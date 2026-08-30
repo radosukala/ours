@@ -54,14 +54,48 @@ act, which is a different question from who should.
 | `oursorg.com` | `[CONFIRM — not yet registered at time of drafting]` | founder's registrar account | the member institution or a purpose-bound holder |
 | `our.one` | founder / related entity | founder's registrar account | remains with the founder or the ONE business; not a project asset |
 | brand `OURS` | unregistered | n/a | purpose-bound holder |
-| any legal entity | `[CONFIRM]` | `[CONFIRM]` | `[CONFIRM]` |
+| Ctrl AI, Inc. | see §4.1 — stated, unverified | `[CONFIRM]` | not established |
 | treasury / bank | none opened | n/a | the member institution |
 | production infrastructure | none provisioned | n/a | institution, through delegated operators |
 
-`Ctrl AI, Inc.` appears in the foundation package as a possible transitional
-operator. Its existence, jurisdiction, ownership, and relationship to this
-project are all `[CONFIRM]`. Until confirmed from a verified legal record, no
-document in this repository may state that it operates, owns, or funds OURS.
+## 4.1 The transitional operator
+
+Amended under [`D-0002`](../decisions/D-0002.md) on 30 August 2026.
+
+**Stated by the founder. Not verified against any filing.**
+
+| Field | Value | Evidence |
+|---|---|---|
+| Entity | Ctrl AI, Inc. | founder's statement, 30 Aug 2026 |
+| Form | Delaware C-Corporation | founder's statement, 30 Aug 2026 |
+| Registered office | 800 North King Street, Wilmington, DE 19801 | founder's statement, 30 Aug 2026 |
+| Delaware file number | `[CONFIRM]` | — |
+| Date of incorporation | `[CONFIRM]` | — |
+| Officers and directors | `[CONFIRM]` | — |
+| Ownership | `[CONFIRM]` | — |
+| Founder's relationship to it | `[CONFIRM]` | — |
+| Assets of this project it holds | none established | — |
+
+A statement in conversation is not a verified legal record. Confirming these
+means reading the Delaware Division of Corporations entity record and citing
+its file number, and until that happens the middle column stays marked as it
+is above.
+
+Two things this does **not** establish, recorded so the table is not read as
+more than it is:
+
+**A registered office is a service address, not a place of business.** 800
+North King Street is a commercial building offering registered-agent and
+virtual-office services. The address establishes the state of incorporation
+and where process is accepted. It says nothing about where the company
+operates, who directs it, or what it holds.
+
+**No relationship to OURS is established.** The entity is named in the
+foundation package as a *possible* transitional operator. Nothing here records
+that it operates, owns, funds, or employs anything connected to this project.
+Until a verified record says otherwise, no document in this repository may
+state that it does — and the fact that its details are now written down does
+not change that.
 
 ## 5. What the founder may decide during bootstrap
 

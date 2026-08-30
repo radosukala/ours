@@ -247,13 +247,22 @@ function scope(ctx: CheckContext): Finding {
     }
   }
   const scanned = ctx.changedPaths.length;
-  return pass(
-    rule,
-    "ENFORCED",
-    scanned === 0
-      ? `Scope is coherent. No changed paths were supplied, so nothing was checked against it.`
-      : `All ${scanned} changed path(s) fall inside the allowed scope.`,
-  );
+  if (scanned === 0) {
+    // A check that evaluated nothing is not a check that passed. Reporting
+    // this as PASS is how M-0001 wrote to a denied path with the trace
+    // calling its scope coherent: the article was ENFORCED in the kernel and
+    // DECLARED in practice, because no caller ever supplied the paths.
+    return {
+      rule,
+      enforcement: "ENFORCED",
+      outcome: "NOT_MACHINE_DECIDABLE",
+      message:
+        `The declared scope is coherent, but no changed paths were supplied, so nothing was ` +
+        `evaluated against it. This is not a pass. Run with the working tree — ` +
+        `\`ours check ${ctx.mandate.mandate_id} --changed\` — to decide it.`,
+    };
+  }
+  return pass(rule, "ENFORCED", `All ${scanned} changed path(s) fall inside the allowed scope.`);
 }
 
 /** Completing a build never confers the authority to release it. */

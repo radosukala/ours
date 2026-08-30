@@ -67,14 +67,45 @@ function report(result: CompileResult, mandateId: string): void {
   console.log("");
 }
 
+/**
+ * What the working tree has actually changed.
+ *
+ * Kept here rather than in the kernel, which stays pure and touches nothing.
+ * Git is read for tracked modifications and for untracked files, because a
+ * new file written outside a mandate's scope is the exact case that went
+ * unnoticed under M-0001 — and `git diff` alone does not report it.
+ */
+async function workingTreePaths(root: string): Promise<string[]> {
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const run = promisify(execFile);
+  const collect = async (args: string[]): Promise<string[]> => {
+    try {
+      const { stdout } = await run("git", args, { cwd: root });
+      return stdout.split("\n").filter((line) => line.trim().length > 0);
+    } catch {
+      return [];
+    }
+  };
+  const [tracked, untracked] = await Promise.all([
+    collect(["diff", "--name-only", "HEAD"]),
+    collect(["ls-files", "--others", "--exclude-standard"]),
+  ]);
+  return [...new Set([...tracked, ...untracked])];
+}
+
 async function main(): Promise<number> {
   const [command = "check", ...rest] = process.argv.slice(2);
   const root = process.env["OURS_ROOT"] ?? process.cwd();
 
   if (command === "check") {
-    const mandateId = rest[0] ?? "M-0000";
-    const result = await compile({ root, mandateId });
+    const mandateId = rest.find((a) => !a.startsWith("--")) ?? "M-0000";
+    const changedPaths = rest.includes("--changed") ? await workingTreePaths(root) : [];
+    const result = await compile({ root, mandateId, changedPaths });
     report(result, mandateId);
+    if (changedPaths.length > 0) {
+      console.log(`  Scope evaluated against ${changedPaths.length} changed path(s).\n`);
+    }
     return result.authorized ? 0 : 1;
   }
 
