@@ -1,0 +1,129 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0001-RELEASE
+title: Publish the Authority Trace
+status: DRAFT
+class: DEPLOY
+
+authority:
+  source_decision: D-0001
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-08-30T00:00:00Z
+  expires_at: 2026-10-31T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0001-RELEASE.md
+
+objective: >
+  Publish the built Authority Trace at oursorg.com as a static site, with the
+  deploy configuration recorded in the repository rather than held as settings
+  in a dashboard, and produce a release receipt binding the running artifact's
+  digest to the authority behind it.
+
+human_outcome: >
+  A stranger can open oursorg.com, read why that page is running, and check
+  the claim without an account.
+
+adopted_constraints:
+  - This mandate publishes the artifact and may not author it; apps/proof/src
+    is denied.
+  - Build output stays gitignored, so the published page cannot drift from the
+    records it projects.
+  - Deploy configuration lives in the repository, not only in a dashboard.
+  - The deployed digest must equal the verified digest.
+  - The agent makes no DNS change and holds no registrar access.
+
+hypotheses:
+  - Recording the build command in vercel.json removes the case where it
+    changes silently, without making the deployment tamper-resistant.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - vercel.json
+      - apps/proof/dist/**
+      - receipts/releases/**
+      - receipts/builds/**
+    deny:
+      - apps/proof/src/**
+      - packages/**
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+  external_systems:
+    - vercel
+
+risk:
+  class: MEDIUM
+  reversibility: REVERSIBLE
+  affected_groups: [public-visitors]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-BUILD-DEPLOY
+    - R-EXACT-ARTIFACT
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, no-third-party-origin]
+  privacy: [no-collection]
+
+acceptance:
+  tests:
+    - ours check M-0001-RELEASE --changed authorises before the deploy.
+    - pnpm proof produces apps/proof/dist/index.html from a clean install.
+    - The deployed page is byte-identical to the local build.
+    - oursorg.com serves the page over HTTPS.
+    - The served page makes no third-party request.
+    - The page states founder authority and that no member institution exists.
+    - The release receipt names digest, environment, deploy authority, and an
+      actionable rollback.
+  evidence:
+    - artifact digest recorded before and verified after deployment
+    - deployment URL and the commit it was built from
+    - a release receipt
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - the deployed digest does not match the verified one
+    - the deployment requires changing apps/proof/src or packages
+    - the page cannot be served without a third-party request
+    - DNS changes are required that the founder has not made
+
+release:
+  deploy_authority_required: true
+  environments: [production]
+  production_allowed: true
+
+rollback:
+  method: >
+    Roll back to the previous Vercel deployment, or remove the domain
+    assignment. The repository is unchanged; the artifact is rebuildable from
+    any commit.
+  irreversible_residue: >
+    Once the page is public, anyone may have read it. A rollback removes the
+    page, not the reading: content may be cached by search engines, archives
+    or readers; the fact that OURS published at all cannot be retracted; and
+    links shared while it was live keep circulating. Nothing personal is
+    exposed, because the page collects nothing.
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  dns: founder
+  deploy: founder
