@@ -1,0 +1,136 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0001
+title: Build the Authority Trace
+status: DRAFT
+class: BUILD
+
+authority:
+  source_decision: D-0001
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-08-30T00:00:00Z
+  expires_at: 2026-10-31T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0001.md
+
+objective: >
+  Build a static page, generated from the records in this repository, that
+  lets a visitor who trusts nobody here reconstruct the authority under which
+  the page itself is running, and see in the same list and at the same weight
+  the articles no machine could decide.
+
+human_outcome: >
+  A reader who has never seen this repository can correctly answer, without
+  coaching, who authorised this, what the implementer was allowed to do, what
+  was checked, what was not checked, and how to reverse it.
+
+adopted_constraints:
+  - The page is a projection over the records the verifier reads; it keeps no
+    separate hand-written narrative.
+  - It states FOUNDER AUTHORITY, not member authority, unmissably.
+  - Enforced and open articles appear in one list at equal weight, with no
+    combined total anywhere.
+  - No analytics, tracking, third-party script, remote font, or cookie.
+  - No form, account, or email field; nothing is collected.
+  - Static output, so anyone can rehost it.
+  - The register of an interface used daily, not a campaign poster.
+  - A neutral UI sans for prose; a true monospace for identifiers, digests,
+    and states.
+  - Near-monochrome; status carried by typography and position, not colour.
+  - >-
+    Accessible: landmarks, visible focus, reduced-motion respected, legible
+    in light and dark.
+
+hypotheses:
+  - A non-technical reader understands the trace in under two minutes.
+  - Rendering open articles at equal weight reads as candour, not failure.
+  - The record schemas survive the page without a breaking change.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/proof/**
+      - packages/kernel/**
+      - tests/**
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - receipts/**
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: [public-visitors]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, no-third-party-origin]
+  privacy: [no-private-identity-projection, no-collection]
+  accessibility: [wcag-aa-target]
+
+acceptance:
+  tests:
+    - pnpm ours check M-0001 authorises before the build begins.
+    - Every rendered value resolves to a record; no fact is hand-written.
+    - The page names founder bootstrap authority and states no member
+      institution exists.
+    - Enforced and open articles appear in one list with no combined total.
+    - The page renders with no third-party network request.
+    - The page is legible in light and dark, at 375px and desktop width.
+    - Every link is keyboard reachable with a visible focus state.
+    - pnpm typecheck and pnpm test pass; the static export builds.
+    - The rendered page contains no prohibited ownership claim, checked by
+      the kernel scan rather than by reading it.
+  evidence:
+    - static build output and artifact digest
+    - conformance report naming each article and its class
+    - narrow-mobile and desktop inspection
+    - build receipt recording agent, model, scope, and failures
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - a value cannot be derived from a record and would have to be written by hand
+    - an acceptance test would require weakening a constitutional article
+    - the page requires a network call to render
+    - implementing a rule requires inventing a fact marked [CONFIRM]
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Remove the route and the build output. No record the page reads is
+    modified by this mandate.
+  irreversible_residue: >
+    None at build time. At release this changes: once the page is public
+    anyone may have read it, and that cannot be undone. M-0001-RELEASE
+    carries that residue.
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  deploy: not-authorized

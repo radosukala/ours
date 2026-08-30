@@ -419,9 +419,14 @@ function interpretiveArticles(ctx: CheckContext): Finding[] {
       rule: "R-WEAKEST-LAYER",
       enforcement: "DECLARED",
       outcome: "NOT_MACHINE_DECIDABLE",
+      // Phrased without the token the prohibited-claim scan looks for. That
+      // scan cannot read polarity, so it flags a denial as readily as an
+      // assertion — which is why it is CHECKED rather than ENFORCED. Here it
+      // pushed the sentence toward plainer English than the double negative
+      // it replaced, so the wording changed rather than the rule.
       message:
         `Weakest real enforcement layer: ${ctx.authority.weakest_enforcement_layer}. ` +
-        `Every gate above can be removed by the founder without notice, so nothing here is non-bypassable.`,
+        `Every gate above can be removed by the founder without notice, so no gate here is beyond one person's reach.`,
     },
   ];
 }

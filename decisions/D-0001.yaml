@@ -1,0 +1,47 @@
+schema: ours.decision/v0.1
+decision_id: D-0001
+title: Publish the Authority Trace
+status: DRAFT
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0001.md
+
+outcome: >
+  Build and publish at oursorg.com a page that lets any visitor reconstruct
+  the authority under which that page is running, and then reverse it.
+
+authorizes:
+  mandate_classes: [BUILD, DEPLOY]
+  mandate_ids: [M-0001, M-0001-RELEASE]
+
+prohibits:
+  - membership, accounts, enrolment, or sign-up of any kind
+  - collecting personal data, including an email address
+  - analytics, tracking, or third-party scripts
+  - any claim that members exist or that anything is member-owned
+  - modifying any record the page displays
+  - moving our.one or altering the legacy ourstoday deployment
+
+effective_from: 2026-08-30T00:00:00Z
+expires_at: 2026-10-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. There is still one participant.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

@@ -9,3 +9,4 @@ coverage/
 
 # Proof bundles are reproducible: pnpm ours export M-0000
 exit/bundle-*.json
+apps/proof/dist/

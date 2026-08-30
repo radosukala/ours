@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ours": "node packages/cli/src/main.ts",
-    "check": "pnpm typecheck && pnpm test && pnpm ours check"
+    "check": "pnpm typecheck && pnpm test && pnpm ours check",
+    "proof": "node apps/proof/src/build.ts"
   },
   "devDependencies": {
     "@ours/schemas": "workspace:*",
@@ -21,7 +22,8 @@
     "@ours/verifier": "workspace:*",
     "@types/node": "26.4.0",
     "typescript": "5.9.3",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "@ours/proof": "workspace:*"
   },
   "dependencies": {
     "yaml": "2.9.0"

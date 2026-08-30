@@ -18,6 +18,9 @@ importers:
       '@ours/kernel':
         specifier: workspace:*
         version: link:packages/kernel
+      '@ours/proof':
+        specifier: workspace:*
+        version: link:apps/proof
       '@ours/schemas':
         specifier: workspace:*
         version: link:packages/schemas
@@ -33,6 +36,18 @@ importers:
       vitest:
         specifier: 4.1.11
         version: 4.1.11(@types/node@26.4.0)(vite@8.2.2(@types/node@26.4.0)(yaml@2.9.0))
+
+  apps/proof:
+    dependencies:
+      '@ours/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      '@ours/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+      yaml:
+        specifier: 2.9.0
+        version: 2.9.0
 
   packages/cli:
     dependencies:

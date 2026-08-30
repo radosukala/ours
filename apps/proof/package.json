@@ -1,0 +1,11 @@
+{
+  "name": "@ours/proof",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ours/kernel": "workspace:*",
+    "@ours/schemas": "workspace:*",
+    "yaml": "2.9.0"
+  }
+}
