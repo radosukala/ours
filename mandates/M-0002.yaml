@@ -1,0 +1,112 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0002
+title: Record the operator and enforce scope against the working tree
+status: DRAFT
+class: BUILD
+
+authority:
+  source_decision: D-0002
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-08-30T00:00:00Z
+  expires_at: 2026-10-31T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0002.md
+
+objective: >
+  Record the transitional operator's stated entity facts in the founding
+  authority, marked unverified, and wire the scope check to the working tree
+  so that a mandate's declared bounds are evaluated against what actually
+  changed rather than against nothing.
+
+human_outcome: >
+  A reader can see who the transitional operator is and how far that is
+  evidenced, and an implementation that writes outside its mandate is refused
+  instead of silently reported as coherent.
+
+adopted_constraints:
+  - Ctrl AI, Inc. facts are recorded as stated by the founder and explicitly
+    not verified against any filing.
+  - No asset ownership is recorded for any party.
+  - No constitutional article's text changes.
+  - An unsupplied scope check reports as not-machine-decidable, never as a pass.
+  - Nothing is deployed.
+
+hypotheses:
+  - Feeding git's changed paths to the existing check requires no rule change.
+  - Reporting an unrun check honestly surfaces gaps rather than hiding them.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - authority/**
+      - packages/kernel/**
+      - packages/cli/**
+      - tests/**
+      - receipts/builds/**
+    deny:
+      - constitution/**
+      - decisions/**
+      - apps/**
+      - foundation/**
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: [founder]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure]
+  privacy: [no-private-identity-projection]
+
+acceptance:
+  tests:
+    - The founding authority records the entity facts and marks them unverified.
+    - No Ctrl AI fact is stated as confirmed anywhere in the repository.
+    - ours check accepts changed paths read from the working tree.
+    - A write outside the allowed scope is refused when paths are supplied.
+    - An unsupplied scope check reports NOT_MACHINE_DECIDABLE, not PASS.
+    - pnpm typecheck and pnpm test pass.
+  evidence:
+    - test output covering the supplied and unsupplied scope cases
+    - a build receipt recording the earlier violation and its cause
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - recording a fact would require inventing or inferring it
+    - an acceptance test would require weakening a constitutional article
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Revert the amendment and the check wiring. No external system is touched.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  deploy: not-authorized

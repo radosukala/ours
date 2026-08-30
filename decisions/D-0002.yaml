@@ -1,0 +1,46 @@
+schema: ours.decision/v0.1
+decision_id: D-0002
+title: Record the operator, and close the scope gap
+status: DRAFT
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0002.md
+
+outcome: >
+  Record the transitional operator's entity facts as stated and unverified,
+  and close the gap that let an implementation write to a path its mandate
+  denied without any check objecting.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0002]
+
+prohibits:
+  - asserting any Ctrl AI, Inc. fact as verified
+  - recording ownership of any asset by any party
+  - changing the text of any constitutional article
+  - deployment of anything
+
+effective_from: 2026-08-30T00:00:00Z
+expires_at: 2026-10-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. One participant.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
