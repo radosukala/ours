@@ -1,0 +1,50 @@
+schema: ours.decision/v0.1
+decision_id: D-0000
+title: Construct OURS Kernel 0.1
+status: DRAFT
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0000.md
+
+outcome: >
+  Construct OURS Kernel 0.1 as a deterministic authority and mandate
+  validator with an offline verifier and the record schemas they operate on.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0000]
+
+prohibits:
+  - deployment to any environment
+  - domain registration, movement, or repointing
+  - any change to the legacy ourstoday repository or deployment
+  - legal entity formation or claims about one
+  - membership issuance or claims that members exist
+  - database, authentication, voting UI, treasury, blockchain
+  - a generalized governance language
+
+effective_from: 2026-08-30T00:00:00Z
+expires_at: 2026-09-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. There is one participant. This is a fact about the size of
+  the project, not evidence of agreement.
+
+appeal:
+  available: false
+  reason: >
+    During bootstrap the founder decides and would hear any appeal, which is
+    not an appeal. Recorded as a known gap.

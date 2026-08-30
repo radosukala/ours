@@ -1,0 +1,29 @@
+{
+  "name": "ours",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OURS \u2014 the institution compiler. Authority becomes mandate becomes software.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ours": "node packages/cli/src/main.ts",
+    "check": "pnpm typecheck && pnpm test && pnpm ours check"
+  },
+  "devDependencies": {
+    "@ours/schemas": "workspace:*",
+    "@ours/kernel": "workspace:*",
+    "@ours/cli": "workspace:*",
+    "@ours/verifier": "workspace:*",
+    "@types/node": "26.4.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "dependencies": {
+    "yaml": "2.9.0"
+  }
+}

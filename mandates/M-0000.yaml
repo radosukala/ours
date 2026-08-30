@@ -1,0 +1,119 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0000
+title: Build the deterministic kernel
+status: DRAFT
+class: BUILD
+
+authority:
+  source_decision: D-0000
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-08-30T00:00:00Z
+  expires_at: 2026-09-30T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0000.md
+
+objective: >
+  Build a deterministic library and CLI that answers whether a mandate is
+  authorized, by whom, and within what bounds — and, when it is not, names
+  the rule that refused and why.
+
+human_outcome: >
+  A stranger with a checkout, no account and no network can run one command,
+  see an invalid authority chain rejected, and read the reason in a sentence
+  they understand.
+
+adopted_constraints:
+  - The kernel performs no network access.
+  - No database; git and the filesystem are the record.
+  - No deployment of any kind.
+  - No claim that members exist or that anything is member-owned.
+  - Every rule reports its enforcement class.
+  - Denial paths are tested at least as thoroughly as the success path.
+
+hypotheses:
+  - Five materially different invalid chains can each be rejected for a
+    specific, correct, human-readable reason.
+  - A non-technical reader can understand a refusal without reading code.
+  - The record schemas survive M-0001 without a breaking change.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - packages/schemas/**
+      - packages/kernel/**
+      - packages/cli/**
+      - packages/verifier/**
+      - tests/**
+    deny:
+      - apps/**
+      - packages/agent-adapter/**
+      - .github/**
+      - receipts/releases/**
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: [founder]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+  security: [no-secret-exposure]
+  privacy: [no-private-identity-projection]
+
+acceptance:
+  tests:
+    - The valid chain validates and the CLI exits 0.
+    - An agent attempting to issue a decision is refused.
+    - A mandate citing a missing decision is refused.
+    - A mandate whose authority window has expired is refused.
+    - A mandate claiming a class its decision does not authorize is refused.
+    - A mandate writing outside its own allowed scope is refused.
+    - A source whose recorded digest does not match its bytes is refused.
+    - A destructive change with no declared irreversible residue is refused.
+    - Every check reports its enforcement class.
+  evidence:
+    - test output naming each denial and its reason
+    - a build receipt recording agent, model, scope, and failures
+    - a truthful statement of enforced versus declared
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - a check cannot be made deterministic
+    - the schema begins growing into a general policy language
+    - an acceptance test would require weakening a constitutional article
+    - implementing a rule requires inventing a fact marked [CONFIRM]
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: Delete the new repository. No existing system is modified.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  deploy: not-authorized

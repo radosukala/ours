@@ -1,0 +1,14 @@
+{
+  "name": "@ours/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "dependencies": {
+    "@ours/kernel": "workspace:*",
+    "@ours/schemas": "workspace:*",
+    "@ours/verifier": "workspace:*"
+  }
+}

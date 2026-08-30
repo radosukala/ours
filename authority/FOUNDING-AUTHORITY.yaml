@@ -1,0 +1,37 @@
+schema: ours.authority/v0.1
+authority_id: FA-0.1
+title: Founding Authority 0.1
+status: DRAFT
+
+human_source:
+  path: authority/FOUNDING-AUTHORITY.md
+
+# The root of the chain. Nothing above this exists in the repository, which is
+# exactly what makes it the bootstrap seed rather than a derived authority.
+root: true
+
+actor:
+  id: founder
+  kind: human
+  role: founder-steward
+
+# During bootstrap the founder may issue every decision class. This is a
+# statement of fact about who can act, not a claim that it is legitimate for
+# a large institution. See FOUNDING-AUTHORITY.md section 6.
+may_issue_decision_classes:
+  - CONSTITUTIONAL
+  - CHARTER
+  - POLICY
+  - PRODUCT_MANDATE
+  - OPERATIONAL
+  - EMERGENCY
+  - ADJUDICATIVE
+
+member_institution_formed: false
+member_ownership_issued: false
+legal_membership_issued: false
+
+weakest_enforcement_layer: AUTOMATED_GATE
+weakest_layer_note: >
+  Every gate in this repository can be removed by the founder without notice.
+  No claim of non-bypassability is available at this layer.

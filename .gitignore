@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+coverage/
+
+# Proof bundles are reproducible: pnpm ours export M-0000
+exit/bundle-*.json
