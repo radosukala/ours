@@ -62,13 +62,15 @@ act, which is a different question from who should.
 
 Amended under [`D-0002`](../decisions/D-0002.md) on 30 August 2026.
 
-**Stated by the founder. Not verified against any filing.**
+**Quoted by the founder from the Certificate of Incorporation. Not
+independently verified against the filed record.**
 
 | Field | Value | Evidence |
 |---|---|---|
-| Entity | Ctrl AI, Inc. | founder's statement, 30 Aug 2026 |
+| Entity | Ctrl AI, Inc. | Certificate of Incorporation, Art. I |
 | Form | Delaware C-Corporation | founder's statement, 30 Aug 2026 |
-| Registered office | 800 North King Street, Wilmington, DE 19801 | founder's statement, 30 Aug 2026 |
+| Registered office | 131 Continental Dr, Suite 305, Newark, DE 19713, New Castle County | Certificate of Incorporation, Art. II |
+| Registered agent | Legalinc Corporate Services, Inc. | Certificate of Incorporation, Art. II |
 | Delaware file number | `[CONFIRM]` | — |
 | Date of incorporation | `[CONFIRM]` | — |
 | Officers and directors | `[CONFIRM]` | — |
@@ -76,19 +78,31 @@ Amended under [`D-0002`](../decisions/D-0002.md) on 30 August 2026.
 | Founder's relationship to it | `[CONFIRM]` | — |
 | Assets of this project it holds | none established | — |
 
-A statement in conversation is not a verified legal record. Confirming these
-means reading the Delaware Division of Corporations entity record and citing
-its file number, and until that happens the middle column stays marked as it
-is above.
+### A correction, kept rather than overwritten
 
-Two things this does **not** establish, recorded so the table is not read as
-more than it is:
+An earlier version of this section recorded the registered office as **800
+North King Street, Wilmington, DE 19801**, from the founder's statement on 30
+August 2026. The Certificate of Incorporation gives a different address, and
+the certificate governs. The earlier entry was wrong.
 
-**A registered office is a service address, not a place of business.** 800
-North King Street is a commercial building offering registered-agent and
-virtual-office services. The address establishes the state of incorporation
-and where process is accepted. It says nothing about where the company
-operates, who directs it, or what it holds.
+It is recorded here rather than quietly replaced, because it is the clearest
+evidence available for why the evidence column exists. The fact was marked
+*stated, unverified* for roughly twenty minutes before the governing document
+contradicted it. Had it been written down as fact, this declaration would now
+assert something false about the entity it names.
+
+### What is still not established
+
+**Quoting a certificate is not reading the filing.** These values come from
+text the founder supplied. Confirming them means retrieving the entity record
+from the Delaware Division of Corporations and citing its file number, which
+no one has done. Until then the evidence column says what it says.
+
+**A registered office is a service address, not a place of business.** The
+address is that of Legalinc Corporate Services, Inc., a commercial registered
+agent. It establishes the state of incorporation and where process is
+accepted. It says nothing about where the company operates, who directs it, or
+what it holds.
 
 **No relationship to OURS is established.** The entity is named in the
 foundation package as a *possible* transitional operator. Nothing here records

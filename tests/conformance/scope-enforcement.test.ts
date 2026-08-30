@@ -69,6 +69,9 @@ describe("a mandate requiring a receipt must permit writing one", () => {
   });
 });
 
+/** Markdown wraps prose, so assertions match meaning rather than line breaks. */
+const flat = (text: string): string => text.replace(/\s+/g, " ");
+
 describe("the transitional operator is recorded without being asserted", () => {
   it("records the stated entity facts", async () => {
     const text = await readFile(
@@ -77,7 +80,8 @@ describe("the transitional operator is recorded without being asserted", () => {
     );
     expect(text).toContain("Ctrl AI, Inc.");
     expect(text).toContain("Delaware C-Corporation");
-    expect(text).toContain("800 North King Street, Wilmington, DE 19801");
+    expect(flat(text)).toContain("131 Continental Dr, Suite 305, Newark, DE 19713");
+    expect(text).toContain("Legalinc Corporate Services, Inc.");
   });
 
   it("marks them unverified and keeps the rest open", async () => {
@@ -85,9 +89,20 @@ describe("the transitional operator is recorded without being asserted", () => {
       path.join(REPO_ROOT, "authority/FOUNDING-AUTHORITY.md"),
       "utf8",
     );
-    expect(text).toContain("Not verified against any filing");
+    expect(flat(text)).toContain("Not independently verified against the filed record");
     expect(text).toMatch(/Delaware file number \| `\[CONFIRM\]`/);
     expect(text).toMatch(/Ownership \| `\[CONFIRM\]`/);
+  });
+
+  it("keeps the superseded address visible rather than overwriting it", async () => {
+    const text = await readFile(
+      path.join(REPO_ROOT, "authority/FOUNDING-AUTHORITY.md"),
+      "utf8",
+    );
+    // The correction is the strongest evidence for why the evidence column
+    // exists, so it is retained. Deleting it would erase the demonstration.
+    expect(flat(text)).toContain("800 North King Street");
+    expect(flat(text)).toContain("The earlier entry was wrong");
   });
 
   it("does not claim the entity operates, owns, or funds anything here", async () => {
@@ -95,8 +110,8 @@ describe("the transitional operator is recorded without being asserted", () => {
       path.join(REPO_ROOT, "authority/FOUNDING-AUTHORITY.md"),
       "utf8",
     );
-    expect(text).toContain("No relationship to OURS is established");
+    expect(flat(text)).toContain("No relationship to OURS is established");
     // The registered office must not be read as a place of business.
-    expect(text).toContain("service address, not a place of business");
+    expect(flat(text)).toContain("service address, not a place of business");
   });
 });
