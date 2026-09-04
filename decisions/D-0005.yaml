@@ -1,0 +1,52 @@
+schema: ours.decision/v0.1
+decision_id: D-0005
+title: Add the visible time-spent option to the feed catalog
+status: DRAFT
+class: PRODUCT_MANDATE
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+    - path: foundation/FEED-PILOT.md
+
+human_source:
+  path: decisions/D-0005.md
+
+proposal: P-0002
+
+outcome: >
+  Amend the v0 option catalog in foundation/FEED-PILOT.md section 6 and the
+  rulebook table in envelopes/M-0003/A-records-and-kernel.md so that OURS
+  Feed shows a person the minutes they have spent in the feed this session
+  and today, by default, kept on their device only, under a new article
+  R-TIME-SHOWN-NOT-KEPT. The option is built under the existing mandate
+  M-0003; this decision authorizes no new mandate.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+prohibits:
+  - storing, sending, or syncing any reading-duration value beyond the person's device
+  - using time spent as an input to ranking, notifications, or any other behavior
+  - making the option FLOOR; the person may turn it off
+  - any change to the catalog beyond the one row and the one article named
+
+effective_from: 2026-09-04T00:00:00Z
+expires_at: 2026-12-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. One participant.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

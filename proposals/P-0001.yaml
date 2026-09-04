@@ -32,6 +32,7 @@ unresolved:
   - defensive names (ourone.io available; ourone.com broker-held; ourone.org third party)
   - timing of the ONE cutover
   - product-line naming, deferred
+  - between our.one and ours.world, and whether ours.world's tone fits the house voice
 
 cost:
   proposer_hours: 2
@@ -53,5 +54,11 @@ deliberation:
   - date: 2026-09-04
     actor: { id: claude, kind: agent }
     position: brand OURS, everything at our.one, oursorg.com redirects; decline OUR ONE and the dotted brand; dissent on confusion preserved
+  - date: 2026-09-04
+    actor: { id: founder, kind: human }
+    position: OURS stronger than our.one as brand; checked aftermarket exact-word domains including ours.world at $500 and ours.ws free
+  - date: 2026-09-04
+    actor: { id: claude, kind: agent }
+    position: two finalists, our.one and ours.world; leans ours.world (exact word, no ONE-cutover dependency); declines ours.ws, theours.co, oursare, oursclub, ours.live
 
 decision: null

@@ -1,0 +1,45 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0002
+title: Show a person the time they spent in the feed, and do not keep it
+status: PROPOSED
+
+requests:
+  decision_class: PRODUCT_MANDATE
+  decision_id: D-0005
+
+human_source:
+  path: proposals/P-0002.md
+
+cell: feed
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - feed-pilot-cohort
+  - agents
+
+unresolved:
+  - default value (session and today, or session only)
+  - placement (stream header, or settings only)
+  - reset (local midnight, or rolling 24 hours)
+
+cost:
+  proposer_hours: 0.2
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-04
+    actor: { id: founder, kind: human }
+    position: a default option showing minutes spent this session and today; no reason to hide it
+  - date: 2026-09-04
+    actor: { id: claude, kind: agent }
+    position: GOVERNED, default on, device-only, new article R-TIME-SHOWN-NOT-KEPT; file before Part A
+
+decision: null
