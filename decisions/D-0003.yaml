@@ -1,0 +1,55 @@
+schema: ours.decision/v0.1
+decision_id: D-0003
+title: Charter the feed pilot and build it through the machine
+status: ADOPTED
+class: CHARTER
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0003.md
+
+outcome: >
+  Charter a provisional Product Cell named feed under founder bootstrap, and
+  build OURS Feed v0 — a familiar social feed whose consequential behaviors
+  are written rules with reasons, whose settings carry the decisions that
+  created them, and whose defaults are set by decision — through the kernel,
+  with any release under a separate mandate.
+
+authorizes:
+  mandate_classes: [BUILD, DEPLOY]
+  mandate_ids: [M-0003, M-0003-RELEASE]
+
+prohibits:
+  - issuing membership, ownership, or any legal interest to anyone
+  - binding votes of any kind; endorsements are recorded demand only
+  - points, ordinals, badges, ranks, tokens, or any scarce or transferable artifact
+  - analytics, tracking, third-party scripts, or advertising
+  - sale or ad-targeting use of behavioral data
+  - paid influence on ranking
+  - accounts for, or features designed for, people under 18
+  - any claim that members exist or that member ownership has been issued
+  - production deployment under BUILD authority
+  - naming a data controller as verified fact without a legal record
+  - using a product-line name or domain that no decision has adopted
+
+effective_from: 2026-09-02T00:00:00Z
+expires_at: 2026-12-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. One participant.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
