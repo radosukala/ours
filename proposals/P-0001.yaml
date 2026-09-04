@@ -1,0 +1,57 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0001
+title: Name the address, and grow the head of the chain
+status: PROPOSED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0004
+
+human_source:
+  path: proposals/P-0001.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - founder
+  - one-business
+  - future-member-institution
+  - feed-pilot-cohort
+  - agents
+
+unresolved:
+  - address option (A1 two-level, A2 our.one for everything, A3 status quo)
+  - brand confirmation (B1 OURS)
+  - defensive names (ourone.io available; ourone.com broker-held; ourone.org third party)
+  - timing of the ONE cutover
+  - product-line naming, deferred
+
+cost:
+  proposer_hours: 2
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-08-30
+    actor: { id: founder, kind: human }
+    position: locked OURS as brand and oursorg.com as canonical; our.one a redirect, not canonical
+  - date: 2026-09-04
+    actor: { id: founder, kind: human }
+    position: org is awkward for products; offered tiours.com, projectours.com, ours26.com, and our.one for the feed
+  - date: 2026-09-04
+    actor: { id: claude, kind: agent }
+    position: two-level addressing; using our.one makes it a project asset on the transfer list
+  - date: 2026-09-04
+    actor: { id: founder, kind: human }
+    position: willing to transfer our.one; worried OURS plus our.one confuses; asked about OUR ONE or the dotted brand
+  - date: 2026-09-04
+    actor: { id: claude, kind: agent }
+    position: brand OURS, everything at our.one, oursorg.com redirects; decline OUR ONE and the dotted brand; dissent on confusion preserved
+
+decision: null
