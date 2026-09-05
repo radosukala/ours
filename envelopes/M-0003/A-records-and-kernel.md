@@ -9,6 +9,9 @@ this part implements.
 Before starting: `pnpm ours check M-0003` must authorise. If it refuses,
 stop and report the refusal verbatim.
 
+**Amended:** 5 September 2026 under `D-0005` — one article
+(`R-TIME-SHOWN-NOT-KEPT`) and two optional provenance fields added.
+
 ## What you build
 
 The feed Cell's records, the record type that carries option provenance,
@@ -30,6 +33,7 @@ Articles to draft, with their honest class today:
 | Article | Meaning | Class today |
 |---|---|---|
 | `R-ATTENTION-OPT-IN` | the feed never decides for the person that it continues; continuation, reminders, session budget and the continue gesture are the person's; the quiet choice is the default | `ENFORCED` by catalog default + app test |
+| `R-TIME-SHOWN-NOT-KEPT` | the feed shows a person how long they have used it, in plain minutes, by default; it does not store, send, or use that number for anything else | `ENFORCED` by app test — no reading-duration value reaches the server · `CHECKED` for the display |
 | `R-NOTHING-FALSELY-IMPOSSIBLE` | where a behavior can be personal it is; withholding a feasible option requires a published reason — cost, safety, or another person's rights; "not possible" may never mean "not profitable"; absences are catalogued with reasons | `STRUCTURAL` (reason required) · `INTERPRETED` (whether the reason is honest) |
 | `R-VOTED-DEFAULTS` | a default is a decision on behalf of everyone who never opens settings; every GOVERNED default names the decision that set it; the person's overrides are theirs | `STRUCTURAL` today · `DECLARED` for the member vote, which does not exist |
 | `R-ANSWERABLE-WHY` | every option and every feed item answers why it exists or appeared, from a record, not a caption | `ENFORCED` by app test |
@@ -73,6 +77,8 @@ provenance:
   mandate: M-0003
   default_set_by: founder-bootstrap
   default_status: BOOTSTRAP_DEFAULT   # BOOTSTRAP_DEFAULT | MEMBER_VOTED
+  proposal: null                      # optional — the proposal that asked for it (e.g. P-0002)
+  amended_by: null                    # optional — a later decision that amended the catalog (e.g. D-0005)
 why: >
   one paragraph, plain language
 recourse: >
@@ -109,6 +115,9 @@ every field earning its place by being checked.
   a `default_status` outside the allowed set; is `absent` without a
   `reason`; or shares an `option_id` with another. The refusal message
   names the option and the article, in a sentence a person can read.
+- Optional `provenance.proposal` and `provenance.amended_by`, when present,
+  must name records that exist in `proposals/` and `decisions/`; a missing
+  record is a refusal. Part C renders both in the provenance drawer.
 - `index.ts`: `compile()` accepts `optionCatalogPath?` and `rulebookPath?`;
   when the mandate's `institution.cell` has `rules/<cell>/options.yaml`, the
   CLI supplies both. A catalog that fails to load is a refusal, not a skip.

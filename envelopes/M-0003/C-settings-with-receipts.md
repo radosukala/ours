@@ -8,6 +8,9 @@ else is authority. Read `AGENTS.md` first, then `foundation/FEED-PILOT.md`
 **Depends on:** Parts A and B merged. Before starting:
 `pnpm ours check M-0003` must authorise.
 
+**Amended:** 5 September 2026 under `D-0005` — the `feed.time_visible`
+behavior and its test added.
+
 ## What you build
 
 The settings page that is the institution's face, and the attention
@@ -64,6 +67,7 @@ Implement each GOVERNED option's behavior in the stream Part B built:
 | `feed.continue_gesture` | `tap`: the "show more" / reminder dismiss is one tap. `hold`: the control must be held for `feed.hold_duration` seconds, with a visible progress ring; releasing early cancels. |
 | `feed.hold_duration` | 1–5 s |
 | `feed.session_budget` | `none`, or a soft stop: after N minutes the stream ends with *You set N minutes for today. Come back tomorrow, or change this in settings.* — and a plain link to continue anyway, because it is the person's setting, not a lock |
+| `feed.time_visible` | `session-and-today` (default): a small monospace line in the stream header — *4 min this session · 12 min today* — measured by the same active-viewing timer as the reminders; *today* is kept in local storage only and resets at local midnight or when the person clears it. `session`: the first number only. `off`: nothing shown. Nothing is synced or sent. |
 | `notifications.quiet_hours` | in-app notification surface stays empty during quiet hours (there is no push in v0; the setting still governs the in-app list) |
 | `notifications.badges` | unread badges and counters render only when on; default off |
 | `notifications.email_digest` | a stored preference only; no email is sent in this mandate |
@@ -90,6 +94,9 @@ stop.** Say this in the option's *why* if Part A did not.
   quiet hours emptying the notification list.
 - No reading-duration value reaches any server endpoint (assert on the
   request log).
+- The time line renders by default and counts only active viewing (fake
+  timers); *today* persists in local storage only and resets at local
+  midnight; `session` shows one number; `off` shows none.
 - Keyboard: every control reachable, the hold gesture operable by holding
   the key, reduced motion honoured for the progress ring.
 

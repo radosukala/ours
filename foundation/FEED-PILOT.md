@@ -180,6 +180,7 @@ The v0 catalog, to be drafted under M-0003 Part A and adopted by the founder:
 | reminder interval: 5 / 10 / 20 minutes | GOVERNED | 10 | R-ATTENTION-OPT-IN |
 | continue gesture: tap / hold, with hold duration 1–5 s | GOVERNED | tap | R-ATTENTION-OPT-IN |
 | session budget: none / soft stop after N minutes | GOVERNED | none | R-ATTENTION-OPT-IN |
+| time spent, visible: this session and today / this session / off | GOVERNED | session and today | R-TIME-SHOWN-NOT-KEPT |
 | quiet hours for notifications | GOVERNED | 22:00–07:00 | R-QUIET-BY-DEFAULT |
 | unread badges and counters | GOVERNED | off | R-QUIET-BY-DEFAULT |
 | email digest | GOVERNED | off | R-QUIET-BY-DEFAULT |
@@ -190,6 +191,10 @@ The v0 catalog, to be drafted under M-0003 Part A and adopted by the founder:
 | behavioral recommendations ("suggested for you") | FLOOR · absent in v0, reason stated | — | R-NOTHING-FALSELY-IMPOSSIBLE |
 | minimum age | FLOOR | 18 | R-ADULTS-ONLY |
 | display density, theme | PERSONAL | comfortable, system | — |
+
+*The row "time spent, visible" was added under [`D-0005`](../decisions/D-0005.md)
+on 5 September 2026, from [`P-0002`](../proposals/P-0002.md). The table
+above is otherwise as adopted under `D-0003`.*
 
 Absences are catalogued too. An option that a person could reasonably expect
 and does not find — video autoplay, algorithmic suggestions — appears in the

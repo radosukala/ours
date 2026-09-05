@@ -1,7 +1,7 @@
 schema: ours.decision/v0.1
 decision_id: D-0005
 title: Add the visible time-spent option to the feed catalog
-status: DRAFT
+status: ADOPTED
 class: PRODUCT_MANDATE
 
 authority:

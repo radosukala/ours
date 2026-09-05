@@ -1,7 +1,7 @@
 schema: ours.proposal/v0.1
 proposal_id: P-0002
 title: Show a person the time they spent in the feed, and do not keep it
-status: PROPOSED
+status: ADOPTED
 
 requests:
   decision_class: PRODUCT_MANDATE
@@ -41,5 +41,8 @@ deliberation:
   - date: 2026-09-04
     actor: { id: claude, kind: agent }
     position: GOVERNED, default on, device-only, new article R-TIME-SHOWN-NOT-KEPT; file before Part A
+  - date: 2026-09-05
+    actor: { id: founder, kind: human }
+    position: agrees with the proposal and D-0005; the three unresolved items resolve as recommended
 
-decision: null
+decision: D-0005
