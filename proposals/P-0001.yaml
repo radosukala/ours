@@ -60,5 +60,11 @@ deliberation:
   - date: 2026-09-04
     actor: { id: claude, kind: agent }
     position: two finalists, our.one and ours.world; leans ours.world (exact word, no ONE-cutover dependency); declines ours.ws, theours.co, oursare, oursclub, ours.live
+  - date: 2026-09-05
+    actor: { id: founder, kind: human }
+    position: found free verb-prefixed names on .com and .co; asks whether .co (better than .ws, reads as company) changes the recommendation
+  - date: 2026-09-05
+    actor: { id: claude, kind: agent }
+    position: no change; tiering is exact word on generic TLD, then owned near-word, then modified word; .com siblings all taken; finalists our.one or ours.world
 
 decision: null
