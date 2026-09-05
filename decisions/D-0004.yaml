@@ -1,0 +1,54 @@
+schema: ours.decision/v0.1
+decision_id: D-0004
+title: Name the addresses, and grow the head of the chain
+status: DRAFT
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0004.md
+
+proposal: P-0001
+
+outcome: >
+  Keep the brand OURS. Keep the institution at oursorg.com and put products
+  at our.one, feed.our.one first, with a revisit clause. Adopt
+  foundation/LIFECYCLE.md as direction; require a proposal before every
+  decision from this one on; make adoption a recorded event and correct the
+  six records left marked DRAFT while acted on; record cost on every
+  record; and authorize one housekeeping mandate, M-0004, for the checks,
+  fields, and the release receipt still owed.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0004]
+
+prohibits:
+  - moving the institution's address from oursorg.com
+  - any DNS change to our.one before the ONE cutover preconditions in the handoff are met and the founder authorizes it
+  - any product-line name on any surface that no decision has adopted
+  - changing the substance of any record during reconciliation; status fields only
+  - resolving any fact marked CONFIRM by inference
+
+effective_from: 2026-09-05T00:00:00Z
+expires_at: 2026-12-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  The founder's unease at the one-letter gap between OURS and our.one is
+  recorded in P-0001 and accepted by the founder on 5 September 2026.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

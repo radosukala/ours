@@ -72,5 +72,11 @@ deliberation:
   - date: 2026-09-05
     actor: { id: claude, kind: agent }
     position: keep OURS (a pronoun that stands alone and asserts; OUR is a determiner that needs a noun); offers ours.world canonical with our.one as short link
+  - date: 2026-09-05
+    actor: { id: founder, kind: human }
+    position: start with our.one (first year paid); may acquire an exact-word address later; brand OURS confirmed
+  - date: 2026-09-05
+    actor: { id: claude, kind: agent }
+    position: D-0004 drafted as A1 with a revisit clause
 
-decision: null
+decision: D-0004 (drafted, awaiting adoption)

@@ -1,0 +1,59 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0003
+title: Change the entry point — a circle's shared surface, tested by hand before it is built
+status: PROPOSED
+
+requests:
+  decision_class: CHARTER
+  decision_id: D-0006
+
+human_source:
+  path: proposals/P-0003.md
+evidence:
+  - path: proposals/P-0003.evidence-external-review.md
+
+cell: feed
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: external-ai-reviewer
+    kind: agent
+    role: reviewer
+    note: model not named in the record
+
+affected_groups:
+  - founder
+  - the professional circle to be named
+  - feed-pilot-cohort
+  - agents
+
+unresolved:
+  - which circle, named before the first invitation
+  - the founder's hour budget and the criteria thresholds
+  - who holds the pilot's data (founder personally or transitional operator)
+  - whether Part A of M-0003 runs now in parallel (recommended yes)
+  - whether the Cell keeps the identifier feed (recommended yes)
+
+cost:
+  proposer_hours: 3
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-05
+    actor: { id: founder, kind: human }
+    position: supplied an external review; asks that it be weighed, not defended against
+  - date: 2026-09-05
+    actor: { id: external-ai-reviewer, kind: agent }
+    position: change the entry point to an existing circle commissioning shared software; manual pilot before code; five tests of control; DRAFT labels are a credibility issue
+  - date: 2026-09-05
+    actor: { id: claude, kind: agent }
+    position: accept the entry-point shift and the manual pilot; keep Part A and the housekeeping now; add data-handling terms; narrow the copyable-receipts point; requests D-0006
+
+decision: null
