@@ -66,5 +66,11 @@ deliberation:
   - date: 2026-09-05
     actor: { id: claude, kind: agent }
     position: no change; tiering is exact word on generic TLD, then owned near-word, then modified word; .com siblings all taken; finalists our.one or ours.world
+  - date: 2026-09-05
+    actor: { id: founder, kind: human }
+    position: could the brand become OUR to match our.one; is OURS much better?
+  - date: 2026-09-05
+    actor: { id: claude, kind: agent }
+    position: keep OURS (a pronoun that stands alone and asserts; OUR is a determiner that needs a noun); offers ours.world canonical with our.one as short link
 
 decision: null
