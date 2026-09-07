@@ -1,0 +1,59 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0004
+title: From a shared need to a shared tool — OURS as the home for community software
+status: PROPOSED
+supersedes: P-0003
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0006
+
+human_source:
+  path: proposals/P-0004.md
+evidence:
+  - path: proposals/P-0004.evidence-external-review-2.md
+  - path: foundation/SHARED-TOOL.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: external-ai-reviewer
+    kind: agent
+    role: reviewer
+    note: model not named in the record
+
+affected_groups:
+  - founder
+  - the first community, to be named
+  - builders and operators, future
+  - agents
+
+unresolved:
+  - which community, where the founder is a member and not the boss
+  - hour budget and success criteria for M-0005
+  - who holds the pilot's personal data
+  - which fiscal host, if any, for the first Cell
+  - whether the feed rulebook and catalog survive as a test fixture
+
+cost:
+  proposer_hours: 4
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-07
+    actor: { id: founder, kind: human }
+    position: the social-media market is too large for too little everyday impact; communities need to feel community-owned software in small groups; the invention is a system with clear rules and ownership; a simple product and a clear process are still missing
+  - date: 2026-09-07
+    actor: { id: external-ai-reviewer, kind: agent }
+    position: OURS helps communities create and run software of their own; shared need as the unit; five-question home; protections instead of "cannot be bypassed"; protocol underneath, service in front; assist one founding first
+  - date: 2026-09-07
+    actor: { id: claude, kind: agent }
+    position: agree — this is the thesis returning to itself; sharpen the absolute, forbid the generalised system before one founding, require a community the founder does not control, extract rather than publish the protocol, supersede the feed cleanly; requests D-0006
+
+decision: null

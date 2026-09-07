@@ -1,7 +1,8 @@
 schema: ours.proposal/v0.1
 proposal_id: P-0003
 title: Change the entry point — a circle's shared surface, tested by hand before it is built
-status: PROPOSED
+status: SUPERSEDED
+superseded_by: P-0004
 
 requests:
   decision_class: CHARTER
