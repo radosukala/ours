@@ -55,5 +55,11 @@ deliberation:
   - date: 2026-09-07
     actor: { id: claude, kind: agent }
     position: agree — this is the thesis returning to itself; sharpen the absolute, forbid the generalised system before one founding, require a community the founder does not control, extract rather than publish the protocol, supersede the feed cleanly; requests D-0006
+  - date: 2026-09-07
+    actor: { id: founder, kind: human }
+    position: ownership solved out of the box; OURS as the most trusted, verified way to build in communities; guaranteed from day one and not bypassable later; a default standard
+  - date: 2026-09-07
+    actor: { id: claude, kind: agent }
+    position: default holding (name, address, deploy authority, controller role, money) by a purpose-bound holder with unconditional exit; promise is "cannot be bypassed quietly"; the holder itself needs the transfer gates; six screens drafted
 
 decision: null

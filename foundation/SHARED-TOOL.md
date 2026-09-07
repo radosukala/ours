@@ -127,6 +127,35 @@ down. The protections:
 Majorities have limits: collective ownership entitles nobody to another
 person's private data and removes no one's right of appeal.
 
+### 6.1 Ownership out of the box — the default holding
+
+The founder's ambition is that a community should not have to design its
+own protections: a tool started on OURS should be **born with them**, the
+way a collective on a fiscal host is born with a bank account it does not
+have to open. The honest form of "out of the box" is a **default holding**:
+
+- every Cell's sovereignty-critical assets — its name, its address, its
+  deploy authority, the data-controller role, and its money through a
+  fiscal host — are held from day one by a purpose-bound holder under the
+  root constitution, never by the builder, the operator, or the founding
+  team;
+- the separation of powers in §6 is the default founding arrangement, not
+  an option the group must know to ask for;
+- exit is unconditional: the holder must hand over the assets to the group
+  or to its chosen successor when the group's own procedure says so, and
+  the fork pack is always available;
+- every protection still states its holding class, and the floor rises
+  over time — automated gate, then separated responsibilities, then keys
+  no single person holds, then legal control — with each rise receipted.
+
+What this can honestly promise is not that power cannot be abused, but
+that **it cannot be abused quietly**: any override is a visible, receipted
+event, and the community sees which protections are still only written
+down. And the holder itself is the founder-capture threat at scale — a
+root that holds many communities' names and keys must be bound by the
+same transfer gates and the same unconditional exit as everything under
+it, or the default holding is an enclosure with good manners.
+
 ## 7. Protocol underneath, service in front
 
 The protocol is the durable agreement among the people the software
