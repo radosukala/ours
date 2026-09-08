@@ -1,6 +1,6 @@
 # M-0001-RELEASE — Publish the Authority Trace
 
-**Status:** DRAFT — awaiting founder adoption
+**Status:** ADOPTED — executed 30 August 2026 while marked DRAFT; its receipt was never written, and it becomes DEPLOYED only when `M-0004` produces the receipt from verifiable facts; status corrected under `D-0004` §C on 8 September 2026
 **Class:** DEPLOY
 **Authorizing decision:** [`D-0001`](../decisions/D-0001.md)
 **Machine projection:** [`M-0001-RELEASE.yaml`](./M-0001-RELEASE.yaml)

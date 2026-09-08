@@ -1,7 +1,7 @@
 schema: ours.authority/v0.1
 authority_id: FA-0.1
 title: Founding Authority 0.1
-status: DRAFT
+status: ADOPTED
 
 human_source:
   path: authority/FOUNDING-AUTHORITY.md

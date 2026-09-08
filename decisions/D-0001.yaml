@@ -1,7 +1,7 @@
 schema: ours.decision/v0.1
 decision_id: D-0001
 title: Publish the Authority Trace
-status: DRAFT
+status: ADOPTED
 class: CONSTITUTIONAL
 
 authority:

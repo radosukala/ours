@@ -1,7 +1,7 @@
 schema: ours.mandate/v0.1
 mandate_id: M-0001
 title: Build the Authority Trace
-status: DRAFT
+status: TESTED
 class: BUILD
 
 authority:

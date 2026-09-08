@@ -1,7 +1,7 @@
 schema: ours.proposal/v0.1
 proposal_id: P-0001
 title: Name the address, and grow the head of the chain
-status: PROPOSED
+status: ADOPTED
 
 requests:
   decision_class: CONSTITUTIONAL
@@ -79,4 +79,4 @@ deliberation:
     actor: { id: claude, kind: agent }
     position: D-0004 drafted as A1 with a revisit clause
 
-decision: D-0004 (drafted, awaiting adoption)
+decision: D-0004

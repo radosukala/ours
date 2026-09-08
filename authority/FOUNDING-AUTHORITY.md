@@ -1,9 +1,9 @@
 # Founding Authority 0.1
 
-**Status:** DRAFT — not yet adopted
+**Status:** ADOPTED — by `D-0004` on 8 September 2026, with every `[CONFIRM]` fact explicitly left open
 **Class:** Root authority declaration
 **Date drafted:** 30 August 2026
-**Adopted:** NOT YET — requires founder review and an explicit adoption record
+**Adopted:** 8 September 2026, under `D-0004` §C — the structure, the control map, and the prohibitions are in force; every fact marked `[CONFIRM]` remains open and is not resolved by adoption
 **Supersedes:** nothing
 
 > Facts marked `[CONFIRM]` are unverified. An agent must not resolve them.

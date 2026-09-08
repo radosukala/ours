@@ -1,7 +1,7 @@
 schema: ours.decision/v0.1
 decision_id: D-0004
 title: Name the addresses, and grow the head of the chain
-status: DRAFT
+status: ADOPTED
 class: CONSTITUTIONAL
 
 authority:

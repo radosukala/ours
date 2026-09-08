@@ -1,7 +1,7 @@
 # OURS · the lifecycle of a change
 
 **Version:** 0.1  
-**Status:** DRAFT · proposed for adoption under `D-0004` by
+**Status:** ADOPTED · DIRECTION — adopted with `D-0004` on 8 September 2026, from
 [`P-0001`](../proposals/P-0001.md)  
 **Prepared:** 4 September 2026  
 **Depends on:** [THESIS.md](./THESIS.md) §5,
