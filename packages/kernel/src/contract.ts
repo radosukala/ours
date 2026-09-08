@@ -1,37 +1,39 @@
-import { readdir, readFile } from "node:fs/promises";
+import { lstat, readdir, readFile } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import path from "node:path";
 import ts from "typescript";
 import type { Finding, ToolSpec } from "@ours/schemas";
 
 /**
- * The static contract check — M-0006, rebuilt after the independent
- * verification of 8 September 2026 found sixteen ways past its first form.
+ * The static contract check — M-0006, in its third form.
  *
- * The first form recognised exactly one shape, `layer.method(...)`, and a
- * source tree in which the client was aliased, indexed, or destructured
- * passed with "0 client call(s)". A check that sees nothing is not a check.
- * This one refuses by default:
+ * The first form recognised one syntactic shape and passed an aliased
+ * client unseen. The second refused every other reference to the client
+ * and a list of names that reach around it — and the re-verification found
+ * the list could not be complete: `global` was not on it, and
+ * `constructor` walks to the Function constructor from anything.
  *
- * - the identifier `layer` may appear only as the receiver of a direct call
- *   to `read`, `write`, or `disclose`, or as a declaration name; any other
- *   reference — an alias, a bracket, a destructuring, an argument, a
- *   parenthesis — is refused as undecidable;
- * - the reserved method names on any other receiver, or as bare calls, are
- *   refused;
- * - imports are an allowlist: the application's own files by relative path,
- *   the layer client package, and the packages its contract declares —
- *   nothing else, and never a Node built-in, never a dynamic `import()`,
- *   never `import.meta`;
- * - the names that reach the network, the file system, or the runtime by
- *   another door are refused wherever they appear;
- * - every class, origin, field list, and record is a literal, or it is
- *   refused;
- * - every file the runtime could execute is read, not only `.ts`.
+ * So this form does not list what is forbidden. It binds the source with
+ * the TypeScript binder and no library at all, so that every identifier
+ * either resolves to something the application declared or imported, or
+ * is a global — and a global is refused unless it is on a short allowlist
+ * of values that cannot reach outside the process: the ECMAScript
+ * built-ins, timers, and `console`. `Function`, `Reflect`, `Proxy`,
+ * `WebAssembly`, `globalThis`, `global`, `process`, `fetch`, and every
+ * other name are refused not because they are listed but because they are
+ * not allowed. The doors that need no global — `.constructor`,
+ * `.prototype`, `__proto__`, `arguments`, top-level `this`, `with` — are
+ * refused by name, because they are few and fixed.
  *
- * Still not checked here, and said in every message: what a declared
- * dependency does inside itself, and anything at runtime. Runtime
- * confinement is a later mandate's. Class: ENFORCED at admission.
+ * The rest as before: the client `layer` may appear only as the receiver of
+ * a direct `read`, `write`, or `disclose` call, or as a declaration name;
+ * imports are an allowlist of the application's own files, the client, and
+ * the package roots the contract declares; every file the runtime could
+ * execute is read, and a symbolic link is refused because it can point
+ * outside what is read.
+ *
+ * Still not checked, and said in every message: what a declared dependency
+ * does inside itself, and anything at runtime. Class: ENFORCED at admission.
  */
 
 export const CONTRACT_RULE = "S-CONTRACT-DECLARED";
@@ -40,56 +42,41 @@ const CLIENT = "layer";
 const CLIENT_PACKAGE = "@ours/layer";
 const CLIENT_METHODS = new Set(["read", "write", "disclose"]);
 
-/** Names that reach around the client. Refused wherever they appear. */
-const REFUSED_NAMES = new Set([
-  "fetch",
-  "XMLHttpRequest",
-  "WebSocket",
-  "EventSource",
-  "sendBeacon",
-  "importScripts",
-  "require",
-  "createRequire",
-  "eval",
-  "Function",
-  "process",
-  "globalThis",
-  "window",
-  "self",
-  "navigator",
-  "Worker",
-  "SharedWorker",
-  "Deno",
-  "Bun",
+/**
+ * Globals an application may reference: values that cannot reach outside
+ * the process. Everything not here is refused. `Object` is here and
+ * `.constructor`, `.prototype`, and `__proto__` are refused as property
+ * names, which closes the walk from any value to the Function constructor.
+ */
+const ALLOWED_GLOBALS = new Set([
+  "Array", "ArrayBuffer", "BigInt", "BigInt64Array", "BigUint64Array", "Boolean", "DataView", "Date",
+  "Error", "EvalError", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError", "AggregateError",
+  "Float32Array", "Float64Array", "Int8Array", "Int16Array", "Int32Array",
+  "Uint8Array", "Uint8ClampedArray", "Uint16Array", "Uint32Array",
+  "Infinity", "NaN", "undefined", "JSON", "Map", "Set", "WeakMap", "WeakSet", "WeakRef",
+  "Math", "Number", "Object", "Promise", "RegExp", "String", "Symbol",
+  "parseInt", "parseFloat", "isNaN", "isFinite",
+  "encodeURIComponent", "decodeURIComponent", "encodeURI", "decodeURI",
+  "structuredClone", "console", "Intl", "URL", "URLSearchParams", "TextEncoder", "TextDecoder",
+  "AbortController", "AbortSignal", "crypto", "Atomics", "SharedArrayBuffer",
+  "setTimeout", "clearTimeout", "setInterval", "clearInterval", "queueMicrotask",
 ]);
 
-/** Packages that reach the network or a database. Refused by root name, any subpath. */
+/** Names that reach around the client even when declared locally. Refused wherever they appear. */
+const REFUSED_NAMES = new Set([
+  "fetch", "XMLHttpRequest", "WebSocket", "EventSource", "sendBeacon", "importScripts",
+  "require", "createRequire", "eval", "Function", "process", "globalThis", "global", "window", "self",
+  "navigator", "Worker", "SharedWorker", "Deno", "Bun", "Reflect", "Proxy", "WebAssembly", "arguments",
+]);
+
+/** Property names that walk to the Function constructor or the caller. Refused on any receiver. */
+const REFUSED_PROPERTIES = new Set(["constructor", "prototype", "__proto__", "callee", "caller"]);
+
+/** Packages that reach the network or a database. Refused by root name, any subpath, even if declared. */
 const IO_PACKAGES = new Set([
-  "pg",
-  "mysql",
-  "mysql2",
-  "better-sqlite3",
-  "sqlite3",
-  "mongodb",
-  "mongoose",
-  "ioredis",
-  "redis",
-  "undici",
-  "node-fetch",
-  "cross-fetch",
-  "isomorphic-fetch",
-  "axios",
-  "got",
-  "ky",
-  "superagent",
-  "ws",
-  "knex",
-  "prisma",
-  "@prisma/client",
-  "drizzle-orm",
-  "kysely",
-  "typeorm",
-  "sequelize",
+  "pg", "mysql", "mysql2", "better-sqlite3", "sqlite3", "mongodb", "mongoose", "ioredis", "redis",
+  "undici", "node-fetch", "cross-fetch", "isomorphic-fetch", "axios", "got", "ky", "superagent", "ws",
+  "knex", "prisma", "@prisma/client", "drizzle-orm", "kysely", "typeorm", "sequelize",
 ]);
 
 const BUILTINS = new Set(builtinModules.map((m) => m.replace(/^node:/, "")));
@@ -105,14 +92,18 @@ const EXTENSIONS: Record<string, ts.ScriptKind> = {
   ".jsx": ts.ScriptKind.JSX,
 };
 
+/** Relative imports may name a source file, a JSON file, or nothing; a native addon or anything else is refused. */
+const IMPORTABLE_EXTENSIONS = new Set([...Object.keys(EXTENSIONS), ".json", ""]);
+
 interface Tree {
   sources: string[];
-  /** Files in the tree that are not read, by extension, so the report can say so. */
   unread: Record<string, number>;
+  /** Symbolic links, refused: they can point outside what is read. */
+  links: string[];
 }
 
 async function listTree(dir: string): Promise<Tree> {
-  const tree: Tree = { sources: [], unread: {} };
+  const tree: Tree = { sources: [], unread: {}, links: [] };
   const walk = async (d: string): Promise<void> => {
     let entries: import("node:fs").Dirent[];
     try {
@@ -122,6 +113,18 @@ async function listTree(dir: string): Promise<Tree> {
     }
     for (const entry of entries) {
       const full = path.join(d, entry.name);
+      let isLink = entry.isSymbolicLink();
+      if (!isLink) {
+        try {
+          isLink = (await lstat(full)).isSymbolicLink();
+        } catch {
+          isLink = false;
+        }
+      }
+      if (isLink) {
+        tree.links.push(path.relative(dir, full));
+        continue;
+      }
       if (entry.isDirectory()) {
         if (entry.name === "node_modules" || entry.name === ".git") continue;
         await walk(full);
@@ -135,6 +138,7 @@ async function listTree(dir: string): Promise<Tree> {
   };
   await walk(dir);
   tree.sources.sort();
+  tree.links.sort();
   return tree;
 }
 
@@ -169,20 +173,24 @@ function literalKeys(node: ts.Node | undefined): string[] | null {
   return out;
 }
 
-/** The package root of a specifier: `pg/lib` → `pg`, `@scope/name/x` → `@scope/name`. */
 function packageRoot(spec: string): string {
   const parts = spec.split("/");
   return spec.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] as string);
 }
 
 /**
- * An import is allowed if it is the application's own file, the client, or
- * a package the contract declares. Everything else is refused: a built-in,
- * an I/O package, or a package nobody declared.
+ * An import is allowed if it is the application's own source or JSON file,
+ * the client, or a package the contract declares and that does not itself
+ * reach a network or a database. Everything else is refused.
  */
 export function specifierVerdict(spec: string, declared: readonly string[]): string | null {
-  if (spec.startsWith("./") || spec.startsWith("../")) return null;
+  if (spec.startsWith("./") || spec.startsWith("../")) {
+    const ext = path.extname(spec);
+    if (!IMPORTABLE_EXTENSIONS.has(ext)) return `imports ${spec}: a relative import may name a source or JSON file, not ${ext}`;
+    return null;
+  }
   if (spec.startsWith("/")) return `imports ${spec}: an absolute path reaches outside the application`;
+  if (spec.startsWith("#")) return `imports ${spec}: a package.json subpath import is a mapping this check cannot see, so refused`;
   const bare = spec.replace(/^node:/, "");
   const root = packageRoot(bare);
   if (spec.startsWith("node:") || BUILTINS.has(root)) {
@@ -211,26 +219,46 @@ function isClientReceiver(node: ts.Identifier): boolean {
   return !!call && ts.isCallExpression(call) && call.expression === parent;
 }
 
-/** Whether an identifier node is the name being declared, not a reference. */
-function isDeclarationName(node: ts.Identifier): boolean {
+/** Whether an identifier is the name being declared, a property name, or in a type — not a value reference. */
+function isNotValueReference(node: ts.Identifier): boolean {
   const parent = node.parent;
-  if (!parent) return false;
+  if (!parent) return true;
+  if (ts.isPropertyAccessExpression(parent) && parent.name === node) return true;
+  if (ts.isPropertyAssignment(parent) && parent.name === node) return true;
+  if (ts.isPropertySignature(parent) || ts.isMethodSignature(parent) || ts.isMethodDeclaration(parent) || ts.isPropertyDeclaration(parent)) return parent.name === node;
   if (ts.isVariableDeclaration(parent) && parent.name === node) return true;
   if (ts.isParameter(parent) && parent.name === node) return true;
+  if (ts.isBindingElement(parent) && parent.name === node) return true;
+  if (ts.isFunctionDeclaration(parent) || ts.isClassDeclaration(parent) || ts.isEnumDeclaration(parent) || ts.isEnumMember(parent)) return parent.name === node;
   if (ts.isImportSpecifier(parent) || ts.isImportClause(parent) || ts.isNamespaceImport(parent)) return true;
-  if (ts.isPropertySignature(parent) || ts.isMethodSignature(parent)) return true;
-  if (ts.isTypeAliasDeclaration(parent) || ts.isInterfaceDeclaration(parent)) return true;
+  // `export { layer as l }`: the alias `l` is a name; the local `layer` is a
+  // reference, and re-exporting the client under any name is aliasing it.
+  if (ts.isExportSpecifier(parent)) return parent.propertyName !== undefined && parent.name === node;
+  if (ts.isTypeAliasDeclaration(parent) || ts.isInterfaceDeclaration(parent) || ts.isTypeParameterDeclaration(parent)) return true;
+  if (ts.isLabeledStatement(parent) || ts.isBreakOrContinueStatement(parent)) return true;
+  if (ts.isJsxAttribute(parent)) return true;
+  for (let a: ts.Node | undefined = parent; a; a = a.parent) {
+    if (ts.isTypeNode(a) || ts.isTypeElement(a) || ts.isHeritageClause(a)) return true;
+    if (ts.isExpression(a) || ts.isStatement(a)) break;
+  }
   return false;
 }
 
-/** Scans one source file. Every refusal names the line and the cause. */
-export function scanSource(
-  fileName: string,
-  text: string,
-  spec: ToolSpec,
-  kind: ts.ScriptKind = ts.ScriptKind.TS,
-): { problems: ContractProblem[]; calls: number } {
-  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, kind);
+function insideFunction(node: ts.Node): boolean {
+  for (let a: ts.Node | undefined = node.parent; a; a = a.parent) {
+    if (ts.isFunctionLike(a) && !ts.isArrowFunction(a)) return true;
+    if (ts.isClassLike(a)) return true;
+  }
+  return false;
+}
+
+interface Scan {
+  problems: ContractProblem[];
+  calls: number;
+}
+
+/** Scans one bound source file. Every refusal names the line and the cause. */
+export function scanSource(sf: ts.SourceFile, checker: ts.TypeChecker, spec: ToolSpec, fileName: string): Scan {
   const problems: ContractProblem[] = [];
   let calls = 0;
   const at = (node: ts.Node) => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
@@ -250,8 +278,7 @@ export function scanSource(
         problem(node, `layer.${method}() with a class that is not a string literal — undecidable statically, so refused`);
         return;
       }
-      const table = method === "read" ? reads : writes;
-      const grant = table.get(cls);
+      const grant = (method === "read" ? reads : writes).get(cls);
       if (!grant) {
         problem(node, `layer.${method}("${cls}") reaches class ${cls}, which the contract does not declare for ${method}`);
         return;
@@ -267,9 +294,7 @@ export function scanSource(
         return;
       }
       const extra = fields.filter((f) => !grant.fields.includes(f));
-      if (extra.length > 0) {
-        problem(node, `layer.${method}("${cls}") reaches field(s) ${extra.join(", ")} beyond the contract's ${grant.fields.join(", ")} (article ${grant.article})`);
-      }
+      if (extra.length > 0) problem(node, `layer.${method}("${cls}") reaches field(s) ${extra.join(", ")} beyond the contract's ${grant.fields.join(", ")} (article ${grant.article})`);
       return;
     }
     if (method === "disclose") {
@@ -289,9 +314,7 @@ export function scanSource(
         return;
       }
       const extra = fields.filter((f) => !grant.fields.includes(f));
-      if (extra.length > 0) {
-        problem(node, `layer.disclose("${origin}") sends field(s) ${extra.join(", ")} that the permitted disclosure (article ${grant.article}) does not list — refused even though the origin is allowed`);
-      }
+      if (extra.length > 0) problem(node, `layer.disclose("${origin}") sends field(s) ${extra.join(", ")} that the permitted disclosure (article ${grant.article}) does not list — refused even though the origin is allowed`);
     }
   };
 
@@ -302,41 +325,56 @@ export function scanSource(
       const verdict = spec_ === null ? `imports a module that is not a string literal — refused` : specifierVerdict(spec_, declared);
       if (verdict !== null) problem(node, verdict);
     }
-    if (ts.isImportEqualsDeclaration(node)) {
-      problem(node, `uses import = require(): refused; imports are an allowlist of the application's own files, the client, and declared dependencies`);
+    if (ts.isImportEqualsDeclaration(node)) problem(node, `uses import = require(): refused; imports are an allowlist`);
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) problem(node, `uses a dynamic import(): refused — a module loaded at runtime cannot be checked here`);
+    if (ts.isMetaProperty(node)) problem(node, `uses import.meta: refused — the application has no business with the runtime's module system`);
+    if (ts.isWithStatement(node)) problem(node, `uses a with statement: refused — it changes what a name means`);
+    if (node.kind === ts.SyntaxKind.ThisKeyword && !insideFunction(node)) problem(node, `uses this outside any function or class: refused — at the top of a script it is the global object`);
+
+    // Property names that walk to the Function constructor, on any receiver, by any spelling.
+    if (ts.isPropertyAccessExpression(node) && REFUSED_PROPERTIES.has(node.name.text)) {
+      problem(node, `reaches .${node.name.text}: the walk from any value to the Function constructor or the caller, refused on every receiver`);
     }
-    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-      problem(node, `uses a dynamic import(): refused — a module loaded at runtime cannot be checked here`);
+    if (ts.isPropertyAccessExpression(node) && REFUSED_NAMES.has(node.name.text) && !(ts.isIdentifier(node.expression) && node.expression.text === CLIENT)) {
+      problem(node, `reaches .${node.name.text}: a door around the client, refused on every receiver`);
     }
-    if (ts.isMetaProperty(node)) {
-      problem(node, `uses import.meta: refused — the application has no business with the runtime's module system`);
+    if (ts.isElementAccessExpression(node)) {
+      const key = literal(node.argumentExpression);
+      if (key !== null && (REFUSED_PROPERTIES.has(key) || REFUSED_NAMES.has(key))) {
+        problem(node, `reaches ["${key}"]: refused on every receiver, by bracket as by dot`);
+      }
     }
 
-    // Names that reach around the client, wherever they appear.
-    if (ts.isIdentifier(node) && REFUSED_NAMES.has(node.text)) {
-      const isCallee = node.parent && ts.isCallExpression(node.parent) && node.parent.expression === node;
-      problem(
-        node,
-        isCallee
-          ? `calls ${node.text}(): outbound access goes through layer.disclose, under a permitted disclosure; a file system, a runtime, or a network reached by another door is refused`
-          : `references ${node.text}: a door around the client, refused wherever it appears`,
-      );
-    }
-
-    // The client may be used only as layer.read/write/disclose(...).
-    if (ts.isIdentifier(node) && node.text === CLIENT && !isClientReceiver(node) && !isDeclarationName(node)) {
-      problem(node, `references layer other than as layer.read/write/disclose(…): aliasing, indexing, passing, or destructuring the client is undecidable, so refused`);
+    // Identifiers in value positions: declared, or a global on the allowlist, or refused.
+    if (ts.isIdentifier(node) && !isNotValueReference(node)) {
+      const name = node.text;
+      if (name === CLIENT) {
+        if (!isClientReceiver(node)) {
+          problem(node, `references layer other than as layer.read/write/disclose(…): aliasing, indexing, passing, or destructuring the client is undecidable, so refused`);
+        }
+      } else if (REFUSED_NAMES.has(name)) {
+        const isCallee = node.parent && ts.isCallExpression(node.parent) && node.parent.expression === node;
+        problem(
+          node,
+          isCallee
+            ? `calls ${name}(): outbound access goes through layer.disclose, under a permitted disclosure; a file system, a runtime, or a network reached by another door is refused`
+            : `references ${name}: a door around the client, refused wherever it appears`,
+        );
+      } else {
+        const shorthand = ts.isShorthandPropertyAssignment(node.parent) ? checker.getShorthandAssignmentValueSymbol(node.parent) : undefined;
+        const symbol = shorthand ?? checker.getSymbolAtLocation(node);
+        if (symbol === undefined && !ALLOWED_GLOBALS.has(name)) {
+          problem(node, `references ${name}, which the application neither declares nor imports: a global outside the allowlist, refused — only the ECMAScript built-ins, timers, and console may be reached`);
+        }
+      }
     }
 
     // Client calls — and the reserved names on any other receiver.
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
       if (ts.isPropertyAccessExpression(callee) && CLIENT_METHODS.has(callee.name.text)) {
-        if (ts.isIdentifier(callee.expression) && callee.expression.text === CLIENT) {
-          checkClientCall(node, callee.name.text);
-        } else {
-          problem(node, `calls .${callee.name.text}() on something other than layer: the client's methods are reserved names, and a call on another receiver is undecidable, so refused`);
-        }
+        if (ts.isIdentifier(callee.expression) && callee.expression.text === CLIENT) checkClientCall(node, callee.name.text);
+        else problem(node, `calls .${callee.name.text}() on something other than layer: the client's methods are reserved names, and a call on another receiver is undecidable, so refused`);
       } else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && callee.expression.text === CLIENT) {
         problem(node, `layer.${callee.name.text}() is not a client method; the client is read, write, and disclose`);
       } else if (ts.isIdentifier(callee) && CLIENT_METHODS.has(callee.text)) {
@@ -350,11 +388,31 @@ export function scanSource(
   return { problems, calls };
 }
 
+/** Binds a source tree with no library, so that every global is visible as one. */
+function bind(files: string[]): { program: ts.Program; checker: ts.TypeChecker } {
+  const program = ts.createProgram({
+    rootNames: files,
+    options: {
+      noLib: true,
+      allowJs: true,
+      checkJs: false,
+      noResolve: true,
+      types: [],
+      skipLibCheck: true,
+      target: ts.ScriptTarget.Latest,
+      module: ts.ModuleKind.ESNext,
+      jsx: ts.JsxEmit.Preserve,
+      noEmit: true,
+    },
+  });
+  return { program, checker: program.getTypeChecker() };
+}
+
 /** Checks a whole source tree against the specification's contract. */
 export async function checkContract(spec: ToolSpec, sourceDir: string): Promise<Finding> {
   const rule = CONTRACT_RULE;
   const tree = await listTree(sourceDir);
-  if (tree.sources.length === 0) {
+  if (tree.sources.length === 0 && tree.links.length === 0) {
     return {
       rule,
       enforcement: "ENFORCED",
@@ -362,43 +420,49 @@ export async function checkContract(spec: ToolSpec, sourceDir: string): Promise<
       message: `No source found under ${sourceDir} (${Object.keys(EXTENSIONS).join(" ")}), so nothing was checked against ${spec.tool_id}'s contract. This is not a pass.`,
     };
   }
-  const problems: ContractProblem[] = [];
+  const problems: ContractProblem[] = tree.links.map((link) => ({
+    file: link,
+    line: 0,
+    message: `is a symbolic link: refused — it can point outside what this check reads`,
+  }));
   let calls = 0;
-  for (const file of tree.sources) {
-    const text = await readFile(file, "utf8");
-    const kind = EXTENSIONS[path.extname(file)] ?? ts.ScriptKind.TS;
-    const result = scanSource(path.relative(sourceDir, file), text, spec, kind);
-    problems.push(...result.problems);
-    calls += result.calls;
+  if (tree.sources.length > 0) {
+    const { program, checker } = bind(tree.sources);
+    for (const file of tree.sources) {
+      const sf = program.getSourceFile(file);
+      if (!sf) {
+        problems.push({ file: path.relative(sourceDir, file), line: 0, message: `could not be read by the binder — refused rather than skipped` });
+        continue;
+      }
+      const result = scanSource(sf, checker, spec, path.relative(sourceDir, file));
+      problems.push(...result.problems);
+      calls += result.calls;
+    }
   }
   const unread = Object.entries(tree.unread)
     .map(([ext, n]) => `${n} ${ext}`)
     .join(", ");
   const unreadNote = unread ? ` Not read, because the runtime does not execute them: ${unread}.` : "";
-  const notChecked =
-    ` What this does not check: what a declared dependency does inside itself, and anything at runtime — runtime confinement is a later mandate's.`;
+  const notChecked = ` What this does not check: what a declared dependency does inside itself, and anything at runtime — runtime confinement is a later mandate's.`;
   if (problems.length > 0) {
     return {
       rule,
       enforcement: "ENFORCED",
       outcome: "REFUSED",
       message:
-        problems.map((p) => `${p.file}:${p.line} ${p.message}`).join("; ") +
-        `. The contract of ${spec.tool_id} is what the community granted; an implementation reaching past it, or reaching for the client in a form this check cannot decide, is refused at the gate.` +
+        problems.map((p) => (p.line > 0 ? `${p.file}:${p.line} ${p.message}` : `${p.file} ${p.message}`)).join("; ") +
+        `. The contract of ${spec.tool_id} is what the community granted; an implementation reaching past it, or reaching for the client or the outside in a form this check cannot decide, is refused at the gate.` +
         notChecked,
     };
   }
+  const declaredCount = spec.contract.dependencies?.length ?? 0;
   return {
     rule,
     enforcement: "ENFORCED",
     outcome: "PASS",
     message:
-      `${tree.sources.length} source file(s) read, ${calls} client call(s), every one a direct layer.read/write/disclose with literal arguments inside ${spec.tool_id}'s contract; ` +
-      `the client referenced in no other form; imports only the application's own files, the client, and ${declaredCount(spec)} declared dependenc${declaredCount(spec) === 1 ? "y" : "ies"}; ` +
-      `no built-in module, no dynamic import, no door around the client.${unreadNote}${notChecked}`,
+      `${tree.sources.length} source file(s) read and bound with no library, ${calls} client call(s), every one a direct layer.read/write/disclose with literal arguments inside ${spec.tool_id}'s contract; ` +
+      `the client referenced in no other form; every other name declared, imported, or a global on the allowlist; imports only the application's own files, the client, and ${declaredCount} declared dependenc${declaredCount === 1 ? "y" : "ies"}; ` +
+      `no built-in module, no dynamic import, no symbolic link, no door around the client.${unreadNote}${notChecked}`,
   };
-}
-
-function declaredCount(spec: ToolSpec): number {
-  return spec.contract.dependencies?.length ?? 0;
 }

@@ -308,7 +308,7 @@ describe("implementations — the verification's S-items", () => {
       "index.ts": `import { createRequire } from "module";\nexport const req = createRequire(import.meta.url);\n`,
     });
     expect(why).toContain("imports module: a built-in module");
-    expect(why).toContain("references createRequire");
+    expect(why).toMatch(/(calls|references) createRequire/);
     expect(why).toContain("uses import.meta");
   });
 
@@ -364,5 +364,76 @@ describe("implementations — the verification's S-items", () => {
     expect(finding?.outcome).toBe("PASS");
     expect(finding?.message).toContain("5 client call(s)");
     expect(finding?.message).toContain("the client referenced in no other form");
+  });
+});
+
+describe("implementations — the re-verification's new doors", () => {
+  it("refuses the walk to the Function constructor through .constructor", async () => {
+    const why = await contractRefusal({ "index.ts": `export const f = ([]).constructor.constructor("return 1")();\n` });
+    expect(why).toContain("reaches .constructor");
+  });
+
+  it("refuses Node's global, by name and by bracket, and Reflect", async () => {
+    const why = await contractRefusal({
+      "index.ts": `export async function f() { await (global as any)["fetch"]("https://x.invalid"); return Reflect.get(global as any, "fetch"); }\n`,
+    });
+    expect(why).toContain("references global");
+    expect(why).toContain("references Reflect");
+    expect(why).toContain('reaches ["fetch"]');
+  });
+
+  it("refuses a global outside the allowlist, whatever its name", async () => {
+    const why = await contractRefusal({ "index.ts": `export const w = WebAssembly; export const q = SomethingNobodyDeclared;\n` });
+    expect(why).toContain("references WebAssembly: a door around the client");
+    expect(why).toContain("references SomethingNobodyDeclared, which the application neither declares nor imports");
+  });
+
+  it("refuses a symbolic link in the source tree, because it can point outside what is read", async () => {
+    const { symlink } = await import("node:fs/promises");
+    const outside = await sourceTree({ "evil.ts": `export const x = fetch;\n` });
+    const dir = await sourceTree({ "index.ts": `import "./hidden/evil.ts";\n` });
+    await symlink(outside, path.join(dir, "hidden"));
+    const result = await check(FIXTURE, dir);
+    const why = refusalFor(result.findings, "S-CONTRACT-DECLARED");
+    expect(why).toContain("hidden is a symbolic link");
+  });
+
+  it("refuses top-level this in a script, a with statement, and arguments", async () => {
+    const why = await contractRefusal({
+      "script.js": `const g = this; with (g) { }\nfunction f() { return arguments.callee; }\nexport { f };\n`,
+    });
+    expect(why).toContain("uses this outside any function or class");
+    expect(why).toContain("uses a with statement");
+    expect(why).toContain("references arguments");
+  });
+
+  it("refuses a relative import of a native addon, and a re-export of the client under another name", async () => {
+    const why = await contractRefusal({
+      "index.ts": `import "./native.node";\nexport { layer as l } from "./client.ts";\n`,
+      "client.ts": DECLARE + `export { layer };\n`,
+    });
+    expect(why).toContain("a relative import may name a source or JSON file, not .node");
+    expect(why).toContain("references layer other than as");
+  });
+
+  it("refuses the prototype walk from an allowed global", async () => {
+    const why = await contractRefusal({ "index.ts": `export const F = Object.getPrototypeOf(function () {}).constructor;\n` });
+    expect(why).toContain("reaches .constructor");
+  });
+
+  it("allows the ECMAScript built-ins, timers, and console, and passes an ordinary implementation", async () => {
+    const dir = await sourceTree({
+      "index.ts": DECLARE + `export async function f() {
+  const now = new Date(); const n = Math.max(1, 2); const s = JSON.stringify({ n }); console.log(s, now);
+  await new Promise((r) => setTimeout(r, 1)); const m = new Map<string, number>(); m.set("a", 1);
+  const rows = await layer.read("machine", ["id", "name", "status"]);
+  return rows.length + [...m.keys()].length + Number.parseInt("1", 10);
+}
+`,
+    });
+    const result = await check(FIXTURE, dir);
+    const finding = result.findings.find((f) => f.rule === "S-CONTRACT-DECLARED");
+    expect(finding?.outcome).toBe("PASS");
+    expect(finding?.message).toContain("bound with no library");
   });
 });

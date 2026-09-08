@@ -80,7 +80,7 @@ with no combined total.
 | `S-ARTICLE-TEST` | an article with no named test, a test that does not exist, or a test holding no article | `ENFORCED` |
 | `S-OPTION-PROVENANCE` | an option without an article, without an adopted decision, a floor option marked overridable, a default outside its values, a duplicate | `ENFORCED` |
 | `S-PIN` | a pinned file that changed, or vanished, after the decision that pinned it — a contract widened, a transition requirement weakened, a charter edited — without an amending decision; a pin by a decision that does not exist, is a draft, or does not record `pins: true`; a pin that names another community | `ENFORCED` · no pin: reported open, never passed |
-| `S-CONTRACT-DECLARED` | over every file the runtime could execute (`.ts .tsx .mts .cts .js .jsx .mjs .cjs`): the client `layer` referenced in any form but the receiver of a direct `layer.read/write/disclose(…)` call — an alias, a bracket, a destructuring, an argument, a parenthesis; a reserved method name called on any other receiver, or bare; a read without a literal field list, a write without an object literal of literal keys, a disclose without a literal list; an undeclared class, field, or origin, or a field an allowed origin's disclosure does not list; an import that is not the application's own file, the client, or a dependency the contract declares — a built-in module in any form, an I/O package by any subpath, a dynamic `import()`, `import = require()`, `import.meta`; the names `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, `require`, `createRequire`, `eval`, `Function`, `process`, `globalThis`, `window`, `self`, `navigator`, `Worker`, `Deno`, `Bun` wherever they appear. Not checked: what a declared dependency does inside itself | `ENFORCED` at admission · runtime confinement `DECLARED` until the runtime exists · without `--source`, reported open, never passed |
+| `S-CONTRACT-DECLARED` | over every file the runtime could execute (`.ts .tsx .mts .cts .js .jsx .mjs .cjs`): the client `layer` referenced in any form but the receiver of a direct `layer.read/write/disclose(…)` call — an alias, a bracket, a destructuring, an argument, a parenthesis; a reserved method name called on any other receiver, or bare; a read without a literal field list, a write without an object literal of literal keys, a disclose without a literal list; an undeclared class, field, or origin, or a field an allowed origin's disclosure does not list; an import that is not the application's own file, the client, or a dependency the contract declares — a built-in module in any form, an I/O package by any subpath, a dynamic `import()`, `import = require()`, `import.meta`; any name in a value position that the application neither declares nor imports and that is not on the allowlist of globals that cannot reach outside the process — the ECMAScript built-ins, timers, and `console` — so `fetch`, `require`, `process`, `global`, `globalThis`, `Reflect`, `Proxy`, `Function`, `WebAssembly` and every name nobody listed are refused; the walk to the Function constructor — `.constructor`, `.prototype`, `__proto__`, `.callee`, `.caller` on any receiver, by dot or bracket — `arguments`, top-level `this`, and a `with` statement; a relative import of anything but a source or JSON file; a symbolic link anywhere in the tree. The source is bound with the TypeScript binder and no library, so that every global is visible as one. Not checked: what a declared dependency does inside itself | `ENFORCED` at admission · runtime confinement `DECLARED` until the runtime exists · without `--source`, reported open, never passed |
 
 **Procedures the kernel knows:** `majority-of-respondents` — more than
 half of those who voted for or against, an abstention being recorded and
@@ -113,12 +113,16 @@ fields is a read of all of them and is refused. Anything computed is
 refused as undecidable, because a check that guesses is worse than one that
 refuses.
 
-Imports are an allowlist: the application's own files by relative path,
-the client package, and the package roots the contract declares under
-`dependencies`. A built-in module in any form, a dynamic `import()`,
-`import.meta`, and the names that reach the network, the file system, or
-the runtime by another door — `fetch`, `require`, `process`, `globalThis`
-and the rest of the list in §4 — are refused wherever they appear.
+Imports are an allowlist: the application's own source and JSON files by
+relative path, the client package, and the package roots the contract
+declares under `dependencies`. A built-in module in any form, a dynamic
+`import()`, `import.meta`, a native addon, and a symbolic link are refused.
+Every other name the application reaches must be declared, imported, or a
+global on the allowlist — the ECMAScript built-ins, timers, and `console` —
+or the implementation is refused: the check binds the source with no
+library, so a global is visible as one, and it does not rely on listing
+what is forbidden. The walk from any value to the Function constructor is
+refused by name on every receiver.
 
 What this check does not decide: what a declared dependency does inside
 itself. A dependency the contract declares is the community's choice and
