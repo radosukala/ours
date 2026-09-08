@@ -63,6 +63,20 @@ an improvement to. **Coordination that produces little new code counts as
 success.** OURS is not a gallery of generated applications, and the cost
 column of `LIFECYCLE.md` §4 is how that is checked rather than declared.
 
+### 3.1 Finding and joining
+
+A directory of communities running software of their own, where every
+card answers the same five things: what the tool is for, how many people,
+how they decide, what it costs, and where control stands — *forming*,
+*founding team, n of 6*, or *community-controlled, 6 of 6* — in the
+community's own recorded words, including the steps not done. It also
+shows which tools are shared across communities, because sharing a tool
+shares its upkeep. It is sorted by recent change or by name, **never by
+size or activity**: engagement is not authority here, and a directory that
+ranked by popularity would teach the opposite of the thesis on its first
+screen. Joining follows each community's own participation rule; a forming
+community collects *we need this too*, which creates no standing.
+
 ## 4. The home for a shared tool
 
 Five ordinary questions organise everything a person sees. Each is a
@@ -87,6 +101,19 @@ affects them, and a change reads in their language:
 After release the same record says what changed, what it cost, and whether
 it worked. The technical evidence — the trace, the receipts, the verifier —
 sits one tap beneath.
+
+### 4.1 On a desktop: three columns, three sentences
+
+Where the screen allows it, the three things a person might confuse are
+kept visibly apart, side by side: **the software we run** (the tool
+itself), **how and why it works** (the rules with their reasons, the open
+change, the last change step by step, and what happens if someone tries
+to break the agreement — including the honest row: the founding team can
+still override today, visibly, until the last step removes that power),
+and **our community** (people, where control stands, money, continuity).
+On a phone the same three become the five tabs of §4. The distinction is
+the product's first lesson, so the layout teaches it before any text
+does.
 
 ## 5. Ownership through actions, with honest status
 

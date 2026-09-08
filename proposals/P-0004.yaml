@@ -61,5 +61,14 @@ deliberation:
   - date: 2026-09-07
     actor: { id: claude, kind: agent }
     position: default holding (name, address, deploy authority, controller role, money) by a purpose-bound holder with unconditional exit; promise is "cannot be bypassed quietly"; the holder itself needs the transfer gates; six screens drafted
+  - date: 2026-09-07
+    actor: { id: external-agent-proposal, kind: agent }
+    position: interactive preview with a refusal tester, a "can OURS overrule us" answer, an OURS services budget line, and the question of who holds the protections against OURS itself
+  - date: 2026-09-07
+    actor: { id: founder, kind: human }
+    position: keep the software, the rules-ownership-money-build, and the community visibly distinct on desktop; add discovery of other communities with members, workings, and ownership status
+  - date: 2026-09-08
+    actor: { id: claude, kind: agent }
+    position: SHARED-TOOL 3.1 and 4.1 added; desktop and discovery screens drafted; independent holder against OURS itself remains open pending legal form
 
 decision: null
