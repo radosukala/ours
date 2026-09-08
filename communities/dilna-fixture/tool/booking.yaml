@@ -85,6 +85,9 @@ contract:
       article: T-PRIVATE
       purpose: the workshop's shared wall calendar shows what is booked, never by whom
   retention: ninety days after a slot; nothing retained by the application itself
+  # Package roots the implementation may import besides its own files and
+  # the layer client. None: the tool needs nothing that reaches outside.
+  dependencies: []
 
 tests:
   - { id: t-fair-1, name: a second booking of the same machine on the same day by the same member is refused, holds: T-FAIR-ACCESS }

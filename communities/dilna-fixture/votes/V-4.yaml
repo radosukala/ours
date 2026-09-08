@@ -1,0 +1,14 @@
+schema: ours.vote/v0.1
+vote_id: V-4
+cell: dilna-fixture
+fictional: true
+decision_id: D-4
+procedure: two-thirds-of-members
+opened: 2026-08-29
+closed: 2026-09-05
+eligible: 23
+ballots_cast: 20
+tally: { for: 18, against: 1, abstain: 1 }
+ballots: private — held by the coordinator. FICTIONAL.
+dissent_preserved: true
+dissent_note: One against — abstentions should count as responses. Kept.

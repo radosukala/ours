@@ -92,22 +92,27 @@ export function loadPin(root: string) {
   return loadYaml<Pin>(root, "PIN.yaml");
 }
 
-/** The ids and statuses of every decision in a root — for provenance checks. */
-export async function listDecisions(root: string): Promise<Record<string, string>> {
+/** Every decision in a root, as records — the community checks read them all, not only the one a mandate cites. */
+export async function loadAllDecisions(root: string): Promise<Decision[]> {
   const { readdir } = await import("node:fs/promises");
-  const out: Record<string, string> = {};
+  const out: Decision[] = [];
   let names: string[] = [];
   try {
     names = await readdir(path.join(root, "decisions"));
   } catch {
     return out;
   }
-  for (const name of names) {
+  for (const name of names.sort()) {
     if (!name.endsWith(".yaml")) continue;
     const loaded = await loadYaml<Decision>(root, `decisions/${name}`);
-    if (loaded.ok && typeof loaded.record.decision_id === "string") {
-      out[loaded.record.decision_id] = String(loaded.record.status);
-    }
+    if (loaded.ok && typeof loaded.record.decision_id === "string") out.push(loaded.record);
   }
+  return out;
+}
+
+/** The ids and statuses of every decision in a root. */
+export async function listDecisions(root: string): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  for (const d of await loadAllDecisions(root)) out[d.decision_id] = String(d.status);
   return out;
 }

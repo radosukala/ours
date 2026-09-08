@@ -2,7 +2,10 @@
 
 **Version:** 0.1  
 **Status:** ADOPTED — drafted under `M-0006` on 8 September 2026 and approved by
-the founder the same day, in conversation, under that mandate's human approvals  
+the founder the same day, in conversation, under that mandate's human approvals;
+**amended the same evening under `M-0006`** after the independent verification
+found the check narrower than these words and sixteen ways past it — §4 and §5
+are the amended text, and the founder's approval of the amendment is pending  
 **Depends on:** [`foundation/THE-LAYER.md`](../foundation/THE-LAYER.md) §5–§6,
 [`foundation/LIFECYCLE.md`](../foundation/LIFECYCLE.md)  
 **Not:** a language. It has no control flow, no expressions, and no type
@@ -24,10 +27,12 @@ article in the constitution.
 communities/<cell>/
   README.md                what this root is; the FICTIONAL label if it is a sample
   authority/CHARTER.md     the founding arrangement — the community's law, articles C-*
-  authority/CHARTER.yaml   ours.charter/v0.1 — the root authority record of this root
+  authority/CHARTER.yaml   ours.charter/v0.1 — the root authority record of this root; names the
+                           decision that adopted it and the mandate classes its decisions may grant
   standing.yaml            ours.standing/v0.1 — who belongs: the count and the roles; the register is private
   votes/V-n.yaml           ours.vote/v0.1 — ballots private, tally public, dissent kept
-  decisions/D-n.md/.yaml   ours.decision/v0.1 — with `vote` naming the vote behind it
+  decisions/D-n.md/.yaml   ours.decision/v0.1 — with `vote` naming the vote behind it, and
+                           `pins: true` on a decision that approves and pins a specification
   mandates/M-n.md/.yaml    ours.mandate/v0.1 — with `tool` naming the specification implemented
   tool/<tool>.md           the service specification — its human source, articles T-*
   tool/<tool>.yaml         ours.tool/v0.1
@@ -66,20 +71,28 @@ with no combined total.
 | Rule | What refuses | Class |
 |---|---|---|
 | `S-CHARTER-ARTICLES` | an article the charter lists that its human source does not carry, or carries without a class | `ENFORCED` |
+| `S-CHARTER-ADOPTED` | a charter that names no adopting decision; one whose adopting decision does not exist, is not of class `CHARTER`, or is a draft — its vote is checked with every other by `C-DECISIONS/root` | `ENFORCED` |
+| `S-CHARTER-GRANTS` | a decision granting a mandate class the charter does not let this community's decisions grant | `ENFORCED` · a charter declaring no limit: reported open, never passed |
 | `S-CHARTER-NAMED` | a mandate citing a charter that does not govern this root | `ENFORCED` |
-| `S-TOOL-NAMED` | a mandate implementing a specification that does not exist here, or belongs to another community | `ENFORCED` |
+| `S-TOOL-NAMED` | a mandate implementing a specification that does not exist here, belongs to another community, or is still a draft | `ENFORCED` |
 | `C-PARTICIPATION` | a decision by an actor without standing — a vote-procedure decision not made by the members, or a delegated decision by someone who does not hold the role | `ENFORCED` — the charter's own article |
-| `C-DECISIONS` | a decision without its vote; a vote for another decision or another community; a tally that does not add up; ballots beyond the eligible; a vote below the charter's threshold for that class | `ENFORCED` — the charter's own article |
+| `C-DECISIONS` | for **every** decision in the root, not only the one a mandate cites — the charter's own adoption among them: a decision without its vote; a vote for another decision or another community; a tally component that is not a non-negative integer; a tally that does not add up; ballots beyond the eligible; an eligible count that differs from a standing record dated on or before the vote closed; dissent not preserved; a vote below the charter's threshold for its class; a procedure the kernel does not know | `ENFORCED` — the charter's own article; reported for the cited decision, and as `C-DECISIONS/root` for all the others |
 | `S-ARTICLE-TEST` | an article with no named test, a test that does not exist, or a test holding no article | `ENFORCED` |
 | `S-OPTION-PROVENANCE` | an option without an article, without an adopted decision, a floor option marked overridable, a default outside its values, a duplicate | `ENFORCED` |
-| `S-PIN` | a pinned file that changed, or vanished, after the decision that pinned it — a contract widened, a transition requirement weakened, a charter edited — without an amending decision; a pin by a decision that does not exist or is a draft | `ENFORCED` · no pin: reported open, never passed |
-| `S-CONTRACT-DECLARED` | an implementation reaching a class or field its contract does not declare; disclosing to an origin it does not name, or a field the disclosure does not list even to an allowed origin; importing a file system, socket, or database; calling `fetch`; a class, origin, or field that is not a string literal, refused as undecidable | `ENFORCED` at admission · runtime confinement `DECLARED` until the runtime exists |
+| `S-PIN` | a pinned file that changed, or vanished, after the decision that pinned it — a contract widened, a transition requirement weakened, a charter edited — without an amending decision; a pin by a decision that does not exist, is a draft, or does not record `pins: true`; a pin that names another community | `ENFORCED` · no pin: reported open, never passed |
+| `S-CONTRACT-DECLARED` | over every file the runtime could execute (`.ts .tsx .mts .cts .js .jsx .mjs .cjs`): the client `layer` referenced in any form but the receiver of a direct `layer.read/write/disclose(…)` call — an alias, a bracket, a destructuring, an argument, a parenthesis; a reserved method name called on any other receiver, or bare; a read without a literal field list, a write without an object literal of literal keys, a disclose without a literal list; an undeclared class, field, or origin, or a field an allowed origin's disclosure does not list; an import that is not the application's own file, the client, or a dependency the contract declares — a built-in module in any form, an I/O package by any subpath, a dynamic `import()`, `import = require()`, `import.meta`; the names `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, `require`, `createRequire`, `eval`, `Function`, `process`, `globalThis`, `window`, `self`, `navigator`, `Worker`, `Deno`, `Bun` wherever they appear. Not checked: what a declared dependency does inside itself | `ENFORCED` at admission · runtime confinement `DECLARED` until the runtime exists · without `--source`, reported open, never passed |
 
 **Procedures the kernel knows:** `majority-of-respondents` — more than
-half of those who voted for or against; `two-thirds-of-members` — at
-least two thirds of the standing count, rounded up; `delegated:<role>` —
-the person standing names in that role. A charter naming any other
-procedure is refused rather than guessed.
+half of those who voted for or against, an abstention being recorded and
+not deciding; `two-thirds-of-members` — at least two thirds of the standing
+count, rounded up; `delegated:<role>` — the person standing names in that
+role. A charter naming any other procedure is refused rather than guessed,
+and a charter whose words say something the kernel does not count — "those
+who respond" where abstentions are meant to count — must say what it
+means, or be amended: the fixture's own charter was, by its `D-4`. The
+standing count is compared to a vote's eligible count only when the
+standing record is dated on or before the vote closed; a later record
+cannot contradict an earlier vote, and the finding says so.
 
 ## 5. The layer client — what an implementation may call
 
@@ -88,15 +101,29 @@ The static check enumerates these calls; the runtime, when it exists,
 holds them.
 
 ```ts
-layer.read("booking", ["id", "machine", "member", "start", "end", "status"]);  // a declared class, declared fields
-layer.write("booking", record);                                                  // a declared class
-layer.disclose("https://calendar.example", ["machine", "start", "end"]);       // a permitted origin, listed fields
+layer.read("booking", ["id", "machine", "member", "start", "end", "status"]);   // a declared class; a literal field list, required
+layer.write("booking", { machine, member, start, end, status: "booked" });        // a declared class; an object literal whose keys are the fields
+layer.disclose("https://calendar.example", ["machine", "start", "end"]);        // a permitted origin; the listed fields
 ```
 
-Class names, origins, and field lists are string literals. Anything
-computed is refused as undecidable, because a check that guesses is worse
-than one that refuses. No `fetch`, no `node:*`, no database driver: an
-application has no storage or sockets of its own.
+The identifier `layer` may appear in no other form: not aliased, not
+indexed, not destructured, not passed, not parenthesised. Class names,
+origins, field lists, and record keys are literals; a read that names no
+fields is a read of all of them and is refused. Anything computed is
+refused as undecidable, because a check that guesses is worse than one that
+refuses.
+
+Imports are an allowlist: the application's own files by relative path,
+the client package, and the package roots the contract declares under
+`dependencies`. A built-in module in any form, a dynamic `import()`,
+`import.meta`, and the names that reach the network, the file system, or
+the runtime by another door — `fetch`, `require`, `process`, `globalThis`
+and the rest of the list in §4 — are refused wherever they appear.
+
+What this check does not decide: what a declared dependency does inside
+itself. A dependency the contract declares is the community's choice and
+its risk, shown on the specification; the runtime's egress policy, when it
+exists, is what would hold it.
 
 ## 6. The pin
 

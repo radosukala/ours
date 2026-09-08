@@ -8,14 +8,16 @@ import type {
   Finding,
   Mandate,
   SourceRef,
+  Vote,
 } from "@ours/schemas";
 import { parseArticles } from "./articles.ts";
-import { articleTests, optionProvenance, pinHolds, runCommunityChecks } from "./community.ts";
+import { articleTests, optionProvenance, pinHolds, runCommunityChecks, toolStatusProblem } from "./community.ts";
 import type { CommunityContext } from "./community.ts";
 import { checkContract } from "./contract.ts";
 import { digestOfFile } from "./digest.ts";
 import {
   listDecisions,
+  loadAllDecisions,
   loadAuthority,
   loadDecision,
   loadMandate,
@@ -40,6 +42,7 @@ export {
   loadToolSpec,
   loadPin,
   listDecisions,
+  loadAllDecisions,
 } from "./registry.ts";
 export { parseArticles } from "./articles.ts";
 export type { ParsedArticle } from "./articles.ts";
@@ -99,8 +102,9 @@ interface CommunityRecords {
   standing: CommunityContext["standing"];
   pin: CommunityContext["pin"];
   pinDigests: CommunityContext["pinDigests"];
-  pinnedByStatus: string | null;
-  decisions: Record<string, string>;
+  pinnedBy: Decision | null;
+  decisions: Decision[];
+  votes: Record<string, Vote>;
 }
 
 /** Everything a community root carries besides the chain, loaded once. */
@@ -118,14 +122,25 @@ async function loadCommunity(root: string, charter: Charter): Promise<CommunityR
       )
     : [];
   const pinnedBy = pin.ok ? await loadDecision(root, pin.record.pinned_by) : null;
+  const decisions = await loadAllDecisions(root);
+  // Every vote a decision names, loaded once, so that every decision in the
+  // root — the charter's own adoption among them — is checked, not only the
+  // one the mandate cites.
+  const votes: Record<string, Vote> = {};
+  for (const d of decisions) {
+    if (d.vote === undefined || votes[d.vote] !== undefined) continue;
+    const v = await loadVote(root, d.vote);
+    if (v.ok) votes[d.vote] = v.record;
+  }
   return {
     charter,
     charterArticles,
     standing: standing.ok ? standing.record : null,
     pin: pin.ok ? pin.record : null,
     pinDigests,
-    pinnedByStatus: pinnedBy === null ? null : pinnedBy.ok ? String(pinnedBy.record.status) : null,
-    decisions: await listDecisions(root),
+    pinnedBy: pinnedBy !== null && pinnedBy.ok ? pinnedBy.record : null,
+    decisions,
+    votes,
   };
 }
 
@@ -157,8 +172,21 @@ async function communityFindings(
     toolArticles,
   };
   const findings = runCommunityChecks(ctx);
-  if (contractSourceDir !== undefined && toolRecord !== null) {
-    findings.push(await checkContract(toolRecord, contractSourceDir));
+  if (toolRecord !== null) {
+    if (contractSourceDir !== undefined) {
+      findings.push(await checkContract(toolRecord, contractSourceDir));
+    } else {
+      // No source was given, so the contract was not checked — and a run
+      // that says nothing about it would let a reader assume it was.
+      findings.push({
+        rule: "S-CONTRACT-DECLARED",
+        enforcement: "ENFORCED",
+        outcome: "NOT_MACHINE_DECIDABLE",
+        message:
+          `No implementation source was supplied, so ${toolRecord.tool_id}'s contract was not checked against any code. ` +
+          `This is not a pass. Run with --source <dir> to decide it.`,
+      });
+    }
   }
   return findings;
 }
@@ -186,16 +214,24 @@ export async function admit(options: AdmitOptions): Promise<CompileResult> {
     );
   }
   const charter: Charter = authority.record;
+  if (["DRAFT", "PROPOSED"].includes(String(charter.status))) {
+    return refusal(
+      "S-CHARTER-NAMED",
+      `Charter ${charter.authority_id} is ${charter.status}. A draft charter admits nothing; adopt it first.`,
+    );
+  }
   const tool = await loadToolSpec(root, toolId);
   if (!tool.ok) {
     return refusal("S-TOOL-NAMED", `No specification ${toolId} in ${root}: ${tool.reason}.`);
   }
+  const statusProblem = toolStatusProblem(tool.record, charter);
+  if (statusProblem !== null) return refusal("S-TOOL-NAMED", statusProblem);
   const records = await loadCommunity(root, charter);
   const toolArticles = parseArticles(await readText(root, tool.record.human_source.path));
   const findings: Finding[] = [
     articleTests(tool.record, toolArticles),
     optionProvenance(tool.record, records.decisions),
-    pinHolds(records.pin, records.pinDigests, records.pinnedByStatus),
+    pinHolds(records.pin, records.pinDigests, records.pinnedBy, charter.cell),
   ];
   if (options.sourceDir !== undefined) {
     findings.push(await checkContract(tool.record, options.sourceDir));

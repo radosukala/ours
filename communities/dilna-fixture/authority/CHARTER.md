@@ -1,6 +1,6 @@
 # Founding arrangement of Dílna Libeň — FICTIONAL
 
-**Status:** ADOPTED — by 17 of 23 members on 12 August 2026 (vote `V-1`) — **in a fictional community, as a sample record under `M-0006`**
+**Status:** ADOPTED — by 17 of 23 members on 12 August 2026 (vote `V-1`); `C-DECISIONS` clarified by `D-4` on 5 September 2026 (vote `V-4`) — **in a fictional community, as a sample record under `M-0006`**
 **Class:** the community's charter — its root authority and its law
 **Cell:** `dilna-fixture` · version 0.1
 **Machine projection:** [`CHARTER.yaml`](./CHARTER.yaml)
@@ -37,8 +37,10 @@ standing · `INTERPRETED` — who has paid is the coordinator's to know
 ## Article C-DECISIONS — By what procedure
 
 Amendments to this arrangement: two thirds of members. Rules of the tool
-and improvements to it: a majority of those who respond. Routine
-operation: the coordinator, receipted. Emergencies — a machine unsafe, a
+and improvements to it: a majority of those who vote for or against — an
+abstention is recorded and does not decide (clarified by `D-4`, after the
+words "those who respond" were found to differ from the procedure the
+kernel counts). Routine operation: the coordinator, receipted. Emergencies — a machine unsafe, a
 breach — the operator, receipted, reviewed at the next vote.
 
 **Class:** `ENFORCED` — the kernel checks every vote's tally against this

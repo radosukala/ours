@@ -180,7 +180,7 @@ describe("the implementer cannot change the rules it is judged by", () => {
     const result = await check(root);
     expect(result.authorized).toBe(false);
     const why = refusalFor(result.findings, "S-PIN");
-    expect(why).toContain("tool/booking.yaml changed after D-3 pinned it");
+    expect(why).toContain("tool/booking.yaml changed after D-4 pinned it");
     expect(why).toContain("without an amending decision");
   });
 

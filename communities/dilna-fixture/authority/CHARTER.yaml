@@ -7,6 +7,12 @@ fictional: true
 cell: dilna-fixture
 version: "0.1"
 
+# The decision of this community that adopted the charter (S-CHARTER-ADOPTED),
+# and the mandate classes its decisions may grant (S-CHARTER-GRANTS): a
+# release is the layer's, never a community decision's to grant.
+adopted_by: D-1
+may_grant_mandate_classes: [BUILD, OPERATE]
+
 human_source:
   path: authority/CHARTER.md
 

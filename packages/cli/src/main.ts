@@ -105,6 +105,27 @@ async function workingTreePaths(root: string): Promise<string[]> {
   return [...new Set([...tracked, ...untracked])];
 }
 
+/** Every Markdown file under a root, relative to it — a community's public text. */
+async function markdownUnder(root: string): Promise<string[]> {
+  const { readdir } = await import("node:fs/promises");
+  const out: string[] = [];
+  const walk = async (dir: string): Promise<void> => {
+    let entries: import("node:fs").Dirent[] = [];
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full);
+      else if (entry.name.endsWith(".md")) out.push(path.relative(root, full));
+    }
+  };
+  await walk(root);
+  return out.sort();
+}
+
 /** The value after a flag, or undefined. */
 function flagValue(args: string[], flag: string): string | undefined {
   const i = args.indexOf(flag);
@@ -149,10 +170,14 @@ async function main(): Promise<number> {
     const sourceArg = flagValue(rest, "--source");
     const mandateId = positionals(rest, ["--root", "--source"])[0] ?? "M-0000";
     const changedPaths = rest.includes("--changed") ? await workingTreePaths(repoRoot) : [];
+    // A community root's human sources are its public text; scan them, so
+    // that the prohibited-claim check runs on the command a reader would run.
+    const publicTextPaths = rootArg !== undefined ? await markdownUnder(root) : [];
     const result = await compile({
       root,
       mandateId,
       changedPaths,
+      publicTextPaths,
       ...(sourceArg !== undefined ? { contractSourceDir: path.resolve(repoRoot, sourceArg) } : {}),
     });
     await fictionalBanner(root);
@@ -237,6 +262,7 @@ async function main(): Promise<number> {
       `# A change to any file below without an amending decision is a refusal at the gate (S-PIN).\n` +
       (charter.fictional ? `# FICTIONAL COMMUNITY — sample records. Nobody here exists.\n` : "");
     await writeFile(path.join(root, "PIN.yaml"), header + stringify(pin), "utf8");
+    await fictionalBanner(root);
     console.log(`Pinned ${entries.length} file(s) in ${rootArg} by ${by}. Verify with:  pnpm ours admit ${rootArg} <tool-id>`);
     return 0;
   }
@@ -252,6 +278,7 @@ async function main(): Promise<number> {
       return 1;
     }
     await writeFile(path.join(repoRoot, out), JSON.stringify(bundle, null, 2) + "\n", "utf8");
+    await fictionalBanner(root);
     console.log(`Wrote ${out} — ${bundle.sources.length} source(s) embedded.`);
     console.log("Verify it with:  pnpm ours verify " + out);
     return 0;

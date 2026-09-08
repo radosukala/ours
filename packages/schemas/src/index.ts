@@ -112,6 +112,10 @@ export interface Charter extends Omit<FoundingAuthority, "schema"> {
   version: string;
   /** True for sample records. Rendered on every surface that shows them. */
   fictional?: boolean;
+  /** The CHARTER-class decision of this community that adopted the charter. Required by S-CHARTER-ADOPTED. */
+  adopted_by?: string;
+  /** The mandate classes this community's decisions may grant. Checked by S-CHARTER-GRANTS. */
+  may_grant_mandate_classes?: MandateClass[];
   purpose: string;
   participation: string;
   /** Decision class → procedure: a vote rule, or `delegated:<role>`. */
@@ -175,12 +179,14 @@ export interface Disclosure {
   purpose: string;
 }
 
-/** The data contract — what an application may reach, write, and disclose. */
+/** The data contract — what an application may reach, write, disclose, and import. */
 export interface Contract {
   reads: ContractAccess[];
   writes: ContractAccess[];
   disclosures: Disclosure[];
   retention: string;
+  /** Package roots the implementation may import besides its own files and the client. Absent means none. */
+  dependencies?: string[];
 }
 
 export const OPTION_LAYERS = ["FLOOR", "GOVERNED", "PERSONAL"] as const;
@@ -295,6 +301,8 @@ export interface Decision {
   prerequisite_decisions?: string[];
   /** In a community root: the vote that produced this decision, checked against the charter's procedure. */
   vote?: string;
+  /** In a community root: this decision approves and pins a specification. Required of any decision a pin names. */
+  pins?: boolean;
   outcome: string;
   authorizes: {
     mandate_classes: MandateClass[];
