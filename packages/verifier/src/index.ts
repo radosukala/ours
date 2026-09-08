@@ -135,6 +135,29 @@ export function verifyBundle(bundle: Bundle): VerifyOutcome {
     fail(`${bundle.authority.authority_id} does not declare itself the root source`);
   }
 
+  // Adoption, re-derived from the bundle's own records. A bundle whose
+  // chain is still a draft hangs together and proves no authority to act;
+  // the verifier says which, rather than letting "verifies" imply both.
+  const preAdoption = ["DRAFT", "PROPOSED"];
+  const drafts: [string, string][] = (
+    [
+      [bundle.authority.authority_id, bundle.authority.status],
+      [bundle.decision.decision_id, bundle.decision.status],
+      [bundle.mandate.mandate_id, bundle.mandate.status],
+    ] as [string, string][]
+  ).filter(([, status]) => preAdoption.includes(status));
+  if (drafts.length > 0) {
+    fail(
+      `not authorised for execution — ${drafts.map(([id, s]) => `${id} is ${s}`).join("; ")}. ` +
+        `The bundle is valid as a draft and nothing more.`,
+    );
+  } else {
+    note(
+      `every record is past adoption — ${bundle.authority.authority_id} ${bundle.authority.status}, ` +
+        `${bundle.decision.decision_id} ${bundle.decision.status}, ${bundle.mandate.mandate_id} ${bundle.mandate.status}`,
+    );
+  }
+
   if (bundle.authority.member_ownership_issued) {
     note(`member ownership is recorded as issued`);
   } else {

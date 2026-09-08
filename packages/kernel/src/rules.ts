@@ -17,12 +17,28 @@ import { matchesAny } from "./glob.ts";
  * dishonesty this kernel exists to prevent.
  */
 
+/** A prerequisite decision as the caller resolved it: its status, or null if absent. */
+export interface PrerequisiteState {
+  id: string;
+  status: string | null;
+}
+
+/** The adoption finding. Named so a caller can tell a draft from a refusal. */
+export const ADOPTION_RULE = "R-TRUTHFUL-STATUS/adoption";
+/** The prerequisite finding. Same reason. */
+export const PREREQUISITE_RULE = "R-SOURCE-HIERARCHY/prerequisite";
+
+/** States before adoption. A record in one of these authorises nothing. */
+const PRE_ADOPTION: readonly string[] = ["DRAFT", "PROPOSED"];
+
 export interface CheckContext {
   authority: FoundingAuthority;
   decision: Decision;
   mandate: Mandate;
   /** Digest mismatches found by the caller, which owns filesystem access. */
   digestFailures: string[];
+  /** Prerequisite decisions named by the decision or the mandate, resolved by the caller. */
+  prerequisites: PrerequisiteState[];
   /** Paths a change proposes to touch. Empty when only validating a mandate. */
   changedPaths: string[];
   /** Public-facing text to scan for prohibited claims. */
@@ -346,6 +362,79 @@ function truthfulStatus(ctx: CheckContext): Finding {
   );
 }
 
+/**
+ * Adoption is an event. Until it has happened, a well-formed chain is a
+ * draft, and a draft authorises nothing.
+ *
+ * The founding authority, three decisions and four mandates carried DRAFT
+ * for nine days while being acted on, and nothing objected, because the
+ * only status check asked whether the word was recognised. D-0004 named the
+ * gap; this is the check that closes it, built under M-0004.
+ */
+function adoption(ctx: CheckContext): Finding {
+  const rule = ADOPTION_RULE;
+  const records: [string, string][] = [
+    [ctx.authority.authority_id, ctx.authority.status],
+    [ctx.decision.decision_id, ctx.decision.status],
+    [ctx.mandate.mandate_id, ctx.mandate.status],
+  ];
+  const drafts = records.filter(([, status]) => PRE_ADOPTION.includes(status));
+  if (drafts.length > 0) {
+    return refuse(
+      rule,
+      "ENFORCED",
+      `${drafts.map(([id, status]) => `${id} is ${status}`).join("; ")}. A draft is a well-formed ` +
+        `chain and nothing more: it authorises no execution until the adopting authority flips its ` +
+        `status and commits.`,
+    );
+  }
+  return pass(
+    rule,
+    "ENFORCED",
+    `Every record in the chain is past adoption: ` +
+      records.map(([id, status]) => `${id} ${status}`).join(", ") +
+      `.`,
+  );
+}
+
+/**
+ * A record may name decisions that must be adopted before it acts. A
+ * prerequisite that is missing or still a draft is not a delay; it is a
+ * refusal, because the alternative is proceeding on the reading that
+ * authorises more work.
+ */
+function prerequisites(ctx: CheckContext): Finding {
+  const rule = PREREQUISITE_RULE;
+  if (ctx.prerequisites.length === 0) {
+    return pass(
+      rule,
+      "ENFORCED",
+      `${ctx.decision.decision_id} and ${ctx.mandate.mandate_id} declare no prerequisite decisions.`,
+    );
+  }
+  const unmet = ctx.prerequisites.filter(
+    (p) => p.status === null || PRE_ADOPTION.includes(p.status),
+  );
+  if (unmet.length > 0) {
+    return refuse(
+      rule,
+      "ENFORCED",
+      `Prerequisite ` +
+        unmet
+          .map((p) => (p.status === null ? `${p.id} does not exist` : `${p.id} is ${p.status}`))
+          .join("; ") +
+        `. A record that names a prerequisite decision waits for it.`,
+    );
+  }
+  return pass(
+    rule,
+    "ENFORCED",
+    `Prerequisite decisions are adopted: ` +
+      ctx.prerequisites.map((p) => `${p.id} ${p.status}`).join(", ") +
+      `.`,
+  );
+}
+
 /** A reference with a digest is a claim about bytes. */
 function digestIntegrity(ctx: CheckContext): Finding {
   const rule = "R-SOURCE-HIERARCHY/digest";
@@ -451,6 +540,8 @@ export function runChecks(ctx: CheckContext): Finding[] {
     buildDeploySeparation(ctx),
     rollback(ctx),
     truthfulStatus(ctx),
+    adoption(ctx),
+    prerequisites(ctx),
     digestIntegrity(ctx),
     noFictionalOwnership(ctx),
     ...interpretiveArticles(ctx),

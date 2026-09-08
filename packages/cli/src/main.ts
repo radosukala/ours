@@ -63,7 +63,17 @@ function report(result: CompileResult, mandateId: string): void {
     ),
   );
   console.log("");
-  console.log(result.authorized ? "  RESULT: AUTHORISED" : "  RESULT: REFUSED");
+  // Three lines and never a bare AUTHORISED. A well-formed draft used to
+  // print the same word as an adopted mandate, and an agent gating on that
+  // word could not tell that it held no authority to act.
+  if (s.execution === "AUTHORISED_FOR_EXECUTION") {
+    console.log("  RESULT: AUTHORISED FOR EXECUTION");
+  } else if (s.execution === "VALID_AS_DRAFT") {
+    console.log("  RESULT: VALID AS A DRAFT — not authorised for execution");
+    for (const reason of s.waitingOn) console.log(wrap(reason, 64, "          "));
+  } else {
+    console.log("  RESULT: REFUSED");
+  }
   console.log("");
 }
 
@@ -106,7 +116,9 @@ async function main(): Promise<number> {
     if (changedPaths.length > 0) {
       console.log(`  Scope evaluated against ${changedPaths.length} changed path(s).\n`);
     }
-    return result.authorized ? 0 : 1;
+    // Only execution authority exits 0. A draft is not an error in the
+    // record, but a process gating on this code must not proceed on it.
+    return summarise(result).execution === "AUTHORISED_FOR_EXECUTION" ? 0 : 1;
   }
 
   if (command === "export") {

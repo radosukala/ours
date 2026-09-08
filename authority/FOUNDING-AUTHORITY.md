@@ -52,7 +52,7 @@ act, which is a different question from who should.
 |---|---|---|---|
 | this repository | `[CONFIRM]` | founder's Git hosting account | the member institution |
 | `oursorg.com` | `[CONFIRM — not yet registered at time of drafting]` | founder's registrar account | the member institution or a purpose-bound holder |
-| `our.one` | founder / related entity | founder's registrar account | remains with the founder or the ONE business; not a project asset |
+| `our.one` | founder | founder's registrar account | a project asset from `D-0004` (8 September 2026): products at their own subdomains; intended holder the member institution or a purpose-bound holder, under the transfer gates of §8. Previously recorded as *not a project asset*; the change is `D-0004`'s and the row was written under `M-0004` |
 | brand `OURS` | unregistered | n/a | purpose-bound holder |
 | Ctrl AI, Inc. | see §4.1 — stated, unverified | `[CONFIRM]` | not established |
 | treasury / bank | none opened | n/a | the member institution |

@@ -3,10 +3,11 @@ import path from "node:path";
 import type { CompileResult, Finding, SourceRef } from "@ours/schemas";
 import { digestOfFile } from "./digest.ts";
 import { loadAuthority, loadDecision, loadMandate } from "./registry.ts";
-import { runChecks } from "./rules.ts";
+import { ADOPTION_RULE, PREREQUISITE_RULE, runChecks } from "./rules.ts";
+import type { PrerequisiteState } from "./rules.ts";
 
-export { runChecks } from "./rules.ts";
-export type { CheckContext } from "./rules.ts";
+export { runChecks, ADOPTION_RULE, PREREQUISITE_RULE } from "./rules.ts";
+export type { CheckContext, PrerequisiteState } from "./rules.ts";
 export { digestOf, digestOfFile } from "./digest.ts";
 export { matchesPattern, matchesAny } from "./glob.ts";
 export { loadAuthority, loadDecision, loadMandate } from "./registry.ts";
@@ -112,11 +113,28 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     }
   }
 
+  // Prerequisite decisions, named by the decision or the mandate, resolved
+  // here because the kernel's rules stay pure and the registry is the
+  // caller's. A prerequisite that cannot be loaded is reported as absent,
+  // not skipped.
+  const prerequisiteIds = [
+    ...new Set([
+      ...(decision.record.prerequisite_decisions ?? []),
+      ...(mandate.record.authority.prerequisite_decisions ?? []),
+    ]),
+  ];
+  const prerequisites: PrerequisiteState[] = [];
+  for (const id of prerequisiteIds) {
+    const loaded = await loadDecision(root, id);
+    prerequisites.push({ id, status: loaded.ok ? loaded.record.status : null });
+  }
+
   const findings = runChecks({
     authority: authority.record,
     decision: decision.record,
     mandate: mandate.record,
     digestFailures,
+    prerequisites,
     changedPaths: options.changedPaths ?? [],
     publicText,
     now,
@@ -125,8 +143,19 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   return { authorized: findings.every((f) => f.outcome !== "REFUSED"), findings };
 }
 
+/**
+ * What a result means for acting on it. Three states, never a bare
+ * "authorised": a chain can be well-formed and still be a draft, and for
+ * nine days this repository could not tell the difference.
+ */
+export type ExecutionState = "AUTHORISED_FOR_EXECUTION" | "VALID_AS_DRAFT" | "REFUSED";
+
 export interface Summary {
   authorized: boolean;
+  /** Authorised for execution, valid only as a draft, or refused outright. */
+  execution: ExecutionState;
+  /** The adoption and prerequisite messages behind a VALID_AS_DRAFT, for the reader. */
+  waitingOn: string[];
   enforced: { passed: number; refused: number };
   checked: { passed: number; refused: number };
   notMachineDecidable: number;
@@ -143,8 +172,16 @@ export interface Summary {
 export function summarise(result: CompileResult): Summary {
   const count = (cls: string, outcome: Finding["outcome"]) =>
     result.findings.filter((f) => f.enforcement === cls && f.outcome === outcome).length;
+  const refusals = result.findings.filter((f) => f.outcome === "REFUSED");
+  const adoptionRules: readonly string[] = [ADOPTION_RULE, PREREQUISITE_RULE];
+  const onlyAdoption =
+    refusals.length > 0 && refusals.every((f) => adoptionRules.includes(f.rule));
+  const execution: ExecutionState =
+    refusals.length === 0 ? "AUTHORISED_FOR_EXECUTION" : onlyAdoption ? "VALID_AS_DRAFT" : "REFUSED";
   return {
     authorized: result.authorized,
+    execution,
+    waitingOn: onlyAdoption ? refusals.map((f) => f.message) : [],
     enforced: { passed: count("ENFORCED", "PASS"), refused: count("ENFORCED", "REFUSED") },
     checked: { passed: count("CHECKED", "PASS"), refused: count("CHECKED", "REFUSED") },
     notMachineDecidable: result.findings.filter((f) => f.outcome === "NOT_MACHINE_DECIDABLE").length,

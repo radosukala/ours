@@ -97,6 +97,23 @@ export interface FoundingAuthority {
   weakest_layer_note?: string;
 }
 
+/**
+ * Cost as a column — LIFECYCLE.md §4, adopted with D-0004.
+ *
+ * Present so a record can carry what a change cost, beside what it decided.
+ * STRUCTURAL only: the kernel does not evaluate these. Every number carries
+ * its source or the word ESTIMATED; a blank is allowed and an invented
+ * figure is not.
+ */
+export interface CostFields {
+  hours?: number | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
+  usd?: number | null;
+  wall_minutes?: number | null;
+  source: string;
+}
+
 export interface Decision {
   schema: "ours.decision/v0.1";
   decision_id: string;
@@ -110,6 +127,8 @@ export interface Decision {
     higher_sources: SourceRef[];
   };
   human_source: SourceRef;
+  /** Decisions that must be ADOPTED before this one acts. Checked under M-0004. */
+  prerequisite_decisions?: string[];
   outcome: string;
   authorizes: {
     mandate_classes: MandateClass[];
@@ -121,6 +140,7 @@ export interface Decision {
   dissent: unknown[];
   dissent_note?: string;
   appeal?: { available: boolean; reason?: string };
+  cost?: CostFields;
 }
 
 export type Reversibility = "ADDITIVE" | "REVERSIBLE" | "DESTRUCTIVE";
@@ -137,6 +157,8 @@ export interface Mandate {
     actor: Actor;
     valid_from: string;
     expires_at: string;
+    /** Decisions that must be ADOPTED before this mandate may execute. */
+    prerequisite_decisions?: string[];
   };
   institution: {
     constitution_version: string;
@@ -164,7 +186,12 @@ export interface Mandate {
     privacy?: string[];
   };
   acceptance: { tests: string[]; evidence: string[] };
-  limits?: { dependency_policy?: string; stop_conditions?: string[] };
+  limits?: {
+    dependency_policy?: string;
+    stop_conditions?: string[];
+    /** The ceiling a build may spend — LIFECYCLE.md §4. Not evaluated. */
+    budget_usd?: number | null;
+  };
   release: {
     deploy_authority_required: boolean;
     environments: string[];
@@ -180,6 +207,7 @@ export interface Mandate {
     irreversible_residue: string;
   };
   human_approvals: Record<string, string>;
+  cost?: CostFields;
 }
 
 /** One rule's verdict. Never summarised without its enforcement class. */
