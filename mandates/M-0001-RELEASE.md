@@ -1,6 +1,6 @@
 # M-0001-RELEASE — Publish the Authority Trace
 
-**Status:** ADOPTED — executed 30 August 2026 while marked DRAFT; its receipt was never written, and it becomes DEPLOYED only when `M-0004` produces the receipt from verifiable facts; status corrected under `D-0004` §C on 8 September 2026
+**Status:** DEPLOYED — executed 30 August 2026; the release receipt written under `M-0004` on 8 September 2026 (`receipts/releases/2026-08-30-M-0001-RELEASE.md`) reproduces the served artifact from the deploying source, byte for byte once the build date it embeds is normalised; set DEPLOYED by the founder on that receipt under `D-0004` §C
 **Class:** DEPLOY
 **Authorizing decision:** [`D-0001`](../decisions/D-0001.md)
 **Machine projection:** [`M-0001-RELEASE.yaml`](./M-0001-RELEASE.yaml)
