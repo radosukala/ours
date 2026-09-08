@@ -60,12 +60,18 @@ importers:
       '@ours/verifier':
         specifier: workspace:*
         version: link:../verifier
+      yaml:
+        specifier: 2.9.0
+        version: 2.9.0
 
   packages/kernel:
     dependencies:
       '@ours/schemas':
         specifier: workspace:*
         version: link:../schemas
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
       yaml:
         specifier: 2.9.0
         version: 2.9.0

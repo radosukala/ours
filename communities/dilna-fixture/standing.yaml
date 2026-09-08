@@ -1,0 +1,13 @@
+schema: ours.standing/v0.1
+cell: dilna-fixture
+fictional: true
+as_of: 2026-09-01
+# The count is the public projection. The register — who the 23 are — is
+# private and lives with the coordinator, never in this repository.
+count: 23
+roles:
+  coordinator: marta
+  operator: jiri
+founding_team: [marta, jiri, tomas]
+register: private — kept by the coordinator; not in this repository. FICTIONAL.
+participation_rule: anyone who pays the workshop fee; guests book through a member

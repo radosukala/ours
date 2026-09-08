@@ -98,6 +98,170 @@ export interface FoundingAuthority {
 }
 
 /**
+ * A community's charter — `ours.charter/v0.1`, built under M-0006.
+ *
+ * It is the root authority record of a community's own root of records,
+ * read by the kernel exactly as the institution's founding authority is,
+ * and it is the community's law: its articles carry classes like the
+ * constitution's. The founding team is not the actor; the members are.
+ */
+export interface Charter extends Omit<FoundingAuthority, "schema"> {
+  schema: "ours.charter/v0.1";
+  /** The community's identifier; its records live under communities/<cell>/. */
+  cell: string;
+  version: string;
+  /** True for sample records. Rendered on every surface that shows them. */
+  fictional?: boolean;
+  purpose: string;
+  participation: string;
+  /** Decision class → procedure: a vote rule, or `delegated:<role>`. */
+  procedures: Record<string, string>;
+  money: string;
+  privacy: string;
+  continuity: string;
+  /** Article ids the charter's human source must carry, each with a class. */
+  articles: string[];
+  /** The steps to community control, done or not — never summarised as a percentage. */
+  control: { steps: { step: string; done: boolean }[] };
+}
+
+export type AuthorityRecord = FoundingAuthority | Charter;
+
+/** Who belongs — `ours.standing/v0.1`. The register is private; the count is the projection. */
+export interface Standing {
+  schema: "ours.standing/v0.1";
+  cell: string;
+  as_of: string;
+  count: number;
+  /** Role → the id of the person holding it. */
+  roles: Record<string, string>;
+  founding_team?: string[];
+  /** Where the private register lives; never a path in this repository. */
+  register: string;
+  participation_rule: string;
+  fictional?: boolean;
+}
+
+/** A vote — `ours.vote/v0.1`. Ballots are private; the tally is public; dissent is kept. */
+export interface Vote {
+  schema: "ours.vote/v0.1";
+  vote_id: string;
+  cell: string;
+  decision_id: string;
+  procedure: string;
+  opened: string;
+  closed: string;
+  eligible: number;
+  ballots_cast: number;
+  tally: { for: number; against: number; abstain: number };
+  ballots: string;
+  dissent_preserved: boolean;
+  dissent_note?: string;
+  fictional?: boolean;
+}
+
+/** One class of data an application may reach, and the article that permits it. */
+export interface ContractAccess {
+  class: string;
+  fields: string[];
+  article: string;
+}
+
+/** One permitted disclosure: origin, the fields that may leave, the article, the purpose. */
+export interface Disclosure {
+  origin: string;
+  fields: string[];
+  article: string;
+  purpose: string;
+}
+
+/** The data contract — what an application may reach, write, and disclose. */
+export interface Contract {
+  reads: ContractAccess[];
+  writes: ContractAccess[];
+  disclosures: Disclosure[];
+  retention: string;
+}
+
+export const OPTION_LAYERS = ["FLOOR", "GOVERNED", "PERSONAL"] as const;
+export type OptionLayer = (typeof OPTION_LAYERS)[number];
+
+/** A consequential option of a tool, with its provenance — carried forward from the feed pilot. */
+export interface ToolOption {
+  option_id: string;
+  title: string;
+  layer: OptionLayer;
+  type: "enum" | "boolean" | "number";
+  values?: (string | number | boolean)[];
+  default: string | number | boolean;
+  person_may_override: boolean;
+  provenance: { article: string; decision: string };
+  why: string;
+  recourse: string;
+}
+
+export interface ToolArticle {
+  id: string;
+  title: string;
+  /** Test ids in the specification's `tests` that hold this article. */
+  tests: string[];
+}
+
+export interface ToolTest {
+  id: string;
+  name: string;
+  /** The article this test holds. */
+  holds: string;
+}
+
+export interface ToolRecordMeaning {
+  name: string;
+  meaning: string;
+  fields: string[];
+}
+
+export interface Transition {
+  record: string;
+  requirement: string;
+  verified_by: string;
+}
+
+/**
+ * The service specification — `ours.tool/v0.1`.
+ *
+ * Durable, and the community's: the meaning of records, the behaviours as
+ * articles, the options, the contract, the tests, and what a replacement
+ * must carry across. Not a language: it has no control flow, no
+ * expressions, and no type system, and M-0006 stops if it acquires any.
+ */
+export interface ToolSpec {
+  schema: "ours.tool/v0.1";
+  tool_id: string;
+  cell: string;
+  title: string;
+  version: string;
+  status: EvidenceState;
+  human_source: SourceRef;
+  fictional?: boolean;
+  records: ToolRecordMeaning[];
+  articles: ToolArticle[];
+  options: ToolOption[];
+  contract: Contract;
+  tests: ToolTest[];
+  transition: Transition[];
+}
+
+/** The pin — `ours.pin/v0.1`: the approved files and their digests, and the decision that pinned them. */
+export interface Pin {
+  schema: "ours.pin/v0.1";
+  cell: string;
+  pinned_by: string;
+  pinned_at: string;
+  files: { path: string; digest: string }[];
+  fictional?: boolean;
+}
+
+/**
  * Cost as a column — LIFECYCLE.md §4, adopted with D-0004.
  *
  * Present so a record can carry what a change cost, beside what it decided.
@@ -129,6 +293,8 @@ export interface Decision {
   human_source: SourceRef;
   /** Decisions that must be ADOPTED before this one acts. Checked under M-0004. */
   prerequisite_decisions?: string[];
+  /** In a community root: the vote that produced this decision, checked against the charter's procedure. */
+  vote?: string;
   outcome: string;
   authorizes: {
     mandate_classes: MandateClass[];
@@ -165,6 +331,8 @@ export interface Mandate {
     cell: string;
     charter_version: string | null;
   };
+  /** In a community root: the service specification this mandate implements. */
+  tool?: string;
   human_source: SourceRef;
   objective: string;
   human_outcome: string;

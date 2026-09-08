@@ -1,0 +1,90 @@
+schema: ours.mandate/v0.1
+mandate_id: M-1
+title: Implement the booking tool to specification 0.1 (FICTIONAL)
+status: ADOPTED
+fictional: true
+class: BUILD
+
+authority:
+  source_decision: D-3
+  granted_by: dilna-fixture-members
+  actor:
+    id: marta
+    kind: human
+    role: coordinator
+  valid_from: 2026-09-01T00:00:00Z
+  expires_at: 2027-03-01T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: dilna-fixture
+  charter_version: dilna-fixture/0.1
+
+tool: booking
+
+human_source:
+  path: mandates/M-1.md
+
+objective: >
+  Implement the equipment-booking tool exactly to the pinned specification
+  0.1 — its records, articles, options, contract and tests — as an
+  application that reaches the layer only through the client, so that the
+  gate can admit it.
+
+human_outcome: >
+  A member books a machine, sees who has what, and can read on the booking
+  itself which article set the rule and who decided it; nothing about a
+  member leaves the tool except what the calendar disclosure lists.
+
+adopted_constraints:
+  - The specification, the charter, the votes, the decisions and the pin are
+    read, never written; if the specification is wrong the implementer stops.
+  - The application reaches the layer only through layer.read, layer.write
+    and layer.disclose, with literal classes, fields and origins.
+  - Nothing is deployed; no member's data exists under this mandate.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/dilna-fixture/**
+      - receipts/builds/**
+    deny:
+      - communities/**
+      - spec/**
+      - authority/**
+      - decisions/**
+      - mandates/**
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: []
+
+requirements:
+  constitutional_rules: [R-HUMAN-AUTHORITY, R-TYPED-MANDATE, R-SCOPE, R-BUILD-DEPLOY, R-ROLLBACK, R-PUBLIC-PRIVATE]
+
+acceptance:
+  tests:
+    - Every test named in the specification passes and holds its article.
+    - The static contract check passes over the application's source.
+    - The pin is unchanged.
+    - pnpm ours admit communities/dilna-fixture booking --source <src> passes the gate.
+  evidence:
+    - a build receipt naming agent, model, pipeline, and cost
+    - the admit report
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: Remove the application. Nothing runs.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: the coordinator
+  adoption: the members, by D-3
+  deploy: not-authorized

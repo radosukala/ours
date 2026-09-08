@@ -9,6 +9,7 @@
   "dependencies": {
     "@ours/kernel": "workspace:*",
     "@ours/schemas": "workspace:*",
-    "@ours/verifier": "workspace:*"
+    "@ours/verifier": "workspace:*",
+    "yaml": "2.9.0"
   }
 }

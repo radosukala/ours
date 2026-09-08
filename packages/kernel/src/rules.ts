@@ -1,8 +1,8 @@
 import type {
+  AuthorityRecord,
   Decision,
   EvidenceState,
   Finding,
-  FoundingAuthority,
   Mandate,
 } from "@ours/schemas";
 import { EVIDENCE_STATES, MANDATE_CLASSES } from "@ours/schemas";
@@ -32,7 +32,8 @@ export const PREREQUISITE_RULE = "R-SOURCE-HIERARCHY/prerequisite";
 const PRE_ADOPTION: readonly string[] = ["DRAFT", "PROPOSED"];
 
 export interface CheckContext {
-  authority: FoundingAuthority;
+  /** The founding authority, or a community's charter — the same fields where the kernel looks. */
+  authority: AuthorityRecord;
   decision: Decision;
   mandate: Mandate;
   /** Digest mismatches found by the caller, which owns filesystem access. */

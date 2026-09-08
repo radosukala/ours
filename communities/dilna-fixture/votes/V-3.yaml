@@ -1,0 +1,14 @@
+schema: ours.vote/v0.1
+vote_id: V-3
+cell: dilna-fixture
+fictional: true
+decision_id: D-3
+procedure: majority-of-respondents
+opened: 2026-08-25
+closed: 2026-09-01
+eligible: 23
+ballots_cast: 15
+tally: { for: 12, against: 2, abstain: 1 }
+ballots: private — held by the coordinator. FICTIONAL.
+dissent_preserved: true
+dissent_note: Two against — build nothing; the paper calendar works. Kept, and answered in D-3's counter-case.

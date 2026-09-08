@@ -1,0 +1,107 @@
+schema: ours.tool/v0.1
+tool_id: booking
+cell: dilna-fixture
+title: Equipment booking (FICTIONAL)
+version: "0.1"
+status: ADOPTED
+fictional: true
+
+human_source:
+  path: tool/booking.md
+
+records:
+  - name: booking
+    meaning: one member's claim on one machine for one slot on one day
+    fields: [id, machine, member, start, end, status]
+  - name: machine
+    meaning: one of the four shared machines, with its status and maintenance log
+    fields: [id, name, status]
+  - name: member
+    meaning: a person with standing, as the layer holds them; nothing else reaches this tool
+    fields: [id, name]
+  - name: waitlist_entry
+    meaning: a member waiting for a machine on a day
+    fields: [id, machine, member, day]
+
+articles:
+  - id: T-FAIR-ACCESS
+    title: One slot per person per machine per day
+    tests: [t-fair-1, t-fair-2]
+  - id: T-CANCEL
+    title: Cancel by two hours before, or it counts as used
+    tests: [t-cancel-1]
+  - id: T-QUIET
+    title: Reminders off unless you turn them on
+    tests: [t-quiet-1]
+  - id: T-PRIVATE
+    title: Bookings are visible to members, and nothing else is collected
+    tests: [t-private-1, t-private-2]
+  - id: T-EXIT
+    title: Your bookings are yours to take
+    tests: [t-exit-1]
+
+options:
+  - option_id: booking.one_slot_per_day
+    title: One slot per person per machine per day
+    layer: FLOOR
+    type: boolean
+    default: true
+    person_may_override: false
+    provenance: { article: T-FAIR-ACCESS, decision: D-1 }
+    why: A slot nobody uses is a slot someone wanted.
+    recourse: Nobody's to override; change it for everyone by amending the arrangement, two thirds.
+  - option_id: booking.cancel_window
+    title: Cancellation window
+    layer: GOVERNED
+    type: enum
+    values: [1h, 2h, 4h]
+    default: 2h
+    person_may_override: true
+    provenance: { article: T-CANCEL, decision: D-1 }
+    why: A slot cancelled too late is a slot the waitlist never got.
+    recourse: Set it for yourself here; to change the default for everyone, propose it — P-3 is open.
+  - option_id: booking.reminders
+    title: Reminders before my slot
+    layer: PERSONAL
+    type: boolean
+    default: false
+    person_may_override: true
+    provenance: { article: T-QUIET, decision: D-1 }
+    why: The tool never decides for you when to think about the workshop.
+    recourse: Yours; turn it on.
+
+contract:
+  reads:
+    - { class: booking, fields: [id, machine, member, start, end, status], article: T-FAIR-ACCESS }
+    - { class: machine, fields: [id, name, status], article: T-FAIR-ACCESS }
+    - { class: member, fields: [id, name], article: T-PRIVATE }
+    - { class: waitlist_entry, fields: [id, machine, member, day], article: T-FAIR-ACCESS }
+  writes:
+    - { class: booking, fields: [machine, member, start, end, status], article: T-FAIR-ACCESS }
+    - { class: waitlist_entry, fields: [machine, member, day], article: T-FAIR-ACCESS }
+  disclosures:
+    - origin: https://calendar.dilna.example
+      fields: [machine, start, end]
+      article: T-PRIVATE
+      purpose: the workshop's shared wall calendar shows what is booked, never by whom
+  retention: ninety days after a slot; nothing retained by the application itself
+
+tests:
+  - { id: t-fair-1, name: a second booking of the same machine on the same day by the same member is refused, holds: T-FAIR-ACCESS }
+  - { id: t-fair-2, name: a cancelled slot is offered to the waitlist before anyone else, holds: T-FAIR-ACCESS }
+  - { id: t-cancel-1, name: a cancellation inside the window counts as used, holds: T-CANCEL }
+  - { id: t-quiet-1, name: no reminder is sent unless the member turned reminders on, holds: T-QUIET }
+  - { id: t-private-1, name: a member sees no field of another member beyond their name, holds: T-PRIVATE }
+  - { id: t-private-2, name: the calendar disclosure carries machine, start, end and nothing else, holds: T-PRIVATE }
+  - { id: t-exit-1, name: export returns the member's bookings and profile as a bundle the verifier accepts, holds: T-EXIT }
+
+transition:
+  - record: booking
+    requirement: every booking carries over with machine, member, start, end and status unchanged in meaning; a replacement that cannot represent a status refuses the transition
+    verified_by: the member's export before and after the swap verify and match; bookings per status are equal in count
+  - record: waitlist_entry
+    requirement: every waitlist entry carries over
+    verified_by: counts per machine and day are equal
+  - record: machine
+    requirement: every machine's status and maintenance log carry over
+    verified_by: the machine records before and after match

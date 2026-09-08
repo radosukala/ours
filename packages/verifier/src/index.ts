@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { Decision, FoundingAuthority, Mandate } from "@ours/schemas";
+import type { AuthorityRecord, Decision, Mandate } from "@ours/schemas";
 
 /**
  * The offline verifier.
@@ -24,7 +24,7 @@ export interface BundleSource {
 export interface Bundle {
   schema: "ours.bundle/v0.1";
   mandate_id: string;
-  authority: FoundingAuthority;
+  authority: AuthorityRecord;
   decision: Decision;
   mandate: Mandate;
   sources: BundleSource[];
@@ -57,9 +57,12 @@ export async function buildBundle(root: string, mandateId: string): Promise<Bund
   if (decisionRaw === null) return null;
   const decision = parse(decisionRaw) as Decision;
 
-  const authorityRaw = await read("authority/FOUNDING-AUTHORITY.yaml");
+  // The institution's founding authority, or a community's charter: the
+  // bundle carries whichever is the root of the records it was built from.
+  const authorityRaw =
+    (await read("authority/FOUNDING-AUTHORITY.yaml")) ?? (await read("authority/CHARTER.yaml"));
   if (authorityRaw === null) return null;
-  const authority = parse(authorityRaw) as FoundingAuthority;
+  const authority = parse(authorityRaw) as AuthorityRecord;
 
   const wanted = [
     authority.human_source?.path,
@@ -156,6 +159,12 @@ export function verifyBundle(bundle: Bundle): VerifyOutcome {
       `every record is past adoption — ${bundle.authority.authority_id} ${bundle.authority.status}, ` +
         `${bundle.decision.decision_id} ${bundle.decision.status}, ${bundle.mandate.mandate_id} ${bundle.mandate.status}`,
     );
+  }
+
+  // A sample community's bundle verifies exactly like a real one — that is
+  // what makes it a fixture — so the label travels with the bundle.
+  if ((bundle.authority as { fictional?: boolean }).fictional) {
+    lines.push(`   note  FICTIONAL COMMUNITY — sample records; nobody in this bundle exists`);
   }
 
   if (bundle.authority.member_ownership_issued) {

@@ -1,0 +1,14 @@
+schema: ours.vote/v0.1
+vote_id: V-2
+cell: dilna-fixture
+fictional: true
+decision_id: D-2
+procedure: majority-of-respondents
+opened: 2026-08-15
+closed: 2026-08-22
+eligible: 23
+ballots_cast: 17
+tally: { for: 14, against: 3, abstain: 0 }
+ballots: private — held by the coordinator. FICTIONAL.
+dissent_preserved: true
+dissent_note: Three against — a log on every machine is more upkeep than the problem deserves. Kept.

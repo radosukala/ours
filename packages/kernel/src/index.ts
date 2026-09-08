@@ -1,8 +1,29 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { CompileResult, Finding, SourceRef } from "@ours/schemas";
+import type {
+  AuthorityRecord,
+  Charter,
+  CompileResult,
+  Decision,
+  Finding,
+  Mandate,
+  SourceRef,
+} from "@ours/schemas";
+import { parseArticles } from "./articles.ts";
+import { articleTests, optionProvenance, pinHolds, runCommunityChecks } from "./community.ts";
+import type { CommunityContext } from "./community.ts";
+import { checkContract } from "./contract.ts";
 import { digestOfFile } from "./digest.ts";
-import { loadAuthority, loadDecision, loadMandate } from "./registry.ts";
+import {
+  listDecisions,
+  loadAuthority,
+  loadDecision,
+  loadMandate,
+  loadPin,
+  loadStanding,
+  loadToolSpec,
+  loadVote,
+} from "./registry.ts";
 import { ADOPTION_RULE, PREREQUISITE_RULE, runChecks } from "./rules.ts";
 import type { PrerequisiteState } from "./rules.ts";
 
@@ -10,7 +31,22 @@ export { runChecks, ADOPTION_RULE, PREREQUISITE_RULE } from "./rules.ts";
 export type { CheckContext, PrerequisiteState } from "./rules.ts";
 export { digestOf, digestOfFile } from "./digest.ts";
 export { matchesPattern, matchesAny } from "./glob.ts";
-export { loadAuthority, loadDecision, loadMandate } from "./registry.ts";
+export {
+  loadAuthority,
+  loadDecision,
+  loadMandate,
+  loadStanding,
+  loadVote,
+  loadToolSpec,
+  loadPin,
+  listDecisions,
+} from "./registry.ts";
+export { parseArticles } from "./articles.ts";
+export type { ParsedArticle } from "./articles.ts";
+export { runCommunityChecks, articleTests, optionProvenance, pinHolds } from "./community.ts";
+export type { CommunityContext } from "./community.ts";
+export { checkContract, scanSource, CONTRACT_RULE } from "./contract.ts";
+export type { ContractProblem } from "./contract.ts";
 
 /**
  * The compiler.
@@ -34,6 +70,12 @@ export interface CompileOptions {
   publicTextPaths?: string[];
   /** Injected so a test can fix the clock. Authority is time-dependent. */
   now?: Date;
+  /**
+   * In a community root, where the implementation's source lives — the
+   * static contract check runs against it. Absent, the contract is not
+   * checked and no finding pretends it was.
+   */
+  contractSourceDir?: string;
 }
 
 function refusal(rule: string, message: string): CompileResult {
@@ -41,6 +83,124 @@ function refusal(rule: string, message: string): CompileResult {
     authorized: false,
     findings: [{ rule, enforcement: "ENFORCED", outcome: "REFUSED", message }],
   };
+}
+
+async function readText(root: string, rel: string): Promise<string> {
+  try {
+    return await readFile(path.join(root, rel), "utf8");
+  } catch {
+    return "";
+  }
+}
+
+interface CommunityRecords {
+  charter: Charter;
+  charterArticles: CommunityContext["charterArticles"];
+  standing: CommunityContext["standing"];
+  pin: CommunityContext["pin"];
+  pinDigests: CommunityContext["pinDigests"];
+  pinnedByStatus: string | null;
+  decisions: Record<string, string>;
+}
+
+/** Everything a community root carries besides the chain, loaded once. */
+async function loadCommunity(root: string, charter: Charter): Promise<CommunityRecords> {
+  const charterArticles = parseArticles(await readText(root, charter.human_source.path));
+  const standing = await loadStanding(root);
+  const pin = await loadPin(root);
+  const pinDigests = pin.ok
+    ? await Promise.all(
+        pin.record.files.map(async (f) => ({
+          path: f.path,
+          recorded: f.digest,
+          actual: await digestOfFile(root, f.path),
+        })),
+      )
+    : [];
+  const pinnedBy = pin.ok ? await loadDecision(root, pin.record.pinned_by) : null;
+  return {
+    charter,
+    charterArticles,
+    standing: standing.ok ? standing.record : null,
+    pin: pin.ok ? pin.record : null,
+    pinDigests,
+    pinnedByStatus: pinnedBy === null ? null : pinnedBy.ok ? String(pinnedBy.record.status) : null,
+    decisions: await listDecisions(root),
+  };
+}
+
+/**
+ * The community checks, when the root is a community's. The institution's
+ * root has a founding authority and no charter, so it gets none of these
+ * and no finding says it was checked for them: there is nothing to check.
+ */
+async function communityFindings(
+  root: string,
+  authority: AuthorityRecord,
+  decision: Decision,
+  mandate: Mandate,
+  contractSourceDir: string | undefined,
+): Promise<Finding[]> {
+  if (authority.schema !== "ours.charter/v0.1") return [];
+  const charter: Charter = authority;
+  const records = await loadCommunity(root, charter);
+  const vote = decision.vote !== undefined ? await loadVote(root, decision.vote) : null;
+  const tool = mandate.tool !== undefined ? await loadToolSpec(root, mandate.tool) : null;
+  const toolRecord = tool !== null && tool.ok ? tool.record : null;
+  const toolArticles = toolRecord ? parseArticles(await readText(root, toolRecord.human_source.path)) : [];
+  const ctx: CommunityContext = {
+    ...records,
+    decision,
+    vote: vote !== null && vote.ok ? vote.record : null,
+    mandate,
+    tool: toolRecord,
+    toolArticles,
+  };
+  const findings = runCommunityChecks(ctx);
+  if (contractSourceDir !== undefined && toolRecord !== null) {
+    findings.push(await checkContract(toolRecord, contractSourceDir));
+  }
+  return findings;
+}
+
+export interface AdmitOptions {
+  root: string;
+  toolId: string;
+  sourceDir?: string;
+}
+
+/**
+ * The gate for a tool on its own, without a mandate: is this specification
+ * admissible — every article held by a test, every option with provenance,
+ * the approved files unchanged, and, if a source tree is given, the
+ * implementation inside its contract. Passing makes a builder eligible to
+ * offer the tool. The community decides its use; this decides nothing else.
+ */
+export async function admit(options: AdmitOptions): Promise<CompileResult> {
+  const { root, toolId } = options;
+  const authority = await loadAuthority(root);
+  if (!authority.ok || authority.record.schema !== "ours.charter/v0.1") {
+    return refusal(
+      "S-CHARTER-NAMED",
+      `${root} is not a community root: no charter at authority/CHARTER.yaml. A tool is admitted to a community, not to a directory.`,
+    );
+  }
+  const charter: Charter = authority.record;
+  const tool = await loadToolSpec(root, toolId);
+  if (!tool.ok) {
+    return refusal("S-TOOL-NAMED", `No specification ${toolId} in ${root}: ${tool.reason}.`);
+  }
+  const records = await loadCommunity(root, charter);
+  const toolArticles = parseArticles(await readText(root, tool.record.human_source.path));
+  const findings: Finding[] = [
+    articleTests(tool.record, toolArticles),
+    optionProvenance(tool.record, records.decisions),
+    pinHolds(records.pin, records.pinDigests, records.pinnedByStatus),
+  ];
+  if (options.sourceDir !== undefined) {
+    findings.push(await checkContract(tool.record, options.sourceDir));
+  }
+  return { authorized: findings.every((f) => f.outcome !== "REFUSED"), findings };
 }
 
 async function verifyDigests(root: string, refs: (SourceRef | undefined)[]): Promise<string[]> {
@@ -140,7 +300,18 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     now,
   });
 
-  return { authorized: findings.every((f) => f.outcome !== "REFUSED"), findings };
+  // A community's root carries its charter's law and the gate's rules for a
+  // specification beside the constitutional chain, in the same list.
+  const community = await communityFindings(
+    root,
+    authority.record,
+    decision.record,
+    mandate.record,
+    options.contractSourceDir,
+  );
+  const all = [...findings, ...community];
+
+  return { authorized: all.every((f) => f.outcome !== "REFUSED"), findings: all };
 }
 
 /**

@@ -1,0 +1,39 @@
+schema: ours.decision/v0.1
+decision_id: D-2
+title: A maintenance log on every machine (FICTIONAL)
+status: ADOPTED
+fictional: true
+class: PRODUCT_MANDATE
+
+authority:
+  source: dilna-fixture-charter
+  actor:
+    id: dilna-fixture-members
+    kind: human
+    role: members-by-charter
+  procedure: majority-of-respondents
+  higher_sources:
+    - path: authority/CHARTER.md
+
+human_source:
+  path: decisions/D-2.md
+
+vote: V-2
+
+outcome: >
+  Every machine carries a maintenance log visible to all members, carried
+  into the booking specification as the machine record's status.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+effective_from: 2026-08-22T00:00:00Z
+expires_at: null
+
+dissent: []
+dissent_note: Three against — more upkeep than the problem deserves; preserved in V-2.
+
+appeal:
+  available: false
+  reason: none outside the group — a recorded gap

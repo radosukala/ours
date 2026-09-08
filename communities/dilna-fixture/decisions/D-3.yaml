@@ -1,0 +1,45 @@
+schema: ours.decision/v0.1
+decision_id: D-3
+title: Adopt the booking specification 0.1, and pin it (FICTIONAL)
+status: ADOPTED
+fictional: true
+class: PRODUCT_MANDATE
+
+authority:
+  source: dilna-fixture-charter
+  actor:
+    id: dilna-fixture-members
+    kind: human
+    role: members-by-charter
+  procedure: majority-of-respondents
+  higher_sources:
+    - path: authority/CHARTER.md
+
+human_source:
+  path: decisions/D-3.md
+
+vote: V-3
+pins: true
+
+outcome: >
+  Adopt tool/booking.md, the service specification for the equipment
+  booking tool, version 0.1, and pin it with the charter; authorize M-1 to
+  implement it without touching any record of this community.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-1]
+
+prohibits:
+  - changing the specification, the charter, or any record of this community under M-1
+  - deploying anything under M-1
+
+effective_from: 2026-09-01T00:00:00Z
+expires_at: 2027-03-01T00:00:00Z
+
+dissent: []
+dissent_note: Two against, one abstaining — build nothing; preserved in V-3 and answered in the counter-case.
+
+appeal:
+  available: false
+  reason: none outside the group — a recorded gap

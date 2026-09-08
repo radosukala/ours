@@ -1,0 +1,69 @@
+schema: ours.charter/v0.1
+authority_id: C-DILNA-0.1
+title: Founding arrangement of Dílna Libeň (FICTIONAL)
+status: ADOPTED
+fictional: true
+
+cell: dilna-fixture
+version: "0.1"
+
+human_source:
+  path: authority/CHARTER.md
+
+# The root of this community's records. Nothing above it in this root;
+# the institution's constitution binds it from outside, through D-0006.
+root: true
+
+# The members are the actor, not the founding team.
+actor:
+  id: dilna-fixture-members
+  kind: human
+  role: members-by-charter
+
+# A community may not issue CONSTITUTIONAL decisions — those are the
+# root's — and this fixture has no appeal body, so no ADJUDICATIVE ones.
+may_issue_decision_classes:
+  - CHARTER
+  - POLICY
+  - PRODUCT_MANDATE
+  - OPERATIONAL
+  - EMERGENCY
+
+member_institution_formed: false
+member_ownership_issued: false
+legal_membership_issued: false
+
+weakest_enforcement_layer: AUTOMATED_GATE
+weakest_layer_note: >
+  Operated by the founding team; control not yet transferred; three of six
+  steps remain. Every check here can be removed by whoever holds the
+  repository. FICTIONAL.
+
+purpose: Share four machines fairly among the people who keep the workshop.
+participation: Anyone who pays the workshop fee. Guests book through a member. The register is private; the count is public.
+procedures:
+  CHARTER: two-thirds-of-members
+  POLICY: majority-of-respondents
+  PRODUCT_MANDATE: majority-of-respondents
+  OPERATIONAL: delegated:coordinator
+  EMERGENCY: delegated:operator
+money: Two euros a month each, into the group's account; anyone can see the ledger; money decisions need two thirds.
+privacy: Bookings are visible to members. Nothing else is collected. The legal data controller is not yet named.
+continuity: A second person can run it from the records; rehearsed yearly.
+
+articles:
+  - C-PURPOSE
+  - C-PARTICIPATION
+  - C-DECISIONS
+  - C-MONEY
+  - C-PRIVACY
+  - C-CONTINUITY
+
+control:
+  steps:
+    - { step: founding arrangement adopted, done: true }
+    - { step: every record public and checkable, done: true }
+    - { step: operator replaceable — rehearsed, done: true }
+    - { step: data controller named, done: false }
+    - { step: name and address held for the group, done: false }
+    - { step: a decision the founding team cannot override, done: false }

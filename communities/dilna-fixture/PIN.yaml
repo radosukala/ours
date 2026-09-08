@@ -1,0 +1,17 @@
+# The pin — the approved files and their digests, and the decision that approved them.
+# A change to any file below without an amending decision is a refusal at the gate (S-PIN).
+# FICTIONAL COMMUNITY — sample records. Nobody here exists.
+schema: ours.pin/v0.1
+cell: dilna-fixture
+pinned_by: D-3
+pinned_at: 2026-09-08
+files:
+  - path: tool/booking.yaml
+    digest: sha256:960f31d606b0e5ca8415ea17bc3d9484ad5e22520d71eeb45e55d8e93adf0861
+  - path: tool/booking.md
+    digest: sha256:507387f9a36c9780fdb73cf17d38e987c4db7fddda9f1a1c253bfd9fe873ab59
+  - path: authority/CHARTER.yaml
+    digest: sha256:bd3f2128437cb1671271dcba54da09f1d9acb3e68e052db891a84562caee6ef6
+  - path: authority/CHARTER.md
+    digest: sha256:8400d3f5d98ed40caddb411aa4c8db141a7eb48158276bcc3d2783babb7f57f4
+fictional: true

@@ -1,0 +1,14 @@
+schema: ours.vote/v0.1
+vote_id: V-1
+cell: dilna-fixture
+fictional: true
+decision_id: D-1
+procedure: two-thirds-of-members
+opened: 2026-08-05
+closed: 2026-08-12
+eligible: 23
+ballots_cast: 19
+tally: { for: 17, against: 1, abstain: 1 }
+ballots: private — held by the coordinator; the tally is the public projection. FICTIONAL.
+dissent_preserved: true
+dissent_note: One member against — the two-hour cancellation window is too long for morning slots. Kept; raised again as P-3.

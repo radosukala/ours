@@ -1,0 +1,39 @@
+schema: ours.decision/v0.1
+decision_id: D-1
+title: Adopt the founding arrangement (FICTIONAL)
+status: ADOPTED
+fictional: true
+class: CHARTER
+
+authority:
+  source: dilna-fixture-charter
+  actor:
+    id: dilna-fixture-members
+    kind: human
+    role: members-by-charter
+  procedure: two-thirds-of-members
+  higher_sources:
+    - path: authority/CHARTER.md
+
+human_source:
+  path: decisions/D-1.md
+
+vote: V-1
+
+outcome: >
+  Adopt authority/CHARTER.md as the founding arrangement of the workshop:
+  purpose, participation, decisions, money, privacy, continuity.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+effective_from: 2026-08-12T00:00:00Z
+expires_at: null
+
+dissent: []
+dissent_note: One member against — the cancellation window; preserved in V-1.
+
+appeal:
+  available: false
+  reason: none outside the group — a recorded gap
