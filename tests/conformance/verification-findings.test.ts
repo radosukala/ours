@@ -487,3 +487,34 @@ export const wait = () => new Promise<void>((r) => setTimeout(() => r(), 1));
     expect(finding?.outcome, finding?.message).toBe("PASS");
   });
 });
+
+describe("implementations — the fourth check's doors, and the last word", () => {
+  it("refuses a class that extends Function, eval, fetch, or an undeclared name", async () => {
+    const why = await contractRefusal({
+      "index.ts": `export class Sub extends Function {}\nexport class Two extends SomethingUndeclared {}\n`,
+    });
+    expect(why).toContain("references Function");
+    expect(why).toContain("references SomethingUndeclared");
+  });
+
+  it("refuses an alias of an allowed global, which would reach its refused methods under another name", async () => {
+    const why = await contractRefusal({
+      "index.ts": `const O = Object;\nexport const p = O.getPrototypeOf(function () {});\nexport const n = [1, 2].map(Number);\n`,
+    });
+    expect(why).toContain("aliases Object");
+    expect(why).toContain("aliases Number");
+  });
+
+  it("accepts a class extending an allowed global, the primitive globals as values, and the ordinary uses", async () => {
+    const dir = await sourceTree({
+      "index.ts": DECLARE + `export class NotFound extends Error { constructor(what: string) { super(what); } }
+export function ok(x: unknown): boolean { return x !== undefined && !Number.isNaN(Number(x)) && x !== Infinity; }
+export const kind = typeof Object;
+export const rows = async () => (await layer.read("machine", ["id", "name", "status"])).map((r) => String(r["name"]));
+`,
+    });
+    const result = await check(FIXTURE, dir);
+    const finding = result.findings.find((f) => f.rule === "S-CONTRACT-DECLARED");
+    expect(finding?.outcome, finding?.message).toBe("PASS");
+  });
+});

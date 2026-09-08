@@ -254,9 +254,38 @@ function isNotValueReference(node: ts.Identifier): boolean {
   if (ts.isLabeledStatement(parent) || ts.isBreakOrContinueStatement(parent)) return true;
   if (ts.isJsxAttribute(parent)) return true;
   for (let a: ts.Node | undefined = parent; a; a = a.parent) {
-    if (ts.isTypeNode(a) || ts.isTypeElement(a) || ts.isHeritageClause(a)) return true;
+    // `implements X` and an interface's `extends X` are types; a class's
+    // `extends X` is a value — the fourth check reached the Function
+    // constructor through `class Sub extends Function {}`. The expression
+    // node under a heritage clause is a TypeNode to the parser, so the
+    // clause is decided first.
+    if (ts.isHeritageClause(a)) {
+      return a.token === ts.SyntaxKind.ImplementsKeyword || (a.parent !== undefined && ts.isInterfaceDeclaration(a.parent));
+    }
+    if (ts.isExpressionWithTypeArguments(a)) continue;
+    if (ts.isTypeNode(a) || ts.isTypeElement(a)) return true;
     if (ts.isExpression(a) || ts.isStatement(a)) break;
   }
+  return false;
+}
+
+/** Primitive-valued globals that may be used as plain values anywhere. */
+const PRIMITIVE_GLOBALS = new Set(["undefined", "NaN", "Infinity"]);
+
+/**
+ * Where an allowed global may be used: as the receiver of a property
+ * access, the callee of a call or `new`, the operand of `typeof`, or the
+ * superclass of a class. Anywhere else — an initializer, an argument, an
+ * element, a return — is an alias, and an alias of `Object` reaches its
+ * reflective methods under another name, as the fourth check showed.
+ */
+function isAllowedGlobalUse(node: ts.Identifier): boolean {
+  const parent = node.parent;
+  if (!parent) return false;
+  if (ts.isPropertyAccessExpression(parent) && parent.expression === node) return true;
+  if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.expression === node) return true;
+  if (ts.isTypeOfExpression(parent)) return true;
+  if (ts.isExpressionWithTypeArguments(parent) && parent.expression === node) return true;
   return false;
 }
 
@@ -419,8 +448,12 @@ export function scanSource(sf: ts.SourceFile, checker: ts.TypeChecker, spec: Too
       } else {
         const shorthand = ts.isShorthandPropertyAssignment(node.parent) ? checker.getShorthandAssignmentValueSymbol(node.parent) : undefined;
         const symbol = shorthand ?? checker.getSymbolAtLocation(node);
-        if (symbol === undefined && !ALLOWED_GLOBALS.has(name)) {
-          problem(node, `references ${name}, which the application neither declares nor imports: a global outside the allowlist, refused — only the ECMAScript built-ins, timers, and console may be reached`);
+        if (symbol === undefined) {
+          if (!ALLOWED_GLOBALS.has(name)) {
+            problem(node, `references ${name}, which the application neither declares nor imports: a global outside the allowlist, refused — only the ECMAScript built-ins, timers, and console may be reached`);
+          } else if (!PRIMITIVE_GLOBALS.has(name) && !isAllowedGlobalUse(node)) {
+            problem(node, `aliases ${name}: an allowed global may be used — as a receiver, a callee, a superclass — but not renamed, passed, or stored, because the alias escapes the checks on its name; write (x) => ${name}(x), not ${name}`);
+          }
         }
       }
     }
