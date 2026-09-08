@@ -1,8 +1,8 @@
 # OURS · the service specification, and the gate
 
 **Version:** 0.1  
-**Status:** DRAFT — drafted under `M-0006` on 8 September 2026; adopted when
-the founder approves it under that mandate's human approvals  
+**Status:** ADOPTED — drafted under `M-0006` on 8 September 2026 and approved by
+the founder the same day, in conversation, under that mandate's human approvals  
 **Depends on:** [`foundation/THE-LAYER.md`](../foundation/THE-LAYER.md) §5–§6,
 [`foundation/LIFECYCLE.md`](../foundation/LIFECYCLE.md)  
 **Not:** a language. It has no control flow, no expressions, and no type

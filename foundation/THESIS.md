@@ -391,9 +391,10 @@ Important pieces already exist:
   driven development, in which the specification is the primary artifact
   and code its expression.
 
-*The five entries above were added under `D-0006` on 8 September 2026.
-Confirmer of the links and of each one-line description: `[CONFIRM —
-founder]`. Until confirmed, they are the agent's reading.*
+*The five entries above were added under `D-0006` on 8 September 2026 from
+the agent's reading. Confirmed by the founder the same day, in conversation,
+as a blanket confirmation of the list rather than link by link — recorded
+as such.*
 
 OURS therefore must not claim to have invented governance, policy engines,
 open source, cooperatives, software receipts, or AI coding.

@@ -23,11 +23,11 @@ AUTHORITY               FOUNDER BOOTSTRAP
 MEMBER INSTITUTION      NOT YET FORMED
 MEMBER OWNERSHIP        NOT YET ISSUED
 LEGAL MEMBERSHIP        NOT YET ISSUED
-THE LAYER               ADOPTED AS DIRECTION — NOTHING BUILT
-THE GATE                authority checks TESTED · community checks NOT YET
+THE LAYER               ADOPTED AS DIRECTION — THE GATE BUILT, NOTHING RUNS
+THE GATE                authority, adoption, and community checks TESTED — on a fictional fixture
 RUNTIME                 NONE
 KERNEL                  0.1 — TESTED
-AUTHORITY TRACE         served at oursorg.com — its release receipt is owed
+AUTHORITY TRACE         served at oursorg.com — receipted 8 September, reproduced modulo its build date
 FIRST COMMUNITY         NOT CHOSEN
 ```
 
@@ -120,8 +120,8 @@ tests/          the denial suite comes first
 receipts/       what was built, under whose authority
 observations/   what happened afterwards — empty until something is observed
 exit/           exported proof bundles
-spec/           the service specification format — arrives with M-0006
-communities/    each community's own records, read like the institution's — M-0006
+spec/           the service specification format, and the gate's rules
+communities/    each community's own records, read like the institution's — a fictional fixture today
 ```
 
 ## Reading order
