@@ -69,8 +69,24 @@ const REFUSED_NAMES = new Set([
   "navigator", "Worker", "SharedWorker", "Deno", "Bun", "Reflect", "Proxy", "WebAssembly", "arguments",
 ]);
 
-/** Property names that walk to the Function constructor or the caller. Refused on any receiver. */
+/** Property names that walk to the Function constructor or the caller. Refused on any receiver, in any spelling. */
 const REFUSED_PROPERTIES = new Set(["constructor", "prototype", "__proto__", "callee", "caller"]);
+
+/**
+ * The reflective methods of `Object`: each reaches a prototype, a
+ * descriptor, or a property by a name passed as a value, and so walks to
+ * the Function constructor without ever writing `.constructor`. Refused on
+ * `Object`; `keys`, `values`, `entries`, `assign`, `freeze`, and
+ * `fromEntries` stay, because they see enumerable properties only and the
+ * built-ins' are not.
+ */
+const REFUSED_OBJECT_METHODS = new Set([
+  "getPrototypeOf", "setPrototypeOf", "getOwnPropertyDescriptor", "getOwnPropertyDescriptors",
+  "getOwnPropertyNames", "getOwnPropertySymbols", "defineProperty", "defineProperties", "create",
+]);
+
+/** Timers run a function; given a string they run code. Only a function literal is accepted. */
+const TIMERS = new Set(["setTimeout", "setInterval"]);
 
 /** Packages that reach the network or a database. Refused by root name, any subpath, even if declared. */
 const IO_PACKAGES = new Set([
@@ -244,12 +260,22 @@ function isNotValueReference(node: ts.Identifier): boolean {
   return false;
 }
 
-function insideFunction(node: ts.Node): boolean {
+/**
+ * Where `this` is what it seems: a class member or an object-literal method,
+ * where it is the instance or the object. At the top of a script it is the
+ * global object; in a plain function called without a receiver it is the
+ * global object in sloppy code. Arrows inherit from where they sit.
+ */
+function thisVerdict(node: ts.Node): string | null {
   for (let a: ts.Node | undefined = node.parent; a; a = a.parent) {
-    if (ts.isFunctionLike(a) && !ts.isArrowFunction(a)) return true;
-    if (ts.isClassLike(a)) return true;
+    if (ts.isArrowFunction(a)) continue;
+    if (ts.isMethodDeclaration(a) || ts.isConstructorDeclaration(a) || ts.isGetAccessor(a) || ts.isSetAccessor(a)) return null;
+    if (ts.isClassLike(a)) return null;
+    if (ts.isFunctionDeclaration(a) || ts.isFunctionExpression(a)) {
+      return `uses this in a plain function: refused — called without a receiver, in sloppy code it is the global object`;
+    }
   }
-  return false;
+  return `uses this outside any function or class: refused — at the top of a script it is the global object`;
 }
 
 interface Scan {
@@ -327,9 +353,36 @@ export function scanSource(sf: ts.SourceFile, checker: ts.TypeChecker, spec: Too
     }
     if (ts.isImportEqualsDeclaration(node)) problem(node, `uses import = require(): refused; imports are an allowlist`);
     if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) problem(node, `uses a dynamic import(): refused — a module loaded at runtime cannot be checked here`);
-    if (ts.isMetaProperty(node)) problem(node, `uses import.meta: refused — the application has no business with the runtime's module system`);
+    if (ts.isMetaProperty(node) && node.keywordToken === ts.SyntaxKind.ImportKeyword) {
+      problem(node, `uses import.meta: refused — the application has no business with the runtime's module system`);
+    }
     if (ts.isWithStatement(node)) problem(node, `uses a with statement: refused — it changes what a name means`);
-    if (node.kind === ts.SyntaxKind.ThisKeyword && !insideFunction(node)) problem(node, `uses this outside any function or class: refused — at the top of a script it is the global object`);
+    if (node.kind === ts.SyntaxKind.ThisKeyword) {
+      const verdict = thisVerdict(node);
+      if (verdict !== null) problem(node, verdict);
+    }
+
+    // The property names that walk to the Function constructor, in every
+    // spelling: as a string anywhere, as a destructured binding, as a
+    // computed key — because a name passed as a value is still the name.
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && REFUSED_PROPERTIES.has(node.text)) {
+      problem(node, `the string "${node.text}" appears: a property name that walks to the Function constructor, refused in any position`);
+    }
+    if (ts.isBindingElement(node)) {
+      const names = [node.name, node.propertyName].filter((n): n is ts.Identifier => !!n && ts.isIdentifier(n)).map((n) => n.text);
+      const bad = names.find((n) => REFUSED_PROPERTIES.has(n) || REFUSED_NAMES.has(n));
+      if (bad !== undefined) problem(node, `destructures ${bad}: a binding named for a door around the client, refused`);
+      if (node.propertyName && ts.isComputedPropertyName(node.propertyName)) problem(node, `destructures a computed key: undecidable, so refused`);
+    }
+    if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "Object" && REFUSED_OBJECT_METHODS.has(node.name.text)) {
+      problem(node, `reaches Object.${node.name.text}: a reflective method that walks to a prototype or a descriptor, refused`);
+    }
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && TIMERS.has(node.expression.text)) {
+      const [fn] = node.arguments;
+      if (!fn || !(ts.isArrowFunction(fn) || ts.isFunctionExpression(fn))) {
+        problem(node, `calls ${node.expression.text}() with something other than a function literal: a string is code, and a name is undecidable, so refused`);
+      }
+    }
 
     // Property names that walk to the Function constructor, on any receiver, by any spelling.
     if (ts.isPropertyAccessExpression(node) && REFUSED_PROPERTIES.has(node.name.text)) {
@@ -339,9 +392,12 @@ export function scanSource(sf: ts.SourceFile, checker: ts.TypeChecker, spec: Too
       problem(node, `reaches .${node.name.text}: a door around the client, refused on every receiver`);
     }
     if (ts.isElementAccessExpression(node)) {
-      const key = literal(node.argumentExpression);
-      if (key !== null && (REFUSED_PROPERTIES.has(key) || REFUSED_NAMES.has(key))) {
-        problem(node, `reaches ["${key}"]: refused on every receiver, by bracket as by dot`);
+      const arg = node.argumentExpression;
+      const key = literal(arg);
+      if (key !== null) {
+        if (REFUSED_PROPERTIES.has(key) || REFUSED_NAMES.has(key)) problem(node, `reaches ["${key}"]: refused on every receiver, by bracket as by dot`);
+      } else if (!ts.isNumericLiteral(arg)) {
+        problem(node, `reaches a member by a computed key: undecidable — it can spell any name — so refused; use a literal key, for…of, .at(), or .map()`);
       }
     }
 

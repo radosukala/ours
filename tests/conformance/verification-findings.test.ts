@@ -425,7 +425,7 @@ describe("implementations — the re-verification's new doors", () => {
     const dir = await sourceTree({
       "index.ts": DECLARE + `export async function f() {
   const now = new Date(); const n = Math.max(1, 2); const s = JSON.stringify({ n }); console.log(s, now);
-  await new Promise((r) => setTimeout(r, 1)); const m = new Map<string, number>(); m.set("a", 1);
+  await new Promise<void>((r) => setTimeout(() => r(), 1)); const m = new Map<string, number>(); m.set("a", 1);
   const rows = await layer.read("machine", ["id", "name", "status"]);
   return rows.length + [...m.keys()].length + Number.parseInt("1", 10);
 }
@@ -435,5 +435,55 @@ describe("implementations — the re-verification's new doors", () => {
     const finding = result.findings.find((f) => f.rule === "S-CONTRACT-DECLARED");
     expect(finding?.outcome).toBe("PASS");
     expect(finding?.message).toContain("bound with no library");
+  });
+});
+
+describe("implementations — the third check's doors, and what must stay open", () => {
+  it("refuses the reflective methods of Object, and the property name as a string anywhere", async () => {
+    const why = await contractRefusal({
+      "index.ts": `export const F = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(function () {}), "constructor");\n`,
+    });
+    expect(why).toContain("reaches Object.getOwnPropertyDescriptor");
+    expect(why).toContain("reaches Object.getPrototypeOf");
+    expect(why).toContain('the string "constructor" appears');
+  });
+
+  it("refuses a computed key, because it can spell any name", async () => {
+    const why = await contractRefusal({
+      "index.ts": `const gp = "getPrototype" + "Of"; const ck = "con" + "structor";\nexport const F = (Object as any)[gp](async function () {})[ck];\nexport const G = (console as any)["log"][ck][ck];\n`,
+    });
+    expect(why).toContain("reaches a member by a computed key");
+  });
+
+  it("refuses a literal key hidden in an as-expression, and a destructured constructor", async () => {
+    const why = await contractRefusal({
+      "index.ts": `export const F = (Object as any).getPrototypeOf(function () {})["constructor" as any];\nconst { constructor } = function () {};\nexport const C = constructor;\nconst { constructor: D } = function () {};\nexport const E = D;\n`,
+    });
+    expect(why).toContain('the string "constructor" appears');
+    expect(why).toContain("destructures constructor");
+  });
+
+  it("refuses this in a plain function, and a timer given anything but a function literal", async () => {
+    const why = await contractRefusal({
+      "index.ts": `export function g() { return this; }\nconst code = "1"; setTimeout(code, 0);\n`,
+    });
+    expect(why).toContain("uses this in a plain function");
+    expect(why).toContain("calls setTimeout() with something other than a function literal");
+  });
+
+  it("accepts ordinary code the doors resemble: a class constructor, this in a method, new.target, a numeric index", async () => {
+    const dir = await sourceTree({
+      "index.ts": DECLARE + `export class Booking {
+  private rows: unknown[] = [];
+  constructor(private readonly id: string) { if (new.target !== Booking) throw new Error("subclassed"); }
+  first(): unknown { return this.rows[0]; }
+  async load(): Promise<void> { this.rows = await layer.read("booking", ["id", "machine", "member", "start", "end", "status"]); }
+}
+export const wait = () => new Promise<void>((r) => setTimeout(() => r(), 1));
+`,
+    });
+    const result = await check(FIXTURE, dir);
+    const finding = result.findings.find((f) => f.rule === "S-CONTRACT-DECLARED");
+    expect(finding?.outcome, finding?.message).toBe("PASS");
   });
 });
