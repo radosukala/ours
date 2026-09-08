@@ -1,7 +1,7 @@
 # OURS · feed pilot
 
 **Version:** 0.1  
-**Status:** ADOPTED · DIRECTION — adopted with `D-0003` on 4 September 2026  
+**Status:** SUPERSEDED — by `D-0006` on 8 September 2026; adopted with `D-0003` on 4 September 2026; §4–§6 carried forward by [`THE-LAYER.md`](./THE-LAYER.md) §12  
 **Prepared:** 2 September 2026  
 **Depends on:** [THESIS.md](./THESIS.md),
 [INSTITUTION-COMPILER.md](./INSTITUTION-COMPILER.md),

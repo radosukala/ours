@@ -1,0 +1,56 @@
+schema: ours.decision/v0.1
+decision_id: D-0007
+title: The opening conditions — rights before custody
+status: DRAFT
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0007.md
+
+proposal: P-0005
+prerequisite_decisions: [D-0006]
+
+outcome: >
+  Before any real person's data exists on the layer and before any
+  community's name is held: state the rights people receive at opening,
+  each with who holds it, how it is exercised and its class; who may remove
+  an operator, by what threshold, with the handover rehearsed before
+  opening; what happens if a holder refuses and what is lost meanwhile; the
+  residual powers of the founder, the operator and the holder, each
+  receipted when used; and choose a holding arrangement among evaluated
+  options, none of which is presented as user ownership. The answers marked
+  CONFIRM are the founder's and are not yet supplied.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+prohibits:
+  - any claim that the chosen holding arrangement is ownership, or that any right is held beyond its stated class
+  - holding any name, deploy key, or personal data before every CONFIRM fact is supplied and the pre-opening rehearsals are receipted
+  - naming a controller as verified fact without a legal record
+
+effective_from: 2026-09-08T00:00:00Z
+expires_at: 2026-12-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. One participant; the reviewer's point adopted rather than
+  disputed.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap, and as the
+    last row of the rights table.

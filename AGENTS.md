@@ -8,19 +8,26 @@ already falsified the project it is building.
 
 ## 1. What OURS is
 
-OURS is an institution compiler: infrastructure that turns legitimate human
-authority into bounded mandates, and those mandates into verifiable,
-reversible software.
+OURS is the enduring institution people belong to. Applications are
+replaceable services operating under its members' authority. The compiler
+connects their decisions to verified changes; the runtime holds the
+resulting permissions. (Adopted as direction under `D-0006`; the sentence
+is working material, not copy.)
+
+Its technical core is an institution compiler: infrastructure that turns
+legitimate human authority into bounded mandates, and those mandates into
+verifiable, reversible software.
 
 ```text
 AUTHORITY → MANDATE → SOFTWARE
 ```
 
 The institution is the product. Software is an output the institution can
-inspect, replace, reverse, or fork.
+inspect, replace, reverse, or fork — and, under the layer, an application
+never has users of its own.
 
 The complete direction is in [`foundation/`](./foundation/). Read
-`THESIS.md`, `INSTITUTION-COMPILER.md`, and `FIRST-PRODUCT.md` before making
+`THESIS.md`, `THE-LAYER.md`, and `INSTITUTION-COMPILER.md` before making
 design decisions.
 
 ## 2. Current authority status
@@ -152,7 +159,8 @@ was not. Both are required.
 
 ```text
 BRAND               OURS
-CANONICAL ADDRESS   oursorg.com
+CANONICAL ADDRESS   oursorg.com          the institution
+PRODUCTS            our.one              each community's tool at its own subdomain (D-0004)
 DESCRIPTOR          the institution compiler
 ```
 

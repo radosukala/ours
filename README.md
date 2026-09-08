@@ -1,13 +1,20 @@
 # OURS
 
-**The institution compiler.** `oursorg.com`
+**The enduring institution people belong to.** `oursorg.com` · communities'
+tools at `our.one`
+
+> OURS is the enduring institution people belong to. Applications are
+> replaceable services operating under its members' authority. The compiler
+> connects their decisions to verified changes; the runtime holds the
+> resulting permissions.
+
+That is the direction adopted under `D-0006` on 8 September 2026. It is a
+sentence about what OURS is for, not a description of what exists. What
+exists is below, truthfully.
 
 ```text
 AUTHORITY → MANDATE → SOFTWARE
 ```
-
-Legitimate human authority is the source. A precise, testable mandate is the
-language. Software is the compiled output.
 
 ## Status, truthfully
 
@@ -16,28 +23,55 @@ AUTHORITY               FOUNDER BOOTSTRAP
 MEMBER INSTITUTION      NOT YET FORMED
 MEMBER OWNERSHIP        NOT YET ISSUED
 LEGAL MEMBERSHIP        NOT YET ISSUED
-KERNEL                  0.1 — TESTED, NOT DEPLOYED
-PUBLIC SURFACE          NONE YET
+THE LAYER               ADOPTED AS DIRECTION — NOTHING BUILT
+THE GATE                authority checks TESTED · community checks NOT YET
+RUNTIME                 NONE
+KERNEL                  0.1 — TESTED
+AUTHORITY TRACE         served at oursorg.com — its release receipt is owed
+FIRST COMMUNITY         NOT CHOSEN
 ```
 
-Nobody has ratified anything. There are no members. Nothing here is
-member-owned, and the founder can remove every check in this repository
+Nobody has ratified anything. There are no members. No ownership has been
+issued to anyone, and the founder can remove every check in this repository
 without notice. Those labels change when the corresponding events actually
 happen — see
 [`authority/FOUNDING-AUTHORITY.md`](./authority/FOUNDING-AUTHORITY.md).
 
-## What is here
+## What a person keeps
 
-Kernel 0.1: a deterministic validator that answers one question about a
-proposed change —
+Under the layer, a person's identity, standing, data, and relationships —
+and a community's rules, records, money, and names — are held by the
+institution in trust, and an application is a replaceable tenant with a
+contract that says what it may reach. **None of this exists yet.** The
+table of what the layer holds, with a class beside every row, is
+[`foundation/THE-LAYER.md`](./foundation/THE-LAYER.md) §4; today every row
+reads *nobody — nothing exists*.
 
-> **Is this mandate authorized, by whom, and within what bounds?**
+## How an application is admitted
 
-— and, when the answer is no, names the article that refused and says why in
-a sentence a person can read.
+Through the gate, which is the compiler's job:
 
-It performs no network access and opens no database. That is what lets a
-stranger reproduce the answer without an account.
+- **the authority chain** — who decided, under what procedure, within what
+  scope, and whether a draft is pretending to be an authorisation. The
+  chain exists; the draft check is `M-0004`'s first job;
+- **conformance** — every article of a tool's specification maps to a named
+  test (`M-0006`);
+- **the data contract** — what a tool may reach and disclose, field by
+  field: statically under `M-0006`, at runtime under a later mandate;
+- **the pin** — an implementer cannot change the rules it is judged by
+  (`M-0006`).
+
+Passing the gate makes a builder eligible to *offer* a tool. The community
+whose data and rules it would touch decides its use.
+
+## How a community decides
+
+By the ring — proposal, deliberation, decision, mandate, build,
+verification, release, audit, observation, correction, exit, amendment — at
+the community's own scale, under its own charter, with standing and votes
+the gate counts. [`foundation/LIFECYCLE.md`](./foundation/LIFECYCLE.md)
+describes every station and how each is held today. OURS governs itself
+with the same ring, which is why this repository is mostly records.
 
 ## Check it yourself
 
@@ -46,11 +80,10 @@ pnpm install
 pnpm ours check M-0000
 ```
 
-You will see ten enforced articles pass, and **four articles reported as
-open** — things no machine can decide, listed rather than quietly counted as
-passing. There is deliberately no combined total. "Fourteen checks passed"
-would tell you the constitution was verified; what was verified is its
-decidable subset, and the open articles are the size of the gap.
+You will see the enforced articles pass and the open ones listed rather
+than counted as passing. There is deliberately no combined total: a single
+number would say the constitution was verified, when what was verified is
+the part of it a machine can decide.
 
 Then break it on purpose:
 
@@ -58,11 +91,8 @@ Then break it on purpose:
 pnpm test
 ```
 
-Twenty of those tests are refusals. Each asserts not only that an invalid
-chain was rejected, but that it was rejected for the *correct* reason — an
-agent trying to issue a decision, a mandate outliving its decision, a build
-mandate trying to deploy itself, a destructive change claiming it leaves
-nothing behind.
+Most of those tests are refusals. Each asserts not only that an invalid
+chain was rejected, but that it was rejected for the *correct* reason.
 
 ## Verify without trusting this repository
 
@@ -73,22 +103,25 @@ pnpm ours verify exit/bundle-M-0000.json
 
 The bundle embeds its sources and their digests. The verifier re-derives
 every hash from the bundle's own bytes and re-walks the chain, with no
-repository, no account, and no network. Copy it to an empty directory and it
-still verifies. If it ever needs the kernel to check itself, the bundle
-format is what should change.
+repository, no account, and no network.
 
 ## Layout
 
 ```text
-foundation/     why this exists — thesis, kernel design, first product
+foundation/     why this exists — thesis, the layer, the gate's design, the lifecycle
 authority/      who may decide anything at all, and what they may not claim
 constitution/   project law during bootstrap, every article tagged
+proposals/      what was asked for, the alternatives, and who argued what
 decisions/      what was decided, by whom, with the counter-case recorded
 mandates/       what an implementer was actually authorised to do
+envelopes/      one mandate, narrowed to one part, for one agent
 packages/       schemas · kernel · cli · verifier
 tests/          the denial suite comes first
 receipts/       what was built, under whose authority
+observations/   what happened afterwards — empty until something is observed
 exit/           exported proof bundles
+spec/           the service specification format — arrives with M-0006
+communities/    each community's own records, read like the institution's — M-0006
 ```
 
 ## Reading order
@@ -96,18 +129,21 @@ exit/           exported proof bundles
 1. [`AGENTS.md`](./AGENTS.md) — the rules any agent works under here
 2. [`foundation/THESIS.md`](./foundation/THESIS.md) — why this should exist,
    and what would falsify it
-3. [`constitution/CONSTITUTION-0.1.md`](./constitution/CONSTITUTION-0.1.md) —
+3. [`foundation/THE-LAYER.md`](./foundation/THE-LAYER.md) — what the
+   institution holds, what an application is, what replacement must
+   preserve
+4. [`constitution/CONSTITUTION-0.1.md`](./constitution/CONSTITUTION-0.1.md) —
    the articles, each tagged with how it is actually held
-4. [`mandates/M-0000.md`](./mandates/M-0000.md) — what built the kernel
+5. [`foundation/LIFECYCLE.md`](./foundation/LIFECYCLE.md) — the ring,
+   station by station
 
 ## What this is not
 
-Not a token, blockchain, or ownership scheme. Not a waitlist. Not a social
-network with feature polls. Not democracy applied to code. Not a claim that
-this project invented governance, policy-as-code, cooperatives, or AI coding
-— [`foundation/THESIS.md`](./foundation/THESIS.md) §12 names the prior art,
-including two shipping products that compile institutional policy today.
-
-The narrow claim is that those compile *management's* authority. This one is
-built to compile the authority of the people the software governs. That
-distinction is the whole of it, and it is not proven yet.
+Not a token, blockchain, or ownership scheme. Not an app store. Not a
+waitlist. Not a social network with feature polls. Not democracy applied to
+code. Not a claim that this project invented governance, policy-as-code,
+cooperatives, user-held data, or AI coding —
+[`foundation/THESIS.md`](./foundation/THESIS.md) §12 names the prior art.
+The narrow claim is that none of it makes standing, admission by the users'
+constitution, and holding in trust one object with the data layer. That
+claim is not proven yet.

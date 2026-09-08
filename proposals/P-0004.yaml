@@ -1,7 +1,8 @@
 schema: ours.proposal/v0.1
 proposal_id: P-0004
 title: From a shared need to a shared tool — OURS as the home for community software
-status: PROPOSED
+status: SUPERSEDED
+superseded_by: P-0005
 supersedes: P-0003
 
 requests:

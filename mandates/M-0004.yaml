@@ -1,0 +1,150 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0004
+title: Adoption as an event, the checks that hold it, cost as a column, and the receipt still owed
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0004
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-05T00:00:00Z
+  expires_at: 2026-12-31T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0004.md
+
+objective: >
+  Make adoption an event the kernel can see and refuse on: refuse a mandate
+  whose own status, its decision's, or the founding authority's is DRAFT
+  (CHECKED until the D-0004 reconciliation is committed, ENFORCED after);
+  refuse while any named prerequisite decision is missing or not ADOPTED;
+  end every check in one of two lines — valid as a draft, or authorised for
+  execution — never a bare AUTHORISED; add denial coverage for each; add
+  the cost fields of LIFECYCLE.md section 4 and back-fill earlier receipts
+  from provider records or mark ESTIMATED; list proposals/ and envelopes/ in
+  the README and add the our.one row to the asset map with D-0004's words;
+  write the M-0001-RELEASE receipt from verifiable facts, stating what could
+  not be verified.
+
+human_outcome: >
+  A reader who runs one command can tell whether a mandate is merely
+  well-formed or actually authorised to be acted on; a record acted on
+  while DRAFT can no longer pass unnoticed; and every change carries the
+  cost of the judgment, the verification and the code beside each other.
+
+adopted_constraints:
+  - No status of any record changes under this mandate; status flips are the
+    founder's, in D-0004's adopting commit.
+  - The adoption check is CHECKED until the reconciliation is committed and
+    ENFORCED after; the receipt records the commit at which it switched.
+  - No fact marked [CONFIRM] is resolved; the release receipt records what
+    can be verified and marks the rest.
+  - The one our.one row is the only text added to the founding authority,
+    and only with D-0004 section A's words.
+
+hypotheses:
+  - The six reconciled records validate under the ENFORCED check with no
+    change beyond their status fields.
+  - The served digest at oursorg.com matches a build from the deploying
+    commit.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - packages/schemas/**
+      - packages/kernel/**
+      - packages/cli/**
+      - packages/verifier/**
+      - tests/**
+      - receipts/**
+      - README.md
+      - authority/FOUNDING-AUTHORITY.md
+    deny:
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - apps/proof/src/**
+      - spec/**
+      - communities/**
+      - layer/**
+  external_systems:
+    - oursorg.com — read-only fetch of the served page, to hash it
+
+risk:
+  class: LOW
+  reversibility: REVERSIBLE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-EXACT-ARTIFACT
+    - R-ROLLBACK
+  security: [no-secret-exposure]
+
+acceptance:
+  tests:
+    - pnpm ours check M-0004 is authorised for execution once D-0004, M-0004
+      and the founding authority are ADOPTED, and valid as a draft before.
+    - An ADOPTED mandate under a DRAFT decision, a DRAFT mandate under an
+      ADOPTED decision, a DRAFT founding authority, a missing prerequisite
+      decision and a DRAFT prerequisite decision each refuse, asserting the
+      article and the message.
+    - Every mandate in mandates/ reports one of the two result lines and
+      never a bare AUTHORISED.
+    - M-0000 to M-0002 validate under the ENFORCED check after
+      reconciliation with no change beyond status fields.
+    - Cost fields are present on every receipt, each with a source or
+      ESTIMATED, none invented.
+    - The release receipt names the served digest, the commit, the
+      environment, the authority, the rollback target and the residue, or
+      states which could not be verified.
+    - pnpm typecheck and pnpm test pass; pnpm ours check M-0004 --changed
+      authorises the finished working tree.
+  evidence:
+    - test output naming each denial and its reason
+    - the M-0001-RELEASE release receipt
+    - a build receipt recording agent, model, scope touched, cost, and every failure
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - a check would require changing any record's status
+    - the served digest cannot be fetched, or fetching it would require more
+      than a read
+    - a cost figure would have to be invented
+    - the work requires a path outside the allowed scope
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Revert the kernel, CLI, verifier, schema and test changes; remove the
+    release receipt and the back-filled fields.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder-after-D-0004
+  enforced-switch-commit: founder
+  deploy: not-authorized

@@ -1,0 +1,83 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0005
+title: The layer is the product — what OURS holds, what an app is, and what replacement must preserve
+status: ADOPTED
+supersedes: P-0004
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0006
+  also_requests: D-0007
+
+human_source:
+  path: proposals/P-0005.md
+evidence:
+  - path: proposals/P-0004.evidence-colleague-review.md
+  - path: proposals/P-0005.evidence-colleague-review-2.md
+  - path: foundation/THE-LAYER.md
+  - path: proposals/P-0004.md
+    note: the deliberation log carrying the founder's first two reflections of 8 September 2026
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: colleague-reviewer
+    kind: unknown
+    role: reviewer
+    note: human or model not named in the record — CONFIRM
+
+affected_groups:
+  - founder
+  - the first community, to be named
+  - the holder, to be named
+  - builders and operators, future
+  - agents
+
+unresolved:
+  - the holder — form, accounts, agreement (D-0007)
+  - which community, and whether its door is a need or a demand to switch
+  - the name and descriptor for the layer
+  - whether the first tool is generated or adopted-and-bound
+  - moving the institution's own records under one root (decided in M-0004)
+
+cost:
+  proposer_hours: 5
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-08
+    actor: { id: founder, kind: human }
+    position: the samples still look like SaaS; the machine is missing something — demand in, constitution voted, ownership out of the box, AI builds from rules, audit, deployed
+  - date: 2026-09-08
+    actor: { id: claude, kind: agent }
+    position: round five — only the middle of the machine exists; six organs; build the ends onto the compiler (superseded the same day)
+  - date: 2026-09-08
+    actor: { id: founder, kind: human }
+    position: not yet as large as the ambition; demand, users, constitution is king; code has zero value; the network, data and ownership are the holy grail no app should be able to take; OURS as the layer that runs user-owned apps
+  - date: 2026-09-08
+    actor: { id: claude, kind: agent }
+    position: round six — the layer is the centre and the compiler its gate; no factory; a data contract per app; the swap and the refusal as the demo; pushed back on "no chance for others"
+  - date: 2026-09-08
+    actor: { id: colleague-reviewer, kind: unknown }
+    position: keep the centre; the holder requirement is replaceability with rights preserved, not centralisation; "cannot be taken" is too strong; the swap needs a durable service specification; admission is not a constituency; synthesis sentence
+  - date: 2026-09-08
+    actor: { id: founder, kind: human }
+    position: a central store of approved apps, users, auth and secured data in OURS's space, else the architecture is wrong; move forward; the shape is now GitHub-spec plus ownership plus rules plus audit of submitted apps; unsure whether the present process should be archived and restarted
+  - date: 2026-09-08
+    actor: { id: claude, kind: agent }
+    position: adopt the three corrections and the synthesis; central store as v0, replaceability as definition; reshape not restart; the holder as a separate gating decision; requests D-0006
+  - date: 2026-09-08
+    actor: { id: colleague-reviewer, kind: unknown }
+    position: second review of the drafts — acceptance rests on a check that cannot tell draft from adopted; the implementer can write the rules it is judged by; the data-protection promise exceeds its mechanisms; the single holder was prescribed not evaluated; prose and YAML disagree on M-0004 and the move touches loader and bundle paths; D-0007 must name rights, exercise, operator removal and holder refusal; two absolutes should become a hypothesis; separate supersession from the move and the whole build
+  - date: 2026-09-08
+    actor: { id: claude, kind: agent }
+    position: all adopted — THE-LAYER revised (hypothesis, adoption check, pin, runtime boundary, permitted disclosures, holder as one option, rights table); D-0006 bounded to the gate and the founding with the move deferred; M-0006 rebounded with prerequisites and the denial suite; M-0004 drafted; D-0007 drafted with CONFIRM answers; requests D-0006 and D-0007
+
+decision: D-0006
+pending: D-0007

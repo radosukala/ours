@@ -1,0 +1,73 @@
+schema: ours.decision/v0.1
+decision_id: D-0006
+title: The layer is the product; reshape the record, do not restart it
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0006.md
+
+proposal: P-0005
+
+# Prerequisites are DECLARED until M-0004 lands the check that reads them.
+prerequisite_decisions: [D-0004]
+
+outcome: >
+  Adopt foundation/THE-LAYER.md as direction: OURS is the enduring
+  institution people belong to, holding identity, standing, data,
+  relationships, law, records, money and names in trust; an application is
+  a replaceable implementation under a contract that never has users of its
+  own; the compiler is the gate. Supersede the feed pilot records with
+  nothing built. Reshape the record rather than restart it: keep the kernel,
+  the constitution and every record; add spec and communities under M-0006;
+  apply the records-only changes in the adopting commit; defer the move of
+  the institution's records to a separate migration decision; scale
+  procedure to decision class. Authorize M-0006 (BUILD, the gate for
+  community records, bounded) and M-0005 (OPERATE, the first founding,
+  gated on D-0007). Require D-0007 — the opening conditions, rights before
+  custody — before any name or personal data is held. The runtime, the
+  tenant and the swap are authorized by a later decision after M-0006's
+  receipt and D-0007. The demonstration is the replay of the first founding
+  ending in the swap, the refusal and a regeneration.
+
+authorizes:
+  mandate_classes: [BUILD, OPERATE]
+  mandate_ids: [M-0006, M-0005]
+
+prohibits:
+  - any claim that members exist, that anything is member-owned, that any protection is absolute, or that OURS holds anything for anyone today
+  - holding a name, a deploy key, or any personal data before D-0007 adopts the opening conditions
+  - the runtime, a tenant on it, or the swap — a later decision authorizes them
+  - starting M-0006 before M-0004's adoption check exists
+  - moving the institution's records under one root — a separate migration decision
+  - deployment of anything under BUILD authority
+  - third-party applications, a marketplace, a payment surface, a protocol specification, or a second community
+  - a general specification language
+  - changing the substance of any superseded record; status fields only
+  - adopting any candidate line as copy before a naming decision
+
+effective_from: 2026-09-08T00:00:00Z
+expires_at: 2026-12-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  The founder's doubt whether the present process — proposals, decisions,
+  mandates — is worth keeping is recorded in P-0005 and preserved here. It
+  is answered by section C of the decision and not dismissed; restart
+  remains available if the reshape fails its purpose.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

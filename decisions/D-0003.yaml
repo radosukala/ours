@@ -1,7 +1,7 @@
 schema: ours.decision/v0.1
 decision_id: D-0003
 title: Charter the feed pilot and build it through the machine
-status: ADOPTED
+status: SUPERSEDED
 class: CHARTER
 
 authority:

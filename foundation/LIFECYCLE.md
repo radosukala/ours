@@ -285,7 +285,10 @@ settings page is the same idea at the scale of one option.
 
 ## 7. Rules that follow — proposed
 
-1. No decision without a proposal, from `D-0004` on.
+1. No `CONSTITUTIONAL` or `CHARTER` decision without a proposal, from `D-0004`
+   on — as amended by `D-0006`: `POLICY` and `PRODUCT_MANDATE` decisions carry
+   their deliberation inside the decision; `OPERATIONAL` work runs under a
+   standing mandate and produces receipts only.
 2. Adoption is an event: a status flip committed by the adopting
    authority. The kernel reports (`CHECKED`) and, once the older records
    are reconciled, refuses (`ENFORCED`) a mandate whose decision is

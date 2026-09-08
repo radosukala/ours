@@ -26,6 +26,13 @@ AUTHORITY → MANDATE → SOFTWARE
 The institution is the product. Software is an output the institution can
 inspect, replace, reverse, or fork.
 
+> **OURS is a layer that belongs to the people in it. Applications are open
+> source and replaceable; the people, their data, and their rules are not.**
+
+Added under `D-0006` on 8 September 2026 as working material beside the
+sentence above — a candidate in the §15 register, not adopted copy. The
+direction it names is [THE-LAYER.md](./THE-LAYER.md).
+
 ## 2. The problem is upstream of code
 
 The familiar software-company sequence is:
@@ -326,7 +333,7 @@ purpose-compatible capital. The appropriate mix belongs to each Product Cell.
 The test is not whether OURS avoids revenue. It is whether the payer, objective,
 authority, and beneficiary can be stated without contradiction.
 
-## 11. Defensibility in a forkable system
+## 11. Defensibility, and the definition of the product
 
 Code cannot be the primary moat if code can be generated and forked.
 
@@ -343,6 +350,14 @@ OURS compounds a different set of assets:
 
 Forkability is not the absence of defensibility. It disciplines the canonical
 institution to remain worth choosing.
+
+Under `D-0006` (8 September 2026) the assets this section lists are no
+longer only what defends OURS; they are what OURS *holds* — identity,
+standing, data, relationships, law, records, money, and names, in trust for
+the people in it — and an application is a replaceable tenant on that
+ground, with a contract for what it may reach. [THE-LAYER.md](./THE-LAYER.md)
+is the direction; the running instance is preferred for exactly as long as
+it deserves to be.
 
 ## 12. Prior art and the honest novelty claim
 
@@ -364,6 +379,21 @@ Important pieces already exist:
 - Emerging systems such as [Senordo](https://senordo.com/) and the
   [DAP Compiler](https://dap.solutions/) use compiler language for governed
   enterprise systems and executable institutional policy.
+- [Solid](https://solidproject.org/) — personal data pods with
+  application-scoped access.
+- The [AT Protocol](https://atproto.com/)'s personal data servers and
+  portable identity.
+- [Matrix](https://matrix.org/) and [Nostr](https://nostr.com/) — open
+  protocols in which the network, not one operator, carries the graph.
+- [Open Collective](https://opencollective.com/) — fiscal hosting for
+  groups without a legal entity of their own.
+- GitHub's [spec-kit](https://github.com/github/spec-kit) — specification-
+  driven development, in which the specification is the primary artifact
+  and code its expression.
+
+*The five entries above were added under `D-0006` on 8 September 2026.
+Confirmer of the links and of each one-line description: `[CONFIRM —
+founder]`. Until confirmed, they are the agent's reading.*
 
 OURS therefore must not claim to have invented governance, policy engines,
 open source, cooperatives, software receipts, or AI coding.
@@ -377,6 +407,11 @@ The novelty hypothesis is narrower and stronger:
 
 This remains a competitive-research hypothesis, not a fact proven by a finite
 search.
+
+Beside the data-layer prior art, the same kind of hypothesis, under
+`D-0006`: none of those systems makes *standing* (who decides), *admission
+by the users' constitution*, and *holding in trust* one object with the
+data layer.
 
 ## 13. What OURS is not
 

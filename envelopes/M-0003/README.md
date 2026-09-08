@@ -1,3 +1,5 @@
+**Status:** SUPERSEDED — with `M-0003`, by `D-0006` on 8 September 2026. Retained as the record of the six-part envelope pattern; nothing was run under it.
+
 # Envelopes for M-0003
 
 An envelope is what an implementation agent receives: the mandate, narrowed

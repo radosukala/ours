@@ -1,7 +1,8 @@
 # OURS · from a shared need to a shared tool
 
 **Version:** 0.1  
-**Status:** DRAFT · proposed for adoption under `D-0006` by
+**Status:** SUPERSEDED as direction — by `D-0006` on 8 September 2026; §3–§5 and
+§9–§11 carried forward by [`THE-LAYER.md`](./THE-LAYER.md) §12; proposed by
 [`P-0004`](../proposals/P-0004.md)  
 **Prepared:** 7 September 2026  
 **Depends on:** [THESIS.md](./THESIS.md) §8 and §14,

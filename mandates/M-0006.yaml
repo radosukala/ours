@@ -1,0 +1,206 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0006
+title: Build the gate for community records
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0006
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-08T00:00:00Z
+  expires_at: 2026-12-31T00:00:00Z
+  # DECLARED until M-0004 lands the check that reads this field; then
+  # ENFORCED — the kernel refuses while any named decision is not ADOPTED.
+  prerequisite_decisions: [D-0004, D-0006]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0006.md
+
+objective: >
+  Build the gate for community records: the service specification format
+  ours.tool/v0.1 with contract, charter, standing, vote and pin record types
+  and a human-readable spec/SPEC.md; the kernel's ability to read a
+  community's root exactly as the institution's; a procedure check (vote
+  met the charter's threshold; actors held standing), a conformance mapping
+  (any article without a named test fails), a static contract check (an
+  implementation reaching for an undeclared data class or disclosure is
+  refused) and a pin check (a specification drifted from its approved
+  digests, or a contract widened or a transition requirement weakened
+  without an amending decision, is refused); CLI reporting with no combined
+  total; a fictional community's full specification drafted for founder
+  approval and pinned on approval; and a denial suite asserting every
+  refusal by article and message. No runtime; nothing runs.
+
+human_outcome: >
+  A founder — and later a community — can hand a builder a pinned
+  specification and know that the gate, not the builder's good conduct,
+  decides whether the implementation may run: an implementation that
+  reaches beyond its contract, changes the rules it is judged by, or runs
+  under a draft authority is refused, with the article named, in a
+  sentence a person can read.
+
+adopted_constraints:
+  - A community's specification, charter, standing count, contracts and
+    decisions are repository records under communities/<cell>/; this
+    mandate may draft the fixture's; the later implementation mandate is
+    denied communities/** and spec/** and reads the pin.
+  - On founder approval the fixture's specification, charter and contracts
+    are pinned by digest in communities/dilna-fixture/PIN.yaml; a change to
+    a pinned file without a decision naming the amendment is a refusal.
+  - The kernel treats any root of records the same; no code path is special
+    to OURS's own records.
+  - Every check added has at least one test asserting the article named and
+    the message, not merely that authorization failed.
+  - The static contract check enumerates the layer client's calls and their
+    declared classes; it needs no general program analysis, and stops if it
+    would.
+  - Nothing runs, nothing is deployed, no environment is named, no domain is
+    touched, no name is registered, no real person's data exists; the
+    fixture is fictional and labelled so everywhere.
+  - No fact marked [CONFIRM] is resolved; no controller or holder is named.
+  - ours.tool/v0.1 describes records, articles, options, contract, tests and
+    transition requirements; if it acquires control flow, expressions or a
+    type system, the work stops.
+  - The mandate may not begin before D-0004 is ADOPTED, M-0004's adoption
+    check exists, and D-0006 and this mandate are ADOPTED; until then the
+    kernel's AUTHORISED means well-formed and nothing more.
+
+hypotheses:
+  - A data contract can be checked statically for an agent-generated
+    TypeScript application whose only data access is the layer client.
+  - A pin of digests holds a specification read-only against an implementer
+    without a second repository.
+  - A fictional community's specification can be written in a day and
+    approved in an hour.
+  - The denial suite for community records needs no kernel concepts beyond
+    standing, vote, contract and pin.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - spec/**
+      - communities/**
+      - packages/schemas/**
+      - packages/kernel/**
+      - packages/cli/**
+      - packages/verifier/**
+      - tests/**
+      - receipts/builds/**
+      - receipts/conformance/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.json
+      - vitest.config.ts
+      - .gitignore
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - apps/**
+      - layer/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure]
+  privacy: [no-real-person-data-under-this-mandate]
+
+acceptance:
+  tests:
+    - pnpm ours check M-0006 reports authorised for execution under a kernel
+      that refuses a DRAFT record in the chain; if that check does not yet
+      exist, the receipt says the result was valid as a draft and the work
+      did not start.
+    - The kernel reads communities/dilna-fixture/ as a root and validates
+      its chain; every invalid chain in Part D refuses for the correct
+      reason, asserted by article and message.
+    - The static contract check refuses an undeclared data class, naming the
+      class and the article, and refuses an undeclared field disclosed to a
+      permitted origin.
+    - A change to a pinned file without an amending decision is refused; a
+      contract widened or a transition requirement weakened without one is
+      refused.
+    - Every article in the fixture's specification maps to a named test, and
+      an article with no test fails conformance.
+    - The CLI prints community findings in the same list as constitutional
+      ones, each with its class, and no combined total.
+    - The fixture is labelled fictional in every file and every surface the
+      CLI prints.
+    - pnpm typecheck and pnpm test pass; pnpm ours check M-0006 --changed
+      authorises the finished working tree.
+  evidence:
+    - conformance report mapping every fixture article and every
+      constitutional article to a check and its class
+    - build receipts per part recording agent, model, scope touched,
+      dependencies added with reasons, cost, and every failure — the first
+      line stating what the authority check reported
+    - the founder's approval of the fixture's specification, and the pin
+    - a proposed runtime mandate, written in the final receipt for founder
+      review
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - any prerequisite does not hold
+    - ours.tool/v0.1 begins to become a language
+    - the static contract check cannot be made deterministic for the
+      fixture's client calls
+    - a fixture value would have to be chosen without founder approval, or
+      a pinned file changed without a decision
+    - a required fact is marked [CONFIRM] or would name a controller or a
+      holder
+    - the work requires a path outside the allowed scope
+    - an acceptance test would require weakening a constitutional article
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Remove spec/ and communities/; revert the schema, kernel, CLI, verifier
+    and workspace changes. No record above this mandate is modified, and
+    nothing runs.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder-after-prerequisites
+  specification-and-fixture-and-pin: founder
+  runtime-mandate: founder-by-a-later-decision-after-D-0007
+  deploy: not-authorized

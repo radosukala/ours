@@ -1,7 +1,7 @@
 schema: ours.mandate/v0.1
 mandate_id: M-0003
 title: Build OURS Feed v0 — the governed surface
-status: ADOPTED
+status: SUPERSEDED
 class: BUILD
 
 authority:

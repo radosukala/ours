@@ -1,0 +1,151 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0005
+title: Assist the first community's founding, on the layer
+status: DRAFT
+class: OPERATE
+
+authority:
+  source_decision: D-0006
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-08T00:00:00Z
+  expires_at: 2026-12-31T00:00:00Z
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: first-community-CONFIRM
+  charter_version: null
+
+human_source:
+  path: mandates/M-0005.md
+
+objective: >
+  Assist one real community — where the founder is a member and not the
+  boss, ten to forty adults, with a recurring coordination need — through
+  the founding of a shared tool: describe the need and invite the affected
+  people; evaluate existing software, adopting one if it fits; agree a
+  short, readable founding arrangement through guided choices with
+  consequences shown; name a builder, an operator, a budget and one bounded
+  first outcome; make one real improvement together with dissent preserved;
+  rehearse replacing the operator. By hand wherever a hand suffices, never
+  by typing records that belong in the layer; the tool is delivered under
+  M-0006's layer once D-0007 adopts the holder.
+
+human_outcome: >
+  A group of people who share a recurring need say, unprompted, that they
+  use the tool, understand what it costs, know how to change it, and that
+  its future does not depend entirely on the person who built it — or the
+  record says which of those they could not say, and why.
+
+adopted_constraints:
+  - Personal data collected is name, contact, what the person needs from
+    the tool, and their deliberation positions; nothing else; consent at
+    invitation in writing naming these terms; retention to the end of the
+    founding plus thirty days; deletion on request within seven days,
+    receipted; any participant leaves with their data at any time.
+  - The controller is not named as verified fact without a legal record;
+    who holds the data is CONFIRM and is not inferred.
+  - Founder time six hours a week for eight weeks, recorded weekly; stop if
+    exceeded by half; no money spent except the founder's own; no subsidy
+    without a visible source.
+  - The community decides by its charter; the founder never decides alone
+    for the community.
+  - Coordination that produces little new code counts as success.
+  - The first invitation is not sent before D-0007 adopts the holder.
+  - No fact marked [CONFIRM] is resolved by inference.
+
+hypotheses:
+  - A real group decides a founding arrangement in about forty minutes of
+    guided choices.
+  - The group prefers adopting an existing tool over commissioning one when
+    the cost of each is shown.
+  - Someone besides the founder takes operational responsibility.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - communities/**
+      - observations/**
+      - receipts/operate/**
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - packages/**
+      - layer/**
+      - spec/**
+      - apps/**
+  external_systems:
+    - participant-data-store-CONFIRM
+
+risk:
+  class: MEDIUM
+  reversibility: REVERSIBLE
+  affected_groups: [the-first-community-participants]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  privacy: [consent-at-invitation, deletion-on-request, retention-stated, leave-with-your-data]
+
+acceptance:
+  tests:
+    - pnpm ours check M-0005 authorises before the first invitation.
+    - Every participant's consent is on record before their data is, naming
+      these terms.
+    - The founding arrangement exists as the community's charter record and
+      validates as a chain under the kernel's community root.
+    - One tradeoff is decided with a vote record whose tally the kernel
+      checks against the charter's threshold.
+    - Weekly cost is recorded and the stop rule applied if triggered.
+    - O-0001 exists and closes every hypothesis with one state.
+  evidence:
+    - the community's records under communities/<cell>/
+    - weekly receipts under receipts/operate/
+    - O-0001, the first observation record
+
+limits:
+  stop_conditions:
+    - the hour budget is exceeded by half
+    - a participant's data would have to be held under terms they did not
+      consent to
+    - the founder is in practice the boss of the community rather than a
+      member
+    - a fact marked [CONFIRM] would have to be inferred
+    - the first invitation would precede D-0007
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Delete every participant's data on request or at retention end; retain
+    the community's public records as deliberate projections with private
+    detail removed; close the mandate with O-0001 stating what was learned.
+  irreversible_residue: >
+    Introductions made, decisions people took part in, and anything a
+    participant already read cannot be unmade; no personal data persists
+    after deletion.
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder-after-CONFIRM-facts
+  first-invitation: founder-after-D-0007
+  community-decisions: the-community-by-its-charter

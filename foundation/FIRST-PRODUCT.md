@@ -198,6 +198,10 @@ reported as declaration-only rather than called a gate.
 
 ### 7.6 Agent adapter
 
+*Superseded by `D-0006` on 8 September 2026: any spec-driven pipeline
+under an OURS service specification serves this role, and OURS builds no
+adapter of its own — see `THE-LAYER.md` §5. The text below is retained.*
+
 A provider-neutral interface for giving the same task envelope to a coding
 agent and collecting structured output.
 
