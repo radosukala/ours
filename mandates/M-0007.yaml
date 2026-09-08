@@ -1,0 +1,187 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0007
+title: Build the v0 runtime, the fixture tenant on it, and rehearse the swap
+status: DRAFT
+class: BUILD
+
+authority:
+  source_decision: D-0008
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-08T00:00:00Z
+  expires_at: 2026-12-31T00:00:00Z
+  prerequisite_decisions: [D-0006, D-0007, D-0008]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0007.md
+
+objective: >
+  Build the v0 runtime of the layer in layer/ — identity by emailed link,
+  the standing register, one database scoped by person and community, the
+  client as a capability-scoped API, the disclosure boundary checking every
+  field against the permitted disclosures with an outbound allowlist, the
+  access log naming the permitting article, export as a verifier-accepted
+  bundle, deletion with its residue, each tenant's trace, bundle and
+  digest; build the fictional community's booking tool to the pinned
+  specification 0.1 through a spec-driven pipeline of the operator's
+  choice, with its seven named tests executable; build a second
+  implementation and rehearse the swap — admitted by the same gate,
+  transition requirements checked, a member's export before and after
+  verifying and matching, what broke recorded. Fictional data only;
+  nothing deployed.
+
+human_outcome: >
+  A reader watching the fixture sees a tool admitted, used and replaced
+  with the community's records unmoved; sees an application refused at the
+  boundary when it reaches for what it was not granted; and sees on every
+  surface that nobody in it exists.
+
+adopted_constraints:
+  - An application has no database, file system or sockets of its own; it
+    runs against the client API with a capability the runtime issues from
+    the pinned contract; a test fails the build if it reaches anything else.
+  - The disclosure API refuses an undeclared origin and an undeclared field
+    to a declared origin, and logs every permitted disclosure with its
+    fields and article.
+  - The static check of M-0006 at admission and the runtime at execution
+    hold the same contract; a difference is a failure.
+  - communities/** and spec/** are denied; the implementer reads the pin;
+    if the specification is wrong the work stops.
+  - The second implementation is admitted by the same gate against the
+    same pin; transition requirements are checked record by record; exports
+    before and after verify offline and match; what did not carry across is
+    in the receipt.
+  - Every person, booking and vote is the fixture's, labelled FICTIONAL on
+    every rendered surface; no real person signs in; no environment, domain
+    or name is touched.
+  - No fact marked [CONFIRM] is resolved; no controller or holder is named.
+  - No analytics, tracking, third-party script, remote font or advertising.
+
+hypotheses:
+  - A runtime capability plus an egress allowlist can be held on ordinary
+    hosting without a custom sandbox.
+  - A second implementation can replace the first with records intact within
+    one working day of agent time.
+  - The seven named tests can be made executable without changing the
+    specification.
+  - A member's export from the layer verifies with the unmodified offline
+    verifier.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - layer/**
+      - apps/dilna-fixture/**
+      - apps/dilna-fixture-2/**
+      - packages/**
+      - tests/**
+      - receipts/builds/**
+      - receipts/conformance/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.json
+      - vitest.config.ts
+      - .gitignore
+    deny:
+      - communities/**
+      - spec/**
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - apps/proof/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-EXACT-ARTIFACT
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, no-third-party-origin, scoped-capability, egress-allowlist]
+  privacy: [fictional-data-only, minimum-identity, export-and-deletion, no-private-identity-projection]
+  accessibility: [wcag-aa-target]
+
+acceptance:
+  tests:
+    - pnpm ours check M-0007 reports authorised for execution, every record
+      and every prerequisite decision adopted.
+    - The runtime capability refuses a read outside the contract and a write
+      to an undeclared class, tested at runtime.
+    - The disclosure API refuses an undeclared origin and an undeclared field
+      to a declared origin, tested at runtime.
+    - Every read, write and disclosure appears in the access log with its
+      permitting article.
+    - The seven T- tests of the specification pass against the tenant.
+    - The second implementation passes the gate; every record carries across
+      with its meaning; a member's export before and after verify offline
+      and match.
+    - Each tenant serves its trace, bundle and a digest equal to the verified
+      build.
+    - No third-party request; the prohibited-claim scan finds nothing; the
+      fixture label is on every surface.
+    - pnpm typecheck and pnpm test pass; pnpm ours check M-0007 --changed
+      authorises the finished working tree.
+  evidence:
+    - a conformance report by someone who did not build
+    - build receipts per part with agent, model, pipeline, scope, dependencies, cost and every failure
+    - the swap drill receipt
+    - a proposed release mandate in the final receipt, for founder review
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - any prerequisite does not hold
+    - confinement would require infrastructure the founder has not chosen
+    - a T- test cannot be made executable without changing the specification
+    - the swap loses a record's meaning
+    - any real person's data would be needed
+    - a required fact is marked [CONFIRM]
+    - the work requires a path outside the allowed scope
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Remove layer/ and the two applications; revert the package and workspace
+    changes. Nothing real was held.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder-after-D-0007-and-D-0008
+  pipeline-and-agent: founder
+  release-mandate: founder-by-a-later-decision
+  deploy: not-authorized

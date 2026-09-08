@@ -1,0 +1,45 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0006
+title: Reconcile the constitution's class lines with the kernel as built
+status: PROPOSED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0009
+
+human_source:
+  path: proposals/P-0006.md
+evidence:
+  - path: packages/kernel/src/rules.ts
+  - path: receipts/builds/2026-08-30-M-0001.md
+  - path: receipts/releases/2026-08-30-M-0001-RELEASE.md
+  - path: receipts/conformance/2026-09-08-M-0006.md
+
+proposed_by:
+  - id: claude
+    kind: agent
+    role: drafter
+    note: an agent may draft a proposal; the founder decides
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - readers of the constitution
+  - agents
+
+unresolved:
+  - whether R-EXACT-ARTIFACT's release-gate half reads DECLARED or stays ENFORCED with a note
+  - whether M-0008 runs before or after M-0007
+
+cost:
+  proposer_hours: 1
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-08
+    actor: { id: claude, kind: agent }
+    position: three class lines name kernel checks that do not exist and two omit checks that do; amend the five lines and add a test that catches the drift
+
+decision: null

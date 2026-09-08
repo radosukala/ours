@@ -1,0 +1,111 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0008
+title: A class line cannot name a check that does not exist
+status: DRAFT
+class: BUILD
+
+authority:
+  source_decision: D-0009
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-08T00:00:00Z
+  expires_at: 2026-12-31T00:00:00Z
+  prerequisite_decisions: [D-0009]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0008.md
+
+objective: >
+  Add a conformance test that parses every article of the constitution and
+  fails when a class line names a kernel rule that no finding carries for
+  the founding chain; add an `ours articles` report printing each article's
+  declared class beside the kernel's actual class and outcome on the last
+  check, for the institution's root or a community's, with no combined
+  total; and have apps/proof import the kernel's article parser instead of
+  its own copy.
+
+human_outcome: >
+  A reader who doubts a class line can run one command and see, article by
+  article, what the constitution says holds and what the kernel actually
+  held — and the next divergence fails the suite before a person has to
+  find it.
+
+adopted_constraints:
+  - The test reads the constitution and may not edit it.
+  - No combined total anywhere in the report.
+
+hypotheses:
+  - Every class line's rule references can be parsed by the same regular
+    grammar the kernel already uses for rule ids.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - packages/kernel/**
+      - packages/cli/**
+      - apps/proof/src/**
+      - tests/**
+      - receipts/builds/**
+    deny:
+      - constitution/**
+      - authority/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - spec/**
+      - communities/**
+      - layer/**
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: ADDITIVE
+  affected_groups: []
+
+requirements:
+  constitutional_rules: [R-HUMAN-AUTHORITY, R-TYPED-MANDATE, R-SCOPE, R-TRUTHFUL-STATUS, R-ROLLBACK]
+
+acceptance:
+  tests:
+    - The class-line test passes against the constitution as amended by
+      D-0009 and fails, shown by a variant, when a class line names a rule
+      no finding carries.
+    - pnpm ours articles prints every article with its declared and actual
+      class for the institution's root and for communities/dilna-fixture.
+    - apps/proof builds with the kernel's parser and its page tests pass
+      unchanged.
+    - pnpm typecheck and pnpm test pass; pnpm ours check M-0008 --changed
+      authorises the finished working tree.
+  evidence:
+    - test output
+    - a build receipt recording agent, model, scope touched, cost, and every failure
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - the test would require changing the constitution's text
+    - the work requires a path outside the allowed scope
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: Revert.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder-after-D-0009
+  deploy: not-authorized
