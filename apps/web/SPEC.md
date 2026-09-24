@@ -1144,3 +1144,143 @@ DATA_CONTROLLER_EMAIL=
 CRON_SECRET=
 OURS_VERSION=             # shown in the footer; set by the release; blank = "development build"
 ```
+
+## 17. Decisions after the independent verification (24 September 2026)
+
+Four verifiers who did not build the application attacked it. Each proved
+defects with a failing test in `tests/verify-*.test.ts`. The architect
+decides as follows. Where a decision changes an earlier section, this
+section governs.
+
+**Identity and joining**
+
+1. **A join link for an existing account asks before it connects.** This
+   amends §8 "Join" step 2. Opening such a link signs the person in and
+   creates nothing. They are shown *"Add <Name> (@handle) as a friend?"*
+   with **Add** and **Not now**. Only **Add** applies the invite. The invite
+   id travels in a signed, short-lived (15 minutes) cookie `ours_invite`,
+   read by `/join/confirm`. *Why:* anyone holding an invite could type a
+   member's address and make the inviter their friend in one click.
+2. **Blocks silence join mail.** `requestJoin` sends nothing, and gives the
+   same answer, when the address belongs to an account with a block either
+   way with the inviter. The join email names the inviter as *Name
+   (@handle)*.
+3. **The client address comes from a header each deployment names.**
+   - The header is named by `CLIENT_IP_HEADER` (for example
+     `x-vercel-forwarded-for`). The first value is used.
+   - In development the default is `x-forwarded-for`.
+   - In production, a missing `CLIENT_IP_HEADER` switches sign-in requests
+     and join requests off (`CLOSED`). This is a missing decision; it is
+     never defaulted.
+   - There is a per-invite limit: `join:invite:<inviteId>`, 10 per day.
+   - `rate_events` gains an index on `created_at`.
+4. **Mail leaves after the response.**
+   - `requestSignIn` and `requestJoin` accept an optional `defer(task)`.
+     Server actions pass Next's `after`, so the request path does the same
+     work whether or not an account exists.
+   - Tests pass nothing, and the mail is sent inline.
+5. **A browser signed in as someone else is not switched silently.** If
+   `/auth` finds a live session for a different account, it consumes
+   nothing. It says *"You're signed in as @x. Sign out first, then open
+   the link again."*
+6. **Sign out everywhere** also marks that address's unused sign-in and join
+   links as used.
+7. **Lock order.** `deleteAccount` locks the account's invites before the
+   account, the same order a join takes, so the two cannot deadlock.
+8. **Cookie names.** In production the cookies are `__Host-ours_session`,
+   `__Host-ours_join` and `__Host-ours_invite`.
+9. **Usernames are unique, so trying one tells whether it is taken.** This
+   is accepted and cannot be closed. `/rules` says it plainly. Username
+   changes are limited to 5 per day (`handle:<accountId>`).
+
+**Connections and races**
+
+10. **A block serializes with every write between the same two people.**
+    - `pairLock(tx, a, b)` in `core/visibility.ts` takes
+      `pg_advisory_xact_lock` on the unordered pair.
+    - These take it inside their transaction, then re-check the block:
+      `block`, `unblock`, `useInviteAsExisting`, `sendFriendRequest`,
+      `acceptFriendRequest`, `follow` and `toggleLike` (author and liker).
+    - `follow` also locks the followee's account row (`for share`) and
+      re-checks `accepts_followers`. `setAcceptsFollowers` updates that
+      row before deleting follows.
+11. **One rule for showing a person.**
+    - `personShownTo(viewerId, accountIdColumn)` moves to
+      `core/visibility.ts`: the account is active and there is no block
+      either way.
+    - Every list of people that is not the viewer's own act uses it: likers,
+      notification actors, `used_by` on invites (list and export) and
+      `listMuted`.
+    - `countUnread` counts only what `listNotifications` shows.
+    - `mute` and `block` of a missing account succeed and write nothing,
+      exactly as for someone who blocked you.
+12. **`postPage` applies the visibility predicate itself.** No exported
+    function returns posts without it.
+13. **Notifications that were undone are removed:**
+    - `unfollow` removes the matching `new_follower` notification;
+    - cancelling or declining a friend request removes its `friend_request`
+      notification.
+
+    Follows are limited to 100 per day (`follow:<accountId>`). A sender can
+    see that a request is no longer pending, and `/rules` says so.
+
+**Safety**
+
+14. **A suspension is explained to the person.**
+    - `suspendAccount` sends the suspended person one email, kind `notice`,
+      with the statement of reasons and the controller's address.
+    - It is sent after the transaction commits.
+    - `mail_log` and `outbox` accept kind `notice`.
+
+**The public surface**
+
+15. **The claims scan:**
+    - normalizes whitespace and the common HTML entities before matching;
+    - scans `src/core/*.ts` (except `claims.ts`) and `src/web/*.ts` as well;
+    - adds the near forms: `\bco-own`, `well[- ]paid`, `owned by (its |our
+      |the )?(people|community|everyone)`, `community[- ]owned`.
+16. **Ledger evidence.** A `RECORDED` contribution or expense without
+    evidence is refused.
+17. **`/privacy`:**
+    - names no supervisory authority. It says *"the data protection
+      authority where you live"* until a decision records the controller's
+      jurisdiction;
+    - says rate-limit entries hold *"your account's id, or a scrambled code
+      made from your email or network address"*;
+    - lists the administrator (reads reported content whatever its
+      audience) and invite holders (see the inviter's name and handle) among
+      those who see data;
+    - derives the email-provider line from the configuration.
+18. **`/power` shows the configured controller.**
+    - The data-controller row shows the configured controller as *stated in
+      this server's configuration* whenever `DATA_CONTROLLER` is set, and
+      *not yet recorded* otherwise, so `/privacy` and `/power` never
+      disagree.
+    - *Moderation* becomes STATED: *no administrator exists until something
+      is deployed; the founder will be the only one*.
+    - *The code* becomes STATED: *Apache-2.0; public once this build is
+      pushed to the public repository*.
+19. **`/rules`:**
+    - *"Nobody can export your data or edit what you wrote. The author of a
+      post can delete replies to it, and an administrator can remove content
+      with a statement of reasons."*
+    - *"Every account except the founder's is invited by a person."*
+    - Under *Who decides today*: *"The founder can change or remove any of
+      these checks without notice; every change is a public commit."*
+    - It cites the tests that assert each part of a rule.
+20. **The running version is shown everywhere:**
+    - `runningVersion()` uses `OURS_VERSION`, then `VERCEL_GIT_COMMIT_SHA`
+      (first 7 characters), then *"development build"* in development or
+      *"unversioned build"* in production;
+    - public pages render per request;
+    - the version and the footer links are reachable on phones: the bottom
+      of `/settings` shows them, and so does not-found.
+
+**Verification stopping rule, declared before the re-check.**
+
+- One re-verification by fresh agents, with the same four lenses narrowed
+  to the changed code and every earlier `DEFECT` test.
+- Anything **critical or high** it finds is fixed and checked once more.
+- Anything lower is fixed where small, and otherwise recorded in the build
+  receipt.
+- There is no third round.
