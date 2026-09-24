@@ -7,6 +7,7 @@ import { getSettings } from "@/core/accounts";
 import { getDb } from "@/core/db";
 import { Button } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
+import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { ProfileForm } from "@/components/settings/ProfileForm";
 import { SettingsLinks } from "@/components/settings/SettingsLinks";
 import styles from "@/components/settings/settings.module.css";
@@ -144,6 +145,9 @@ export default async function SettingsPage() {
           ]}
         />
       </section>
+
+      {/* The version and the footer links, reachable on phones (SPEC §17 item 20). */}
+      <InAppSiteFooter />
     </>
   );
 }

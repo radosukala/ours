@@ -15,12 +15,29 @@ data is FICTIONAL, with `example.test` addresses, and mail goes to a local
 `outbox` table, never to a real address.
 
 **Status.** The core and the web application are IMPLEMENTED and TESTED
-locally: sign-in by link, invites and joining, friends and follows, blocks
-and mutes, posts, replies and likes, the feed with its end, notifications,
-reports and moderation, export and deletion, the weekly email, and the
-public pages (rules, privacy, costs, who controls what). An independent
-verification is recorded in `receipts/`. **Nothing is deployed**; release
-is a separate decision.
+locally. **Nothing is deployed**; release is a separate decision.
+
+What "tested" means here:
+
+- **The core** — sign-in by link, invites and joining, friends and follows,
+  blocks and mutes, posts, replies and likes, the feed with its end,
+  notifications, reports and moderation, export and deletion, the weekly
+  email, the ledger and the control map — is tested by calling its
+  functions against a real, throwaway Postgres, refusals first.
+- **The public pages** are tested by rendering their components to HTML
+  in the test process: `/costs`, `/privacy`, `/power` and `/rules` whole,
+  the footer and the not-found page. The landing page's words are compared
+  with D-0011's working copy in its source. The claims scan reads the files
+  SPEC §12 and §17 name.
+- **Some server actions and route handlers** (signing in, joining, the
+  export, the health count, the weekly-email route) are called directly
+  in tests, with Next's request functions replaced by test doubles.
+- **Not tested here:** no test drives a browser or sends an HTTP request to
+  a running server, and no signed-in page is rendered in a test.
+
+Four independent verifiers who did not build it attacked it. Each finding
+is a test in `tests/verify-*.test.ts`, and [`SPEC.md`](./SPEC.md) §17
+records the decisions on them.
 
 ## Run it locally
 
@@ -53,7 +70,7 @@ pnpm --filter @ours/web test        # vitest against a real Postgres
 pnpm --filter @ours/web typecheck
 pnpm --filter @ours/web lint
 pnpm --filter @ours/web build
-pnpm --filter @ours/web claims      # the claims scan over every public string; exits 1 on a hit
+pnpm --filter @ours/web claims      # the claims scan over the files SPEC §12 and §17 name; exits 1 on a hit
 pnpm --filter @ours/web digest      # run the weekly email once, into the outbox
 ```
 

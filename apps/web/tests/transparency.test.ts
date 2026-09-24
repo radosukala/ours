@@ -11,14 +11,23 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as PublicLayout from "@/app/(public)/layout";
+import PowerPage from "@/app/(public)/power/page";
+import PrivacyPage from "@/app/(public)/privacy/page";
+import RulesPage from "@/app/(public)/rules/page";
+import * as RootNotFound from "@/app/not-found";
 import { ControlList } from "@/components/public/ControlList";
 import { FLOOR_RULES, NO_ALGORITHM_SENTENCE } from "@/components/public/floorRules";
+import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { LedgerView } from "@/components/public/LedgerView";
+import { ENFORCEMENT_WORDS } from "@/components/public/RuleList";
+import { STATUS_LINE } from "@/components/RightColumn";
 import { DEFAULT_INVITES } from "@/core/config";
 import { counts, health } from "@/core/health";
 import {
   controlStatusWords,
+  DATA_CONTROLLER_ASSET,
   ledgerStatusWords,
   ledgerSummary,
   loadControl,
@@ -26,6 +35,7 @@ import {
   parseControl,
   parseLedger,
   TransparencyError,
+  withConfiguredController,
 } from "@/core/transparency";
 import { at, befriend, db, makeAccount, plus, post, reset } from "./helpers";
 
@@ -33,6 +43,9 @@ const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const REPO_ROOT = join(WEB_ROOT, "..", "..");
 
 type RawEntry = Record<string, unknown>;
+
+/** A FICTIONAL receipt path: a RECORDED contribution or expense must name one. */
+const EVIDENCE = "receipts/FICTIONAL/L-0100-invoice.pdf";
 
 function entry(fields: RawEntry): RawEntry {
   return {
@@ -42,11 +55,24 @@ function entry(fields: RawEntry): RawEntry {
     date: "2026-09-24",
     description: "FICTIONAL entry",
     amount: 10,
-    evidence: null,
+    evidence: EVIDENCE,
     note: null,
     ...fields,
   };
 }
+
+/** Visible text of rendered HTML, roughly as a reader sees it. */
+function textOf(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x27;|&apos;|&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const FICTIONAL_CONTROLLER = { name: "FICTIONAL Controller", email: "controller@example.test" };
 
 function ledgerWith(entries: RawEntry[], overrides: RawEntry = {}) {
   return {
@@ -154,6 +180,39 @@ describe("ledger: what is never counted", () => {
     const html = renderToStaticMarkup(createElement(LedgerView, { summary }));
     expect(section(html, "received")).not.toContain("$300");
     expect(section(html, "credits")).toContain("credit from a provider, not money");
+  });
+
+  it("refuses a RECORDED contribution or expense that names no evidence (SPEC §17 item 16)", () => {
+    expect(
+      refusedWith(() => parseLedger(ledgerWith([entry({ kind: "contribution", evidence: null })]))),
+    ).toMatch(/a RECORDED contribution must name its evidence/);
+    expect(
+      refusedWith(() => parseLedger(ledgerWith([entry({ kind: "expense", evidence: null })]))),
+    ).toMatch(/a RECORDED expense must name its evidence/);
+    // Leaving the key out is the same as null.
+    const { evidence: _omitted, ...withoutKey } = entry({ kind: "expense" });
+    expect(refusedWith(() => parseLedger(ledgerWith([withoutKey])))).toMatch(/must name its evidence/);
+  });
+
+  it("still takes a commitment, an estimate or a credit with no evidence yet: none of them is counted as money", () => {
+    const summary = ledgerSummary(
+      parseLedger(
+        ledgerWith([
+          entry({ id: "L-0001", kind: "commitment", status: "RECORDED", evidence: null }),
+          entry({ id: "L-0002", kind: "commitment", status: "PROPOSED", evidence: null }),
+          entry({ id: "L-0003", kind: "estimate", status: "ESTIMATE", evidence: null }),
+          entry({ id: "L-0004", kind: "credit", status: "CREDIT", evidence: null }),
+        ]),
+      ),
+    );
+    expect(summary.received.total).toBe(0);
+    expect(summary.paid.total).toBe(0);
+  });
+
+  it("refuses evidence that is not a path in the repository", () => {
+    for (const evidence of ["https://example.test/invoice.pdf", "../outside.pdf", "/etc/passwd", "an invoice"]) {
+      expect(() => parseLedger(ledgerWith([entry({ evidence })])), evidence).toThrow(/is not a repository path/);
+    }
   });
 });
 
@@ -263,9 +322,9 @@ describe("the ledger file", () => {
 });
 
 describe("control", () => {
-  it("renders NOT_YET_RECORDED as 'not yet recorded'", () => {
+  it("renders NOT_YET_RECORDED as 'not yet recorded' (a server with no controller configured)", () => {
     expect(controlStatusWords("NOT_YET_RECORDED")).toBe("not yet recorded");
-    const rows = loadControl();
+    const rows = loadControl(null);
     const html = renderToStaticMarkup(createElement(ControlList, { rows }));
     for (const asset of ["Data controller", "If the founder stops"]) {
       const start = html.indexOf(asset);
@@ -281,20 +340,87 @@ describe("control", () => {
     expect(html).toContain("stated by the founder, not verified");
   });
 
-  it("holds the rows of SPEC §11, in order, with their statuses", () => {
-    const rows = loadControl();
+  it("holds the rows of SPEC §11, in order, with their statuses as SPEC §17 item 18 amends them", () => {
+    const rows = loadControl(null);
     expect(rows.map((r) => [r.asset, r.status])).toEqual([
       ["The rules of OURS", "RECORDED"],
       ["The domain our.one", "RECORDED"],
       ["The operator", "STATED"],
-      ["The code", "RECORDED"],
+      ["The code", "STATED"],
       ["Hosting, database, email sending", "RECORDED"],
       ["Releases", "RECORDED"],
-      ["Moderation", "RECORDED"],
+      ["Moderation", "STATED"],
       ["Money", "RECORDED"],
       ["Data controller", "NOT_YET_RECORDED"],
       ["If the founder stops", "NOT_YET_RECORDED"],
     ]);
+    const by = Object.fromEntries(rows.map((r) => [r.asset, r]));
+    expect(by["Moderation"]?.who).toBe(
+      "No administrator exists until something is deployed; the founder will be the only one.",
+    );
+    expect(by["The code"]?.who).toMatch(/^Apache-2\.0; public once this build is pushed to the public repository\./);
+    // Nothing in the file is STATED on the configuration's word.
+    expect(rows.every((r) => r.statedBy === undefined)).toBe(true);
+  });
+
+  it("shows the configured data controller as stated in this server's configuration, with no record", () => {
+    const rows = loadControl(FICTIONAL_CONTROLLER);
+    const row = rows.find((r) => r.asset === DATA_CONTROLLER_ASSET)!;
+    expect(row).toEqual({
+      asset: "Data controller",
+      who: "FICTIONAL Controller. Write to controller@example.test.",
+      status: "STATED",
+      evidence: null,
+      statedBy: "configuration",
+    });
+    // Its place in the list, and every other row, are the file's.
+    expect(rows.map((r) => r.asset)).toEqual(loadControl(null).map((r) => r.asset));
+    expect(rows.filter((r) => r !== row)).toEqual(loadControl(null).filter((r) => r.asset !== DATA_CONTROLLER_ASSET));
+    const html = renderToStaticMarkup(createElement(ControlList, { rows }));
+    const start = html.indexOf("Data controller");
+    const item = textOf(html.slice(start, html.indexOf("</li>", start)));
+    expect(item).toBe(
+      "Data controller stated in this server's configuration FICTIONAL Controller. Write to controller@example.test. No record yet.",
+    );
+    // The operator's statement is still the founder's.
+    expect(textOf(html)).toContain("stated by the founder, not verified");
+    expect(html.match(/data-status="NOT_YET_RECORDED"/g)).toHaveLength(1);
+  });
+
+  it("reads the controller from the configuration when called, not at import", () => {
+    try {
+      vi.stubEnv("DATA_CONTROLLER", "");
+      expect(loadControl().find((r) => r.asset === DATA_CONTROLLER_ASSET)?.status).toBe("NOT_YET_RECORDED");
+      vi.stubEnv("DATA_CONTROLLER", "FICTIONAL Other Controller");
+      vi.stubEnv("DATA_CONTROLLER_EMAIL", "other@example.test");
+      expect(loadControl().find((r) => r.asset === DATA_CONTROLLER_ASSET)?.who).toBe(
+        "FICTIONAL Other Controller. Write to other@example.test.",
+      );
+      // A name without an address names nobody, as for joining.
+      vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
+      expect(loadControl().find((r) => r.asset === DATA_CONTROLLER_ASSET)?.status).toBe("NOT_YET_RECORDED");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("refuses a control file with no data-controller row, two of them, or one that claims a controller itself", () => {
+    const file = parseControl({
+      rows: [
+        { asset: "FICTIONAL asset", who: "FICTIONAL", status: "STATED", evidence: null },
+        { asset: "Data controller", who: "Not yet named.", status: "NOT_YET_RECORDED", evidence: null },
+      ],
+    });
+    expect(withConfiguredController(file, null)).toEqual(file);
+    expect(() => withConfiguredController(file.slice(0, 1), null)).toThrow(/no "Data controller" row/);
+    expect(() => withConfiguredController([...file, file[1]!], FICTIONAL_CONTROLLER)).toThrow(/appears twice/);
+    const claimed = file.map((r) =>
+      r.asset === "Data controller"
+        ? { ...r, who: "FICTIONAL Somebody", status: "STATED" as const }
+        : r,
+    );
+    expect(() => withConfiguredController(claimed, null)).toThrow(TransparencyError);
+    expect(() => withConfiguredController(claimed, FICTIONAL_CONTROLLER)).toThrow(TransparencyError);
   });
 
   it("every evidence path is a file in the repository", () => {
@@ -372,6 +498,128 @@ describe("the rules page names its own checks honestly", () => {
     expect(text).toContain("Admins can read reported content through the queue only");
     expect(text).toMatch(/self-attested/);
     expect(rules.find((r) => r.id === "claims")?.cls).toBe("CHECKED");
+  });
+});
+
+describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("/rules shows who decides, that the founder can change or remove any check without notice, and every rule with its class and tests", () => {
+    const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
+    expect(text).toContain("Who decides today");
+    expect(text).toContain(
+      "The founder can change or remove any of these checks without notice; every change is a public commit.",
+    );
+    expect(text).toContain(STATUS_LINE);
+    for (const words of Object.values(ENFORCEMENT_WORDS)) expect(text).toContain(words);
+    for (const rule of FLOOR_RULES.flatMap((g) => g.rules)) {
+      expect(text, rule.id).toContain(rule.text);
+      if (rule.more) expect(text, rule.id).toContain(rule.more);
+      for (const file of rule.tests ?? []) expect(text, `${rule.id}: ${file}`).toContain(file);
+    }
+    // The sentences SPEC §17 items 9, 13 and 19 put on /rules.
+    for (const sentence of [
+      "Every account except the founder's is invited by a person.",
+      "Nobody can export your data or edit what you wrote. The author of a post can delete replies to it, and an administrator can remove content with a statement of reasons.",
+      "Usernames are unique, so trying to take one tells you whether it's in use — even by someone who blocked you.",
+      "the person who sent it isn't told, but they can see that it is no longer waiting.",
+    ]) {
+      expect(text).toContain(sentence);
+    }
+    expect(text).not.toContain("Nobody can export, delete or edit anyone else's data.");
+    expect(text).not.toContain("the only administrator.");
+  });
+
+  it("/rules cites the tests that assert replies and likes across a block, and that a muted person is not told", () => {
+    const tests = (id: string) => FLOOR_RULES.flatMap((g) => g.rules).find((r) => r.id === id)!.tests!;
+    expect(tests("blocking")).toEqual(expect.arrayContaining(["tests/posts.test.ts", "tests/likes.test.ts"]));
+    expect(tests("muting")).toContain("tests/connections.test.ts");
+  });
+
+  it("/power shows every row, the configured controller, the status line and this server's version", () => {
+    vi.stubEnv("OURS_VERSION", "v0-FICTIONAL-power");
+    const text = textOf(renderToStaticMarkup(createElement(PowerPage)));
+    for (const row of loadControl()) {
+      expect(text, row.asset).toContain(row.asset);
+      expect(text, row.asset).toContain(row.who);
+    }
+    expect(text).toContain(
+      "Data controller stated in this server's configuration FICTIONAL Controller. Write to controller@example.test.",
+    );
+    expect(text).not.toContain("Not yet named.");
+    expect(text).toContain(STATUS_LINE);
+    expect(text).toContain("This page changes when control changes. Every change is a public commit.");
+    expect(text).toContain("Running version: v0-FICTIONAL-power.");
+  });
+
+  it("/privacy and /power agree about the data controller, named or not", () => {
+    const privacy = () => textOf(renderToStaticMarkup(createElement(PrivacyPage)));
+    const power = () => textOf(renderToStaticMarkup(createElement(PowerPage)));
+
+    expect(privacy()).toContain(
+      "The data controller — the person or body answerable for your data — is FICTIONAL Controller , as stated in this server's configuration.",
+    );
+    expect(power()).toContain("Data controller stated in this server's configuration FICTIONAL Controller.");
+
+    vi.stubEnv("DATA_CONTROLLER", "");
+    vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
+    expect(privacy()).toContain("The data controller is not yet named");
+    expect(privacy()).not.toContain("FICTIONAL Controller");
+    expect(power()).toContain("Data controller not yet recorded Not yet named.");
+    expect(power()).not.toContain("FICTIONAL Controller");
+  });
+
+  it("/privacy names no supervisory authority, lists who else sees data, and takes the email provider from the configuration", () => {
+    const html = renderToStaticMarkup(createElement(PrivacyPage));
+    const text = textOf(html);
+    expect(text).toContain("You can complain to the data protection authority where you live.");
+    const start = html.indexOf('id="privacy-others"');
+    const others = textOf(html.slice(start, html.indexOf("</section>", start)));
+    for (const who of ["People on OURS", "The administrator", "Whoever holds an invite link", "Email provider", "Hosting"]) {
+      expect(others).toContain(who);
+    }
+    expect(others).toContain("whoever it was shared with");
+    expect(others).toContain("Sees the name and handle of the person who made it");
+    // The test configuration writes mail to the outbox.
+    expect(others).toContain("Email provider None. This server sends no email");
+    expect(others).not.toContain("Resend");
+    vi.stubEnv("MAIL_TRANSPORT", "resend");
+    const resend = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
+    expect(resend).toContain("Resend delivers the emails OURS sends");
+    expect(resend).not.toContain("This server sends no email");
+  });
+
+  it("every public page and the not-found page render per request, so the version is this server's", () => {
+    expect(PublicLayout.dynamic).toBe("force-dynamic");
+    expect(RootNotFound.dynamic).toBe("force-dynamic");
+  });
+
+  it("the not-found page and the in-app footer show the version and the five links", () => {
+    vi.stubEnv("OURS_VERSION", "v0-FICTIONAL-footer");
+    for (const html of [
+      renderToStaticMarkup(createElement(RootNotFound.default)),
+      renderToStaticMarkup(createElement(InAppSiteFooter)),
+    ]) {
+      const text = textOf(html);
+      expect(text).toContain("Version: v0-FICTIONAL-footer");
+      for (const link of ["Open code", "Costs", "Who controls what", "Rules", "Privacy"]) {
+        expect(text).toContain(link);
+      }
+      for (const href of ['href="/costs"', 'href="/power"', 'href="/rules"', 'href="/privacy"']) {
+        expect(html).toContain(href);
+      }
+    }
+  });
+
+  it("on phones, the bottom of /settings and the in-app not-found page carry the footer", () => {
+    for (const file of ["src/app/(app)/settings/page.tsx", "src/app/(app)/not-found.tsx"]) {
+      const source = readFileSync(join(WEB_ROOT, file), "utf8");
+      expect(source, file).toMatch(/import \{ InAppSiteFooter \} from "@\/components\/public\/InAppSiteFooter";/);
+      expect(source, file).toMatch(/<InAppSiteFooter \/>\s*<\/>\s*\);\s*\}\s*$/);
+    }
+    // It hides only where the right column shows the same footer.
+    const css = readFileSync(join(WEB_ROOT, "src/components/public/public.module.css"), "utf8");
+    expect(css).toMatch(/@media \(min-width: 1000px\) \{\s*\.inAppFooter \{\s*display: none;/);
   });
 });
 

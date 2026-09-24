@@ -20,7 +20,8 @@ export const FLOOR_RULES: RuleGroup[] = [
     rules: [
       {
         id: "invite-only",
-        text: "Accounts exist only by invitation. Every account is invited by a person.",
+        text: "Accounts exist only by invitation. Every account except the founder's is invited by a person.",
+        more: "The founder's account is the first one, so nobody could invite it.",
         cls: "ENFORCED",
         tests: ["tests/invites.test.ts"],
       },
@@ -51,6 +52,7 @@ export const FLOOR_RULES: RuleGroup[] = [
       {
         id: "friendship",
         text: "Friendship is mutual: both people agree.",
+        more: "If you decline a friend request, the person who sent it isn't told, but they can see that it is no longer waiting.",
         cls: "ENFORCED",
         tests: ["tests/connections.test.ts"],
       },
@@ -63,14 +65,21 @@ export const FLOOR_RULES: RuleGroup[] = [
       {
         id: "blocking",
         text: "A block works at once and both ways. It ends the friendship and any following, hides each of you from the other, and stops new requests, follows, replies and likes between you.",
+        more: "Usernames are unique, so trying to take one tells you whether it's in use — even by someone who blocked you. Changing your username is limited to 5 times a day.",
         cls: "ENFORCED",
-        tests: ["tests/blocks.test.ts", "tests/visibility.test.ts"],
+        tests: [
+          "tests/blocks.test.ts",
+          "tests/visibility.test.ts",
+          "tests/posts.test.ts",
+          "tests/likes.test.ts",
+          "tests/accounts.test.ts",
+        ],
       },
       {
         id: "muting",
         text: "Muting hides someone's posts from your feed and your weekly email. It's private, and they aren't told.",
         cls: "ENFORCED",
-        tests: ["tests/feed.test.ts", "tests/digest.test.ts"],
+        tests: ["tests/feed.test.ts", "tests/digest.test.ts", "tests/connections.test.ts"],
       },
     ],
   },
@@ -116,7 +125,7 @@ export const FLOOR_RULES: RuleGroup[] = [
       {
         id: "reports",
         text: "Anyone can report a post, a reply or a person. A person reads every report and decides what happens.",
-        more: "Today that person is the founder, the only administrator. If you think a decision is wrong, write to the address on the privacy page.",
+        more: "No administrator exists until OURS is deployed; then it will be the founder, the only one. If you think a decision is wrong, write to the data controller, whose address is on the privacy page once one is named.",
         cls: "INTERPRETED",
       },
       {
@@ -150,9 +159,14 @@ export const FLOOR_RULES: RuleGroup[] = [
       },
       {
         id: "others-data",
-        text: "Nobody can export, delete or edit anyone else's data.",
+        text: "Nobody can export your data or edit what you wrote. The author of a post can delete replies to it, and an administrator can remove content with a statement of reasons.",
         cls: "ENFORCED",
-        tests: ["tests/export.test.ts", "tests/accounts.test.ts"],
+        tests: [
+          "tests/export.test.ts",
+          "tests/accounts.test.ts",
+          "tests/posts.test.ts",
+          "tests/moderation.test.ts",
+        ],
       },
     ],
   },

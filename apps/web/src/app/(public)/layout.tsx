@@ -6,9 +6,16 @@
  *
  * It does not read the session, so these pages never depend on the
  * database being up.
+ *
+ * Every page under it renders per request (SPEC §17 item 20), so the
+ * footer's running version, the configured controller on /power and the
+ * mail provider on /privacy are this server's now, never the values the
+ * app happened to be built with.
  */
 import Link from "next/link";
 import { SiteFooter } from "@/components/RightColumn";
+
+export const dynamic = "force-dynamic";
 
 export default function PublicLayout({
   children,

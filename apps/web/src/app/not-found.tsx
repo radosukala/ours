@@ -1,8 +1,14 @@
 /**
  * Not found. Also what a person sees for anything they may not see
  * (SPEC §2 rule 3): a hidden post and a missing one look the same.
+ *
+ * It shows the footer, with the running version (SPEC §17 item 20), and
+ * renders per request so that version is this server's, not the build's.
  */
 import Link from "next/link";
+import { SiteFooter } from "@/components/RightColumn";
+
+export const dynamic = "force-dynamic";
 
 export default function NotFound() {
   return (
@@ -15,6 +21,9 @@ export default function NotFound() {
       <Link href="/" className="btn btn--primary">
         Go to OURS
       </Link>
+      <footer>
+        <SiteFooter />
+      </footer>
     </main>
   );
 }

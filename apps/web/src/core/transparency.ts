@@ -15,11 +15,19 @@
  * - a kind must match its status: a contribution counts as received and an
  *   expense as paid only when RECORDED; a pledge is a `commitment` until
  *   it is received; a figure is an `estimate` until it is invoiced;
- *   provider credits are `credit`s, never money.
+ *   provider credits are `credit`s, never money;
+ * - a RECORDED contribution or expense names its evidence (SPEC §17 item
+ *   16; D-0011 §C.2: "costs paid, with redacted evidence"): money counted
+ *   as received or paid on nobody's record is refused.
  *
  * A refused entry refuses the whole ledger: a page that silently dropped
  * one entry would show sums that are not the ledger's.
+ *
+ * The control map's data-controller row is the one row this server fills
+ * in from its configuration (SPEC §17 item 18), so /privacy and /power
+ * never disagree: see `loadControl`.
  */
+import { controller as configuredController } from "./config";
 import controlFile from "../../transparency/control.json";
 import ledgerFile from "../../transparency/ledger.json";
 
@@ -76,7 +84,10 @@ export type LedgerEntry = {
   period: string | null;
   /** Whether founder money is repayable, as stated. */
   repayable: string | null;
-  /** A repository path to the evidence, or null when there is none yet. */
+  /**
+   * A repository path to the evidence, or null when there is none yet.
+   * Never null for a RECORDED contribution or expense.
+   */
   evidence: string | null;
   note: string | null;
 };
@@ -114,6 +125,9 @@ function optStr(o: Obj, key: string, where: string): string | null {
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ENTRY_ID = /^L-\d{4}$/;
+
+/** A repository-relative path: no scheme, no leading slash, no "..". */
+const REPO_PATH = /^(?!\/)(?!.*\.\.)(?!.*:\/\/)[A-Za-z0-9_.\-/]+$/;
 
 function isLedgerStatus(value: unknown): value is LedgerStatus {
   return (LEDGER_STATUSES as readonly unknown[]).includes(value);
@@ -157,6 +171,19 @@ function parseEntry(raw: unknown, index: number): LedgerEntry {
   if (Math.abs(Math.round(amount * 100) - amount * 100) > 1e-6) {
     throw new TransparencyError(`${at}: amount has more than two decimal places.`);
   }
+  const evidence = optStr(raw, "evidence", at);
+  if (evidence !== null && !REPO_PATH.test(evidence)) {
+    throw new TransparencyError(`${at}: evidence "${evidence}" is not a repository path.`);
+  }
+  if (
+    raw.status === "RECORDED" &&
+    (raw.kind === "contribution" || raw.kind === "expense") &&
+    evidence === null
+  ) {
+    throw new TransparencyError(
+      `${at}: a RECORDED ${raw.kind} must name its evidence. It is not counted as ${raw.kind === "contribution" ? "received" : "paid"} without it.`,
+    );
+  }
   return {
     id,
     kind: raw.kind,
@@ -166,7 +193,7 @@ function parseEntry(raw: unknown, index: number): LedgerEntry {
     amount,
     period: optStr(raw, "period", at),
     repayable: optStr(raw, "repayable", at),
-    evidence: optStr(raw, "evidence", at),
+    evidence,
     note: optStr(raw, "note", at),
   };
 }
@@ -294,10 +321,12 @@ export type ControlRow = {
   status: ControlStatus;
   /** Repository paths (from the repository root), or null when there is none. */
   evidence: Evidence[] | null;
+  /**
+   * Where a STATED row's statement comes from: the founder (in the file),
+   * or this server's configuration (the data controller, SPEC §17 item 18).
+   */
+  statedBy?: "founder" | "configuration";
 };
-
-/** A repository-relative path: no scheme, no leading slash, no "..". */
-const REPO_PATH = /^(?!\/)(?!.*\.\.)(?!.*:\/\/)[A-Za-z0-9_.\-/]+$/;
 
 function parseEvidence(raw: unknown, at: string): Evidence[] | null {
   if (raw === null || raw === undefined) return null;
@@ -347,18 +376,73 @@ export function parseControl(raw: unknown): ControlRow[] {
   });
 }
 
-/** The rows in apps/web/transparency/control.json, validated. */
-export function loadControl(): ControlRow[] {
-  return parseControl(controlFile);
+/** The asset name of the row this server fills in from its configuration. */
+export const DATA_CONTROLLER_ASSET = "Data controller";
+
+/**
+ * The data-controller row as this server shows it (SPEC §17 item 18):
+ *
+ * - with `DATA_CONTROLLER` and `DATA_CONTROLLER_EMAIL` set, the configured
+ *   controller, STATED, as "stated in this server's configuration" — the
+ *   same name /privacy shows, and the same setting that opens joining;
+ * - otherwise the file's row, which says not yet recorded.
+ *
+ * No record in the repository names a controller, so the configured row
+ * carries no evidence. The file must have the row: a /power with nothing to
+ * say about the controller would be a silent gap.
+ */
+export function withConfiguredController(
+  rows: ControlRow[],
+  configured: { name: string; email: string } | null,
+): ControlRow[] {
+  const at = rows.findIndex((r) => r.asset === DATA_CONTROLLER_ASSET);
+  if (at === -1) {
+    throw new TransparencyError(`control: there is no "${DATA_CONTROLLER_ASSET}" row.`);
+  }
+  if (rows.findIndex((r, i) => i > at && r.asset === DATA_CONTROLLER_ASSET) !== -1) {
+    throw new TransparencyError(`control: "${DATA_CONTROLLER_ASSET}" appears twice.`);
+  }
+  const fileRow = rows[at]!;
+  if (fileRow.status !== "NOT_YET_RECORDED") {
+    throw new TransparencyError(
+      `control row "${DATA_CONTROLLER_ASSET}": the file says only that it is not yet recorded; a controller comes from this server's configuration.`,
+    );
+  }
+  if (!configured) return rows;
+  const shown: ControlRow = {
+    asset: DATA_CONTROLLER_ASSET,
+    who: `${configured.name}. Write to ${configured.email}.`,
+    status: "STATED",
+    evidence: null,
+    statedBy: "configuration",
+  };
+  return rows.map((r, i) => (i === at ? shown : r));
+}
+
+/**
+ * The rows /power shows: apps/web/transparency/control.json, validated,
+ * with the data-controller row from this server's configuration (see
+ * `withConfiguredController`). Pass `configured` to show another
+ * configuration; by default it is read now, not at import.
+ */
+export function loadControl(
+  configured: { name: string; email: string } | null = configuredController(),
+): ControlRow[] {
+  return withConfiguredController(parseControl(controlFile), configured);
 }
 
 /** A control status in words, for the page. */
-export function controlStatusWords(status: ControlStatus): string {
+export function controlStatusWords(
+  status: ControlStatus,
+  statedBy: ControlRow["statedBy"] = "founder",
+): string {
   switch (status) {
     case "RECORDED":
       return "recorded";
     case "STATED":
-      return "stated by the founder, not verified";
+      return statedBy === "configuration"
+        ? "stated in this server's configuration"
+        : "stated by the founder, not verified";
     case "NOT_YET_RECORDED":
       return "not yet recorded";
   }

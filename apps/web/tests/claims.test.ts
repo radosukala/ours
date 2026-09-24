@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALLOWLIST,
   formatHit,
+  normalizeForScan,
   PROHIBITED,
   publicTextFiles,
   scanRepoPublicText,
@@ -35,13 +36,20 @@ const SAMPLES: Record<string, string[]> = {
   "user[- ]owned": ["A user-owned network.", "user owned"],
   "owned by (?:its |our |the )?users": ["Owned by its users.", "owned by users", "owned by the users"],
   "co-owner": ["Become a co-owner.", "co-owners"],
+  "\\bco-own": ["The people using it co-own OURS.", "co-owned by everyone", "She co-owns it."],
+  "\\bowned by (?:its |our |the )?(?:people|community|everyone)": [
+    "OURS is owned by the people using it.",
+    "owned by its community",
+    "owned by everyone",
+  ],
+  "community[- ]owned": ["A community-owned home.", "community owned"],
   "\\byou own\\b": ["The network you own."],
   "\\bwe own\\b": ["Something we own together."],
   "(?<!\\bat )\\bstakes?\\b": ["Take a stake in OURS.", "Hold stakes in OURS."],
   "\\binvest(?:s|ed|ing|ments?|ors?)?\\b": ["Invest in OURS.", "an investment", "investors", "invested"],
   "\\bequity\\b": ["Get equity."],
   "\\bdividend": ["Dividends for everyone.", "a dividend"],
-  "well paid": ["Moderators are well paid."],
+  "well[- ]paid": ["Moderators are well paid.", "well-paid moderators"],
   "tax[- ]deductible": [
     "Contributions are tax-deductible.",
     "It is tax deductible.",
@@ -179,6 +187,83 @@ describe("denials pass only where the scan says why", () => {
   });
 });
 
+describe("the text is read as a reader sees it (SPEC §17 item 15)", () => {
+  it("catches a claim a formatter wrapped across lines, and reports the line where it starts", () => {
+    const source = [
+      "export default function Page() {", // 1
+      "  return (", // 2
+      "    <p>", // 3
+      "      OURS is a home that is not for", // 4
+      "      sale, and contributions are tax", // 5
+      "      deductible.", // 6
+      "    </p>", // 7
+      "  );", // 8
+      "}", // 9
+    ].join("\n");
+    const hits = scanText(source, "src/app/x.tsx");
+    expect(hits.map((h) => [h.line, h.match])).toEqual([
+      [4, "not for sale"],
+      [5, "tax deductible"],
+    ]);
+    expect(formatHit(hits[0]!)).toMatch(/^src\/app\/x\.tsx:4: "not for sale"/);
+  });
+
+  it("reads HTML entities and JSX's {\" \"} as the characters and spaces they render", () => {
+    for (const claim of [
+      "OURS is not&nbsp;for&#160;sale.",
+      "OURS is not&#xA0;for sale.",
+      "OURS is not for{\" \"}\n        sale.",
+      "OURS is not for{' '}sale.",
+      "A user&#8209;owned network.",
+      "A user&hyphen;owned network.",
+      "Moderators are well&nbsp;paid.",
+      "Contributions are tax&#45;deductible.",
+      "It is tamper\u2011proof.",
+      "Become a co\u00ad-owner.",
+    ]) {
+      expect(scanText(claim, "src/app/(public)/page.tsx").length, claim).toBeGreaterThan(0);
+    }
+  });
+
+  it("still lets a denial through when its words are wrapped or written as entities", () => {
+    for (const denial of [
+      "They won&apos;t be\n      tax-deductible unless the recipient qualifies.",
+      "They won&rsquo;t be tax-deductible.",
+      "This is not\n  tax deductible.",
+    ]) {
+      expect(scanText(denial), denial).toEqual([]);
+    }
+  });
+
+  it("does not decode twice or invent entities", () => {
+    // "&amp;nbsp;" renders as the text "&nbsp;", not as a space.
+    expect(normalizeForScan("not for&amp;nbsp;sale").text).toBe("not for&nbsp;sale");
+    expect(scanText("not for&amp;nbsp;sale")).toEqual([]);
+    // An unknown name is left as written.
+    expect(normalizeForScan("a &notanentity; b").text).toBe("a &notanentity; b");
+  });
+
+  it("maps every character of the normalized text back to where it came from", () => {
+    const raw = "a&nbsp;b\n\n   c{\" \"}d";
+    const { text, origin } = normalizeForScan(raw);
+    expect(text).toBe("a b c d");
+    expect(origin).toHaveLength(text.length);
+    expect(origin.map((i) => raw[i])).toEqual(["a", "&", "b", "\n", "c", "{", "d"]);
+  });
+
+  it("an allowlisted sentence wrapped across lines still passes in its file, and only there", () => {
+    const file = "src/components/public/floorRules.ts";
+    const wrapped = "No algorithm\n      decides the order.";
+    expect(scanText(wrapped, file)).toEqual([]);
+    expect(scanText(wrapped, "src/app/(public)/page.tsx").length).toBe(1);
+  });
+
+  it("reports a claim once where two patterns match at the same place", () => {
+    expect(scanText("Become a co-owner.").map((h) => h.match)).toEqual(["co-owner"]);
+    expect(scanText("They co-own it.").map((h) => h.match)).toEqual(["co-own"]);
+  });
+});
+
 describe("the scan over the real files", () => {
   it("reads every file SPEC §12 names", () => {
     const files = publicTextFiles(WEB_ROOT);
@@ -198,6 +283,44 @@ describe("the scan over the real files", () => {
       expect(files).toContain(expected);
     }
     expect(files.every((f) => /\.(ts|tsx|json)$/.test(f))).toBe(true);
+  });
+
+  it("reads every file in src/core except claims.ts, and every file in src/web (SPEC §17 item 15)", () => {
+    const files = new Set(publicTextFiles(WEB_ROOT));
+    const core = readdirSync(join(WEB_ROOT, "src/core")).filter((f) => f.endsWith(".ts"));
+    const web = readdirSync(join(WEB_ROOT, "src/web")).filter((f) => f.endsWith(".ts"));
+    expect(core.length).toBeGreaterThan(15);
+    expect(web.length).toBeGreaterThan(2);
+    for (const f of core) {
+      if (f === "claims.ts") expect(files.has("src/core/claims.ts")).toBe(false);
+      else expect(files.has(`src/core/${f}`), f).toBe(true);
+    }
+    for (const f of web) expect(files.has(`src/web/${f}`), f).toBe(true);
+  });
+
+  it("finds a claim in a core error message or in src/web", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ours-claims-"));
+    try {
+      for (const d of ["src/app", "src/components", "src/core", "src/web", "transparency"]) {
+        mkdirSync(join(dir, d), { recursive: true });
+      }
+      writeFileSync(join(dir, "src/core/mail-templates.ts"), "export {};");
+      writeFileSync(
+        join(dir, "src/core/posts.ts"),
+        'throw invalid(\n  "Posting is limited. Invest in OURS\n   to post more.",\n);\n',
+      );
+      writeFileSync(join(dir, "src/web/actions.ts"), 'const GENERIC_ERROR = "A FICTIONAL well-paid team.";\n');
+      // claims.ts holds the patterns themselves, so it is not read.
+      writeFileSync(join(dir, "src/core/claims.ts"), 'const p = /not for sale/i;\n');
+      const { files, hits } = scanRepoPublicText(dir);
+      expect(files).toEqual(["src/core/mail-templates.ts", "src/core/posts.ts", "src/web/actions.ts"]);
+      expect(hits.map((h) => [h.file, h.line, h.match])).toEqual([
+        ["src/core/posts.ts", 2, "Invest"],
+        ["src/web/actions.ts", 1, "well-paid"],
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("finds no prohibited claim in any public string", () => {

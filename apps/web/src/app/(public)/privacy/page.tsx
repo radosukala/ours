@@ -1,11 +1,14 @@
 /**
- * /privacy (SPEC §2 rule 6, §5, §10): built from the configuration and the
- * data model. Who is responsible (or that nobody is named yet, in which
- * case nobody new can join); what is kept, table by table, in plain words,
- * why and for how long; who else receives it; your rights; how to reach
- * the controller.
+ * /privacy (SPEC §2 rule 6, §5, §10, §17 item 17): built from the
+ * configuration and the data model. Who is responsible (or that nobody is
+ * named yet, in which case nobody new can join); what is kept, table by
+ * table, in plain words, why and for how long; who else receives it; your
+ * rights; how to reach the controller.
  *
- * Rendered per request, because the controller comes from the environment.
+ * Rendered per request, because the controller and the mail transport come
+ * from the environment. It names no supervisory authority: no record states
+ * the controller's jurisdiction yet (FOUNDING-AUTHORITY §3 leaves it to be
+ * confirmed), so it says "the data protection authority where you live".
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -13,6 +16,7 @@ import styles from "@/components/public/public.module.css";
 import {
   controller,
   EMAIL_TOKEN_TTL_MINUTES,
+  mailTransport,
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
 } from "@/core/config";
@@ -86,8 +90,8 @@ const KEPT: Kept[] = [
   },
   {
     title: "Limits on repeated actions",
-    what: "A scrambled code made from your email address, your network address or your account, and a time. Not the address itself.",
-    why: "To stop floods of sign-in emails, posts and reports.",
+    what: "Your account's id, or a scrambled code made from your email or network address, and a time. Not the address itself. A limit on one invite link holds that invite's id.",
+    why: "To stop floods of emails, posts, replies, requests, invites and reports.",
     howLong: "Entries older than 24 hours are removed whenever a new one is counted.",
   },
   {
@@ -110,6 +114,13 @@ const KEPT: Kept[] = [
   },
 ];
 
+/** Who delivers email, from this server's configuration (SPEC §17 item 17). */
+function emailProvider(): string {
+  return mailTransport() === "resend"
+    ? "Resend delivers the emails OURS sends: sign-in and join links, the weekly email and notices. It receives your email address and each email's subject and text."
+    : "None. This server sends no email: each message is written to a test outbox instead.";
+}
+
 export default function PrivacyPage() {
   const named = controller();
 
@@ -130,7 +141,8 @@ export default function PrivacyPage() {
         {named ? (
           <p>
             The data controller — the person or body answerable for your
-            data — is <strong>{named.name}</strong>. Write to{" "}
+            data — is <strong>{named.name}</strong>, as stated in this
+            server&apos;s configuration. Write to{" "}
             <a href={`mailto:${named.email}`}>{named.email}</a>.
           </p>
         ) : (
@@ -159,18 +171,40 @@ export default function PrivacyPage() {
           ))}
         </ul>
         <p>
-          Two cookies, both needed for the site to work: one keeps you signed
-          in, and one holds your place for up to {PENDING_JOIN_TTL_MINUTES}{" "}
-          minutes while you join. No other cookies, no analytics, no
-          tracking, and nothing is loaded from other sites.
+          Three cookies, all needed for the site to work: one keeps you
+          signed in; one holds your place for up to {PENDING_JOIN_TTL_MINUTES}{" "}
+          minutes while you join; and one holds, for up to 15 minutes, an
+          invite you opened while you already had an account, until you
+          choose whether to add that person. No other cookies, no analytics,
+          no tracking, and nothing is loaded from other sites.
         </p>
       </section>
 
       <section aria-labelledby="privacy-others">
         <h2 id="privacy-others">Who else receives your data</h2>
         <dl className={styles.facts}>
+          <dt>People on OURS</dt>
+          <dd>
+            Anyone signed in whom you haven&apos;t blocked, and who
+            hasn&apos;t blocked you, can see your name, handle and bio. Your
+            posts are seen only by the audience you choose, your replies by
+            whoever can see the post, and your likes only by the post&apos;s
+            author.
+          </dd>
+          <dt>The administrator</dt>
+          <dd>
+            Reads what is reported — a post, a reply or a profile — whoever
+            it was shared with, sees who reported it, and decides what
+            happens. No administrator exists until OURS is deployed; the
+            founder will be the only one.
+          </dd>
+          <dt>Whoever holds an invite link</dt>
+          <dd>
+            Sees the name and handle of the person who made it, whether or
+            not they have an account.
+          </dd>
           <dt>Email provider</dt>
-          <dd>none yet — OURS is not deployed.</dd>
+          <dd>{emailProvider()}</dd>
           <dt>Hosting</dt>
           <dd>none yet — OURS is not deployed.</dd>
         </dl>
@@ -209,9 +243,8 @@ export default function PrivacyPage() {
             )}
           </li>
           <li>
-            <strong>Complain.</strong> You can complain to the Czech data
-            protection authority, the ÚOOÚ (Úřad pro ochranu osobních
-            údajů).
+            <strong>Complain.</strong> You can complain to the data
+            protection authority where you live.
           </li>
         </ul>
       </section>

@@ -1,6 +1,8 @@
 /**
- * /rules (SPEC §6, §10, §12): the floor rules, each with how it is held,
- * and who decides today. Plain words; says plainly who decides.
+ * /rules (SPEC §6, §10, §12, §17 item 19): the floor rules, each with how
+ * it is held, and who decides today. Plain words; says plainly who decides,
+ * and that the founder can change or remove any check without notice
+ * (FOUNDING-AUTHORITY §6: saying so is a requirement, not a disclaimer).
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -37,7 +39,11 @@ export default function RulesPage() {
           >
             open code
           </a>
-          , and every change to these rules is a public commit.
+          .
+        </p>
+        <p>
+          The founder can change or remove any of these checks
+          without notice; every change is a public commit.
         </p>
         <p className="muted">{STATUS_LINE}</p>
         <p>

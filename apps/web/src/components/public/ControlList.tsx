@@ -2,7 +2,8 @@
  * Who controls what (/power), from transparency/control.json: each row in
  * plain words, with its status as a badge and its evidence as links into
  * the public repository. A row with no recorded fact says "not yet
- * recorded" (D-0011 §C.3).
+ * recorded" (D-0011 §C.3). The data-controller row comes from this server's
+ * configuration when it names one, and its badge says so (SPEC §17 item 18).
  */
 import { type ControlRow, type ControlStatus, controlStatusWords } from "@/core/transparency";
 import styles from "./public.module.css";
@@ -14,10 +15,16 @@ const BADGE: Record<ControlStatus, string> = {
   NOT_YET_RECORDED: styles.badgeNotYet ?? "",
 };
 
-export function ControlStatusBadge({ status }: { status: ControlStatus }) {
+export function ControlStatusBadge({
+  status,
+  statedBy,
+}: {
+  status: ControlStatus;
+  statedBy?: ControlRow["statedBy"];
+}) {
   return (
     <span className={`${styles.badge} ${BADGE[status]}`} data-status={status}>
-      {controlStatusWords(status)}
+      {controlStatusWords(status, statedBy)}
     </span>
   );
 }
@@ -29,7 +36,7 @@ export function ControlList({ rows }: { rows: ControlRow[] }) {
         <li key={row.asset} className={styles.item}>
           <div className={styles.itemHead}>
             <h2 className={styles.itemTitle}>{row.asset}</h2>
-            <ControlStatusBadge status={row.status} />
+            <ControlStatusBadge status={row.status} statedBy={row.statedBy} />
           </div>
           <p>{row.who}</p>
           {row.evidence ? (

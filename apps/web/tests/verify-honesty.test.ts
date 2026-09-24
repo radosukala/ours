@@ -7,6 +7,11 @@
  * require, and the failure is the evidence that the build does not hold it.
  * A test named "closed: …" PASSES: a door that was tried and found shut.
  *
+ * After the architect's decisions (SPEC §17), a DEFECT that the fix closed
+ * is titled "fixed: …". Where the decision was to correct the words rather
+ * than the behaviour (/rules, /privacy, control.json, README), the body
+ * asserts the corrected words and that they match what the code does.
+ *
  * Every person here is FICTIONAL, with an example.test address.
  */
 import { spawnSync } from "node:child_process";
@@ -139,7 +144,7 @@ describe("claims scan: coverage of the prohibited list", () => {
     expect(scanText(injected, file).map((h) => h.match)).toEqual(["not for sale"]);
   });
 
-  it("DEFECT: a claim wrapped across a line break in JSX (as a formatter writes it) passes the scan", () => {
+  it("fixed: a claim wrapped across a line break in JSX (as a formatter writes it) passes the scan", () => {
     // JSX collapses the newline and indentation to one space: the page
     // renders "OURS is a home that is not for sale". The scan reads the raw
     // file text, where the words are split by "\n        ".
@@ -171,7 +176,7 @@ describe("claims scan: coverage of the prohibited list", () => {
     }
   });
 
-  it("DEFECT: near forms of D-0011's own words pass the scan (co-own, co-owned, well-paid, owned by the people using it)", () => {
+  it("fixed: near forms of D-0011's own words pass the scan (co-own, co-owned, well-paid, owned by the people using it)", () => {
     // D-0011 prohibits "co-owner" and "any claim of ownership, in the
     // present tense". These are the same claims in the same words' family.
     const passing = [
@@ -184,7 +189,7 @@ describe("claims scan: coverage of the prohibited list", () => {
     expect(passing, "present-tense ownership/pay claims the scan lets through").toEqual([]);
   });
 
-  it("DEFECT: public strings in src/core and src/web (error messages, statements of reasons) are never scanned", () => {
+  it("fixed: public strings in src/core and src/web (error messages, statements of reasons) are never scanned", () => {
     // A CoreError's message is shown to people verbatim (src/web/actions.ts
     // run(): `return { ok: false, error: error.message }`), and reports.ts
     // writes the removal notices people read. None of these files is read
@@ -202,7 +207,7 @@ describe("claims scan: coverage of the prohibited list", () => {
     expect(speaking.filter((f) => !scanned.has(f)), "files with people-facing sentences the scan skips").toEqual([]);
   });
 
-  it("DEFECT: a prohibited claim in a core error message is not a hit", () => {
+  it("fixed: a prohibited claim in a core error message is not a hit", () => {
     const dir = scratchWebRoot();
     try {
       writeFileSync(
@@ -277,7 +282,7 @@ describe("/costs and the ledger", () => {
     expect(s.remaining).toBeNull();
   });
 
-  it("DEFECT: a RECORDED expense with no evidence is accepted, counted as paid, and shown as 'recorded' beside 'none recorded yet'", () => {
+  it("fixed: a RECORDED expense with no evidence is accepted, counted as paid, and shown as 'recorded' beside 'none recorded yet'", () => {
     // D-0011 §C.2: "costs paid, with redacted evidence". control.json's
     // validator refuses a RECORDED row without evidence; the ledger's does not.
     const raw = {
@@ -347,7 +352,7 @@ describe("/power", () => {
     }
   });
 
-  it("DEFECT: /privacy names a data controller while /power, on the same running instance, says none is named", () => {
+  it("fixed: /privacy names a data controller while /power, on the same running instance, says none is named", () => {
     // The test environment names a FICTIONAL controller, as the README tells
     // every local run to do. /privacy reads the environment; /power reads a
     // static file. A reader of both pages is told two different things.
@@ -364,7 +369,7 @@ describe("/power", () => {
 });
 
 describe("/privacy", () => {
-  it("DEFECT: names the Czech data protection authority, a jurisdiction no record states (FOUNDING-AUTHORITY §3: jurisdiction [CONFIRM])", () => {
+  it("fixed: names the Czech data protection authority, a jurisdiction no record states (FOUNDING-AUTHORITY §3: jurisdiction [CONFIRM])", () => {
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     const records = ["authority", "decisions", "mandates"].flatMap((d) =>
       readdirSync(join(REPO_ROOT, d))
@@ -413,18 +418,21 @@ describe("/privacy", () => {
   describe("with the database", () => {
     beforeEach(reset);
 
-    it("DEFECT: says rate-limit entries are 'a scrambled code made from … your account', but post:/reply:/report:/invite:/friendreq: keys hold the raw account id", async () => {
+    it("fixed: says rate-limit entries hold 'your account's id, or a scrambled code made from your email or network address' — and post:/reply:/report:/invite:/friendreq: keys do hold the raw account id", async () => {
+      // SPEC §17 item 17 rewords the page to what the keys hold (SPEC §5
+      // writes post:<accountId> and the like raw), rather than scrambling them.
       const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
-      expect(privacy).toContain("A scrambled code made from your email address, your network address or your account, and a time.");
+      expect(privacy).not.toContain("A scrambled code made from your email address, your network address or your account, and a time.");
+      expect(privacy).toContain("Your account's id, or a scrambled code made from your email or network address, and a time.");
       const anna = await makeAccount({ displayName: "FICTIONAL Anna" });
       await createPost(db(), anna.id, { body: "A FICTIONAL post.", audience: "friends", now: at("2026-09-24T10:00:00Z") });
       const keys = (await db().select({ key: rateEvents.key }).from(rateEvents)).map((r) => r.key);
       expect(keys).toHaveLength(1);
-      expect(keys[0], "the stored key should be scrambled, as /privacy says").not.toContain(anna.id);
+      expect(keys[0], "the stored key holds the account's id, as /privacy now says").toContain(anna.id);
     });
   });
 
-  it("DEFECT: 'Who else receives your data' leaves out the administrator, who reads reported posts whatever their audience", () => {
+  it("fixed: 'Who else receives your data' leaves out the administrator, who reads reported posts whatever their audience", () => {
     // /rules says so ("Admins can read reported content through the queue
     // only; it shows what was reported, whoever it was shared with"); the
     // privacy notice's list of who else receives your data does not.
@@ -437,7 +445,7 @@ describe("/privacy", () => {
   describe("under a production configuration", () => {
     afterEach(() => vi.unstubAllEnvs());
 
-    it("DEFECT: still says 'Email provider: none yet' when the configuration sends mail through Resend", () => {
+    it("fixed: still says 'Email provider: none yet' when the configuration sends mail through Resend", () => {
       vi.stubEnv("NODE_ENV", "production");
       vi.stubEnv("MAIL_TRANSPORT", "resend");
       vi.stubEnv("RESEND_API_KEY", "re_FICTIONAL");
@@ -472,24 +480,33 @@ describe("/rules", () => {
   describe("with the database", () => {
     beforeEach(reset);
 
-    it("DEFECT: 'Nobody can export, delete or edit anyone else's data' is labelled ENFORCED, yet a post's author deletes another person's reply", async () => {
+    it("fixed: /rules no longer says 'Nobody can export, delete or edit anyone else's data'; it says a post's author can delete replies to it, which the code allows", async () => {
+      // SPEC §17 item 19: the sentence now says what the code does.
       const r = rule("others-data");
       expect(r.cls).toBe("ENFORCED");
-      expect(r.text).toBe("Nobody can export, delete or edit anyone else's data.");
+      expect(r.text).not.toContain("Nobody can export, delete or edit anyone else's data.");
+      expect(r.text).toBe(
+        "Nobody can export your data or edit what you wrote. The author of a post can delete replies to it, and an administrator can remove content with a statement of reasons.",
+      );
+      expect(r.tests).toEqual(expect.arrayContaining(["tests/posts.test.ts", "tests/moderation.test.ts"]));
       const author = await makeAccount({ displayName: "FICTIONAL Author" });
       const replier = await makeAccount({ displayName: "FICTIONAL Replier" });
+      const other = await makeAccount({ displayName: "FICTIONAL Other Friend" });
       await befriend(author, replier);
+      await befriend(author, other);
       const p = await post(author, { at: at("2026-09-24T09:00:00Z") });
       const { id: replyId } = await createReply(db(), replier.id, p.id, {
         body: "A FICTIONAL reply that is the replier's own data.",
         now: at("2026-09-24T09:05:00Z"),
       });
-      // If the sentence on /rules were true, this would be refused.
-      await expect(deleteReply(db(), author.id, replyId)).rejects.toMatchObject({ code: "NOT_FOUND" });
+      // Someone who is neither the replier nor the post's author cannot.
+      await expect(deleteReply(db(), other.id, replyId)).rejects.toMatchObject({ code: "NOT_FOUND" });
+      // The post's author can, as the sentence now says.
+      await expect(deleteReply(db(), author.id, replyId)).resolves.toBeUndefined();
     });
   });
 
-  it("DEFECT: ENFORCED rules are shown without the bound FOUNDING-AUTHORITY §6 requires: the founder can remove every check without notice", () => {
+  it("fixed: ENFORCED rules are shown without the bound FOUNDING-AUTHORITY §6 requires: the founder can remove every check without notice", () => {
     // FOUNDING-AUTHORITY §6: "Every enforcement claim made here is bounded
     // by that fact, and saying so is a requirement rather than a disclaimer."
     // AGENTS.md §7: "this repository says so out loud".
@@ -505,7 +522,7 @@ describe("/rules", () => {
     );
   });
 
-  it("DEFECT: the tests /rules names for 'blocking' and 'muting' do not assert parts of those rules", () => {
+  it("fixed: the tests /rules names for 'blocking' and 'muting' do not assert parts of those rules", () => {
     // "stops new requests, follows, replies and likes between you" — replies
     // and likes across a block are asserted in posts.test.ts and
     // likes.test.ts, not in the cited blocks/visibility tests.
@@ -521,11 +538,13 @@ describe("/rules", () => {
     expect(missing).toEqual([]);
   });
 
-  it("DEFECT: 'Every account is invited by a person' is labelled ENFORCED, but the founder script creates an account with no inviter", () => {
+  it("fixed: /rules says every account except the founder's is invited by a person, which is what the founder script does", () => {
+    // SPEC §17 item 19: the sentence names the one account with no inviter.
     expect(rule("invite-only").cls).toBe("ENFORCED");
-    expect(rule("invite-only").text).toContain("Every account is invited by a person.");
+    expect(rule("invite-only").text).not.toContain("Every account is invited by a person.");
+    expect(rule("invite-only").text).toContain("Every account except the founder's is invited by a person.");
     const script = read("scripts/seed-founder.ts");
-    expect(script, "seed-founder.ts inserts an account with invitedBy: null").not.toMatch(/invitedBy:\s*null/);
+    expect(script, "the founder's account is the one inserted with invitedBy: null").toMatch(/invitedBy:\s*null/);
   });
 });
 
@@ -540,14 +559,14 @@ describe("the running version", () => {
     expect(textOf(html)).toContain(STATUS_LINE);
   });
 
-  it("DEFECT: the root not-found page shows no running version (control.json: 'shown at the bottom of every page')", () => {
+  it("fixed: the root not-found page shows no running version (control.json: 'shown at the bottom of every page')", () => {
     const code = loadControl().find((r) => r.asset === "The code")!;
     expect(code.who).toContain("The running version is shown at the bottom of every page.");
     const html = renderToStaticMarkup(createElement(RootNotFound));
     expect(textOf(html)).toContain(runningVersion());
   });
 
-  it("DEFECT: below 1000px no signed-in page shows the running version (its only copy is in .aside, which is display:none)", () => {
+  it("fixed: below 1000px no signed-in page shows the running version (its only copy is in .aside, which is display:none)", () => {
     const css = read("src/app/globals.css");
     const base = css.slice(0, css.indexOf("@media (min-width: 700px)"));
     const asideHiddenAtBase = /\.nav,\s*\.aside\s*\{\s*display:\s*none;/.test(base);
@@ -562,7 +581,7 @@ describe("the running version", () => {
     expect(elsewhere, "some signed-in element visible under 1000px must carry the version").not.toEqual([]);
   });
 
-  it("DEFECT: static public pages freeze the version at build time, so one server shows two different versions", () => {
+  it("fixed: static public pages freeze the version at build time, so one server shows two different versions", () => {
     // Observed on `next start` with OURS_VERSION=v0-FICTIONAL-runtime:
     // /, /privacy, /signin, /join, /i/… show v0-FICTIONAL-runtime, while
     // /power, /costs, /rules, /auth, /unsubscribe, /signin/goodbye show
@@ -718,16 +737,23 @@ describe("mail", () => {
 /* ====================================================================== */
 
 describe("the records about this build", () => {
-  it("DEFECT: README says an independent verification is recorded in receipts/, but no receipt mentions M-0010", () => {
+  it("fixed: README no longer says a verification is recorded in receipts/ while no receipt mentions M-0010, and says what is tested", () => {
     const readme = read("README.md");
-    expect(readme).toMatch(/An independent\s+verification is recorded in `receipts\/`/);
     const receipts = ["builds", "conformance", "releases"].flatMap((d) =>
       readdirSync(join(REPO_ROOT, "receipts", d)).map((f) => readRepo(`receipts/${d}/${f}`)),
     );
-    expect(receipts.some((t) => t.includes("M-0010"))).toBe(true);
+    const recorded = receipts.some((t) => t.includes("M-0010"));
+    // A pointer at receipts/ for this build is allowed only once a receipt exists.
+    const pointsAtReceipts =
+      /verification is recorded in `receipts\/`/.test(readme) ||
+      /receipts\/[^\n]*M-0010|M-0010[^\n]*receipts\//.test(readme);
+    expect(!pointsAtReceipts || recorded, "README points at a receipt for M-0010 that does not exist").toBe(true);
+    // It says how the public pages are tested, and what is not tested.
+    expect(readme).toMatch(/`\/costs`, `\/privacy`, `\/power` and `\/rules` whole/);
+    expect(readme).toMatch(/Not tested here/);
   });
 
-  it("DEFECT: control.json records 'Moderation: the founder, the only administrator' on a script that makes as many FICTIONAL administrators as it is run", async () => {
+  it("fixed: control.json no longer records 'Moderation: the founder, the only administrator' on a script that makes as many FICTIONAL administrators as it is run; the row is STATED", async () => {
     await reset();
     const url = process.env.DATABASE_URL!;
     const env = {
@@ -755,9 +781,12 @@ describe("the records about this build", () => {
     }
     const admins = await db().select().from(accounts).where(eq(accounts.isAdmin, true));
     const row = loadControl().find((r) => r.asset === "Moderation")!;
-    expect(row.status).toBe("RECORDED");
-    expect(row.evidence?.map((e) => e.path)).toEqual(["apps/web/scripts/seed-founder.ts"]);
+    // SPEC §17 item 18: STATED, in the decision's words, and not on this script.
+    expect(row.status).toBe("STATED");
+    expect(row.who).toBe("No administrator exists until something is deployed; the founder will be the only one.");
+    expect(row.evidence?.map((e) => e.path) ?? []).not.toContain("apps/web/scripts/seed-founder.ts");
     expect(admins.every((a) => a.email.endsWith("@example.test"))).toBe(true);
-    expect(admins.length, "the cited evidence keeps a single administrator").toBe(1);
+    // Why the row cannot be RECORDED on the script: it still makes one administrator per run.
+    expect(admins.length).toBe(2);
   });
 });

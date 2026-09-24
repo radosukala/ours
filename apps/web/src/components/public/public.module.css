@@ -241,3 +241,21 @@
   gap: 12px;
   justify-items: start;
 }
+
+/* ------------------------------------------------- in-app footer (phones) */
+
+/*
+ * The footer at the bottom of /settings and the in-app not-found page
+ * (SPEC §17 item 20). Below 1000px the right column is hidden, so this is
+ * where a signed-in page shows the running version and the links; from
+ * 1000px the right column shows the same footer, so this one steps aside.
+ */
+.inAppFooter {
+  padding: 16px 0 24px;
+}
+
+@media (min-width: 1000px) {
+  .inAppFooter {
+    display: none;
+  }
+}

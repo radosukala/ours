@@ -1,5 +1,5 @@
 {
-  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4 and D-0011. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root.",
+  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4, D-0011 and apps/web/SPEC.md §17. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root. The Data controller row is the one row a running server fills in: when its configuration names a controller, /power shows that name as stated in this server's configuration (SPEC §17 item 18), the same name /privacy shows.",
   "rows": [
     {
       "asset": "The rules of OURS",
@@ -30,8 +30,8 @@
     },
     {
       "asset": "The code",
-      "who": "Public, Apache-2.0. The running version is shown at the bottom of every page.",
-      "status": "RECORDED",
+      "who": "Apache-2.0; public once this build is pushed to the public repository. The running version is shown at the bottom of every page. On a phone, once you're signed in, it is at the bottom of Settings.",
+      "status": "STATED",
       "evidence": [
         { "path": "apps/web/LICENSE", "label": "Licence (Apache-2.0)" }
       ]
@@ -54,13 +54,10 @@
     },
     {
       "asset": "Moderation",
-      "who": "The founder, the only administrator",
-      "status": "RECORDED",
+      "who": "No administrator exists until something is deployed; the founder will be the only one.",
+      "status": "STATED",
       "evidence": [
-        {
-          "path": "apps/web/scripts/seed-founder.ts",
-          "label": "The script that creates the first administrator"
-        }
+        { "path": "mandates/M-0010.md", "label": "Build record M-0010: nothing deployed" }
       ]
     },
     {
