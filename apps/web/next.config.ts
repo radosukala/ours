@@ -49,6 +49,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The development badge sits over the phone tab bar; nothing is lost without it.
+  devIndicators: false,
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {

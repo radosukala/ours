@@ -14,7 +14,7 @@ export function Marker({
   text?: string;
 }) {
   // A separator's children are not read out, so its name carries both
-  // lines: "You're caught up. You've seen everything since 3h ago."
+  // lines: "You're caught up. You've seen everything from before your last visit, 3 hours ago."
   const label = [title ? `${title}.` : null, text].filter(Boolean).join(" ");
   return (
     <div className="marker" role="separator" aria-label={label}>
@@ -28,21 +28,25 @@ export function Marker({
   );
 }
 
-/** "You're caught up. You've seen everything since 3h ago." */
+/** "You're caught up. You've seen everything from before your last visit, 3 hours ago." */
 export function CaughtUpMarker({ since, now }: { since: Date; now?: Date }) {
-  const short = relativeTime(since, now);
-  const when =
-    short === "now"
-      ? "just now"
-      : /^\d+[mhd]$/.test(short)
-        ? `${short} ago`
-        : short;
   return (
     <Marker
       title="You're caught up"
-      text={`You've seen everything since ${when}.`}
+      text={`You've seen everything from before your last visit, ${visitWords(since, now)}.`}
     />
   );
+}
+
+/** "just now", "5 minutes ago", "1 hour ago", "3 days ago", or "on 12 Sept". */
+function visitWords(since: Date, now?: Date): string {
+  const short = relativeTime(since, now);
+  if (short === "now") return "just now";
+  const m = /^(\d+)([mhd])$/.exec(short);
+  if (!m) return `on ${short}`;
+  const n = Number(m[1]);
+  const unit = { m: "minute", h: "hour", d: "day" }[m[2] as "m" | "h" | "d"];
+  return `${n} ${unit}${n === 1 ? "" : "s"} ago`;
 }
 
 /** "That's everything from the last 14 days." */
