@@ -1,0 +1,30 @@
+{
+  "scope": "This ledger covers OURS only. It is kept separate from any other project of the same company.",
+  "currency": "USD",
+  "contributions_open": false,
+  "unpaid_work": "The founder works on OURS without pay. This is acknowledged here and not given a money value.",
+  "entries": [
+    {
+      "id": "L-0001",
+      "kind": "commitment",
+      "status": "PROPOSED",
+      "date": "2026-09-24",
+      "description": "Founder's proposed contribution toward initial infrastructure costs",
+      "amount": 2500,
+      "repayable": "not yet stated",
+      "evidence": null,
+      "note": "Proposed by the founder in conversation on 24 September 2026. Shown as a proposal until confirmed, and as received only when it is."
+    },
+    {
+      "id": "L-0002",
+      "kind": "estimate",
+      "status": "ESTIMATE",
+      "date": "2026-09-24",
+      "description": "our.one domain",
+      "amount": 700,
+      "period": "per year",
+      "evidence": null,
+      "note": "The founder's figure. Recorded as a paid cost only when the registrar's invoice is recorded."
+    }
+  ]
+}

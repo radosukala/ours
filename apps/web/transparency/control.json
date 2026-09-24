@@ -1,0 +1,91 @@
+{
+  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4 and D-0011. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root.",
+  "rows": [
+    {
+      "asset": "The rules of OURS",
+      "who": "The founder, under bootstrap authority. Decisions are public in the OURS records.",
+      "status": "RECORDED",
+      "evidence": [
+        { "path": "decisions/D-0011.md", "label": "Decision D-0011" }
+      ]
+    },
+    {
+      "asset": "The domain our.one",
+      "who": "The founder, through the founder's registrar account",
+      "status": "RECORDED",
+      "evidence": [
+        {
+          "path": "authority/FOUNDING-AUTHORITY.md",
+          "label": "Founding authority, section 4"
+        }
+      ]
+    },
+    {
+      "asset": "The operator",
+      "who": "Ctrl AI, Inc. (Delaware) is proposed as the starting operator. Its authority, assets and responsibility for OURS are not yet recorded.",
+      "status": "STATED",
+      "evidence": [
+        { "path": "decisions/D-0011.md", "label": "Decision D-0011, part F" }
+      ]
+    },
+    {
+      "asset": "The code",
+      "who": "Public, Apache-2.0. The running version is shown at the bottom of every page.",
+      "status": "RECORDED",
+      "evidence": [
+        { "path": "apps/web/LICENSE", "label": "Licence (Apache-2.0)" }
+      ]
+    },
+    {
+      "asset": "Hosting, database, email sending",
+      "who": "None yet. OURS is not deployed.",
+      "status": "RECORDED",
+      "evidence": [
+        { "path": "mandates/M-0010.md", "label": "Build record M-0010: nothing deployed" }
+      ]
+    },
+    {
+      "asset": "Releases",
+      "who": "The founder, only under a release decision",
+      "status": "RECORDED",
+      "evidence": [
+        { "path": "mandates/M-0010.yaml", "label": "Build record M-0010: build only" }
+      ]
+    },
+    {
+      "asset": "Moderation",
+      "who": "The founder, the only administrator",
+      "status": "RECORDED",
+      "evidence": [
+        {
+          "path": "apps/web/scripts/seed-founder.ts",
+          "label": "The script that creates the first administrator"
+        }
+      ]
+    },
+    {
+      "asset": "Money",
+      "who": "No account and nothing received",
+      "status": "RECORDED",
+      "evidence": [
+        {
+          "path": "authority/FOUNDING-AUTHORITY.md",
+          "label": "Founding authority, section 4: no bank account"
+        },
+        { "path": "apps/web/transparency/ledger.json", "label": "The public ledger" }
+      ]
+    },
+    {
+      "asset": "Data controller",
+      "who": "Not yet named. Accounts can't be created until it is.",
+      "status": "NOT_YET_RECORDED",
+      "evidence": null
+    },
+    {
+      "asset": "If the founder stops",
+      "who": "Not yet arranged",
+      "status": "NOT_YET_RECORDED",
+      "evidence": null
+    }
+  ]
+}

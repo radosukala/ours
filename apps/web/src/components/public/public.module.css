@@ -1,0 +1,243 @@
+/*
+ * The public pages (M5): landing, rules, privacy, costs, power and
+ * unsubscribe. Only what the foundation's vocabulary (globals.css) does not
+ * already have; every colour is a token from SPEC §9.
+ */
+
+/* ---------------------------------------------------------------- landing */
+
+.landing {
+  display: grid;
+  gap: 16px;
+}
+
+.landing h1 {
+  /* SPEC §9: the landing headline in 31px / 800 (.headline). */
+  margin-bottom: 4px;
+}
+
+.promises {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.promises a {
+  color: var(--text);
+}
+
+.promises a:hover {
+  text-decoration: underline;
+}
+
+.connect {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.invite {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.invite p {
+  font-size: 17px;
+}
+
+.status {
+  color: var(--muted);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.links a {
+  color: var(--accent);
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ pages */
+
+.page {
+  display: grid;
+  gap: 16px;
+  line-height: 1.5;
+}
+
+.page section {
+  display: grid;
+  gap: 8px;
+}
+
+.page h2 {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.page a {
+  color: var(--accent);
+}
+
+.page a:hover {
+  text-decoration: underline;
+}
+
+.items {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.itemTitle {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.big {
+  font-size: 23px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.facts dd {
+  margin: 0;
+}
+
+@media (max-width: 420px) {
+  .facts {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .facts dd {
+    margin-bottom: 6px;
+  }
+}
+
+/* ---------------------------------------------------------- status badges */
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--outline-border);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.badgeRecorded {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.badgeStated {
+  color: var(--text);
+}
+
+.badgeNotYet,
+.badgeProposed,
+.badgeEstimate {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.badgeCredit {
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ rules */
+
+.legend {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.legend div {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+
+.legend dd {
+  margin: 0;
+}
+
+.checkedBy {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.checkedBy code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+/* ----------------------------------------------------------- unsubscribe */
+
+.result {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
