@@ -1,0 +1,71 @@
+/*
+ * One notification (M3). Laid out like the post row: a 40px column (here
+ * the kind's icon) and the content, with the same padding and border.
+ */
+
+.row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: inherit;
+  transition: background-color 0.15s;
+}
+
+a.row:hover {
+  background: var(--hover);
+}
+
+.unread {
+  background: var(--accent-soft);
+}
+
+a.unread:hover {
+  background: var(--accent-soft);
+}
+
+.kind {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+  color: var(--accent);
+}
+
+.kindLike {
+  color: var(--like);
+}
+
+.kindSafety {
+  color: var(--muted);
+}
+
+.main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.text {
+  overflow-wrap: anywhere;
+}
+
+.time {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.snippet {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.statement {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
