@@ -1,0 +1,162 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0010
+title: Build the connections core and the web application, v0
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0011
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-24T00:00:00Z
+  expires_at: 2027-03-31T00:00:00Z
+  prerequisite_decisions: [D-0004, D-0006, D-0011]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0010.md
+
+objective: >
+  Build apps/web: one core (identity by emailed link, invite-only accounts,
+  mutual friendship and one-way following, blocking and muting, text posts
+  with an audience, one level of replies, likes seen only by the author, a
+  feed in order that marks where you were caught up and ends at fourteen
+  days, in-app notifications, reporting with a moderation queue and
+  statements of reasons, export and deletion, a weekly email that names who
+  posted and not what) and the mobile-ready web application on it, in a
+  familiar design with a system font stack; the public pages — landing,
+  rules, privacy, costs from a versioned ledger file, power from a versioned
+  control file, counts; a claims scan over every public string; and a
+  denial suite against a real Postgres. Fictional data only; nothing runs
+  anywhere but this machine.
+
+human_outcome: >
+  A person invited by someone they know can join, connect as friends or
+  follow, post to the people they chose, read their people's posts in order
+  and reach an end, reply, like, mute, block, report, take their data out,
+  and leave — and cannot see, reach or export anything a connection, a block
+  or an audience denies them. Anyone can read, before joining, the rules,
+  what it costs and who controls it.
+
+adopted_constraints:
+  - The core (apps/web/src/core) has no framework imports; every read and write goes through it; every permission decision is made there and tested there.
+  - No real person's data exists under this mandate. Seed and test data are fictional and labelled FICTIONAL.
+  - No email is sent to any real address. The development mail transport writes to a local outbox table.
+  - Accounts cannot be created unless DATA_CONTROLLER and DATA_CONTROLLER_EMAIL are set. A missing human decision switches the feature off; it is never defaulted.
+  - The ledger and control files hold only recorded facts, stated commitments and labelled estimates; a [CONFIRM] fact is rendered as not yet recorded, never resolved by the agent.
+  - Every public string passes the claims scan, which runs in the test suite.
+  - No third-party code reaches the graph. No contact upload, search, suggestions, ranking, advertising or photos.
+  - New dependencies are justified in the build receipt; the fewer the better.
+  - Build and release are separate. Nothing is deployed, no domain is touched, no provider account is used.
+
+hypotheses:
+  - The whole core fits in a few thousand lines a person can read.
+  - A feed with an end and a weekly email of who posted gives two connected people a reason to return without a posting habit.
+  - Invite-only growth with a per-person limit keeps a surge within what the core and one moderator can hold.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+      - pnpm-lock.yaml
+      - .claude/launch.json
+      - .gitignore
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: MEDIUM
+  reversibility: ADDITIVE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, signed-sessions, hashed-single-use-tokens, rate-limits]
+  privacy: [no-real-person-data-under-this-mandate, minimal-data]
+
+acceptance:
+  tests:
+    - A person who is not a friend cannot see a friends-only post, its replies or its likes, through any page or core function.
+    - A follower sees only posts marked for followers, and only while following and not blocked.
+    - A block, in either direction, removes friendship and following, hides each from the other, and refuses new requests, follows, replies and likes between them.
+    - A disconnected friend loses access to friends-only posts at once; reconnecting needs a new request and a new acceptance.
+    - A sign-in token works once, expires after fifteen minutes, and is stored only as a hash; an unknown or reused token is refused.
+    - An invite works once, expires, counts against the inviter's limit, and cannot be used by an existing friend or a blocked person.
+    - Only the author of a post sees who liked it.
+    - A person cannot export, delete or edit anyone else's data; an export contains only what its owner may take.
+    - Deleting an account removes its posts, replies, likes, connections and sessions.
+    - Only an administrator reaches the moderation queue; a removed post is hidden from everyone and its author sees the statement of reasons.
+    - The feed contains only posts the viewer may see, newest first, from the last fourteen days, excluding muted and blocked people, and ends.
+    - Rate limits refuse sign-in email floods, post floods and report floods.
+    - Account creation is refused while the controller is not named.
+    - The claims scan finds no prohibited claim in any public string.
+    - Typecheck, lint, tests and a production build pass; pnpm ours check M-0010 --changed authorises the finished working tree.
+  evidence:
+    - build receipt recording agents, models, files touched, dependencies added with reasons, cost, and every failure
+    - an independent verification report by agents that did not build it, with a stopping rule declared before the first check
+    - screenshots of the application at phone and desktop width
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - any prerequisite does not hold
+    - a required fact is marked [CONFIRM]
+    - the work requires a path outside the allowed scope
+    - an acceptance test would require weakening a constitutional article
+    - a feature would need real personal data, a provider account, or a deployment
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Remove apps/web and its lockfile entries. No record above this mandate
+    is modified, and nothing runs anywhere but the builder's machine.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  release: a later M-0010-RELEASE after D-0007's applicable conditions
+  deploy: not-authorized
+
+cost:
+  source: ESTIMATED
+  wall_minutes: null

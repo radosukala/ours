@@ -1,0 +1,72 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0007
+title: Connections first — a home for friends and the people you follow, controlled by the people using it
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0011
+
+human_source:
+  path: proposals/P-0007.md
+evidence:
+  - path: plans/connections-first.md
+  - path: proposals/P-0007.evidence-conversation-2026-09-24.md
+  - path: proposals/P-0007.evidence-factcheck.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: colleague-reviewer
+    kind: unknown
+    role: reviewer
+
+affected_groups:
+  - everyone who would connect
+  - the founder, as funder and operator at launch
+  - builders, not admitted to the graph in the first version
+
+unresolved:
+  - the operator (Ctrl AI, Inc. proposed; authority, assets and responsibility unrecorded)
+  - who can change the rules, appoint operators, sell essential assets, and authorize continuity (D-0007)
+  - the controller named in the privacy notice
+  - the ledger's first recorded entries
+  - photos (text only in v0)
+
+cost:
+  proposer_hours: 6
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-24
+    actor: { id: founder, kind: human }
+    position: the only value is network and users; a message that resonates with users and builders is missing; apps user-owned, builders stewards paid by users
+  - date: 2026-09-24
+    actor: { id: claude, kind: agent }
+    position: round ten — the last move; a group's brief, paid-in yeses, replaceable maintainers (withdrawn the same day)
+  - date: 2026-09-24
+    actor: { id: colleague-reviewer, kind: unknown }
+    position: OURS helps people become the collective customer; creation over replacement; the message is part of the mechanism
+  - date: 2026-09-24
+    actor: { id: founder, kind: human }
+    position: the social graph is the big bang; a network without an algorithm; ownership of the rules and the infrastructure at cost; explainable in a few sentences
+  - date: 2026-09-24
+    actor: { id: colleague-reviewer, kind: unknown }
+    position: start with identity and connections; OURS operates the core, builders only through reviewed interfaces
+  - date: 2026-09-24
+    actor: { id: claude, kind: agent }
+    position: round eleven — agree; the difference is who can sell or change it; hype then fade is the category's history; a feed that ends, a weekly email, invite-only growth; simplicity is the safety design
+  - date: 2026-09-24
+    actor: { id: founder, kind: human }
+    position: adopted and asked the agent to build it; system fonts, familiar like X and Instagram; transparent code and finances from day one; Ctrl AI, Inc. as starting operator; our.one; web then iOS then Android
+  - date: 2026-09-24
+    actor: { id: colleague-reviewer, kind: unknown }
+    position: message "Stay connected. On our terms."; hold back "Not for sale"; a costs page and a power page; Ctrl AI proposed operator, not the ownership mechanism
+
+decision: D-0011

@@ -371,6 +371,14 @@ contract is refused; the same code copied elsewhere runs, and has nobody).
 
 ## 13. v0 — one community, one app, one holder, one database
 
+> **Amended by [`D-0011`](../decisions/D-0011.md), 24 September 2026.**
+> v0 is now *an invite-only network of people and their consented
+> connections, with one first-party application on one core*: a home for
+> friends and the people you choose to follow, built under `M-0010`. The
+> single-community tool v0 described below is retained as the later path for
+> community tools, under `D-0008` and `M-0007` when adopted. The rest of this
+> section is unchanged.
+
 Built in two bounded steps — the gate for community records under
 `M-0006`; the runtime, the fixture tenant on it, and the swap under a later
 mandate, authorised only after `M-0006`'s receipt is accepted and `D-0007`

@@ -1,0 +1,63 @@
+schema: ours.decision/v0.1
+decision_id: D-0011
+title: Connections first
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0011.md
+
+proposal: P-0007
+prerequisite_decisions: [D-0004, D-0006]
+
+outcome: >
+  OURS's first product is a home for friends (mutual) and the people you
+  choose to follow (one-way): their posts in order, with an end when you are
+  caught up; the first act is a person inviting another. Adopt the working
+  copy and the status line "Founder-led and founder-funded at launch.
+  Working toward control by the people using it." Transparent from the first
+  day: open source under Apache-2.0, a public ledger that separates received,
+  paid, remaining and coming, and a public page of who controls what.
+  Minimal data, invite-only growth, one weekly email, safety in the
+  foundation, a familiar design. Amend THE-LAYER §13's statement of v0.
+  Ctrl AI, Inc. is the proposed starting operator, with facts unrecorded;
+  the ownership arrangement stays with D-0007. Supersede M-0005. Authorize
+  M-0010, BUILD, with no real person's data and nothing deployed.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0010]
+
+prohibits:
+  - any present-tense claim of ownership — "not for sale", "user-owned", "member-owned", "co-owner"
+  - a ledger figure that is not a recorded fact, a stated commitment, or a labelled estimate
+  - claims of tax deductibility
+  - deployment of anything under M-0010
+  - holding any real person's data before D-0007's applicable conditions and a release mandate
+  - third-party applications, ranking, advertising, contact upload, search, or a public graph in v0
+
+effective_from: 2026-09-24T00:00:00Z
+expires_at: 2027-03-31T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The colleague's correction of "Not for sale" and the
+  agent's withdrawal of the brief are recorded in P-0007's deliberation.
+  The founder's review of this exact wording is pending; an amendment is a
+  new record.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
