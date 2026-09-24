@@ -1,0 +1,146 @@
+/*
+ * Module-scoped styles for the post components (M3). Everything else comes
+ * from the foundation's class vocabulary in src/app/globals.css; these only
+ * fill the few gaps it leaves, with the same tokens.
+ */
+
+/* ⋯ menu: an inline confirmation step and an error line. */
+.confirm {
+  display: grid;
+  gap: 12px;
+  padding: 12px 16px;
+  max-width: 280px;
+  /* The menu sits in a post's header, which is muted and nowrap. */
+  color: var(--text);
+  white-space: normal;
+}
+
+.confirmText {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.confirmTitle {
+  display: block;
+  font-weight: 700;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 8px;
+}
+
+.menuError {
+  padding: 8px 16px 12px;
+  color: var(--danger);
+  font-size: 13px;
+  white-space: normal;
+  max-width: 280px;
+}
+
+.menuIcon {
+  display: inline-flex;
+  flex: none;
+}
+
+/* Composer: the audience choice and the error line under it. */
+.audience {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 12px;
+  border-radius: 9999px;
+  border-color: var(--outline-border);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.barStart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.barEnd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.formError {
+  margin-top: 8px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.replyInput {
+  font-size: 17px;
+  min-height: 40px;
+}
+
+/* Lists: the "Show more" row. */
+.more {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.moreError {
+  padding: 0 16px 16px;
+  color: var(--danger);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* The post page: the full time line, and the "Liked by" list. */
+.focusTime {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.likersTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.liker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.likerText {
+  display: grid;
+  min-width: 0;
+}
+
+.likerName {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.likerName:hover {
+  text-decoration: underline;
+}
+
+.likerHandle {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Anchors (#compose, #reply, #reply-<id>) land below the sticky header. */
+.anchor {
+  scroll-margin-top: calc(var(--header-h) + 12px + env(safe-area-inset-top));
+}
