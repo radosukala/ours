@@ -35,7 +35,8 @@ export function joinEmail(
 ): MailContent {
   const inviter = inviterHandle ? `${inviterName} (@${inviterHandle})` : inviterName;
   return {
-    subject: `${inviterName} invited you to OURS`,
+    // The handle is in the subject too: a display name alone can be copied.
+    subject: `${inviter} invited you to OURS`,
     body: [
       `${inviter} invited you to connect on OURS.`,
       "",

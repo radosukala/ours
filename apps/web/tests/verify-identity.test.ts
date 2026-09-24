@@ -245,7 +245,8 @@ describe("DEFECTS in identity, tokens and joining", () => {
     const invite = await createInvite(db(), mallory.id, {});
     await requestJoin(db(), { code: invite.code, email: "vera_v@example.test", ipHash: IP });
     const mail = await latestOutbox(db(), "vera_v@example.test", "join");
-    expect(mail?.subject).toBe("Anna FICTIONAL invited you to OURS");
+    // The subject now carries the handle, so the copied name is visibly not Anna's.
+    expect(mail?.subject).toBe("Anna FICTIONAL (@mallory_v) invited you to OURS");
 
     // Vera opens it (SPEC §8 "Join" step 2: sign in and apply the invite).
     const token = await mailedToken("vera_v@example.test", "join");

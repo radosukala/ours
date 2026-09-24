@@ -30,7 +30,7 @@
     },
     {
       "asset": "The code",
-      "who": "Apache-2.0; public once this build is pushed to the public repository. The running version is shown at the bottom of every page. On a phone, once you're signed in, it is at the bottom of Settings.",
+      "who": "Apache-2.0; public once this build is pushed to the public repository. The running version is shown at the bottom of every public page, of Settings, and of the not-found page; on a wide screen, beside every signed-in page.",
       "status": "STATED",
       "evidence": [
         { "path": "apps/web/LICENSE", "label": "Licence (Apache-2.0)" }

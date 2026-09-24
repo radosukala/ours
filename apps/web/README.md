@@ -63,6 +63,18 @@ work name a FICTIONAL controller in `.env.local`, as the tests do
 (`DATA_CONTROLLER="FICTIONAL Controller"`,
 `DATA_CONTROLLER_EMAIL=controller@example.test`).
 
+Two more settings are human decisions for a deployment, never defaults:
+
+- **`CLIENT_IP_HEADER`** names the header the host sets with the visitor's
+  address, one a visitor cannot write (for example `x-vercel-forwarded-for`).
+  Per-address limits on sign-in and join requests read it. In development it
+  defaults to `x-forwarded-for`; in production, while it is blank, sign-in
+  and join requests are switched off.
+- **`MAIL_TRANSPORT=resend`** with `RESEND_API_KEY` and `MAIL_FROM` sends
+  real email: sign-in and join links, the weekly email, and the notice that
+  explains a suspension to the suspended person. Anything else writes to the
+  local `outbox` table.
+
 ## Test
 
 ```sh

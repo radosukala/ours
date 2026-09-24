@@ -561,7 +561,8 @@ describe("the running version", () => {
 
   it("fixed: the root not-found page shows no running version (control.json: 'shown at the bottom of every page')", () => {
     const code = loadControl().find((r) => r.asset === "The code")!;
-    expect(code.who).toContain("The running version is shown at the bottom of every page.");
+    // The row now says precisely where the version is shown (architect, after F3's report).
+    expect(code.who).toContain("The running version is shown at the bottom of every public page, of Settings, and of the not-found page");
     const html = renderToStaticMarkup(createElement(RootNotFound));
     expect(textOf(html)).toContain(runningVersion());
   });

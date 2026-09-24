@@ -44,13 +44,13 @@ const KEPT: Kept[] = [
     title: "Sign-in and join links",
     what: "Your email address, a scrambled copy of the link's code (never the code itself), and when the link was made, when it expires and when it was used.",
     why: `So each link works once, for ${EMAIL_TOKEN_TTL_MINUTES} minutes.`,
-    howLong: `${NOT_REMOVED_YET} They stay after you delete your account; an old link can't be used.`,
+    howLong: `${NOT_REMOVED_YET} They are deleted when you delete your account.`,
   },
   {
     title: "Joining in progress",
     what: "Your email address and which invite you're using.",
     why: `To hold your place for up to ${PENDING_JOIN_TTL_MINUTES} minutes while you choose a handle.`,
-    howLong: `${NOT_REMOVED_YET} They stay after you delete your account.`,
+    howLong: `${NOT_REMOVED_YET} It is deleted when you delete your account.`,
   },
   {
     title: "Sessions",
@@ -96,7 +96,7 @@ const KEPT: Kept[] = [
   },
   {
     title: "Email records",
-    what: "Which kind of email was sent to which account, whether it went, and when. Not your address.",
+    what: "Which kind of email was sent to which account (a sign-in or join link, the weekly email, or a notice such as the reasons for a suspension), whether it went, and when. Not your address.",
     why: "To see whether emails arrive.",
     howLong: `${NOT_REMOVED_YET} When you delete your account, they no longer point to it.`,
   },
@@ -110,7 +110,7 @@ const KEPT: Kept[] = [
     title: "Test outbox",
     what: "Only in builds that send no real email: each email's address, subject and text, written here instead of being sent.",
     why: "To build and test OURS without emailing anyone.",
-    howLong: NOT_REMOVED_YET,
+    howLong: `${NOT_REMOVED_YET} What was written to your address is deleted when you delete your account.`,
   },
 ];
 
