@@ -741,7 +741,10 @@ describe("the records about this build", () => {
   it("fixed: README no longer says a verification is recorded in receipts/ while no receipt mentions M-0010, and says what is tested", () => {
     const readme = read("README.md");
     const receipts = ["builds", "conformance", "releases"].flatMap((d) =>
-      readdirSync(join(REPO_ROOT, "receipts", d)).map((f) => readRepo(`receipts/${d}/${f}`)),
+      readdirSync(join(REPO_ROOT, "receipts", d), { withFileTypes: true })
+        // A receipt may keep its evidence (screenshots) in a folder beside it.
+        .filter((e) => e.isFile())
+        .map((e) => readRepo(`receipts/${d}/${e.name}`)),
     );
     const recorded = receipts.some((t) => t.includes("M-0010"));
     // A pointer at receipts/ for this build is allowed only once a receipt exists.
