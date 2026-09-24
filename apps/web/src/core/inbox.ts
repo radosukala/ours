@@ -8,12 +8,14 @@
  * while the recipient can still see it, through the same predicates as
  * every other read (core/visibility.ts), or when it is the recipient's own.
  */
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { type Db, withTx } from "./db";
 import { accounts, type NotificationKind, notifications, posts, replies } from "./schema";
-import { personShownTo } from "./posts";
+import { NOTIFICATIONS_MAX, notificationShownTo } from "./notifications";
 import { visiblePostPredicate, visibleReplyPredicate } from "./visibility";
+
+export { NOTIFICATIONS_MAX };
 
 export type NotificationView = {
   id: string;
@@ -38,8 +40,6 @@ export type NotificationView = {
   replySnippet: string | null;
 };
 
-/** The newest this many (SPEC §8). */
-export const NOTIFICATIONS_MAX = 100;
 /** Characters of a post or reply shown in a notification. */
 export const SNIPPET_MAX = 120;
 
@@ -99,14 +99,10 @@ export async function listNotifications(
       target,
       eq(target.id, sql`coalesce(${notifications.postId}, ${reply.postId})`),
     )
-    .where(
-      and(
-        eq(notifications.recipientId, accountId),
-        // An actor who has been suspended, or is blocked either way, is
-        // hidden from everyone / from each other (SPEC §6).
-        or(isNull(notifications.actorId), personShownTo(accountId, notifications.actorId)),
-      ),
-    )
+    // Theirs, and an actor only while the actor may be shown to them: a
+    // suspended actor is hidden from everyone, a block hides each from the
+    // other (SPEC §6, §17 item 11). countUnread uses the same condition.
+    .where(notificationShownTo(accountId))
     .orderBy(desc(notifications.createdAt), desc(notifications.id))
     .limit(limit);
   return rows.map((row) => ({

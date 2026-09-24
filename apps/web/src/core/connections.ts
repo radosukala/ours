@@ -13,8 +13,13 @@
  *   same NOT_FOUND, with the same sentence.
  * - A block takes effect at once, in one transaction (SPEC §6). Unblocking
  *   restores nothing.
+ * - Every write between two people serializes with a block between them
+ *   (SPEC §17 item 10): it takes `pairLock` inside its transaction and
+ *   checks for a block again under it.
+ * - Blocking or muting someone who does not exist succeeds and writes
+ *   nothing, exactly as for someone who blocked you (SPEC §17 item 11).
  */
-import { and, desc, eq, gt, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { FRIEND_REQUEST_TTL_DAYS } from "./config";
 import { type Db, withTx } from "./db";
@@ -33,7 +38,13 @@ import {
   notifications,
   posts,
 } from "./schema";
-import { areFriends, canSeeAccount, isActive } from "./visibility";
+import {
+  areFriends,
+  canSeeAccount,
+  isActive,
+  pairLock,
+  personShownTo,
+} from "./visibility";
 
 /** A person in one of your lists. */
 export type PersonRow = {
@@ -189,21 +200,45 @@ async function assertActive(db: Db, accountId: string): Promise<void> {
   if (!(await isActive(db, accountId))) throw forbidden();
 }
 
-/** The other account exists (active or not). */
-async function exists(db: Db, accountId: string): Promise<boolean> {
-  const [row] = await db
+/**
+ * The other account exists (active or not). Inside a transaction, its row
+ * is locked `for key share`, so it cannot be deleted before the caller's
+ * writes that reference it commit.
+ */
+async function lockExisting(tx: Db, accountId: string): Promise<boolean> {
+  const [row] = await tx
     .select({ id: accounts.id })
     .from(accounts)
     .where(eq(accounts.id, accountId))
-    .limit(1);
+    .for("key share");
   return Boolean(row);
 }
 
+/** Remove the friend_request notification of a request that is no longer pending. */
+async function withdrawRequestNotice(
+  tx: Db,
+  request: { fromId: string; toId: string; createdAt: Date },
+): Promise<void> {
+  // Created with the request (same moment); none newer can exist while it
+  // was pending, because asking again while pending notifies nothing.
+  await tx
+    .delete(notifications)
+    .where(
+      and(
+        eq(notifications.kind, "friend_request"),
+        eq(notifications.recipientId, request.toId),
+        eq(notifications.actorId, request.fromId),
+        gte(notifications.createdAt, request.createdAt),
+      ),
+    );
+}
+
 /**
- * Accept the pending request requester → accepter, inside `tx`. The update
- * locks the request row and re-checks that there is no block, so a block
- * racing with an acceptance either cancels the request first or deletes
- * the friendship after. Returns false when there is no such request.
+ * Accept the pending request requester → accepter, inside `tx`. It takes
+ * the pair lock (SPEC §17 item 10), and the update re-checks under it that
+ * there is no block, so a block racing with an acceptance either cancels
+ * the request first or deletes the friendship after. Returns false when
+ * there is no such request.
  */
 async function acceptWithin(
   tx: Db,
@@ -211,6 +246,7 @@ async function acceptWithin(
   accepterId: string,
   now: Date,
 ): Promise<boolean> {
+  await pairLock(tx, requesterId, accepterId);
   const rows = await tx
     .update(friendRequests)
     .set({ status: "accepted", respondedAt: now })
@@ -261,7 +297,8 @@ export async function sendFriendRequest(
   }
   if (await areFriends(db, fromId, toId)) return { status: "already_friends" };
 
-  await expireStaleForPair(db, fromId, toId, now);
+  // Read-only until the lock: pendingBetween already ignores stale
+  // requests, and the transaction marks them expired under the pair lock.
   const pending = await pendingBetween(db, fromId, toId, now);
   if (pending?.fromId === fromId) return { status: "requested" };
   if (pending?.fromId === toId) {
@@ -275,7 +312,22 @@ export async function sendFriendRequest(
   await hit(db, `friendreq:${fromId}`, { ...RATE.friendRequest, now });
 
   try {
-    await withTx(db, async (tx) => {
+    const result = await withTx(db, async (tx): Promise<FriendRequestResult> => {
+      // Serialize with a block between the two, then look again under the
+      // lock (SPEC §17 item 10): whatever committed since the checks above
+      // decides the answer.
+      await pairLock(tx, fromId, toId);
+      if (!(await canSeeAccount(tx, fromId, toId))) {
+        throw notFound(PERSON_NOT_FOUND);
+      }
+      if (await areFriends(tx, fromId, toId)) return { status: "already_friends" };
+      await expireStaleForPair(tx, fromId, toId, now);
+      const current = await pendingBetween(tx, fromId, toId, now);
+      if (current?.fromId === fromId) return { status: "requested" };
+      if (current?.fromId === toId) {
+        if (await acceptWithin(tx, toId, fromId, now)) return { status: "accepted" };
+        throw notFound(PERSON_NOT_FOUND);
+      }
       await tx.insert(friendRequests).values({
         id: newId(),
         fromId,
@@ -289,7 +341,9 @@ export async function sendFriendRequest(
         actorId: fromId,
         now,
       });
+      return { status: "requested" };
     });
+    return result;
   } catch (error) {
     if (!isUniqueViolation(error, "friend_requests_one_pending_per_pair")) {
       throw error;
@@ -304,7 +358,6 @@ export async function sendFriendRequest(
     if (await areFriends(db, fromId, toId)) return { status: "already_friends" };
     return { status: "requested" };
   }
-  return { status: "requested" };
 }
 
 /** Accept the pending request from `fromId` to `accountId`. */
@@ -323,7 +376,12 @@ export async function acceptFriendRequest(
   if (!accepted) throw notFound(REQUEST_NOT_FOUND);
 }
 
-/** Decline the pending request from `fromId` to `accountId`. The sender is not told. */
+/**
+ * Decline the pending request from `fromId` to `accountId`, and remove its
+ * friend_request notification (SPEC §17 item 13). The sender gets no
+ * notification, but can see that the request is no longer pending: that is
+ * accepted, and /rules says so.
+ */
 export async function declineFriendRequest(
   db: Db,
   accountId: string,
@@ -332,22 +390,33 @@ export async function declineFriendRequest(
 ): Promise<void> {
   await assertActive(db, accountId);
   await expireStaleForPair(db, accountId, fromId, now);
-  const rows = await db
-    .update(friendRequests)
-    .set({ status: "declined", respondedAt: now })
-    .where(
-      and(
-        eq(friendRequests.fromId, fromId),
-        eq(friendRequests.toId, accountId),
-        eq(friendRequests.status, "pending"),
-        gt(friendRequests.createdAt, requestCutoff(now)),
-      ),
-    )
-    .returning({ id: friendRequests.id });
-  if (rows.length === 0) throw notFound(REQUEST_NOT_FOUND);
+  await withTx(db, async (tx) => {
+    const rows = await tx
+      .update(friendRequests)
+      .set({ status: "declined", respondedAt: now })
+      .where(
+        and(
+          eq(friendRequests.fromId, fromId),
+          eq(friendRequests.toId, accountId),
+          eq(friendRequests.status, "pending"),
+          gt(friendRequests.createdAt, requestCutoff(now)),
+        ),
+      )
+      .returning({
+        fromId: friendRequests.fromId,
+        toId: friendRequests.toId,
+        createdAt: friendRequests.createdAt,
+      });
+    if (rows.length === 0) throw notFound(REQUEST_NOT_FOUND);
+    for (const row of rows) await withdrawRequestNotice(tx, row);
+  });
 }
 
-/** Cancel your pending request to `toId`. */
+/**
+ * Cancel your pending request to `toId`, and remove its friend_request
+ * notification (SPEC §17 item 13), so sending and cancelling again and
+ * again leaves the other person nothing.
+ */
 export async function cancelFriendRequest(
   db: Db,
   accountId: string,
@@ -356,19 +425,26 @@ export async function cancelFriendRequest(
 ): Promise<void> {
   await assertActive(db, accountId);
   await expireStaleForPair(db, accountId, toId, now);
-  const rows = await db
-    .update(friendRequests)
-    .set({ status: "cancelled", respondedAt: now })
-    .where(
-      and(
-        eq(friendRequests.fromId, accountId),
-        eq(friendRequests.toId, toId),
-        eq(friendRequests.status, "pending"),
-        gt(friendRequests.createdAt, requestCutoff(now)),
-      ),
-    )
-    .returning({ id: friendRequests.id });
-  if (rows.length === 0) throw notFound(REQUEST_NOT_FOUND);
+  await withTx(db, async (tx) => {
+    const rows = await tx
+      .update(friendRequests)
+      .set({ status: "cancelled", respondedAt: now })
+      .where(
+        and(
+          eq(friendRequests.fromId, accountId),
+          eq(friendRequests.toId, toId),
+          eq(friendRequests.status, "pending"),
+          gt(friendRequests.createdAt, requestCutoff(now)),
+        ),
+      )
+      .returning({
+        fromId: friendRequests.fromId,
+        toId: friendRequests.toId,
+        createdAt: friendRequests.createdAt,
+      });
+    if (rows.length === 0) throw notFound(REQUEST_NOT_FOUND);
+    for (const row of rows) await withdrawRequestNotice(tx, row);
+  });
 }
 
 /**
@@ -395,7 +471,13 @@ export async function unfriend(
 /**
  * Allowed only if the followee accepts followers, is not you, and no block.
  * A new follow notifies the followee (new_follower); following again
- * changes nothing.
+ * changes nothing. Limited to 100 new follows a day (SPEC §17 item 13).
+ *
+ * The write serializes with a block between the two (the pair lock) and
+ * with the followee switching followers off (their account row, locked
+ * `for share`; `setAcceptsFollowers` updates that row before it deletes
+ * follows). Both are checked again under those locks (SPEC §17 item 10),
+ * so a follow never outlives a block or the switch.
  */
 export async function follow(
   db: Db,
@@ -417,7 +499,33 @@ export async function follow(
   if (!followee.acceptsFollowers) {
     throw forbidden("This person doesn't accept followers.");
   }
+  // Following again changes nothing, and does not count toward the limit.
+  const [already] = await db
+    .select({ followerId: follows.followerId })
+    .from(follows)
+    .where(and(eq(follows.followerId, followerId), eq(follows.followeeId, followeeId)))
+    .limit(1);
+  if (already) return;
+
+  // Before the transaction: a limit hit inside it would roll back with it.
+  await hit(db, `follow:${followerId}`, { ...RATE.follow, now });
+
   await withTx(db, async (tx) => {
+    await pairLock(tx, followerId, followeeId);
+    const [row] = await tx
+      .select({
+        acceptsFollowers: accounts.acceptsFollowers,
+        suspendedAt: accounts.suspendedAt,
+      })
+      .from(accounts)
+      .where(eq(accounts.id, followeeId))
+      .for("share");
+    if (!row || row.suspendedAt || !(await canSeeAccount(tx, followerId, followeeId))) {
+      throw notFound(PERSON_NOT_FOUND);
+    }
+    if (!row.acceptsFollowers) {
+      throw forbidden("This person doesn't accept followers.");
+    }
     const inserted = await tx
       .insert(follows)
       .values({ followerId, followeeId, createdAt: now })
@@ -434,18 +542,33 @@ export async function follow(
   });
 }
 
-/** Stop following. Unfollowing someone you do not follow changes nothing. */
+/**
+ * Stop following, and take back the new_follower notification (SPEC §17
+ * item 13), so following and unfollowing again and again cannot flood
+ * anyone. Unfollowing someone you do not follow changes nothing.
+ */
 export async function unfollow(
   db: Db,
   followerId: string,
   followeeId: string,
 ): Promise<void> {
   await assertActive(db, followerId);
-  await db
-    .delete(follows)
-    .where(
-      and(eq(follows.followerId, followerId), eq(follows.followeeId, followeeId)),
-    );
+  await withTx(db, async (tx) => {
+    await tx
+      .delete(follows)
+      .where(
+        and(eq(follows.followerId, followerId), eq(follows.followeeId, followeeId)),
+      );
+    await tx
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.kind, "new_follower"),
+          eq(notifications.recipientId, followeeId),
+          eq(notifications.actorId, followerId),
+        ),
+      );
+  });
 }
 
 /* ----------------------------------------------------------------- blocks */
@@ -462,7 +585,13 @@ export async function unfollow(
  * Replies stay, hidden between the two by the visibility rule. Blocking
  * someone already blocked runs the same effects again, which is harmless.
  * Any existing account can be blocked, including one that blocked you:
- * refusing would tell you that they had.
+ * refusing would tell you that they had. For the same reason, blocking an
+ * account that does not exist succeeds and writes nothing (SPEC §17
+ * item 11).
+ *
+ * It takes the pair lock first (SPEC §17 item 10), so every other write
+ * between the two either commits before it (and is removed here) or waits
+ * for it (and then finds the block and refuses).
  */
 export async function block(
   db: Db,
@@ -472,18 +601,18 @@ export async function block(
 ): Promise<void> {
   if (blockerId === blockedId) throw invalid("You can't block yourself.");
   await assertActive(db, blockerId);
-  if (!(await exists(db, blockedId))) throw notFound(PERSON_NOT_FOUND);
 
   const x = blockerId;
   const y = blockedId;
   await withTx(db, async (tx) => {
+    await pairLock(tx, x, y);
+    if (!(await lockExisting(tx, y))) return;
+
     await tx
       .insert(blocks)
       .values({ blockerId: x, blockedId: y, createdAt: now })
       .onConflictDoNothing();
 
-    // Requests first: this waits for an acceptance in flight to commit, so
-    // the friendship delete below sees the friendship it created.
     await tx
       .update(friendRequests)
       .set({ status: "cancelled", respondedAt: now })
@@ -528,23 +657,31 @@ export async function block(
   });
 }
 
-/** Remove your block. Nothing that the block removed comes back. */
+/**
+ * Remove your block. Nothing that the block removed comes back. Takes the
+ * pair lock (SPEC §17 item 10), like every write between the two.
+ */
 export async function unblock(
   db: Db,
   blockerId: string,
   blockedId: string,
 ): Promise<void> {
   await assertActive(db, blockerId);
-  await db
-    .delete(blocks)
-    .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId)));
+  await withTx(db, async (tx) => {
+    await pairLock(tx, blockerId, blockedId);
+    await tx
+      .delete(blocks)
+      .where(and(eq(blocks.blockerId, blockerId), eq(blocks.blockedId, blockedId)));
+  });
 }
 
 /* ------------------------------------------------------------------ mutes */
 
 /**
  * Mute: hides their posts from your feed only. Private: nobody is told,
- * and nothing else changes.
+ * and nothing else changes. Muting an account that does not exist succeeds
+ * and writes nothing, the same answer as for anyone else (SPEC §17
+ * item 11).
  */
 export async function mute(
   db: Db,
@@ -554,11 +691,13 @@ export async function mute(
 ): Promise<void> {
   if (muterId === mutedId) throw invalid("You can't mute yourself.");
   await assertActive(db, muterId);
-  if (!(await exists(db, mutedId))) throw notFound(PERSON_NOT_FOUND);
-  await db
-    .insert(mutes)
-    .values({ muterId, mutedId, createdAt: now })
-    .onConflictDoNothing();
+  await withTx(db, async (tx) => {
+    if (!(await lockExisting(tx, mutedId))) return;
+    await tx
+      .insert(mutes)
+      .values({ muterId, mutedId, createdAt: now })
+      .onConflictDoNothing();
+  });
 }
 
 export async function unmute(
@@ -720,7 +859,12 @@ export async function listBlocked(
     .orderBy(desc(blocks.createdAt), accounts.handle);
 }
 
-/** People you muted, newest first. Your own list, like listBlocked. */
+/**
+ * People you muted, newest first, as far as they may be shown to you
+ * (`personShownTo`, SPEC §17 item 11): someone suspended, or with a block
+ * either way, drops out like a deleted account. The mute row stays; it has
+ * no effect while a block stands.
+ */
 export async function listMuted(
   db: Db,
   accountId: string,
@@ -729,6 +873,6 @@ export async function listMuted(
     .select({ ...person, since: mutes.createdAt })
     .from(mutes)
     .innerJoin(accounts, eq(accounts.id, mutes.mutedId))
-    .where(eq(mutes.muterId, accountId))
+    .where(and(eq(mutes.muterId, accountId), personShownTo(accountId, mutes.mutedId)))
     .orderBy(desc(mutes.createdAt), accounts.handle);
 }

@@ -13,7 +13,7 @@
  * blocks, the friendship and the follow, so it needs nothing else joined.
  */
 import { and, eq, type SQL, sql } from "drizzle-orm";
-import type { AnyPgColumn } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, PgTransaction } from "drizzle-orm/pg-core";
 import { FRIEND_REQUEST_TTL_DAYS } from "./config";
 import type { Db } from "./db";
 import { type Post, posts, replies, type Reply } from "./schema";
@@ -105,6 +105,58 @@ export function visibleReplyPredicate(
          or (vis_rblock.blocker_id = ${r.authorId} and vis_rblock.blocked_id = ${viewerId})
     )
   )`;
+}
+
+/**
+ * ONE RULE FOR SHOWING A PERSON (SPEC §17 item 11): the person is active,
+ * and there is no block either way with the viewer. Every list of people
+ * that is not the viewer's own act uses it: the likers of a post, the actor
+ * of a notification, who used an invite (the list and the export), and the
+ * muted list. A person it hides is indistinguishable from a deleted one
+ * (SPEC §2 rule 3).
+ *
+ * Posts never use this: their rule is `visiblePostPredicate` alone.
+ */
+export function personShownTo(viewerId: string, personId: AnyPgColumn): SQL {
+  return sql`(
+    exists (
+      select 1 from accounts shown_person
+      where shown_person.id = ${personId} and shown_person.suspended_at is null
+    )
+    and not exists (
+      select 1 from blocks shown_block
+      where (shown_block.blocker_id = ${viewerId} and shown_block.blocked_id = ${personId})
+         or (shown_block.blocker_id = ${personId} and shown_block.blocked_id = ${viewerId})
+    )
+  )`;
+}
+
+/* ------------------------------------------------------------------ locks */
+
+/**
+ * Serialize every write between the same two people (SPEC §17 item 10):
+ * a transaction-scoped advisory lock on the unordered pair, released when
+ * the transaction ends.
+ *
+ * `block`, `unblock`, `useInviteAsExisting`, `sendFriendRequest`,
+ * `acceptFriendRequest`, `follow` and `toggleLike` (liker and author) take
+ * it first inside their transaction and then re-check the block, so a
+ * block either commits before the write (which then sees it and refuses)
+ * or after it (and then removes what the write made). Neither order leaves
+ * a connection across a block.
+ *
+ * Only meaningful inside a transaction: outside one the lock would be
+ * released as soon as it was taken, so that is refused as a programming
+ * error.
+ */
+export async function pairLock(tx: Db, a: string, b: string): Promise<void> {
+  if (!(tx instanceof PgTransaction)) {
+    throw new Error("pairLock must be taken inside a transaction.");
+  }
+  const [low, high] = a < b ? [a, b] : [b, a];
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`pair:${low}:${high}`}, 0))`,
+  );
 }
 
 /* ------------------------------------------------------------ single rows */

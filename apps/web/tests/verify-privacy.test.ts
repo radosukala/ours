@@ -13,9 +13,20 @@
  *
  * The race tests make an interleaving deterministic instead of hoping for
  * it: a second connection takes a table lock, the racing core call starts
- * and waits on that lock, the block commits under the lock, and then the
- * racer finishes. Any serial order of the two operations leaves the pair
- * without the connection; the tests check that the interleaved one does too.
+ * and waits on that lock, the block starts while the racer is paused, and
+ * then the racer finishes. Any serial order of the two operations leaves the
+ * pair without the connection; the tests check that the interleaved one
+ * does too.
+ *
+ * Harness change by the fixer (SPEC §17 item 10), assertions unchanged: the
+ * verifier ran the block inside the table-lock holder's transaction, so it
+ * committed while the racer was mid-transaction. The fix makes exactly that
+ * impossible: the racer holds the pair lock (or the followee's row lock)
+ * from the start of its transaction, so the block must wait for it, and a
+ * block inside the lock holder would deadlock with the racer. The block now
+ * runs on its own connection; the harness waits until it is waiting on a
+ * lock (or has finished, as it would without the fix), then releases the
+ * table and lets both finish.
  */
 import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -142,28 +153,60 @@ async function waitForLockWaiter(table: string): Promise<void> {
 }
 
 /**
+ * Wait until the backend `pid` is waiting on a lock, or `work` has settled
+ * (without the fix, the competing operation may not wait at all).
+ */
+async function waitForBackendWaiting(pid: number, work: Promise<unknown>): Promise<void> {
+  let settled = false;
+  work.then(
+    () => (settled = true),
+    () => (settled = true),
+  );
+  for (let i = 0; i < 500; i++) {
+    if (settled) return;
+    const result = await db().execute(sql`
+      select count(*)::int as n from pg_stat_activity
+      where pid = ${pid} and wait_event_type = 'Lock'
+    `);
+    if (Number((result.rows[0] as { n: number }).n) > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error("the competing operation neither finished nor waited on a lock");
+}
+
+/**
  * Deterministic race: a second connection locks `table`; `racer` starts and
- * blocks on its first write to `table`; `during` runs and commits under the
- * lock; then the racer finishes. Returns how the racer ended.
+ * blocks on its first write to `table`; `during` starts on its own
+ * connection while the racer is paused, and runs until it waits on a lock
+ * (or finishes); then the table is released and both finish. Returns how
+ * the racer ended.
  */
 async function race(
   table: "follows" | "friendships" | "likes" | "friend_requests",
   racer: () => Promise<unknown>,
-  during: (tx: Db) => Promise<void>,
+  during: (db: Db) => Promise<void>,
 ): Promise<Outcome> {
-  const client = new pg.Client({ connectionString: inject("databaseUrl") });
-  await client.connect();
-  const other = drizzle(client, { schema });
+  const holder = new pg.Client({ connectionString: inject("databaseUrl") });
+  const competitor = new pg.Client({ connectionString: inject("databaseUrl") });
+  await holder.connect();
+  await competitor.connect();
+  const competitorPid = Number(
+    (await competitor.query("select pg_backend_pid() as pid")).rows[0].pid,
+  );
   let settled: Promise<Outcome> | null = null;
+  let finished: Promise<void> | null = null;
   try {
-    await other.transaction(async (tx) => {
+    await drizzle(holder, { schema }).transaction(async (tx) => {
       await tx.execute(sql.raw(`lock table ${table} in share row exclusive mode`));
       settled = outcome(racer);
       await waitForLockWaiter(table);
-      await during(tx as unknown as Db);
+      finished = during(drizzle(competitor, { schema }) as unknown as Db);
+      await waitForBackendWaiting(competitorPid, finished);
     });
+    await finished;
   } finally {
-    await client.end();
+    await holder.end();
+    await competitor.end();
   }
   return settled!;
 }
@@ -171,7 +214,7 @@ async function race(
 /* ===================================================== DEFECTS: races */
 
 describe("a block racing a connection write (SPEC §6: a block takes effect at once, in one transaction)", () => {
-  it("DEFECT: an invite used while a block commits leaves the friendship standing, and unblocking restores friends-only access without a new acceptance", async () => {
+  it("fixed: an invite used while a block commits leaves the friendship standing, and unblocking restores friends-only access without a new acceptance", async () => {
     const inviter = await makeAccount({ handle: "race_inviter" });
     const guest = await makeAccount({ handle: "race_guest" });
     const secret = await fx.post(inviter, {
@@ -183,8 +226,8 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     const racer = await race(
       "friendships",
       () => applyInviteAsExisting(db(), { accountId: guest.id, inviteId }),
-      async (tx) => {
-        await block(tx, inviter.id, guest.id);
+      async (other) => {
+        await block(other, inviter.id, guest.id);
       },
     );
     expect(racer).toEqual({ ok: true }); // the invite use started before the block
@@ -201,7 +244,7 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     });
   });
 
-  it("DEFECT: a follow made while a block commits survives the block, and unblocking restores the follower's reach", async () => {
+  it("fixed: a follow made while a block commits survives the block, and unblocking restores the follower's reach", async () => {
     const author = await makeAccount({ handle: "race_author", acceptsFollowers: true });
     const fan = await makeAccount({ handle: "race_fan" });
     const forFollowers = await fx.post(author, { audience: "followers" });
@@ -209,8 +252,8 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     const racer = await race(
       "follows",
       () => follow(db(), fan.id, author.id),
-      async (tx) => {
-        await block(tx, author.id, fan.id);
+      async (other) => {
+        await block(other, author.id, fan.id);
       },
     );
     expect(racer).toEqual({ ok: true });
@@ -230,7 +273,7 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     });
   });
 
-  it("DEFECT: a follow made while accepts_followers is switched off survives, and reaches followers posts again when it is switched back on", async () => {
+  it("fixed: a follow made while accepts_followers is switched off survives, and reaches followers posts again when it is switched back on", async () => {
     const author = await makeAccount({ handle: "race_author2", acceptsFollowers: true });
     const fan = await makeAccount({ handle: "race_fan2" });
     const forFollowers = await fx.post(author, { audience: "followers" });
@@ -238,8 +281,8 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     const racer = await race(
       "follows",
       () => follow(db(), fan.id, author.id),
-      async (tx) => {
-        await setAcceptsFollowers(tx, author.id, false);
+      async (other) => {
+        await setAcceptsFollowers(other, author.id, false);
       },
     );
     expect(racer).toEqual({ ok: true });
@@ -260,7 +303,7 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     });
   });
 
-  it("DEFECT: a like made while a block commits survives the block, and the author sees the blocked person among the likers after unblocking", async () => {
+  it("fixed: a like made while a block commits survives the block, and the author sees the blocked person among the likers after unblocking", async () => {
     const author = await makeAccount({ handle: "race_liked" });
     const liker = await makeAccount({ handle: "race_liker" });
     await fx.befriend(author, liker);
@@ -269,8 +312,8 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     const racer = await race(
       "likes",
       () => toggleLike(db(), liker.id, p.id),
-      async (tx) => {
-        await block(tx, author.id, liker.id);
+      async (other) => {
+        await block(other, author.id, liker.id);
       },
     );
     expect(racer).toEqual({ ok: true });
@@ -289,15 +332,15 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
     expect({ likeRows, likerShown }).toEqual({ likeRows: 0, likerShown: false });
   });
 
-  it("DEFECT: a friend request sent while a block commits survives as pending, and reappears to the blocker after unblocking", async () => {
+  it("fixed: a friend request sent while a block commits survives as pending, and reappears to the blocker after unblocking", async () => {
     const a = await makeAccount({ handle: "race_req_a" });
     const b = await makeAccount({ handle: "race_req_b" });
 
     const racer = await race(
       "friend_requests",
       () => sendFriendRequest(db(), a.id, b.id),
-      async (tx) => {
-        await block(tx, b.id, a.id);
+      async (other) => {
+        await block(other, b.id, a.id);
       },
     );
     expect(racer.ok).toBe(true);
@@ -328,7 +371,7 @@ describe("a block racing a connection write (SPEC §6: a block takes effect at o
 /* =========================================== DEFECTS: direct, no race */
 
 describe("exported core functions that skip the one predicate", () => {
-  it("DEFECT: postPage (exported from core/posts) hands a stranger a friends-only post when its caller forgets the predicate", async () => {
+  it("fixed: postPage (exported from core/posts) hands a stranger a friends-only post when its caller forgets the predicate", async () => {
     const author = await makeAccount({ handle: "pp_author" });
     const stranger = await makeAccount({ handle: "pp_stranger" });
     const secret = await fx.post(author, {
@@ -345,7 +388,7 @@ describe("exported core functions that skip the one predicate", () => {
 });
 
 describe("a person who blocked you, or was suspended, must be indistinguishable from nothing (SPEC §2 rule 3, §6)", () => {
-  it("DEFECT: /people/invites (listInvites) names an invitee who has since blocked you — even their new handle — while a deleted invitee shows nothing", async () => {
+  it("fixed: /people/invites (listInvites) names an invitee who has since blocked you — even their new handle — while a deleted invitee shows nothing", async () => {
     const inviter = await makeAccount({ handle: "inv_owner" });
     const guest = await makeAccount({ handle: "inv_guest" });
     const gone = await makeAccount({ handle: "inv_gone" });
@@ -371,7 +414,7 @@ describe("a person who blocked you, or was suspended, must be indistinguishable 
     });
   });
 
-  it("DEFECT: the export names a suspended invitee (used_by_handle) that /people/invites hides", async () => {
+  it("fixed: the export names a suspended invitee (used_by_handle) that /people/invites hides", async () => {
     const inviter = await makeAccount({ handle: "exp_owner" });
     const guest = await makeAccount({ handle: "exp_guest" });
     const inv = await createInvite(db(), inviter.id, {});
@@ -384,7 +427,7 @@ describe("a person who blocked you, or was suspended, must be indistinguishable 
     expect(exported).toBeNull(); // the export should not be a way around it
   });
 
-  it("DEFECT: /settings/blocked (listMuted) keeps showing someone who blocked you, with their new name, while a deleted account drops out", async () => {
+  it("fixed: /settings/blocked (listMuted) keeps showing someone who blocked you, with their new name, while a deleted account drops out", async () => {
     const me = await makeAccount({ handle: "mute_me" });
     const blocker = await makeAccount({ handle: "mute_blocker" });
     const leaver = await makeAccount({ handle: "mute_leaver" });
@@ -400,7 +443,7 @@ describe("a person who blocked you, or was suspended, must be indistinguishable 
     expect(handles).toEqual([]);
   });
 
-  it("DEFECT: mute() and block() by id answer differently for a person who blocked you (ok) and a deleted account (NOT_FOUND)", async () => {
+  it("fixed: mute() and block() by id answer differently for a person who blocked you (ok) and a deleted account (NOT_FOUND)", async () => {
     const me = await makeAccount({ handle: "oracle_me" });
     const blocker = await makeAccount({ handle: "oracle_blocker" });
     const leaver = await makeAccount({ handle: "oracle_leaver" });
@@ -420,7 +463,7 @@ describe("a person who blocked you, or was suspended, must be indistinguishable 
     });
   });
 
-  it("DEFECT: the unread badge (countUnread) counts notifications that /notifications (listNotifications) hides, so it signals activity by a suspended account", async () => {
+  it("fixed: the unread badge (countUnread) counts notifications that /notifications (listNotifications) hides, so it signals activity by a suspended account", async () => {
     const me = await makeAccount({ handle: "badge_me" });
     const friend = await makeAccount({ handle: "badge_friend" });
     await fx.befriend(me, friend);

@@ -10,8 +10,17 @@
  *
  * Races are made deterministic with `interleaved()`: a second connection
  * pool whose connections pause just before one chosen SQL statement while
- * another operation commits on the ordinary pool. That is the schedule two
+ * another operation runs on the ordinary pool. That is the schedule two
  * concurrent requests can produce; the pause only fixes the order.
+ *
+ * Harness change by the fixer (SPEC §17 item 10), assertions unchanged: the
+ * verifier let the paused statement go on only once the other operation
+ * had committed. With the fix, a write between two people holds the pair
+ * lock (or the followee's row lock) from the start of its transaction, so a
+ * block cannot commit while the write is paused; waiting for it would hang.
+ * The paused statement now goes on once the other operation has finished
+ * (as it does without the fix) or is waiting on a lock in the database, and
+ * `close()` waits for that operation to finish before the assertions.
  */
 import { and, count, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -226,15 +235,58 @@ async function seedRate(key: string, n: number): Promise<void> {
 
 type Hook = { match: RegExp; run: () => Promise<unknown> };
 
+/** Whether any session in the test database is waiting on a lock. */
+async function someoneWaitsOnALock(): Promise<boolean> {
+  const result = await db().execute(sql`
+    select count(*)::int as n from pg_stat_activity
+    where datname = current_database() and wait_event_type = 'Lock'`);
+  return Number((result.rows[0] as { n: number }).n) > 0;
+}
+
+/**
+ * Run `run` and resolve once it has finished, or once it is waiting on a
+ * lock (it then goes on in the background, and is returned as `waiting`).
+ * If it fails before either, that failure is thrown here.
+ */
+async function runUntilDoneOrWaiting(
+  run: () => Promise<unknown>,
+): Promise<{ waiting: Promise<unknown> | null }> {
+  const status: { state: "running" | "done" | "failed"; failure?: unknown } = {
+    state: "running",
+  };
+  const running = run().then(
+    () => void (status.state = "done"),
+    (error: unknown) => {
+      status.state = "failed";
+      status.failure = error;
+    },
+  );
+  for (let i = 0; i < 1000; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (status.state === "failed") throw status.failure;
+    if (status.state === "done") return { waiting: null };
+    if (await someoneWaitsOnALock()) {
+      return {
+        waiting: running.then(() => {
+          if (status.state === "failed") throw status.failure;
+        }),
+      };
+    }
+  }
+  throw new Error("the competing operation neither finished nor waited on a lock");
+}
+
 /**
  * A second pool on the test database. `before(match, run)` pauses the
- * first statement whose SQL matches, runs `run` to completion on the
- * ordinary pool (so it commits), then lets the paused statement go on.
+ * first statement whose SQL matches, runs `run` on the ordinary pool until
+ * it has committed or is waiting on a lock, then lets the paused statement
+ * go on. `close()` waits for every such `run` to finish.
  */
 function interleaved() {
   const pool = new pg.Pool({ connectionString: inject("databaseUrl"), max: 4 });
   const hooks: Hook[] = [];
   const fired: string[] = [];
+  const stillRunning: Promise<unknown>[] = [];
   pool.on("connect", (client) => {
     const original = client.query.bind(client) as (...args: unknown[]) => unknown;
     (client as unknown as { query: (...args: unknown[]) => unknown }).query = (
@@ -251,7 +303,10 @@ function interleaved() {
         typeof args[args.length - 1] === "function"
           ? (args.pop() as (error: unknown, result?: unknown) => void)
           : null;
-      const result = hook!.run().then(() => original(...args) as Promise<unknown>);
+      const result = runUntilDoneOrWaiting(hook!.run).then(({ waiting }) => {
+        if (waiting) stillRunning.push(waiting);
+        return original(...args) as Promise<unknown>;
+      });
       if (callback) {
         result.then(
           (r) => callback(null, r),
@@ -268,7 +323,15 @@ function interleaved() {
       hooks.push({ match, run });
     },
     fired,
-    close: () => pool.end(),
+    close: async () => {
+      try {
+        const results = await Promise.allSettled(stillRunning);
+        const failed = results.find((r) => r.status === "rejected");
+        if (failed) throw (failed as PromiseRejectedResult).reason;
+      } finally {
+        await pool.end();
+      }
+    },
   };
 }
 
@@ -387,7 +450,7 @@ describe("invite economy", () => {
     ).toEqual([]);
   });
 
-  it("DEFECT: the inviter's invite list (and export) keeps showing the current handle of an invitee who has since blocked them", async () => {
+  it("fixed: the inviter's invite list (and export) keeps showing the current handle of an invitee who has since blocked them", async () => {
     const inviter = await makeAccount();
     const invitee = await makeAccount();
     const { code } = await createInvite(db(), inviter.id, {});
@@ -408,7 +471,7 @@ describe("invite economy", () => {
     }).toEqual({ listed: [null], exported: [null] });
   });
 
-  it("DEFECT: an invite used while a block commits leaves a friendship across the block, and unblocking restores it", async () => {
+  it("fixed: an invite used while a block commits leaves a friendship across the block, and unblocking restores it", async () => {
     const inviter = await makeAccount();
     const user = await makeAccount();
     const { code } = await createInvite(db(), inviter.id, {});
@@ -462,7 +525,7 @@ describe("friend requests: spam", () => {
     expect(await refusal(conn.sendFriendRequest(db(), pest.id, target.id))).toBe("NOT_FOUND");
   });
 
-  it("DEFECT: cycling send and cancel re-notifies the recipient every time and leaves every notification behind", async () => {
+  it("fixed: cycling send and cancel re-notifies the recipient every time and leaves every notification behind", async () => {
     const pest = await makeAccount();
     const target = await makeAccount();
     for (let i = 0; i < 20; i++) {
@@ -494,7 +557,7 @@ describe("follows", () => {
     expect(await notificationCount(closedDoor.id)).toBe(0);
   });
 
-  it("DEFECT: toggling follow floods the followee with new_follower notifications, with no limit at all", async () => {
+  it("fixed: toggling follow floods the followee with new_follower notifications, with no limit at all", async () => {
     const fan = await makeAccount();
     const star = await makeAccount({ acceptsFollowers: true });
     for (let i = 0; i < 60; i++) {
@@ -506,7 +569,7 @@ describe("follows", () => {
     expect(await notificationCount(star.id, "new_follower")).toBeLessThanOrEqual(1);
   });
 
-  it("DEFECT: a follow that commits just after a block survives it, and unblocking restores the following", async () => {
+  it("fixed: a follow that commits just after a block survives it, and unblocking restores the following", async () => {
     const fan = await makeAccount();
     const star = await makeAccount({ acceptsFollowers: true });
     const race = interleaved();
@@ -528,7 +591,7 @@ describe("follows", () => {
     });
   });
 
-  it("DEFECT: a follow that commits just after accepts_followers is turned off survives, and turning it back on restores the follower", async () => {
+  it("fixed: a follow that commits just after accepts_followers is turned off survives, and turning it back on restores the follower", async () => {
     const fan = await makeAccount();
     const star = await makeAccount({ acceptsFollowers: true });
     const race = interleaved();
@@ -666,7 +729,7 @@ describe("block completeness (SPEC §6)", () => {
     expect(await snapshot(a.id, b.id, c.id, pa.id, pb.id)).toEqual(before);
   });
 
-  it("DEFECT: a like that commits just after a block survives it, and after unblocking the blocker sees it again", async () => {
+  it("fixed: a like that commits just after a block survives it, and after unblocking the blocker sees it again", async () => {
     const author = await makeAccount();
     const liker = await makeAccount();
     await befriend(author, liker);
@@ -691,7 +754,7 @@ describe("block completeness (SPEC §6)", () => {
     }).toEqual({ rowsAcrossBlock: 0, likersAfterUnblock: [] });
   });
 
-  it("DEFECT: a friend request that commits just after a block survives it, and after unblocking it waits in the blocker's requests", async () => {
+  it("fixed: a friend request that commits just after a block survives it, and after unblocking it waits in the blocker's requests", async () => {
     const pest = await makeAccount();
     const target = await makeAccount();
     const race = interleaved();
@@ -957,7 +1020,7 @@ describe("suspension effects", () => {
     expect(await outboxTo(x.email, "digest")).toEqual([]);
   });
 
-  it("DEFECT: the unread badge counts notifications the list hides (from an actor suspended since)", async () => {
+  it("fixed: the unread badge counts notifications the list hides (from an actor suspended since)", async () => {
     const author = await makeAccount();
     const x = await makeAccount();
     await befriend(author, x);

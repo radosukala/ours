@@ -9,8 +9,13 @@
  * - Connections (friends, following, followers) are listed as the owner
  *   sees them now: people who are active and with no block either way,
  *   and followers only while the owner accepts followers (SPEC §6).
- * - Records of the owner's own acts (likes, blocks, mutes, invites, who
- *   invited them) name the other person's handle as recorded.
+ * - Records of the owner's own acts (likes, blocks, who invited them) name
+ *   the other person's handle as recorded.
+ * - Who used an invite, and the muted list, follow the one rule for
+ *   showing a person (`personShownTo`, SPEC §17 item 11), exactly as
+ *   /people/invites and /settings/blocked do: someone suspended, or with a
+ *   block either way, is left out like a deleted account, so the export is
+ *   never a way around those pages.
  *
  * The function takes the owner's id from the session; there is no way to
  * ask it for someone else.
@@ -30,6 +35,7 @@ import {
   posts,
   replies,
 } from "./schema";
+import { personShownTo } from "./visibility";
 
 type Person = { handle: string; display_name: string; since: string };
 
@@ -226,7 +232,7 @@ export async function exportAccount(
       .select({ handle: other.handle, since: mutes.createdAt })
       .from(mutes)
       .innerJoin(other, eq(other.id, mutes.mutedId))
-      .where(eq(mutes.muterId, me.id))
+      .where(and(eq(mutes.muterId, me.id), personShownTo(me.id, mutes.mutedId)))
       .orderBy(asc(mutes.createdAt), asc(other.handle)),
     db
       .select({
@@ -235,6 +241,7 @@ export async function exportAccount(
         usedAt: invites.usedAt,
         revokedAt: invites.revokedAt,
         usedByHandle: other.handle,
+        usedByShown: sql<boolean>`${personShownTo(me.id, invites.usedBy)}`,
       })
       .from(invites)
       .leftJoin(other, eq(other.id, invites.usedBy))
@@ -289,7 +296,7 @@ export async function exportAccount(
     invites: inviteRows.map((i) => ({
       created_at: iso(i.createdAt),
       status: inviteStatus(i, now),
-      used_by_handle: i.usedAt ? (i.usedByHandle ?? null) : null,
+      used_by_handle: i.usedAt && i.usedByShown === true ? (i.usedByHandle ?? null) : null,
     })),
   };
 }

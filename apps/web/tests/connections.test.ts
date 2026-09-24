@@ -460,10 +460,11 @@ describe("follow", () => {
 /* ------------------------------------------------------------------ mutes */
 
 describe("mute", () => {
-  it("is refused toward yourself (INVALID) and toward nobody (NOT_FOUND)", async () => {
+  it("is refused toward yourself (INVALID); toward nobody it succeeds and writes nothing (SPEC §17 item 11)", async () => {
     const anna = await makeAccount({ handle: "anna" });
     await expectCode(mute(db(), anna.id, anna.id, t0), "INVALID");
-    await expectCode(mute(db(), anna.id, newId(), t0), "NOT_FOUND");
+    await expect(mute(db(), anna.id, newId(), t0)).resolves.toBeUndefined();
+    expect(await db().select().from(mutes)).toHaveLength(0);
   });
 
   it("is private: no notification, and nothing else changes", async () => {

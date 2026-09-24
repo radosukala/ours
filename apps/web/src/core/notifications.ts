@@ -2,7 +2,7 @@
  * Creating and counting notifications. Listing them and marking them read
  * belong to core/inbox.ts (M3).
  */
-import { and, count, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, or, type SQL, sql } from "drizzle-orm";
 import { FRIEND_REQUEST_TTL_DAYS } from "./config";
 import type { Db } from "./db";
 import { invalid } from "./errors";
@@ -13,7 +13,10 @@ import {
   type NotificationKind,
   notifications,
 } from "./schema";
-import { isBlocked } from "./visibility";
+import { isBlocked, personShownTo } from "./visibility";
+
+/** /notifications lists the newest this many (SPEC §8). */
+export const NOTIFICATIONS_MAX = 100;
 
 const KINDS_WITH_BODY: ReadonlySet<NotificationKind> = new Set([
   "content_removed",
@@ -62,14 +65,36 @@ export async function notify(db: Db, input: NotifyInput): Promise<string | null>
   return id;
 }
 
-/** Unread notifications for the navigation badge. */
+/**
+ * The notifications shown to their recipient (SPEC §17 item 11): theirs,
+ * and, when someone caused them, only while that person may be shown to
+ * the recipient (active, no block either way). `listNotifications` and
+ * `countUnread` both filter with this, so the badge and the list agree.
+ */
+export function notificationShownTo(recipientId: string): SQL {
+  return and(
+    eq(notifications.recipientId, recipientId),
+    or(isNull(notifications.actorId), personShownTo(recipientId, notifications.actorId)),
+  )!;
+}
+
+/**
+ * Unread notifications for the navigation badge: the unread ones among
+ * exactly what /notifications lists (the newest NOTIFICATIONS_MAX shown to
+ * the recipient), so the badge never signals something the list hides.
+ */
 export async function countUnread(db: Db, accountId: string): Promise<number> {
+  const listed = db
+    .select({ readAt: notifications.readAt })
+    .from(notifications)
+    .where(notificationShownTo(accountId))
+    .orderBy(desc(notifications.createdAt), desc(notifications.id))
+    .limit(NOTIFICATIONS_MAX)
+    .as("listed");
   const [row] = await db
     .select({ n: count() })
-    .from(notifications)
-    .where(
-      and(eq(notifications.recipientId, accountId), isNull(notifications.readAt)),
-    );
+    .from(listed)
+    .where(isNull(listed.readAt));
   return row?.n ?? 0;
 }
 

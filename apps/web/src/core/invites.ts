@@ -34,7 +34,7 @@ import {
   validHandle,
   validNote,
 } from "./validate";
-import { areFriends, isActive, isBlocked } from "./visibility";
+import { areFriends, isActive, isBlocked, pairLock, personShownTo } from "./visibility";
 
 export type InviteStatus = "waiting" | "used" | "expired" | "revoked";
 
@@ -192,7 +192,9 @@ export async function listInvites(
       usedAt: invites.usedAt,
       revokedAt: invites.revokedAt,
       usedByHandle: usedBy.handle,
-      usedBySuspendedAt: usedBy.suspendedAt,
+      // The one rule for showing a person (SPEC §17 item 11): someone
+      // suspended, or with a block either way, reads like a deleted account.
+      usedByShown: sql<boolean>`${personShownTo(inviterId, invites.usedBy)}`,
     })
     .from(invites)
     .leftJoin(usedBy, eq(usedBy.id, invites.usedBy))
@@ -206,8 +208,7 @@ export async function listInvites(
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
       status: statusOf(row, now),
-      // A suspended account's profile is hidden from everyone (SPEC §6).
-      usedByHandle: row.usedBySuspendedAt ? null : (row.usedByHandle ?? null),
+      usedByHandle: row.usedByShown === true ? (row.usedByHandle ?? null) : null,
     })),
   };
 }
@@ -563,6 +564,10 @@ export async function useInviteAsExisting(
       .for("update", { of: invites });
     if (!invite) throw notFound(INVITE_UNUSABLE);
     if (invite.inviterId === accountId) return { status: "own_invite" };
+    // Serialize with a block between the two (SPEC §17 item 10), then check
+    // for one under the lock: a block either committed before (refused
+    // here) or waits for this transaction and then removes the friendship.
+    await pairLock(tx, accountId, invite.inviterId);
     if (!(await isActive(tx, accountId))) throw notFound(INVITE_UNUSABLE);
     if (await isBlocked(tx, accountId, invite.inviterId)) {
       throw notFound(INVITE_UNUSABLE);

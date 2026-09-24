@@ -84,6 +84,8 @@ export const RATE = {
   post: { max: 50, windowSec: 24 * 60 * 60 },
   reply: { max: 200, windowSec: 24 * 60 * 60 },
   friendRequest: { max: 50, windowSec: 24 * 60 * 60 },
+  /** `follow:<accountId>`, SPEC §17 item 13. */
+  follow: { max: 100, windowSec: 24 * 60 * 60 },
   report: { max: 20, windowSec: 24 * 60 * 60 },
   invite: { max: 20, windowSec: 24 * 60 * 60 },
 } as const;

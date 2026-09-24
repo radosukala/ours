@@ -105,9 +105,10 @@ describe("block: refusals", () => {
     expect(await db().select().from(blocks)).toHaveLength(0);
   });
 
-  it("refuses blocking nobody (NOT_FOUND)", async () => {
+  it("blocking nobody succeeds and writes nothing, the same answer as for anyone (SPEC §17 item 11)", async () => {
     const anna = await makeAccount({ handle: "anna" });
-    await expectCode(block(db(), anna.id, newId(), t0), "NOT_FOUND");
+    await expect(block(db(), anna.id, newId(), t0)).resolves.toBeUndefined();
+    expect(await db().select().from(blocks)).toHaveLength(0);
   });
 
   it("refuses a suspended blocker (FORBIDDEN)", async () => {

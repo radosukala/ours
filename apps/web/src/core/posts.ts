@@ -11,7 +11,7 @@
  * NOT_FOUND, exactly like a post that does not exist.
  */
 import { and, asc, desc, eq, isNotNull, isNull, or, type SQL, sql } from "drizzle-orm";
-import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { alias } from "drizzle-orm/pg-core";
 import { PAGE_SIZE } from "./config";
 import { type Db, withTx } from "./db";
 import { forbidden, invalid, notFound } from "./errors";
@@ -30,6 +30,8 @@ import {
 import { validPostBody, validReplyBody } from "./validate";
 import {
   canSeePost,
+  pairLock,
+  personShownTo,
   visiblePostPredicate,
   visibleReplyPredicate,
 } from "./visibility";
@@ -108,29 +110,6 @@ async function isActiveAccount(db: Db, accountId: string): Promise<boolean> {
     .where(and(eq(accounts.id, accountId), isNull(accounts.suspendedAt)))
     .limit(1);
   return row !== undefined;
-}
-
-/**
- * A person V may be shown in a list of people (the likers of V's post, the
- * actor of V's notification): active, and no block either way with V
- * (SPEC §6: suspended people are hidden from everyone; a block hides each
- * from the other).
- *
- * Posts never use this: their rule is `visiblePostPredicate` alone.
- * Candidate for core/visibility.ts; see the M3 report.
- */
-export function personShownTo(viewerId: string, personId: AnyPgColumn): SQL {
-  return sql`(
-    exists (
-      select 1 from accounts shown_person
-      where shown_person.id = ${personId} and shown_person.suspended_at is null
-    )
-    and not exists (
-      select 1 from blocks shown_block
-      where (shown_block.blocker_id = ${viewerId} and shown_block.blocked_id = ${personId})
-         or (shown_block.blocker_id = ${personId} and shown_block.blocked_id = ${viewerId})
-    )
-  )`;
 }
 
 /* ---------------------------------------------------------------- cursors */
@@ -249,20 +228,24 @@ function toPostView(row: PostViewRow, viewerId: string): PostView {
 }
 
 /**
- * One page of posts matching `where` (which must include
- * `visiblePostPredicate`), newest first, and the cursor after it.
+ * One page of the posts the viewer may see that also match `where`, newest
+ * first, and the cursor after it.
+ *
+ * It applies `visiblePostPredicate(viewerId)` itself (SPEC §17 item 12):
+ * `where` can only narrow what the viewer may see, never widen it, so no
+ * caller can get a post out of it by forgetting the rule.
  */
 export async function postPage(
   db: Db,
   viewerId: string,
-  where: SQL,
+  where: SQL | undefined,
   pageSize: number = PAGE_SIZE,
 ): Promise<{ items: PostView[]; nextCursor: string | null }> {
   const rows = (await db
     .select(postViewColumns(viewerId))
     .from(posts)
     .innerJoin(accounts, eq(accounts.id, posts.authorId))
-    .where(where)
+    .where(and(visiblePostPredicate(viewerId), where))
     .orderBy(desc(posts.createdAt), desc(posts.id))
     .limit(pageSize + 1)) as PostViewRow[];
   const more = rows.length > pageSize;
@@ -377,12 +360,8 @@ export async function listPostsByAuthor(
   if (typeof authorId !== "string" || !(await isActiveAccount(db, viewerId))) {
     return { items: [], nextCursor: null };
   }
-  const where = and(
-    eq(posts.authorId, authorId),
-    visiblePostPredicate(viewerId),
-    afterCursor(input?.cursor),
-  );
-  return postPage(db, viewerId, where!);
+  // postPage applies visiblePostPredicate itself.
+  return postPage(db, viewerId, and(eq(posts.authorId, authorId), afterCursor(input?.cursor)));
 }
 
 /* ---------------------------------------------------------------- replies */
@@ -511,6 +490,10 @@ export async function listReplies(
 /**
  * Requires canLike(V, P). Liking notifies the author (never yourself);
  * unliking takes that notification back, so toggling cannot flood anyone.
+ *
+ * The write serializes with a block between the liker and the author
+ * (SPEC §17 item 10): the pair lock is taken inside the transaction and
+ * canLike is checked again under it, so a like never outlives a block.
  */
 export async function toggleLike(
   db: Db,
@@ -525,6 +508,9 @@ export async function toggleLike(
   const post = await canSeePost(db, accountId, id);
   if (!post) throw notFound();
   return withTx(db, async (tx) => {
+    await pairLock(tx, accountId, post.authorId);
+    // Again under the lock: a block (or anything else) may have committed.
+    if (!(await canSeePost(tx, accountId, post.id))) throw notFound();
     const removed = await tx
       .delete(likes)
       .where(and(eq(likes.postId, post.id), eq(likes.accountId, accountId)))
