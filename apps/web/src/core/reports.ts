@@ -21,7 +21,9 @@
  * - Dismiss: closes this report, with an optional note for the reporter.
  * - Suspend: sets suspended_at on the reported account (or the author of
  *   the reported post or reply), revokes all its sessions and actions this
- *   report.
+ *   report. Once that has committed, the suspended person is sent one
+ *   email (kind `notice`) with the statement of reasons and the data
+ *   controller's address (SPEC §17 item 14).
  *
  * Notifications from a decision carry no actor. The person deciding is not
  * named to the author, and a block between the author and the
@@ -36,6 +38,8 @@ import { type Db, withTx } from "./db";
 import { conflict, forbidden, invalid, notFound } from "./errors";
 import { newId } from "./ids";
 import { hit, RATE } from "./limits";
+import { sendMail } from "./mail";
+import { suspensionEmail } from "./mail-templates";
 import { notify } from "./notifications";
 import {
   accounts,
@@ -768,6 +772,11 @@ async function reportedAccountId(tx: Db, report: Report): Promise<string | null>
  * reply: sets suspended_at (kept if already set), revokes all sessions and
  * actions the report. Requires a reason of at least 10 characters, kept
  * with the decision. An administrator cannot suspend themself.
+ *
+ * After the transaction commits, the person it suspended is sent one email,
+ * kind `notice`, with the reason and the controller's address (SPEC §17
+ * item 14). Call it outside any transaction of your own, or "after the
+ * commit" is not.
  */
 export async function suspendAccount(
   db: Db,
@@ -779,7 +788,7 @@ export async function suspendAccount(
   const now = input.now ?? new Date();
   const reason = validReason(input.reason, "a reason");
 
-  await withTx(db, async (tx) => {
+  const suspended = await withTx(db, async (tx) => {
     const report = await lockOpenReport(tx, reportId);
     const accountId = await reportedAccountId(tx, report);
     if (!accountId) throw notFound("The reported account is gone.");
@@ -795,10 +804,13 @@ export async function suspendAccount(
       .for("update");
     if (!exists) throw notFound("The reported account is gone.");
 
-    await tx
+    // Only the decision that suspends the account tells the person; a
+    // second report on an account already suspended sends nothing more.
+    const [newlySuspended] = await tx
       .update(accounts)
       .set({ suspendedAt: now })
-      .where(and(eq(accounts.id, accountId), isNull(accounts.suspendedAt)));
+      .where(and(eq(accounts.id, accountId), isNull(accounts.suspendedAt)))
+      .returning({ id: accounts.id, email: accounts.email });
     await revokeAllSessions(tx, accountId, now);
 
     await tx
@@ -811,5 +823,31 @@ export async function suspendAccount(
       })
       .where(eq(reports.id, report.id));
     await tellReporters(tx, [report], outcomeSuspended(report.targetKind), now);
+    return newlySuspended ?? null;
   });
+
+  // After the commit: a suspension that rolled back sends nothing, and a
+  // mail transport cannot hold the decision open. A transport failure is
+  // logged in mail_log; the suspension stands either way.
+  if (suspended) {
+    const { subject, body } = suspensionEmail(
+      withStop(reason),
+      controller()?.email ?? null,
+    );
+    try {
+      await sendMail(db, {
+        to: suspended.email,
+        subject,
+        body,
+        kind: "notice",
+        accountId: suspended.id,
+      });
+    } catch (error) {
+      // The decision is recorded; only the message failed to be written.
+      console.error(
+        "[ours] the suspension notice could not be sent:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
 }

@@ -72,7 +72,8 @@ export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
 export const REPORT_STATUSES = ["open", "actioned", "dismissed"] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
-export const MAIL_KINDS = ["sign_in", "join", "digest"] as const;
+/** `notice`: the one email a suspended person is sent (SPEC §17 item 14). */
+export const MAIL_KINDS = ["sign_in", "join", "digest", "notice"] as const;
 export type MailKind = (typeof MAIL_KINDS)[number];
 
 export const MAIL_STATUSES = ["sent", "failed"] as const;
@@ -460,9 +461,13 @@ export const notifications = pgTable(
 /* ----------------------------------------------------------- rate_events */
 
 /**
- * Keys: signin:email:<sha256>, signin:ip:<sha256>, join:email:<sha256>,
- * join:ip:<sha256>, post:<accountId>, reply:<accountId>,
- * friendreq:<accountId>, report:<accountId>, invite:<accountId>.
+ * Keys: signin:email:<h>, signin:ip:<h>, join:email:<h>, join:ip:<h>,
+ * join:invite:<inviteId>, post:<accountId>, reply:<accountId>,
+ * friendreq:<accountId>, follow:<accountId>, report:<accountId>,
+ * invite:<accountId>, handle:<accountId>. `<h>` is `rateKeyHash` (limits.ts).
+ *
+ * The index on `created_at` alone serves the prune every `hit()` runs over
+ * all keys (SPEC §17 item 3); without it that delete scans the table.
  */
 export const rateEvents = pgTable(
   "rate_events",
@@ -471,18 +476,21 @@ export const rateEvents = pgTable(
     key: text("key").notNull(),
     createdAt: tstz("created_at").notNull().defaultNow(),
   },
-  (t) => [index("rate_events_key_created_idx").on(t.key, t.createdAt)],
+  (t) => [
+    index("rate_events_key_created_idx").on(t.key, t.createdAt),
+    index("rate_events_created_idx").on(t.createdAt),
+  ],
 );
 
 /* ---------------------------------------------------------------- outbox */
 
-/** The development mail transport. */
+/** The development mail transport. `kind` is one of MAIL_KINDS (typed, not checked). */
 export const outbox = pgTable("outbox", {
   id: text("id").primaryKey(),
   toAddress: text("to_address").notNull(),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
-  kind: text("kind").notNull(),
+  kind: text("kind", { enum: MAIL_KINDS }).notNull(),
   createdAt: tstz("created_at").notNull().defaultNow(),
 });
 

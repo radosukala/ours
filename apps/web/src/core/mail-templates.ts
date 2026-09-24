@@ -22,11 +22,22 @@ export function signInEmail(url: string): MailContent {
   };
 }
 
-export function joinEmail(url: string, inviterName: string): MailContent {
+/**
+ * The join link. The body names the inviter as "Name (@handle)", as the
+ * invite page does (SPEC §17 item 2): a display name alone can be copied by
+ * anyone, a handle cannot. The handle has a default, so `joinEmail.length`
+ * stays 2: a link and a name, never a post.
+ */
+export function joinEmail(
+  url: string,
+  inviterName: string,
+  inviterHandle: string | null = null,
+): MailContent {
+  const inviter = inviterHandle ? `${inviterName} (@${inviterHandle})` : inviterName;
   return {
     subject: `${inviterName} invited you to OURS`,
     body: [
-      `${inviterName} invited you to connect on OURS.`,
+      `${inviter} invited you to connect on OURS.`,
       "",
       "Open this link to join:",
       "",
@@ -35,6 +46,32 @@ export function joinEmail(url: string, inviterName: string): MailContent {
       "It works once, for 15 minutes.",
       "",
       "If you weren't expecting this, you can ignore this email. Nothing is created unless you open the link and join.",
+    ].join("\n"),
+  };
+}
+
+/**
+ * The one email a suspended person is sent (SPEC §17 item 14): that the
+ * account is suspended, the statement of reasons as the administrator wrote
+ * it, and where to write. While no data controller is named, it says so
+ * instead of inventing an address (SPEC §2 rule 6).
+ */
+export function suspensionEmail(
+  reason: string,
+  controllerEmail: string | null,
+): MailContent {
+  return {
+    subject: "Your OURS account is suspended",
+    body: [
+      "Your OURS account is suspended. You can't sign in, and your profile, posts and replies are hidden from everyone.",
+      "",
+      "The reason, as the administrator wrote it:",
+      "",
+      reason,
+      "",
+      controllerEmail
+        ? `If you think this is wrong, write to ${controllerEmail}.`
+        : "If you think this is wrong, the address to write to is not named yet.",
     ].join("\n"),
   };
 }

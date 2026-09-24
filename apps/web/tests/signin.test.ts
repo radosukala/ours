@@ -3,9 +3,11 @@
  * invite" step 2; M-0010 acceptance: sign-in tokens, rate limits, the
  * controller gate). Denial paths first. Everyone here is FICTIONAL.
  *
- * M2's `useInviteAsExisting` is replaced by a mock in this file: these
- * tests check how M1 calls it and what M1 does with each answer, not M2's
- * rules, which M2 tests.
+ * M2's `useInviteAsExisting` is replaced by a mock in this file. Since
+ * SPEC §17 item 1, a join link never calls it: it signs the person in and
+ * only asks M2's read-only `inviteOfferForViewer` whether to offer the
+ * invite on /join/confirm. That one is wrapped (the real code runs) so a
+ * test can make it fail.
  */
 import { eq, like } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,29 +25,36 @@ import {
 } from "@/core/auth";
 import { CoreError, isCoreError } from "@/core/errors";
 import { newId, sha256 } from "@/core/ids";
-import { useInviteAsExisting } from "@/core/invites";
+import { inviteOfferForViewer, useInviteAsExisting } from "@/core/invites";
 import { rateKeyHash } from "@/core/limits";
 import { latestOutbox, tokenFromLink } from "@/core/mail";
 import {
   accounts,
   emailTokens,
+  friendships,
   invites,
   outbox,
   pendingJoins,
   rateEvents,
 } from "@/core/schema";
-import { at, db, makeAccount, plus, reset } from "./helpers";
+import { at, befriend, block, db, makeAccount, plus, reset } from "./helpers";
 
-vi.mock("@/core/invites", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/core/invites")>()),
-  useInviteAsExisting: vi.fn(),
-}));
+vi.mock("@/core/invites", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/core/invites")>();
+  return {
+    ...real,
+    useInviteAsExisting: vi.fn(),
+    inviteOfferForViewer: vi.fn(real.inviteOfferForViewer),
+  };
+});
 
 const applyInvite = vi.mocked(useInviteAsExisting);
+const offerInvite = vi.mocked(inviteOfferForViewer);
 
 beforeEach(async () => {
   await reset();
   applyInvite.mockReset();
+  offerInvite.mockClear();
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -339,7 +348,7 @@ describe("verifyEmailLink: refusals", () => {
     const inviter = await makeAccount({ handle: "inviter" });
     const invite = await makeInvite(inviter.id);
     const anna = await makeAccount({ handle: "anna" });
-    applyInvite.mockRejectedValueOnce(new Error("database went away"));
+    offerInvite.mockRejectedValueOnce(new Error("database went away"));
     const token = await createEmailToken(db(), {
       email: anna.email,
       purpose: "join",
@@ -401,11 +410,10 @@ describe("verifyEmailLink: what each link does", () => {
     ).toBe(0);
   });
 
-  it("a join link for an existing account signs it in and applies the invite as M2's useInviteAsExisting", async () => {
+  it("a join link for an existing account signs it in, applies nothing, and offers the invite (SPEC §17 item 1)", async () => {
     const inviter = await makeAccount({ handle: "inviter" });
     const invite = await makeInvite(inviter.id);
     const anna = await makeAccount({ handle: "anna" });
-    applyInvite.mockResolvedValueOnce({ status: "friends" });
     const token = await createEmailToken(db(), {
       email: anna.email,
       purpose: "join",
@@ -416,44 +424,65 @@ describe("verifyEmailLink: what each link does", () => {
     expect(await verifyEmailLink(db(), { token, now })).toEqual({
       kind: "joined_existing",
       accountId: anna.id,
-    });
-    expect(applyInvite).toHaveBeenCalledTimes(1);
-    expect(applyInvite.mock.calls[0]![1]).toEqual({
-      accountId: anna.id,
       inviteId: invite.id,
-      now,
     });
+    // Asked, not applied: no friendship, the invite unused, no pending join.
+    expect(applyInvite).not.toHaveBeenCalled();
+    expect(offerInvite).toHaveBeenCalledTimes(1);
+    expect(await count(db().select().from(friendships))).toBe(0);
+    const [row] = await db().select().from(invites).where(eq(invites.id, invite.id));
+    expect(row!.usedAt).toBeNull();
     expect(await count(db().select().from(pendingJoins))).toBe(0);
   });
 
-  it("already friends, or your own invite: signed in, nothing joined", async () => {
+  it("already friends, or your own invite: signed in, nothing offered", async () => {
     const inviter = await makeAccount({ handle: "inviter" });
     const invite = await makeInvite(inviter.id);
     const anna = await makeAccount({ handle: "anna" });
-    for (const status of ["already_friends", "own_invite"] as const) {
-      applyInvite.mockResolvedValueOnce({ status });
+    await befriend(anna, inviter);
+    for (const who of [anna, inviter]) {
       const token = await createEmailToken(db(), {
-        email: anna.email,
+        email: who.email,
         purpose: "join",
         inviteId: invite.id,
         now: t0,
       });
       expect(await verifyEmailLink(db(), { token, now: t0 })).toEqual({
         kind: "signed_in",
+        accountId: who.id,
+      });
+    }
+    expect(applyInvite).not.toHaveBeenCalled();
+  });
+
+  it("an invite that can no longer be offered (blocked, used, expired) still signs the person in, and offers nothing", async () => {
+    const inviter = await makeAccount({ handle: "inviter" });
+    const anna = await makeAccount({ handle: "anna" });
+    const blocked = await makeInvite(inviter.id);
+    const used = await makeInvite(inviter.id);
+    const expired = await makeInvite(inviter.id);
+    await db().update(invites).set({ usedAt: t0 }).where(eq(invites.id, used.id));
+    await db()
+      .update(invites)
+      .set({ expiresAt: plus.minutes(t0, 1) })
+      .where(eq(invites.id, expired.id));
+    for (const invite of [used, expired]) {
+      const token = await createEmailToken(db(), {
+        email: anna.email,
+        purpose: "join",
+        inviteId: invite.id,
+        now: t0,
+      });
+      expect(await verifyEmailLink(db(), { token, now: plus.minutes(t0, 2) })).toEqual({
+        kind: "signed_in",
         accountId: anna.id,
       });
     }
-  });
-
-  it("an invite that can no longer be used (blocked, used, expired) still signs the person in, and applies nothing", async () => {
-    const inviter = await makeAccount({ handle: "inviter" });
-    const invite = await makeInvite(inviter.id);
-    const anna = await makeAccount({ handle: "anna" });
-    applyInvite.mockRejectedValueOnce(new CoreError("NOT_FOUND", "That isn't available."));
+    await block(inviter, anna);
     const token = await createEmailToken(db(), {
       email: anna.email,
       purpose: "join",
-      inviteId: invite.id,
+      inviteId: blocked.id,
       now: t0,
     });
     expect(await verifyEmailLink(db(), { token, now: t0 })).toEqual({
@@ -462,5 +491,6 @@ describe("verifyEmailLink: what each link does", () => {
     });
     // The link is used up all the same.
     await expectCode(verifyEmailLink(db(), { token, now: t0 }), "NOT_FOUND");
+    expect(applyInvite).not.toHaveBeenCalled();
   });
 });

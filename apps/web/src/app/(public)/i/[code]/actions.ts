@@ -5,7 +5,8 @@
  *
  * - `requestJoinAction`: a signed-out person asks for a join link. The
  *   answer on success is always the same ("Check your email — we've sent a
- *   link."), whether or not the address has an account.
+ *   link."), whether or not the address has an account; the mail is
+ *   worked out after the response (`afterResponse`, SPEC §17 item 4).
  * - `acceptInviteAction`: a signed-in person uses the invite to become the
  *   inviter's friend, then goes to the inviter's profile.
  */
@@ -19,7 +20,7 @@ import {
   lookupInvite,
   requestJoin,
 } from "@/core/invites";
-import { type ActionResult, run } from "@/web/actions";
+import { type ActionResult, afterResponse, run } from "@/web/actions";
 import { clientIpHash } from "@/web/request";
 import { requireViewer } from "@/web/viewer";
 
@@ -39,6 +40,7 @@ export async function requestJoinAction(
       code: text(form, "code"),
       email: text(form, "email"),
       ipHash: await clientIpHash(),
+      defer: afterResponse,
     });
   });
 }

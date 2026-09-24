@@ -478,7 +478,12 @@ describe("a person who blocked you, or was suspended, must be indistinguishable 
     expect(badge).toBe(listedUnread);
   });
 
-  it("DEFECT (spec tension): changing your username tells you a handle is held by someone who blocked you, or by a suspended account, though their profile is not found", async () => {
+  it("accepted (spec tension): changing your username tells you a handle is held by someone who blocked you, or by a suspended account, though their profile is not found — usernames are unique; tries are limited to 5 a day (SPEC §17 item 9)", async () => {
+    // Fixer: SPEC §17 item 9 accepts this (it cannot be closed while
+    // usernames are unique, and /rules says so) and limits username changes
+    // to 5 a day (`handle:<accountId>`). The final assertion is rewritten to
+    // the decision: the answer is still CONFLICT, and a prober runs out of
+    // tries after five, whatever the names.
     const me = await makeAccount({ handle: "handle_me" });
     const blocker = await makeAccount({ handle: "handle_blocker" });
     const banned = await makeAccount({ handle: "handle_banned" });
@@ -492,10 +497,20 @@ describe("a person who blocked you, or was suspended, must be indistinguishable 
         change: await outcome(() => changeHandle(db(), me.id, handle)),
       };
     }
-    // A handle whose profile is "not found" should not be confirmed as taken.
     for (const r of Object.values(results)) {
       expect(r.profile).toBe(false);
-      expect(r.change).not.toMatchObject({ ok: false, code: "CONFLICT" });
+      expect(r.change).toMatchObject({ ok: false, code: "CONFLICT" });
+    }
+    // Three more probes use up the day (the two above counted too)…
+    for (const handle of ["handle_probe1", "handle_probe2", "handle_blocker"]) {
+      await outcome(() => changeHandle(db(), me.id, handle));
+    }
+    // …and the sixth is refused before the name is looked at.
+    for (const handle of ["handle_banned", "handle_nobody"]) {
+      expect(await outcome(() => changeHandle(db(), me.id, handle))).toMatchObject({
+        ok: false,
+        code: "RATE_LIMITED",
+      });
     }
   });
 });

@@ -17,6 +17,8 @@ export const PAGE_SIZE = 30;
 /** Lifetimes (SPEC §5). */
 export const EMAIL_TOKEN_TTL_MINUTES = 15;
 export const PENDING_JOIN_TTL_MINUTES = 60;
+/** How long a join link's "Add <Name> as a friend?" stays open (SPEC §17 item 1). */
+export const INVITE_OFFER_TTL_MINUTES = 15;
 export const SESSION_TTL_DAYS = 60;
 export const INVITE_TTL_DAYS = 30;
 export const FRIEND_REQUEST_TTL_DAYS = 30;
@@ -94,7 +96,38 @@ export function resendSettings(): { apiKey: string; from: string } | null {
   return apiKey && from ? { apiKey, from } : null;
 }
 
-/** The running version shown on every page. Set by a release. */
+/** What a request header name can be (RFC 9110 token, restricted to what proxies use). */
+const HEADER_NAME = /^[A-Za-z0-9][A-Za-z0-9-]{0,99}$/;
+
+/**
+ * The request header that carries the client's address (SPEC §17 item 3),
+ * lowercased, or null when there is none to trust.
+ *
+ * Each deployment names it in CLIENT_IP_HEADER: a header its own proxy sets
+ * and a client cannot write, such as `x-vercel-forwarded-for`. The first
+ * value in it is used. In development the default is `x-forwarded-for`. In
+ * production a missing name is a missing decision: this returns null, and
+ * sign-in and join requests are switched off (CLOSED); it is never
+ * defaulted (SPEC §2 rule 6). A value that cannot be a header name counts
+ * as missing, in every environment.
+ */
+export function clientIpHeader(): string | null {
+  const value = env("CLIENT_IP_HEADER");
+  if (value) return HEADER_NAME.test(value) ? value.toLowerCase() : null;
+  return isProduction() ? null : "x-forwarded-for";
+}
+
+/**
+ * The running version shown on every page (SPEC §17 item 20): OURS_VERSION
+ * when a release sets it, otherwise the first 7 characters of the commit
+ * the host built (VERCEL_GIT_COMMIT_SHA), otherwise "development build" in
+ * development and "unversioned build" in production, so a production build
+ * never calls itself a development one.
+ */
 export function runningVersion(): string {
-  return env("OURS_VERSION") ?? "development build";
+  const release = env("OURS_VERSION");
+  if (release) return release;
+  const commit = env("VERCEL_GIT_COMMIT_SHA");
+  if (commit) return commit.slice(0, 7);
+  return isProduction() ? "unversioned build" : "development build";
 }

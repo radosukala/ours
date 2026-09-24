@@ -19,6 +19,11 @@
  * the same code a browser does without a running server. Everyone here is
  * FICTIONAL, with example.test addresses.
  *
+ * Fixes (SPEC §17, 24 September 2026), noted by the fixer: a test whose
+ * defect is gone is titled "fixed: …" with its body kept, except where a
+ * line says otherwise below it; a behaviour §17 accepts rather than removes
+ * is titled "accepted: …" and asserts the decision instead.
+ *
  * HTTP evidence (not a test; recorded once, 24 September 2026, against
  * `next build && next start -p 3322` with a throwaway database, outbox
  * transport, seed:fictional):
@@ -120,7 +125,14 @@ import {
   sessions,
 } from "@/core/schema";
 import { areFriends } from "@/core/visibility";
-import { JOIN_COOKIE, SESSION_COOKIE } from "@/web/session";
+import {
+  cookieName,
+  INVITE_COOKIE,
+  JOIN_COOKIE,
+  readSessionCookie,
+  SESSION_COOKIE,
+  setSessionCookie,
+} from "@/web/session";
 import { getViewer } from "@/web/viewer";
 import { openEmailLinkAction } from "@/app/(public)/auth/actions";
 import { requestSignInAction } from "@/app/(public)/signin/actions";
@@ -197,7 +209,7 @@ async function signInJar(accountId: string): Promise<string> {
 /* ======================================================================= */
 
 describe("DEFECTS in identity, tokens and joining", () => {
-  it("DEFECT: a person you blocked can still make OURS email you, under a subject line they write", async () => {
+  it("fixed: a person you blocked can still make OURS email you, under a subject line they write", async () => {
     const anna = await makeAccount({ handle: "anna_v", email: "anna_v@example.test" });
     const bruno = await makeAccount({
       handle: "bruno_v",
@@ -216,7 +228,7 @@ describe("DEFECTS in identity, tokens and joining", () => {
     expect(mail?.subject ?? null, "a join mail from a blocked person reached the blocker").toBeNull();
   });
 
-  it("DEFECT: one click on an emailed invite makes a stranger your friend, even one whose request you declined", async () => {
+  it("fixed: one click on an emailed invite makes a stranger your friend, even one whose request you declined", async () => {
     // Vera is friends with the real Anna.
     const vera = await makeAccount({ handle: "vera_v", email: "vera_v@example.test" });
     const anna = await makeAccount({ handle: "anna_real", displayName: "Anna FICTIONAL" });
@@ -249,7 +261,7 @@ describe("DEFECTS in identity, tokens and joining", () => {
     ).toBe(false);
   });
 
-  it("DEFECT: the join email names the inviter only by a display name, which anyone can copy", async () => {
+  it("fixed: the join email names the inviter only by a display name, which anyone can copy", async () => {
     await makeAccount({ handle: "vera_v", email: "vera_v@example.test" });
     const mallory = await makeAccount({ handle: "mallory_v", displayName: "Anna FICTIONAL" });
     const invite = await createInvite(db(), mallory.id, {});
@@ -259,7 +271,14 @@ describe("DEFECTS in identity, tokens and joining", () => {
     expect(`${mail.subject}\n${mail.body}`).toContain("@mallory_v");
   });
 
-  it("DEFECT: the per-IP sign-in limit is keyed on x-forwarded-for, which the client writes", async () => {
+  it("fixed: the per-IP sign-in limit is keyed on x-forwarded-for, which the client writes", async () => {
+    // Fixer (SPEC §17 item 3): the address now comes from the header the
+    // deployment names in CLIENT_IP_HEADER, one its proxy sets and a client
+    // cannot write; x-forwarded-for is only the development default, and
+    // production without a name is CLOSED. These two lines model such a
+    // deployment; the client's attack and the assertion are unchanged.
+    vi.stubEnv("CLIENT_IP_HEADER", "x-vercel-forwarded-for");
+    web.headers.set("x-vercel-forwarded-for", "203.0.113.7");
     // SPEC §8: 20 per hour per IP. One client sends 25, changing the header each time.
     const refused: number[] = [];
     for (let i = 0; i < 25; i++) {
@@ -270,7 +289,7 @@ describe("DEFECTS in identity, tokens and joining", () => {
     expect(refused.length, "no request was refused: the IP limit never applied").toBeGreaterThan(0);
   });
 
-  it("DEFECT: one invite link makes OURS send join mail to any number of addresses (spoofed x-forwarded-for)", async () => {
+  it("fixed: one invite link makes OURS send join mail to any number of addresses (spoofed x-forwarded-for)", async () => {
     const anna = await makeAccount({ handle: "anna_v" });
     const invite = await createInvite(db(), anna.id, {});
     for (let i = 0; i < 15; i++) {
@@ -282,12 +301,23 @@ describe("DEFECTS in identity, tokens and joining", () => {
     expect(sent.length, "join mails sent from one invite by one client").toBeLessThanOrEqual(10);
   });
 
-  it("DEFECT: how long a sign-in request takes says whether the account exists", async () => {
+  it("accepted: how long a sign-in request takes says whether the account exists — so the work that differs runs after the response (SPEC §17 item 4)", async () => {
+    // Fixer: SPEC §17 item 4 keeps the difference out of the response
+    // instead of removing it. Whether the account exists, the link and the
+    // mail run in one task that the server action hands to Next's `after`
+    // (`defer`). Called with no `defer` (tests, scripts), the core still
+    // sends inline, and still takes longer for a real account. Here the
+    // `defer` a server action passes is stood in for by a queue run after
+    // the "response"; the verifier's timing assertion is unchanged.
     web.mailDelayMs = 300; // a real transport; Resend is a network round trip
     await makeAccount({ handle: "tim_v", email: "tim_v@example.test" });
+    const later: Array<() => Promise<void>> = [];
+    const defer = (task: () => Promise<void>) => {
+      later.push(task);
+    };
     const time = async (email: string, ip: string) => {
       const start = performance.now();
-      await requestSignIn(db(), { email, ipHash: rateKeyHash(ip) });
+      await requestSignIn(db(), { email, ipHash: rateKeyHash(ip), defer });
       return performance.now() - start;
     };
     const exists = await time("tim_v@example.test", "192.0.2.1");
@@ -296,9 +326,16 @@ describe("DEFECTS in identity, tokens and joining", () => {
     // is the same, the time is not: the transport is awaited only for a
     // real account.
     expect(Math.abs(exists - missing), `exists ${exists}ms, missing ${missing}ms`).toBeLessThan(150);
+    // Nothing was looked up, created or sent during either request…
+    expect(await db().select().from(emailTokens)).toHaveLength(0);
+    expect(await db().select().from(outbox)).toHaveLength(0);
+    expect(later).toHaveLength(2);
+    // …and after the response, the real account gets its link, and only it.
+    for (const task of later) await task();
+    expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual(["tim_v@example.test"]);
   });
 
-  it("DEFECT: opening someone else's sign-in link silently swaps this browser into their account, and revokes its own session", async () => {
+  it("fixed: opening someone else's sign-in link silently swaps this browser into their account, and revokes its own session", async () => {
     const vera = await makeAccount({ handle: "vera_v" });
     const mallory = await makeAccount({ handle: "mallory_v" });
     const veraSession = await signInJar(vera.id);
@@ -307,7 +344,16 @@ describe("DEFECTS in identity, tokens and joining", () => {
     await requestSignIn(db(), { email: mallory.email, ipHash: IP });
     const token = await mailedToken(mallory.email, "sign_in");
     const result = await openEmailLinkAction(token);
-    expect(result.ok).toBe(true);
+    // Fixer: the verifier expected `ok: true` (a question, "Sign in as @x
+    // instead?"). SPEC §17 item 5 decides a refusal that uses nothing and
+    // says who is signed in; the two assertions below are unchanged.
+    expect(result).toEqual({
+      ok: false,
+      error: "You're signed in as @vera_v. Sign out first, then open the link again.",
+      signedInAs: "vera_v",
+    });
+    const [link] = await db().select().from(emailTokens).where(eq(emailTokens.email, mallory.email));
+    expect(link!.usedAt, "the refused link was used up").toBeNull();
 
     const [veraRow] = await db().select().from(sessions).where(eq(sessions.id, veraSession));
     expect(veraRow!.revokedAt, "Vera's own session was revoked by Mallory's link").toBeNull();
@@ -317,7 +363,7 @@ describe("DEFECTS in identity, tokens and joining", () => {
     ).toBe(vera.id);
   });
 
-  it("DEFECT: sign out everywhere leaves an unused sign-in link that still signs in", async () => {
+  it("fixed: sign out everywhere leaves an unused sign-in link that still signs in", async () => {
     const kim = await makeAccount({ handle: "kim_v" });
     // A link is requested (by Kim, or by whoever has her device or mailbox)…
     await requestSignIn(db(), { email: kim.email, ipHash: IP });
@@ -333,7 +379,11 @@ describe("DEFECTS in identity, tokens and joining", () => {
     ).toBe("NOT_FOUND");
   });
 
-  it("DEFECT (spec-level): a taken username tells apart 'blocked me or suspended' from 'nobody'", async () => {
+  it("accepted (spec-level): a taken username tells apart 'blocked me or suspended' from 'nobody' — usernames are unique, and tries are limited to 5 a day (SPEC §17 item 9)", async () => {
+    // Fixer: SPEC §17 item 9 accepts this oracle (it cannot be closed while
+    // usernames are unique; /rules says so) and limits username changes to
+    // 5 a day (`handle:<accountId>`). The last assertion is rewritten to the
+    // decision: the answers still differ, and every try counts.
     const viewer = await makeAccount({ handle: "viewer_v" });
     const hider = await makeAccount({ handle: "hider_v" });
     await makeAccount({ handle: "gone_v", suspended: true });
@@ -348,10 +398,20 @@ describe("DEFECTS in identity, tokens and joining", () => {
     const blockedMe = await codeOf(changeHandle(db(), viewer.id, "hider_v"));
     const suspended = await codeOf(changeHandle(db(), viewer.id, "gone_v"));
     const nobody = await codeOf(changeHandle(db(), viewer.id, "nobody_v"));
-    expect([blockedMe, suspended], `nobody: ${nobody}`).toEqual([nobody, nobody]);
+    expect([blockedMe, suspended, nobody]).toEqual(["CONFLICT", "CONFLICT", "OK"]);
+
+    // Keeping the current name is not a try; two more tries use up the day.
+    expect(await codeOf(changeHandle(db(), viewer.id, "nobody_v"))).toBe("OK");
+    expect(await codeOf(changeHandle(db(), viewer.id, "probe_one"))).toBe("OK");
+    expect(await codeOf(changeHandle(db(), viewer.id, "probe_two"))).toBe("OK");
+    // The sixth try is refused, taken or free, and says nothing about the name.
+    expect(await codeOf(changeHandle(db(), viewer.id, "hider_v"))).toBe("RATE_LIMITED");
+    expect(await codeOf(changeHandle(db(), viewer.id, "probe_three"))).toBe("RATE_LIMITED");
+    const [me] = await db().select().from(accounts).where(eq(accounts.id, viewer.id));
+    expect(me!.handle).toBe("probe_two");
   });
 
-  it("DEFECT: a join racing the inviter's account deletion deadlocks, and one side fails with a raw database error", async () => {
+  it("fixed: a join racing the inviter's account deletion deadlocks, and one side fails with a raw database error", async () => {
     // completeJoin locks the invite, then (inserting invited_by) the
     // inviter's account; deleteAccount locks the account, then (cascade)
     // the invite. Opposite orders: Postgres kills one with 40P01, which is
@@ -376,12 +436,37 @@ describe("DEFECTS in identity, tokens and joining", () => {
     expect(raw, "raw database errors from a join racing the inviter's deletion").toEqual([]);
   });
 
-  it("DEFECT (hardening, spec-level): the session and join cookies are not __Host- cookies, so a sibling subdomain can plant them", () => {
+  it("fixed (hardening, spec-level): the session and join cookies are not __Host- cookies, so a sibling subdomain can plant them", async () => {
     // D-0004 puts each community's tool at its own subdomain of our.one. A
     // cookie without the __Host- prefix can be set for the parent domain by
     // any subdomain (cookie tossing), e.g. a valid session of the tosser's.
-    expect(SESSION_COOKIE.startsWith("__Host-")).toBe(true);
-    expect(JOIN_COOKIE.startsWith("__Host-")).toBe(true);
+    //
+    // Fixer: SPEC §17 item 8 decides the prefix in production. Development
+    // runs over http, where a browser refuses a __Host- cookie, so the
+    // exported constants stay the plain names and `cookieName` adds the
+    // prefix in production. The two assertions are rewritten to that.
+    vi.stubEnv("NODE_ENV", "production");
+    expect(cookieName(SESSION_COOKIE)).toBe("__Host-ours_session");
+    expect(cookieName(JOIN_COOKIE)).toBe("__Host-ours_join");
+    expect(cookieName(INVITE_COOKIE)).toBe("__Host-ours_invite");
+
+    // Set through the real helper: the prefix's conditions hold (Secure,
+    // Path=/, no Domain), or a browser would drop the cookie.
+    const kim = await makeAccount({ handle: "kim_v" });
+    const own = await createSession(db(), kim.id);
+    await setSessionCookie(own.cookieValue, own.expiresAt);
+    expect(web.jar.get("__Host-ours_session")).toBe(own.cookieValue);
+    expect(web.jar.has(SESSION_COOKIE)).toBe(false);
+    const options = web.cookieOptions.get("__Host-ours_session")!;
+    expect(options).toMatchObject({ secure: true, path: "/", httpOnly: true });
+    expect(options.domain).toBeUndefined();
+
+    // A plain-named cookie, as a sibling subdomain could plant, is never read.
+    const tosser = await makeAccount({ handle: "tosser_v" });
+    web.jar.clear();
+    web.jar.set(SESSION_COOKIE, (await createSession(db(), tosser.id)).cookieValue);
+    expect(await readSessionCookie()).toBeNull();
+    expect(await getViewer()).toBeNull();
   });
 });
 

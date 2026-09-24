@@ -428,7 +428,7 @@ describe("invite economy", () => {
     expect(await remainingOf(inviter.id)).toBe(9);
   });
 
-  it("DEFECT: a person who blocked the inviter still receives the inviter's join emails, the inviter's chosen name in the subject", async () => {
+  it("fixed: a person who blocked the inviter still receives the inviter's join emails, the inviter's chosen name in the subject", async () => {
     const inviter = await makeAccount({ displayName: "FICTIONAL Blocked Sender" });
     const blocker = await makeAccount({ email: "fictional.blocker@example.test" });
     await conn.block(db(), blocker.id, inviter.id);
@@ -1301,7 +1301,11 @@ describe("rate limits at the server-action layer", () => {
     expect(results[10]).toEqual({ ok: false, error: RATE_LIMITED_MESSAGE });
   });
 
-  it("DEFECT (spec-level, deployment-dependent): the per-IP join limit is keyed on the client-supplied first X-Forwarded-For value, so rotating it sends unlimited join emails", async () => {
+  it("fixed (spec-level, deployment-dependent): the per-IP join limit is keyed on the client-supplied first X-Forwarded-For value, so rotating it sends unlimited join emails", async () => {
+    // Fixer (SPEC §17 item 3): one invite now sends at most 10 join links a
+    // day (`join:invite:<id>`), which is what holds here; and a deployment
+    // names the header its proxy sets (CLIENT_IP_HEADER), with production
+    // CLOSED until it does. x-forwarded-for remains the development default.
     const inviter = await makeAccount({ displayName: "FICTIONAL Inviter" });
     const { code } = await createInvite(db(), inviter.id, {});
     const { requestJoinAction } = await import("@/app/(public)/i/[code]/actions");

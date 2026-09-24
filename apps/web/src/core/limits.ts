@@ -75,12 +75,14 @@ export async function hit(
   });
 }
 
-/** The rate limits SPEC §8 sets, in one place. */
+/** The rate limits SPEC §8 and §17 set, in one place. */
 export const RATE = {
   signinEmail: { max: 5, windowSec: 60 * 60 },
   signinIp: { max: 20, windowSec: 60 * 60 },
   joinEmail: { max: 3, windowSec: 60 * 60 },
   joinIp: { max: 10, windowSec: 60 * 60 },
+  /** `join:invite:<inviteId>`: join links one invite can send, SPEC §17 item 3. */
+  joinInvite: { max: 10, windowSec: 24 * 60 * 60 },
   post: { max: 50, windowSec: 24 * 60 * 60 },
   reply: { max: 200, windowSec: 24 * 60 * 60 },
   friendRequest: { max: 50, windowSec: 24 * 60 * 60 },
@@ -88,4 +90,9 @@ export const RATE = {
   follow: { max: 100, windowSec: 24 * 60 * 60 },
   report: { max: 20, windowSec: 24 * 60 * 60 },
   invite: { max: 20, windowSec: 24 * 60 * 60 },
+  /**
+   * `handle:<accountId>`: tries at a new username, SPEC §17 item 9. A taken
+   * name answers CONFLICT, so every try counts, whether or not it succeeds.
+   */
+  handle: { max: 5, windowSec: 24 * 60 * 60 },
 } as const;

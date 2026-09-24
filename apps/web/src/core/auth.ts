@@ -7,10 +7,14 @@
  *   HMAC stops anyone from minting a cookie, the row lets us revoke it.
  * - A pending join is a verified email waiting to choose a handle, held in
  *   a signed cookie for 60 minutes.
+ * - An invite offer is a join link opened by someone who already has an
+ *   account: the invite waits, in a signed cookie for 15 minutes, for them
+ *   to say Add or Not now (SPEC §17 item 1).
  */
 import { and, eq, gt, isNull } from "drizzle-orm";
 import {
   EMAIL_TOKEN_TTL_MINUTES,
+  INVITE_OFFER_TTL_MINUTES,
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
   sessionSecret,
@@ -125,6 +129,24 @@ export async function consumeEmailToken(
   const row = rows[0];
   if (!row) throw notFound(LINK_REFUSED);
   return row;
+}
+
+/**
+ * Mark every unused link to an address as used, so none of them can sign
+ * in or join any more (sign out everywhere, SPEC §17 item 6). Returns how
+ * many there were.
+ */
+export async function retireEmailTokens(
+  db: Db,
+  email: string,
+  now: Date = new Date(),
+): Promise<number> {
+  const rows = await db
+    .update(emailTokens)
+    .set({ usedAt: now })
+    .where(and(eq(emailTokens.email, normEmail(email)), isNull(emailTokens.usedAt)))
+    .returning({ id: emailTokens.id });
+  return rows.length;
 }
 
 /* -------------------------------------------------------------- sessions */
@@ -265,6 +287,54 @@ export async function pendingJoinFromCookie(
     )
     .limit(1);
   return row ?? null;
+}
+
+/* ---------------------------------------------------------- invite offers */
+
+const OFFER_TAG = "invite-offer";
+
+/**
+ * The signed cookie value that carries an invite offer: which invite, for
+ * which account, until when. Tagged, so no other signed value (a session,
+ * a pending join) can be read as one.
+ */
+export function inviteOfferCookieValue({
+  inviteId,
+  accountId,
+  now = new Date(),
+}: {
+  inviteId: string;
+  accountId: string;
+  now?: Date;
+}): { cookieValue: string; expiresAt: Date } {
+  if (!/^[A-Za-z0-9_-]+$/.test(inviteId) || !/^[A-Za-z0-9_-]+$/.test(accountId)) {
+    throw new Error("inviteOfferCookieValue: ids must be plain ids");
+  }
+  const expiresAt = new Date(now.getTime() + INVITE_OFFER_TTL_MINUTES * MINUTE);
+  return {
+    cookieValue: signValue(`${OFFER_TAG}:${inviteId}:${accountId}:${expiresAt.getTime()}`),
+    expiresAt,
+  };
+}
+
+/**
+ * The invite offer inside a cookie value, or null when it is not ours, is
+ * malformed, or has expired. The caller checks that `accountId` is the
+ * signed-in person before showing or applying it.
+ */
+export function inviteOfferFromCookie(
+  value: unknown,
+  now: Date = new Date(),
+): { inviteId: string; accountId: string; expiresAt: Date } | null {
+  const inside = verifySignedValue(value);
+  if (!inside) return null;
+  const parts = inside.split(":");
+  if (parts.length !== 4 || parts[0] !== OFFER_TAG) return null;
+  const [, inviteId, accountId, expires] = parts as [string, string, string, string];
+  if (!inviteId || !accountId || !/^\d{1,15}$/.test(expires)) return null;
+  const expiresAt = new Date(Number(expires));
+  if (expiresAt.getTime() <= now.getTime()) return null;
+  return { inviteId, accountId, expiresAt };
 }
 
 /* ---------------------------------------------------------------- viewer */

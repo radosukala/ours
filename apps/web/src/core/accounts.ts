@@ -7,17 +7,29 @@
  * nothing (SPEC §6), so each write refuses it with NOT_FOUND, the same
  * answer as an account that does not exist.
  */
-import { and, eq, isNull, ne, sql } from "drizzle-orm";
-import { accountCreationOpen, appUrl } from "./config";
-import { consumeEmailToken, createEmailToken, createPendingJoin } from "./auth";
+import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { accountCreationOpen, appUrl, clientIpHeader } from "./config";
+import {
+  consumeEmailToken,
+  createEmailToken,
+  createPendingJoin,
+  retireEmailTokens,
+  revokeAllSessions,
+} from "./auth";
 import { type Db, withTx } from "./db";
-import { closed, conflict, invalid, isCoreError, notFound } from "./errors";
-// Aliased: the `use` prefix belongs to React hooks, and this is not one.
-import { useInviteAsExisting as applyInviteAsExisting } from "./invites";
+import { closed, conflict, CoreError, invalid, isCoreError, notFound } from "./errors";
+import { inviteOfferForViewer } from "./invites";
 import { hit, RATE, rateKeyHash } from "./limits";
-import { sendMail } from "./mail";
+import { type Defer, nowOrDeferred, sendMail } from "./mail";
 import { signInEmail } from "./mail-templates";
-import { accounts, emailTokens, follows, outbox, pendingJoins } from "./schema";
+import {
+  accounts,
+  emailTokens,
+  follows,
+  invites,
+  outbox,
+  pendingJoins,
+} from "./schema";
 import {
   HANDLE_PATTERN,
   normEmail,
@@ -34,8 +46,29 @@ export const LINK_REFUSED = "This link has expired or was already used.";
 export const SIGN_IN_ANSWER =
   "If there's an account for that address, we've sent a sign-in link. It works once, for 15 minutes.";
 
+/** CLOSED while production names no client-address header (SPEC §17 item 3). */
+export const SIGN_IN_REQUESTS_OFF =
+  "This server can't send sign-in links yet: its setup doesn't name the header that carries each visitor's address (CLIENT_IP_HEADER).";
+
 const HANDLE_TAKEN = "That username is taken. Choose another.";
 const CONFIRM_MISMATCH = "Type your username exactly as shown to confirm.";
+
+/**
+ * An emailed link opened in a browser signed in as another account (SPEC
+ * §17 item 5). The link is not used: the person signs out first, then
+ * opens it again.
+ */
+export class SignedInElsewhere extends CoreError {
+  readonly handle: string;
+
+  constructor(handle: string) {
+    super(
+      "CONFLICT",
+      `You're signed in as @${handle}. Sign out first, then open the link again.`,
+    );
+    this.handle = handle;
+  }
+}
 
 /* --------------------------------------------------------------- helpers */
 
@@ -160,13 +193,50 @@ export async function updateProfile(
  * Change your username. The format and the reserved names are checked by
  * `validHandle` (INVALID); a name someone else has, in any letter case, is
  * CONFLICT. Keeping your own name is allowed and changes nothing.
+ *
+ * Usernames are unique, so trying one tells you whether it is taken, even
+ * when its holder blocked you or is suspended. SPEC §17 item 9 accepts
+ * this, says so on /rules, and limits tries at a new username to 5 a day
+ * (`handle:<accountId>`). Every try counts, taken or not: the limit is
+ * recorded before the transaction, so a refusal does not roll it back.
  */
 export async function changeHandle(
   db: Db,
   accountId: string,
   handleInput: string,
+  now: Date = new Date(),
 ): Promise<{ handle: string }> {
   const handle = validHandle(handleInput);
+  await countHandleTry(db, accountId, handle, now);
+  return changeHandleWithin(db, accountId, handle);
+}
+
+/**
+ * Record a try at a new username, or throw RATE_LIMITED. Keeping the
+ * current name is not a try. `db` must not be a transaction that may
+ * still roll back (SPEC §10).
+ */
+async function countHandleTry(
+  db: Db,
+  accountId: string,
+  handle: string,
+  now: Date,
+): Promise<void> {
+  const [me] = await db
+    .select({ handle: accounts.handle })
+    .from(accounts)
+    .where(activeAccount(accountId))
+    .limit(1);
+  if (!me) throw notFound();
+  if (me.handle === handle) return;
+  await hit(db, `handle:${accountId}`, { ...RATE.handle, now });
+}
+
+async function changeHandleWithin(
+  db: Db,
+  accountId: string,
+  handle: string,
+): Promise<{ handle: string }> {
   return withTx(db, async (tx) => {
     const [me] = await tx
       .select({ handle: accounts.handle })
@@ -202,13 +272,15 @@ export async function changeHandle(
 export async function saveProfile(
   db: Db,
   accountId: string,
-  input: { displayName: string; handle: string; bio: string },
+  input: { displayName: string; handle: string; bio: string; now?: Date },
 ): Promise<{ handle: string }> {
   const displayName = validDisplayName(input.displayName);
   const handle = validHandle(input.handle);
   const bio = validBio(input.bio);
+  // Counted before the transaction, so a refused name still counts.
+  await countHandleTry(db, accountId, handle, input.now ?? new Date());
   return withTx(db, async (tx) => {
-    const result = await changeHandle(tx, accountId, handle);
+    const result = await changeHandleWithin(tx, accountId, handle);
     await updateProfile(tx, accountId, { displayName, bio });
     return result;
   });
@@ -262,6 +334,11 @@ export async function setWeeklyEmail(
  *
  * The address also leaves the tables that hold it without a reference to
  * the account: unused links and development mail sent to it.
+ *
+ * Lock order (SPEC §17 item 7): the join links made from this account's
+ * invites, then the invites, then the account. A join takes the same order
+ * (its link, its invite, then the inviter's account through `invited_by`),
+ * so a join racing the inviter's deletion waits instead of deadlocking.
  */
 export async function deleteAccount(
   db: Db,
@@ -269,6 +346,21 @@ export async function deleteAccount(
   confirmHandle: string,
 ): Promise<void> {
   await withTx(db, async (tx) => {
+    const mine = tx
+      .select({ id: invites.id })
+      .from(invites)
+      .where(eq(invites.inviterId, accountId));
+    await tx
+      .select({ id: emailTokens.id })
+      .from(emailTokens)
+      .where(inArray(emailTokens.inviteId, mine))
+      .for("update");
+    await tx
+      .select({ id: invites.id })
+      .from(invites)
+      .where(eq(invites.inviterId, accountId))
+      .for("update");
+
     const [me] = await tx
       .select({ id: accounts.id, handle: accounts.handle, email: accounts.email })
       .from(accounts)
@@ -289,6 +381,30 @@ export async function deleteAccount(
   });
 }
 
+/* -------------------------------------------------------------- sign out */
+
+/**
+ * Sign out everywhere (SPEC §8, §17 item 6): revoke every session of the
+ * account, and mark every unused sign-in and join link to its address as
+ * used, so a link requested before cannot sign anyone in afterwards.
+ */
+export async function signOutEverywhere(
+  db: Db,
+  accountId: string,
+  now: Date = new Date(),
+): Promise<void> {
+  await withTx(db, async (tx) => {
+    const [me] = await tx
+      .select({ email: accounts.email })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+    if (!me) throw notFound();
+    await revokeAllSessions(tx, accountId, now);
+    await retireEmailTokens(tx, me.email, now);
+  });
+}
+
 /* --------------------------------------------------------------- sign in */
 
 /**
@@ -298,14 +414,21 @@ export async function deleteAccount(
  * answer (SIGN_IN_ANSWER). The limits count every request, whether or not
  * the account exists, so a refusal says nothing about the address either.
  *
- * `ipHash` is `clientIpHash()` from the web layer: already a keyed hash,
- * never an address.
+ * Whether the account exists, the link and the mail are one task, which
+ * runs after the response when the caller passes `defer` (SPEC §17 item
+ * 4): the request itself then does the same work, and takes the same time,
+ * for every address. Without `defer` (tests, scripts) it runs inline.
+ *
+ * Refused with CLOSED while production names no client-address header
+ * (SPEC §17 item 3). `ipHash` is `clientIpHash()` from the web layer:
+ * already a keyed hash, never an address.
  */
 export async function requestSignIn(
   db: Db,
-  input: { email: string; ipHash: string; now?: Date },
+  input: { email: string; ipHash: string; now?: Date; defer?: Defer },
 ): Promise<void> {
   const now = input.now ?? new Date();
+  if (!clientIpHeader()) throw closed(SIGN_IN_REQUESTS_OFF);
   const email = normEmail(input.email);
   const ipHash =
     typeof input.ipHash === "string" && input.ipHash
@@ -320,34 +443,44 @@ export async function requestSignIn(
     now,
   });
 
-  const [account] = await db
-    .select({ id: accounts.id })
-    .from(accounts)
-    .where(and(eq(accounts.email, email), isNull(accounts.suspendedAt)))
-    .limit(1);
-  if (!account) return;
+  await nowOrDeferred(async () => {
+    const [account] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.email, email), isNull(accounts.suspendedAt)))
+      .limit(1);
+    if (!account) return;
 
-  const token = await createEmailToken(db, { email, purpose: "sign_in", now });
-  const { subject, body } = signInEmail(`${appUrl()}/auth#${token}`);
-  // A transport failure is logged in mail_log; the answer stays the same.
-  await sendMail(db, { to: email, subject, body, kind: "sign_in", accountId: account.id });
+    const token = await createEmailToken(db, { email, purpose: "sign_in", now });
+    const { subject, body } = signInEmail(`${appUrl()}/auth#${token}`);
+    // A transport failure is logged in mail_log; the answer stays the same.
+    await sendMail(db, { to: email, subject, body, kind: "sign_in", accountId: account.id });
+  }, input.defer);
 }
 
 export type VerifyEmailLinkResult =
   | { kind: "signed_in"; accountId: string }
   | { kind: "join_pending"; pendingJoinId: string }
-  | { kind: "joined_existing"; accountId: string };
+  /** A join link for an existing account: signed in, the invite offered, nothing applied. */
+  | { kind: "joined_existing"; accountId: string; inviteId: string };
 
 /**
- * Use an emailed link (SPEC §8), in one transaction:
+ * Use an emailed link (SPEC §8, as amended by §17 items 1 and 5), in one
+ * transaction:
  *
  * - `sign_in`: the account for the address, if it is active.
- * - `join`, an account exists for the address: it is signed in, and the
- *   invite is applied as for an existing account (M2's
- *   `useInviteAsExisting`). An invite that can no longer be used
- *   (NOT_FOUND there) still signs the person in, and applies nothing.
+ * - `join`, an account exists for the address: it is signed in, and
+ *   nothing else happens here. If the invite could be added (usable, not
+ *   their own, no block either way, not friends already), the result is
+ *   `joined_existing` with the invite's id, and the caller asks "Add <Name>
+ *   (@handle) as a friend?" on /join/confirm; only their Add applies it.
+ *   Otherwise the result is plain `signed_in`.
  * - `join`, no account: a pending join, while accounts can be created
  *   (CLOSED otherwise).
+ *
+ * `signedInAs` is the account of a live session this browser already has.
+ * If the link is for anyone else, it is refused with SignedInElsewhere
+ * (CONFLICT) and nothing is used: the person signs out first.
  *
  * Unknown, used and expired links, and links for a suspended or deleted
  * account, are all the same NOT_FOUND. The caller creates the session for
@@ -357,7 +490,7 @@ export type VerifyEmailLinkResult =
  */
 export async function verifyEmailLink(
   db: Db,
-  input: { token: string; now?: Date },
+  input: { token: string; now?: Date; signedInAs?: string | null },
 ): Promise<VerifyEmailLinkResult> {
   const now = input.now ?? new Date();
   return withTx(db, async (tx): Promise<VerifyEmailLinkResult> => {
@@ -377,39 +510,39 @@ export async function verifyEmailLink(
       .where(eq(accounts.email, link.email))
       .limit(1);
     if (account?.suspendedAt) throw notFound(LINK_REFUSED);
+    if (link.purpose === "sign_in" && !account) throw notFound(LINK_REFUSED);
+    if (link.purpose === "join" && !link.inviteId) throw notFound(LINK_REFUSED);
 
-    if (link.purpose === "sign_in") {
-      if (!account) throw notFound(LINK_REFUSED);
-      return { kind: "signed_in", accountId: account.id };
+    // A browser signed in as someone else is not switched (SPEC §17 item
+    // 5). Thrown inside the transaction, so the link stays unused.
+    if (input.signedInAs && input.signedInAs !== account?.id) {
+      const [current] = await tx
+        .select({ handle: accounts.handle })
+        .from(accounts)
+        .where(activeAccount(input.signedInAs))
+        .limit(1);
+      if (current) throw new SignedInElsewhere(current.handle);
     }
 
-    if (!link.inviteId) throw notFound(LINK_REFUSED);
+    if (link.purpose === "sign_in") {
+      return { kind: "signed_in", accountId: account!.id };
+    }
 
     if (account) {
-      try {
-        // A savepoint, so a refusal inside cannot abort this transaction.
-        const used = await withTx(tx, (sp) =>
-          applyInviteAsExisting(sp, {
-            accountId: account.id,
-            inviteId: link.inviteId!,
-            now,
-          }),
-        );
-        return used.status === "friends"
-          ? { kind: "joined_existing", accountId: account.id }
-          : { kind: "signed_in", accountId: account.id };
-      } catch (error) {
-        if (isCoreError(error) && error.code === "NOT_FOUND") {
-          return { kind: "signed_in", accountId: account.id };
-        }
-        throw error;
-      }
+      const offer = await inviteOfferForViewer(tx, {
+        inviteId: link.inviteId!,
+        viewerId: account.id,
+        now,
+      });
+      return offer.kind === "can_add"
+        ? { kind: "joined_existing", accountId: account.id, inviteId: offer.invite.inviteId }
+        : { kind: "signed_in", accountId: account.id };
     }
 
     if (!accountCreationOpen()) throw closed();
     const pending = await createPendingJoin(tx, {
       email: link.email,
-      inviteId: link.inviteId,
+      inviteId: link.inviteId!,
       now,
     });
     return { kind: "join_pending", pendingJoinId: pending.id };

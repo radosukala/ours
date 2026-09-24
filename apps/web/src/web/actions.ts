@@ -17,6 +17,7 @@
  * or wrap a whole function with `action(fn)`.
  */
 import { unstable_rethrow } from "next/navigation";
+import { after } from "next/server";
 import { isCoreError } from "@/core/errors";
 
 export type ActionOk<T extends object = object> = { ok: true } & T;
@@ -53,4 +54,30 @@ export function action<Args extends unknown[], T extends object = object>(
   fn: (...args: Args) => Promise<T | void>,
 ): (...args: Args) => Promise<ActionResult<T>> {
   return async (...args: Args) => run(() => fn(...args));
+}
+
+/**
+ * Run `task` after the response has been sent, with Next's `after` (SPEC
+ * §17 item 4). Pass it as `defer` to the core's `requestSignIn` and
+ * `requestJoin`: the request then does the same work whether or not an
+ * account exists, and whether or not mail is sent.
+ *
+ * A failure in the task is logged; the person already has their answer.
+ * Outside a request (a script, or a test calling an action directly) there
+ * is no response to wait for and `after` refuses; the task then runs now,
+ * and the returned promise is awaited by the core.
+ */
+export function afterResponse(task: () => Promise<void>): void | Promise<void> {
+  const guarded = async () => {
+    try {
+      await task();
+    } catch (error) {
+      console.error("[ours] work after the response failed:", error);
+    }
+  };
+  try {
+    after(guarded);
+  } catch {
+    return guarded();
+  }
 }

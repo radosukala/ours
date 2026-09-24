@@ -12,11 +12,16 @@ import {
   saveProfile,
   setAcceptsFollowers,
   setWeeklyEmail,
+  signOutEverywhere,
 } from "@/core/accounts";
-import { revokeAllSessions, revokeSession } from "@/core/auth";
+import { revokeSession } from "@/core/auth";
 import { getDb } from "@/core/db";
 import { type ActionResult, run } from "@/web/actions";
-import { clearSessionCookie, currentSessionId } from "@/web/session";
+import {
+  clearInviteCookie,
+  clearSessionCookie,
+  currentSessionId,
+} from "@/web/session";
 import { requireViewer } from "@/web/viewer";
 
 function text(form: FormData, name: string): string {
@@ -63,13 +68,19 @@ export async function signOutAction(): Promise<void> {
   const sessionId = await currentSessionId();
   if (sessionId) await revokeSession(getDb(), sessionId);
   await clearSessionCookie();
+  await clearInviteCookie();
   redirect("/signin?signed_out=1");
 }
 
-/** Sign out everywhere: revoke every session of the account, this one too. */
+/**
+ * Sign out everywhere: revoke every session of the account, this one too,
+ * and mark every unused sign-in and join link to its address as used
+ * (SPEC §17 item 6).
+ */
 export async function signOutEverywhereAction(): Promise<void> {
   const viewer = await requireViewer();
-  await revokeAllSessions(getDb(), viewer.id);
+  await signOutEverywhere(getDb(), viewer.id);
   await clearSessionCookie();
+  await clearInviteCookie();
   redirect("/signin?signed_out=1");
 }

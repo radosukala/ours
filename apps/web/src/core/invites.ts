@@ -14,17 +14,25 @@
  * - New accounts can be created only while a data controller is named
  *   (`config.accountCreationOpen()`); otherwise `requestJoin` and
  *   `completeJoin` refuse with CLOSED.
+ * - A join link opened by someone who already has an account applies
+ *   nothing: it signs them in and offers "Add <Name> (@handle) as a
+ *   friend?" (SPEC §17 item 1). Only their Add calls `useInviteAsExisting`.
  */
-import { and, desc, eq, gt, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { createEmailToken, createSession, pendingJoinFromCookie } from "./auth";
-import { accountCreationOpen, appUrl, INVITE_TTL_DAYS } from "./config";
+import {
+  accountCreationOpen,
+  appUrl,
+  clientIpHeader,
+  INVITE_TTL_DAYS,
+} from "./config";
 import { insertFriendship, isUniqueViolation } from "./connections";
 import { type Db, withTx } from "./db";
 import { closed, conflict, CoreError, forbidden, invalid, notFound } from "./errors";
 import { newId, randomToken, sha256 } from "./ids";
 import { hit, RATE, rateKeyHash } from "./limits";
-import { sendMail } from "./mail";
+import { type Defer, nowOrDeferred, sendMail } from "./mail";
 import { joinEmail } from "./mail-templates";
 import { notify } from "./notifications";
 import { accounts, friendRequests, invites, pendingJoins } from "./schema";
@@ -57,10 +65,15 @@ export const JOIN_EXPIRED =
 export const EMAIL_TAKEN =
   "There's already an account for this email. Sign in instead.";
 export const HANDLE_TAKEN = "That username is taken. Choose another.";
+/** CLOSED while production names no client-address header (SPEC §17 item 3). */
+export const JOIN_REQUESTS_OFF =
+  "This server can't send join links yet: its setup doesn't name the header that carries each visitor's address (CLIENT_IP_HEADER).";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Codes are 22 characters; anything that cannot be a code is not looked up. */
 const CODE_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
+/** Invite ids are ulids; anything else is not looked up. */
+const ID_PATTERN = /^[A-Za-z0-9]{1,64}$/;
 
 /* --------------------------------------------------------------- helpers */
 
@@ -272,6 +285,16 @@ export async function lookupInvite(
   viewerId?: string | null,
 ): Promise<PublicInvite | null> {
   if (typeof code !== "string" || !CODE_PATTERN.test(code)) return null;
+  return findUsableInvite(db, eq(invites.codeHash, sha256(code)), now, viewerId);
+}
+
+/** The usable invite `which` selects, with its active inviter, or null. */
+async function findUsableInvite(
+  db: Db,
+  which: SQL,
+  now: Date,
+  viewerId?: string | null,
+): Promise<PublicInvite | null> {
   const [row] = await db
     .select({
       inviteId: invites.id,
@@ -285,7 +308,7 @@ export async function lookupInvite(
       accounts,
       and(eq(accounts.id, invites.inviterId), isNull(accounts.suspendedAt)),
     )
-    .where(and(eq(invites.codeHash, sha256(code)), usable(now)))
+    .where(and(which, usable(now)))
     .limit(1);
   if (!row) return null;
   const isOwn = Boolean(viewerId) && viewerId === row.inviterId;
@@ -327,6 +350,15 @@ export async function inviteForViewer(
       ? { kind: "can_join", invite }
       : { kind: "closed", invite };
   }
+  return stateForSignedIn(db, invite, viewerId);
+}
+
+/** What a signed-in viewer is offered for a usable invite. */
+async function stateForSignedIn(
+  db: Db,
+  invite: PublicInvite,
+  viewerId: string,
+): Promise<InvitePageState> {
   if (invite.isOwn) return { kind: "own", invite, note: invite.note ?? "" };
   if (!(await isActive(db, viewerId))) return { kind: "unusable" };
   if (await isBlocked(db, viewerId, invite.inviter.id)) return { kind: "unusable" };
@@ -336,23 +368,55 @@ export async function inviteForViewer(
   return { kind: "can_add", invite };
 }
 
+/**
+ * What a join link opened by an existing account offers (SPEC §17 item 1),
+ * by invite id: the same answers the invite page gives a signed-in viewer.
+ * `verifyEmailLink` asks this to decide whether to offer the invite at all,
+ * and /join/confirm asks again when it shows the offer. It writes nothing.
+ * The id comes from the signed `ours_invite` cookie, never from a form.
+ */
+export async function inviteOfferForViewer(
+  db: Db,
+  {
+    inviteId,
+    viewerId,
+    now = new Date(),
+  }: { inviteId: string; viewerId: string; now?: Date },
+): Promise<InvitePageState> {
+  if (typeof inviteId !== "string" || !ID_PATTERN.test(inviteId)) {
+    return { kind: "unusable" };
+  }
+  const invite = await findUsableInvite(db, eq(invites.id, inviteId), now, viewerId);
+  if (!invite) return { kind: "unusable" };
+  return stateForSignedIn(db, invite, viewerId);
+}
+
 /* ---------------------------------------------------------------- joining */
 
 /**
  * Send a join link for an invite. Refused with CLOSED while no controller
- * is named. Rate-limited (3/hour per email hash, 10/hour per IP hash).
+ * is named, and while production names no client-address header (SPEC §17
+ * item 3). Rate-limited: 3/hour per email hash, 10/hour per IP hash, and
+ * 10/day per invite (`join:invite:<id>`), so one link cannot mail any
+ * number of addresses however the client's address is presented.
  *
- * The caller always shows the same answer: the link goes to the address
+ * The caller always shows the same answer. The link goes to the address
  * whether or not it already has an account (an existing account is signed
- * in and uses the invite, SPEC §8 step 2). An address whose account is
- * suspended is sent nothing, with the same answer.
+ * in and asked whether to add the inviter, SPEC §17 item 1). An address
+ * whose account is suspended, or has a block either way with the inviter
+ * (SPEC §17 item 2), is sent nothing, with the same answer.
+ *
+ * Which of those it is, and the mail, are worked out in one task that runs
+ * after the response when the caller passes `defer` (SPEC §17 item 4), so
+ * the request itself does the same work for every address.
  */
 export async function requestJoin(
   db: Db,
-  input: { code: string; email: string; ipHash: string; now?: Date },
+  input: { code: string; email: string; ipHash: string; now?: Date; defer?: Defer },
 ): Promise<void> {
   const now = input.now ?? new Date();
   if (!accountCreationOpen()) throw closed();
+  if (!clientIpHeader()) throw closed(JOIN_REQUESTS_OFF);
   const email = normEmail(input.email);
   if (!input.ipHash) throw new Error("requestJoin needs the client's IP hash.");
 
@@ -361,28 +425,36 @@ export async function requestJoin(
 
   const invite = await lookupInvite(db, input.code, now);
   if (!invite) throw notFound(INVITE_UNUSABLE);
+  await hit(db, `join:invite:${invite.inviteId}`, { ...RATE.joinInvite, now });
 
-  const [existing] = await db
-    .select({ suspendedAt: accounts.suspendedAt })
-    .from(accounts)
-    .where(eq(accounts.email, email))
-    .limit(1);
-  if (existing?.suspendedAt) return;
+  await nowOrDeferred(async () => {
+    const [existing] = await db
+      .select({ id: accounts.id, suspendedAt: accounts.suspendedAt })
+      .from(accounts)
+      .where(eq(accounts.email, email))
+      .limit(1);
+    if (existing?.suspendedAt) return;
+    if (existing && (await isBlocked(db, existing.id, invite.inviter.id))) return;
 
-  const token = await createEmailToken(db, {
-    email,
-    purpose: "join",
-    inviteId: invite.inviteId,
-    now,
-  });
-  const mail = joinEmail(`${appUrl()}/auth#${token}`, invite.inviter.displayName);
-  await sendMail(db, {
-    to: email,
-    subject: mail.subject,
-    body: mail.body,
-    kind: "join",
-    accountId: null,
-  });
+    const token = await createEmailToken(db, {
+      email,
+      purpose: "join",
+      inviteId: invite.inviteId,
+      now,
+    });
+    const mail = joinEmail(
+      `${appUrl()}/auth#${token}`,
+      invite.inviter.displayName,
+      invite.inviter.handle,
+    );
+    await sendMail(db, {
+      to: email,
+      subject: mail.subject,
+      body: mail.body,
+      kind: "join",
+      accountId: null,
+    });
+  }, input.defer);
 }
 
 /** What /join shows about the pending join in its cookie, or null. */
@@ -421,13 +493,19 @@ export async function describePendingJoin(
  * Finish joining, in one transaction (SPEC §8 step 4). Refused with CLOSED
  * while no controller is named.
  *
- * Re-checks everything inside the transaction, with the pending join and
- * the invite locked: the pending join is valid, the invite usable, the
+ * Re-checks everything inside the transaction, with the invite and the
+ * pending join locked: the pending join is valid, the invite usable, the
  * inviter active, the email and the handle free. Then it creates the
  * account, marks the invite used, makes the new person and the inviter
  * friends, notifies the inviter (invite_joined), completes the pending
  * join and starts a session. The caller deletes the join cookie and sets
  * the session cookie.
+ *
+ * Lock order (SPEC §17 item 7): the invite, then the pending join, then
+ * (by inserting `invited_by`) the inviter's account. `deleteAccount` locks
+ * the account's invites before the account, and its cascade reaches the
+ * pending joins only after both, so the two wait for each other instead
+ * of deadlocking.
  */
 export async function completeJoin(
   db: Db,
@@ -452,6 +530,25 @@ export async function completeJoin(
 
   try {
     return await withTx(db, async (tx) => {
+      // Which invite, read without a lock; everything is checked again
+      // below, once the invite and then the pending join are locked.
+      const [named] = await tx
+        .select({ inviteId: pendingJoins.inviteId })
+        .from(pendingJoins)
+        .where(eq(pendingJoins.id, input.pendingJoinId))
+        .limit(1);
+      if (!named) throw notFound(JOIN_EXPIRED);
+
+      const [invite] = await tx
+        .select({ id: invites.id, inviterId: invites.inviterId })
+        .from(invites)
+        .innerJoin(
+          accounts,
+          and(eq(accounts.id, invites.inviterId), isNull(accounts.suspendedAt)),
+        )
+        .where(and(eq(invites.id, named.inviteId), usable(now)))
+        .for("update", { of: invites });
+
       const [pending] = await tx
         .select({
           id: pendingJoins.id,
@@ -468,17 +565,7 @@ export async function completeJoin(
         )
         .for("update");
       if (!pending) throw notFound(JOIN_EXPIRED);
-
-      const [invite] = await tx
-        .select({ id: invites.id, inviterId: invites.inviterId })
-        .from(invites)
-        .innerJoin(
-          accounts,
-          and(eq(accounts.id, invites.inviterId), isNull(accounts.suspendedAt)),
-        )
-        .where(and(eq(invites.id, pending.inviteId), usable(now)))
-        .for("update", { of: invites });
-      if (!invite) throw notFound(INVITE_UNUSABLE);
+      if (!invite || invite.id !== pending.inviteId) throw notFound(INVITE_UNUSABLE);
 
       const [emailTaken] = await tx
         .select({ id: accounts.id })
@@ -604,7 +691,7 @@ export async function useInviteAsExisting(
 /**
  * The same function under a name that does not start with "use": the
  * react-hooks lint rule treats any call of `use…()` outside a component as
- * a misplaced hook, so callers (M1's verifyEmailLink, the invite page's
- * action) call it by this name.
+ * a misplaced hook, so callers (the invite page's Add and /join/confirm's
+ * Add) call it by this name.
  */
 export { useInviteAsExisting as applyInviteAsExisting };

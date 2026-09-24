@@ -25,6 +25,26 @@ export type MailInput = {
 
 export type MailResult = { ok: true } | { ok: false; errorCode: string };
 
+/**
+ * Where a caller can hand work to run after the response (SPEC §17 item
+ * 4): server actions pass Next's `after`, through `afterResponse` in
+ * src/web/actions.ts. It may return a promise, which is awaited: that is
+ * how work runs inline when there is no response to wait for.
+ */
+export type Defer = (task: () => Promise<void>) => void | Promise<void>;
+
+/**
+ * Run `task` now, or give it to `defer` to run after the response. Tests
+ * and scripts pass nothing, and the work (and the mail) happens inline.
+ */
+export async function nowOrDeferred(
+  task: () => Promise<void>,
+  defer?: Defer,
+): Promise<void> {
+  if (defer) await defer(task);
+  else await task();
+}
+
 async function log(
   db: Db,
   kind: MailKind,
