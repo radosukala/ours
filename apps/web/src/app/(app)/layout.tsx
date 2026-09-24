@@ -32,7 +32,11 @@ export default async function AppLayout({
     countUnread(db, viewer.id),
     countIncomingRequests(db, viewer.id),
   ]);
-  const navViewer = { handle: viewer.handle, displayName: viewer.displayName };
+  const navViewer = {
+    handle: viewer.handle,
+    displayName: viewer.displayName,
+    isAdmin: viewer.isAdmin,
+  };
   const counts = { unread, pending };
 
   return (

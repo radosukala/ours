@@ -63,8 +63,10 @@ export const PROHIBITED: readonly Prohibited[] = [
   { pattern: /co-owner/i, reason: D0011_OWNERSHIP },
   { pattern: /\byou own\b/i, reason: D0011_OWNERSHIP },
   { pattern: /\bwe own\b/i, reason: D0011_OWNERSHIP },
-  { pattern: /\bstake\b/i, reason: MONEY },
-  { pattern: /\binvest/i, reason: MONEY },
+  // Not "at stake" (architect decision after the M5 build: ordinary English).
+  { pattern: /(?<!\bat )\bstakes?\b/i, reason: MONEY },
+  // invest, invests, invested, investing, investment(s), investor(s) — not "investigate".
+  { pattern: /\binvest(?:s|ed|ing|ments?|ors?)?\b/i, reason: MONEY },
   { pattern: /\bequity\b/i, reason: MONEY },
   { pattern: /\bdividend/i, reason: MONEY },
   {

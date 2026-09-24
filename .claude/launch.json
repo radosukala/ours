@@ -4,8 +4,28 @@
     {
       "name": "proof",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4173", "-d", "apps/proof/dist"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4173",
+        "-d",
+        "apps/proof/dist"
+      ],
       "port": 4173
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@ours/web",
+        "exec",
+        "next",
+        "dev",
+        "-p",
+        "3310"
+      ],
+      "port": 3310
     }
   ]
 }

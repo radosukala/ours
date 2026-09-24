@@ -35,7 +35,7 @@ export type ReportedItemView =
       bio: string;
       suspended?: boolean;
     }
-  | { kind: "gone" };
+  | { kind: "gone"; author?: { handle: string; displayName: string; suspended: boolean } | null };
 
 const AUDIENCE = {
   friends: { icon: "lock", label: "Friends only" },
@@ -59,6 +59,7 @@ export function ReportedItem({
       <section className={styles.quote} aria-label={label}>
         <p className={styles.gone}>
           This was deleted before anyone looked at it.
+          {item.author ? ` It was posted by ${item.author.displayName} (@${item.author.handle}).` : ""}
         </p>
       </section>
     );

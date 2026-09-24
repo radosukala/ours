@@ -15,7 +15,7 @@ import { Icon, type IconName } from "./Icon";
 
 export type NavCounts = { unread: number; pending: number };
 
-export type NavViewer = { handle: string; displayName: string };
+export type NavViewer = { handle: string; displayName: string; isAdmin?: boolean };
 
 export function countLabel(n: number): string {
   return n > 99 ? "99+" : String(n);
@@ -46,6 +46,11 @@ export function navItems(viewer: NavViewer, counts: NavCounts) {
       aliases: [`/@${viewer.handle}`],
     },
     { href: "/settings", label: "Settings", icon: "gear" as IconName, count: 0 },
+    // Only administrators see the moderation queue in the navigation; for
+    // everyone else /admin is not found.
+    ...(viewer.isAdmin
+      ? [{ href: "/admin", label: "Moderation", icon: "flag" as IconName, count: 0 }]
+      : []),
   ];
 }
 

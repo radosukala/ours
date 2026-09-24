@@ -469,8 +469,11 @@ then shows *That's everything from the last 14 days.*
 - else if `now − last > 30 min`, set previous = last and last = now;
 - else set last = now.
 
-The page calls it after loading the first page, so the marker reflects the
-previous visit.
+The page calls it **before** loading the first page. *(Architect decision
+after the M3 build, which found that calling it after puts the marker one
+session behind: a return at t0+6h showed the marker at t0, not at the
+t0+3h visit.)* Recording first moves `previous` to the last time you
+looked; reloads within 30 minutes leave the marker where it is.
 
 ## 8. Flows
 
@@ -807,7 +810,7 @@ colours) and an SVG icon at `src/app/icon.svg`: a bold "O" monogram.
 - every `(app)` page renders `PageHeader` itself (it is the sticky top bar
   at every width; `/home` passes `wordmark`) and calls `requireViewer()`
   itself — the layout's check is not enough;
-- every server action calls `requireViewer()`;
+- every server action calls `requireViewer()` — except the actions of signed-out flows (sign-in, `/auth`, joining, unsubscribing), where the email token, the signed join cookie or the signed unsubscribe token is the permission;
 - actions that change navigation counts (accepting a request, opening
   notifications) call `revalidatePath("/", "layout")`;
 - the composer has `id="compose"` and focuses itself when the URL hash is

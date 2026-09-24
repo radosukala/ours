@@ -423,7 +423,9 @@ describe("createReport records what can be seen", () => {
       targetKind: "post",
       targetPostId: p.id,
       targetReplyId: null,
-      targetAccountId: null,
+      // The author is recorded too, so deleting the post before review does
+      // not remove the account from moderation (architect decision).
+      targetAccountId: author.id,
       category: "harassment",
       details: "FICTIONAL details.",
       status: "open",

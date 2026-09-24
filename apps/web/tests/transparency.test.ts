@@ -355,15 +355,10 @@ describe("the rules page names its own checks honestly", () => {
     }
   });
 
-  it("the test files of this module and the foundation that /rules names exist", () => {
-    const here = [
-      "tests/digest.test.ts",
-      "tests/claims.test.ts",
-      "tests/visibility.test.ts",
-    ];
+  it("every test file /rules names exists (after the merge, all of them)", () => {
     const named = new Set(FLOOR_RULES.flatMap((g) => g.rules.flatMap((r) => r.tests ?? [])));
-    for (const file of here) {
-      expect(named.has(file), file).toBe(true);
+    expect(named.size).toBeGreaterThan(10);
+    for (const file of named) {
       expect(existsSync(join(WEB_ROOT, file)), file).toBe(true);
     }
   });

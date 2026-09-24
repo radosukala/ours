@@ -76,7 +76,7 @@ function reportedAccount(
     case "account":
       return target;
     case "gone":
-      return null;
+      return target.author;
   }
 }
 
@@ -90,7 +90,7 @@ function ReportEntry({
   const { target } = report;
   const noun = NOUN[target.kind];
   const account = reportedAccount(target);
-  // Not offered for a deleted item, an account already suspended, or the
+  // Not offered when the account is unknown or gone, already suspended, or the
   // administrator's own account (the core refuses that too).
   const canSuspend =
     account !== null && !account.suspended && account.id !== viewerId;

@@ -14,10 +14,13 @@ domain, provider account or real person's data is used; all seed and test
 data is FICTIONAL, with `example.test` addresses, and mail goes to a local
 `outbox` table, never to a real address.
 
-**Status.** The foundation (schema, identity, sessions, the visibility
-predicate, the shell) is IMPLEMENTED and TESTED locally. The modules
-(accounts, connections, posts, safety, public pages) are stubs until their
-builders replace them, so most routes do not exist yet.
+**Status.** The core and the web application are IMPLEMENTED and TESTED
+locally: sign-in by link, invites and joining, friends and follows, blocks
+and mutes, posts, replies and likes, the feed with its end, notifications,
+reports and moderation, export and deletion, the weekly email, and the
+public pages (rules, privacy, costs, who controls what). An independent
+verification is recorded in `receipts/`. **Nothing is deployed**; release
+is a separate decision.
 
 ## Run it locally
 
@@ -29,7 +32,7 @@ cp apps/web/.env.example apps/web/.env.local   # then fill in SESSION_SECRET
 createdb ours_web_dev
 pnpm --filter @ours/web db:migrate
 pnpm --filter @ours/web seed:fictional         # add --reset to start over
-pnpm --filter @ours/web dev                    # http://localhost:3000
+pnpm --filter @ours/web dev                    # http://localhost:3000 (APP_URL must match)
 ```
 
 `seed:fictional` prints a one-time sign-in link for its FICTIONAL
@@ -50,6 +53,8 @@ pnpm --filter @ours/web test        # vitest against a real Postgres
 pnpm --filter @ours/web typecheck
 pnpm --filter @ours/web lint
 pnpm --filter @ours/web build
+pnpm --filter @ours/web claims      # the claims scan over every public string; exits 1 on a hit
+pnpm --filter @ours/web digest      # run the weekly email once, into the outbox
 ```
 
 The tests create a fresh database (`ours_web_test_<random>`) on the server
@@ -66,7 +71,8 @@ migrate it, and drop it afterwards.
 | `src/app/` | routes; `(public)` and `(app)` layouts |
 | `src/components/` | UI; class vocabulary documented at the top of `src/app/globals.css` |
 | `drizzle/` | generated SQL migrations (from `src/core/schema.ts`) |
-| `scripts/` | migrate and seeds; the claims scan and weekly digest come with the public-pages module |
+| `scripts/` | migrate, seeds, the claims scan, the weekly digest |
+| `transparency/` | the public ledger and who controls what, rendered by `/costs` and `/power`; every change is a commit |
 
 ## Licence
 

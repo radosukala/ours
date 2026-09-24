@@ -344,7 +344,10 @@ export async function createReport(
     targetKind: target.kind,
     targetPostId: target.kind === "post" ? target.id : null,
     targetReplyId: target.kind === "reply" ? target.id : null,
-    targetAccountId: target.kind === "account" ? target.id : null,
+    // For a post or reply, the author's account too (architect decision after
+    // the M4 build): deleting the content before review must not also delete
+    // the moderator's ability to act on the account that posted it.
+    targetAccountId: target.kind === "account" ? target.id : target.author.id,
     category: input.category,
     details,
     status: "open",
@@ -406,7 +409,11 @@ export type OpenReport = {
         bio: string;
         suspended: boolean;
       }
-    | { kind: "gone" };
+    | {
+        kind: "gone";
+        /** The author of a deleted post or reply, when the report recorded one. */
+        author: { id: string; handle: string; displayName: string; suspended: boolean } | null;
+      };
 };
 
 /**
@@ -470,7 +477,18 @@ export async function listOpenReports(
     .orderBy(asc(reports.createdAt), asc(reports.id));
 
   return rows.map((row): OpenReport => {
-    let item: OpenReport["target"] = { kind: "gone" };
+    let item: OpenReport["target"] = {
+      kind: "gone",
+      author:
+        row.accountId !== null
+          ? {
+              id: row.accountId,
+              handle: row.accountHandle ?? "",
+              displayName: row.accountName ?? "",
+              suspended: row.accountSuspendedAt !== null,
+            }
+          : null,
+    };
     if (
       row.targetKind === "post" &&
       row.postId !== null &&
@@ -723,6 +741,9 @@ export async function dismissReport(
 /** Whose account a report is about: the account, or the content's author. */
 async function reportedAccountId(tx: Db, report: Report): Promise<string | null> {
   if (report.targetKind === "account") return report.targetAccountId;
+  // Recorded at report time for posts and replies since the architect's fix;
+  // older rows fall back to looking the content up.
+  if (report.targetAccountId) return report.targetAccountId;
   if (report.targetKind === "post" && report.targetPostId) {
     const [row] = await tx
       .select({ authorId: posts.authorId })

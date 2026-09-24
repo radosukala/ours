@@ -29,7 +29,10 @@ const csp = [
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "no-referrer" },
+  // same-origin, not no-referrer: browsers send `Origin: null` on native form
+  // posts under no-referrer, and Next then refuses the server action, so every
+  // form without JavaScript failed. Cross-origin requests still get nothing.
+  { key: "Referrer-Policy", value: "same-origin" },
   { key: "X-Frame-Options", value: "DENY" },
   {
     key: "Permissions-Policy",

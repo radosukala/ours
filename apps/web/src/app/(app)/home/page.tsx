@@ -3,8 +3,11 @@
  *
  * The feed is the posts of the people you chose, newest first. A marker
  * shows where you were caught up, and the feed ends after fourteen days.
- * The page records the visit after loading the first page, as SPEC §7
- * says, so the marker it shows reflects the visit before.
+ * The page records the visit BEFORE loading the feed (architect decision,
+ * amending SPEC §7): a return after more than 30 minutes moves the previous
+ * visit to the last time you looked, so the marker sits exactly where you
+ * left off; reloads within a session leave it in place. Loading first put
+ * the marker one session behind.
  */
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
@@ -25,8 +28,8 @@ export default async function HomePage() {
   const viewer = await requireViewer();
   const db = getDb();
   const now = new Date();
-  const feed = await getFeed(db, viewer.id, { now });
   await recordFeedVisit(db, viewer.id, now);
+  const feed = await getFeed(db, viewer.id, { now });
 
   return (
     <>

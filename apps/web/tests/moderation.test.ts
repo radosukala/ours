@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSession, sessionFromCookie } from "@/core/auth";
 import { isCoreError } from "@/core/errors";
 import { newId } from "@/core/ids";
+import { createReport } from "@/core/reports";
 import {
   dismissReport,
   listOpenReports,
@@ -670,5 +671,30 @@ describe("suspendAccount", () => {
       "NOT_FOUND",
     );
     expect(await reportRow(aboutGone)).toMatchObject({ status: "open" });
+  });
+});
+
+/* ------------------------------ deleting the content does not escape review */
+
+describe("a post deleted before review", () => {
+  it("still lets an administrator suspend its author, and the queue names who posted it", async () => {
+    const { admin, author, friend, p } = await world();
+    const { id } = await createReport(db(), friend.id, {
+      kind: "post",
+      targetId: p.id,
+      category: "harassment",
+      now: t0,
+    });
+    // The author deletes the post before anyone looks.
+    await db().delete(posts).where(eq(posts.id, p.id));
+
+    const [open] = await listOpenReports(db(), admin.id);
+    expect(open?.target.kind).toBe("gone");
+    expect(open?.target.kind === "gone" ? open.target.author?.id : null).toBe(author.id);
+
+    await suspendAccount(db(), admin.id, id, { reason: REASON, now: t1 });
+    const [row] = await db().select().from(accounts).where(eq(accounts.id, author.id));
+    expect(row?.suspendedAt).not.toBeNull();
+    expect((await reportRow(id)).status).toBe("actioned");
   });
 });
