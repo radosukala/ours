@@ -2,6 +2,9 @@
  * /power (SPEC §11, D-0011 §C.3): who controls what, from
  * transparency/control.json, in plain words, with the status line and the
  * running version. A row with no recorded fact says "not yet recorded".
+ * Two rows come from this server's configuration (see `loadControl`): the
+ * data controller, and what this server does with email, by the same test
+ * sendMail makes, so /privacy and /power never disagree.
  */
 import type { Metadata } from "next";
 import { ControlList } from "@/components/public/ControlList";
@@ -49,7 +52,8 @@ export default function PowerPage() {
 
       <p>This page changes when control changes. Every change is a public commit.</p>
       <p className={styles.meta}>
-        The list is a file in the open code:{" "}
+        The list is a file in the OURS records, published with each
+        release:{" "}
         <a href={repositoryUrl(CONTROL_PATH)} rel="noopener noreferrer" target="_blank">
           control.json
         </a>

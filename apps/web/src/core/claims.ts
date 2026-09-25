@@ -16,10 +16,24 @@
  * - `ALLOWLIST` names a file and one exact sentence in it, with a reason.
  *
  * Before matching, the text is normalized as a reader would see it (SPEC
- * §17 item 15): the common HTML entities are decoded, JSX's `{" "}` is a
- * space, and every run of whitespace is one space. So a claim a formatter
- * wrapped across two lines ("not for\n        sale") is still a hit, and
- * each hit is reported at the line of the original file where it starts.
+ * §17 item 15, and the final verification's honesty-1 and honesty-3):
+ *
+ * - the common HTML entities are decoded;
+ * - inline tags (`<strong>`, `<em>`, `<a …>`, `<Link …>`, `<code>` and the
+ *   like) and every closing tag are dropped, so "not for <strong>sale</strong>"
+ *   reads "not for sale" (a second reading keeps the tags, for the words
+ *   inside one, such as an `aria-label`);
+ * - a JSX string expression (`{"member-"}owned`, `{' '}`) is read as the
+ *   text it renders, joined to the text around it;
+ * - in .ts and .tsx files, JavaScript escapes (`\u0020`, `\u{2011}`,
+ *   `\x20`, `\n`, `\'`) are decoded; in .json files each string value is
+ *   read as `JSON.parse` gives it (see `scanJsonText`);
+ * - every run of whitespace is one space.
+ *
+ * So a claim a formatter wrapped across two lines ("not for\n        sale")
+ * is still a hit, and each hit is reported at the line of the original file
+ * where it starts. tests/claims.test.ts also scans the rendered pages and
+ * every mail template, the text as it actually reaches people.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -45,7 +59,9 @@ const MONEY =
 const APOS = "(?:'|’|&apos;|&#39;|&rsquo;)";
 
 export const PROHIBITED: readonly Prohibited[] = [
-  // The kernel's list (packages/kernel/src/rules.ts, noFictionalOwnership).
+  // The kernel's list (packages/kernel/src/rules.ts, noFictionalOwnership),
+  // copied exactly: tests/verify-honesty.test.ts checks each source is here.
+  // The wider forms of the same claims follow in D-0011's list below.
   { pattern: /\bmember-owned\b/i, reason: OWNERSHIP },
   { pattern: /\bowned by (?:our |the )?members\b/i, reason: OWNERSHIP },
   { pattern: /\bmembers own\b/i, reason: OWNERSHIP },
@@ -73,6 +89,11 @@ export const PROHIBITED: readonly Prohibited[] = [
   { pattern: /\bco-own/i, reason: D0011_OWNERSHIP },
   { pattern: /\bowned by (?:its |our |the )?(?:people|community|everyone)/i, reason: D0011_OWNERSHIP },
   { pattern: /community[- ]owned/i, reason: D0011_OWNERSHIP },
+  // The final verification's honesty-4: the commonest co-operative phrase,
+  // the space form of "member-owned", and the second person.
+  { pattern: /\bowned by (?:its |our |the )?members\b/i, reason: D0011_OWNERSHIP },
+  { pattern: /\bmembers?[- ]owned/i, reason: D0011_OWNERSHIP },
+  { pattern: /\bowned by you\b/i, reason: D0011_OWNERSHIP },
   { pattern: /\byou own\b/i, reason: D0011_OWNERSHIP },
   { pattern: /\bwe own\b/i, reason: D0011_OWNERSHIP },
   // Not "at stake" (architect decision after the M5 build: ordinary English).
@@ -171,10 +192,46 @@ const NAMED_ENTITIES: Readonly<Record<string, string>> = {
 const ENTITY = /&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[a-zA-Z]{2,8});/y;
 /** JSX's explicit space between two lines of text: {" "}, {' '} or {` `}. */
 const JSX_SPACE = /\{\s*(["'`]) +\1\s*\}/y;
+/**
+ * A JSX string expression, which renders as its text: {"member-"},
+ * {'sale'}, or {`text`} with no ${…} in it. Group 1, 2 or 3 is the text
+ * between the quotes, escapes not yet decoded.
+ */
+const STRING_EXPRESSION =
+  /\{\s*(?:"((?:[^"\\\n]|\\[\s\S])*)"|'((?:[^'\\\n]|\\[\s\S])*)'|`((?:[^`\\$]|\\[\s\S]|\$(?!\{))*)`)\s*\}/y;
+/**
+ * Inline elements: a reader sees their text run on with the text around
+ * them. A block element (<p>, <li>, <h2>) is kept, so it still separates.
+ */
+const INLINE_NAMES =
+  "a|abbr|b|bdi|bdo|cite|code|data|del|dfn|em|i|ins|kbd|Link|mark|q|s|samp|small|span|strong|sub|sup|time|u|var";
+/** An attribute value: "…", '…', or a JSX expression up to three braces deep. */
+const ATTR_VALUE = String.raw`(?:"[^"]*"|'[^']*'|\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})`;
+const ATTR = String.raw`\s+(?:[A-Za-z_][\w:.-]*(?:\s*=\s*${ATTR_VALUE})?|\{\s*\.\.\.[^{}]*\})`;
+/**
+ * An inline opening tag (attributes and all, as JSX or HTML writes them,
+ * across lines), a self-closing one, or any closing tag. The attribute
+ * grammar is strict, so a comparison such as `i<b;` is never read as a tag.
+ */
+const TAG = new RegExp(
+  String.raw`<(?:(?:${INLINE_NAMES})(?:${ATTR})*\s*\/?|\/[A-Za-z][\w.:-]*\s*)>`,
+  "y",
+);
+/**
+ * A JavaScript escape: \uXXXX, \u{X…}, \xXX, \n \r \t \v \f (whitespace
+ * where it renders), \' \" \` \\, and a backslash before a line break
+ * (a line continuation, which renders as nothing).
+ */
+const JS_ESCAPE =
+  /\\(?:u([0-9a-fA-F]{4})|u\{([0-9a-fA-F]{1,6})\}|x([0-9a-fA-F]{2})|([nrtvf])|(['"`\\])|(\r\n|\n|\r))/y;
 /** Characters that render as nothing: soft hyphen, zero-width space and joiners, BOM. */
 const INVISIBLE = /[\u00ad\u200b\u200c\u200d\u2060\ufeff]/;
-/** Hyphens that render as "-". */
-const HYPHENS = /[\u2010\u2011]/;
+/**
+ * Hyphens and dashes a claim may be written with, read as "-": the Unicode
+ * hyphen and non-breaking hyphen, the figure dash, the en dash (and so
+ * `&ndash;`), and the minus sign. Not the em dash, which joins clauses.
+ */
+const HYPHENS = /[\u2010\u2011\u2012\u2013\u2212]/;
 
 function decodeEntity(body: string): string | null {
   if (body.startsWith("#")) {
@@ -187,22 +244,83 @@ function decodeEntity(body: string): string | null {
   return NAMED_ENTITIES[body.toLowerCase()] ?? null;
 }
 
+/** The JavaScript escape at `at`, decoded, and how long it is; or null. */
+function jsEscapeAt(raw: string, at: number): { text: string; length: number } | null {
+  JS_ESCAPE.lastIndex = at;
+  const m = JS_ESCAPE.exec(raw);
+  if (!m) return null;
+  const hex = m[1] ?? m[3];
+  let text: string;
+  if (hex !== undefined) text = String.fromCharCode(Number.parseInt(hex, 16));
+  else if (m[2] !== undefined) {
+    const code = Number.parseInt(m[2], 16);
+    if (code > 0x10ffff) return null;
+    text = String.fromCodePoint(code);
+  } else if (m[4] !== undefined) text = " ";
+  else if (m[5] !== undefined) text = m[5];
+  else text = "";
+  return { text, length: m[0].length };
+}
+
 export type Normalized = {
   /** The text as a reader would see it: entities decoded, whitespace collapsed. */
   text: string;
   /** For each UTF-16 unit of `text`, its offset in the original. */
   origin: number[];
+  /** Where each dropped tag was in the original: [start, end). */
+  droppedTags: [number, number][];
+};
+
+export type NormalizeOptions = {
+  /**
+   * Decode JavaScript escapes (\u0020, \x20, \n …) outside string
+   * expressions too, as a .ts or .tsx file's string literals render them.
+   * `scanText` sets it from the file's name.
+   */
+  jsEscapes?: boolean;
+  /**
+   * Keep tags as they are written (default false: inline and closing tags
+   * are dropped). The scan reads the text both ways, so words inside a tag
+   * (an `aria-label`, a `title`) are read as well as the text around it.
+   */
+  keepTags?: boolean;
 };
 
 /**
  * The text as a reader sees it, with a map back to the original: the
- * common HTML entities decoded, JSX's `{" "}` read as a space, invisible
- * characters dropped, and every run of whitespace (a line break and the
- * indentation after it, a non-breaking space) made one space.
+ * common HTML entities decoded; inline tags and closing tags dropped; a JSX
+ * string expression read as its text (`{" "}` as a space); with
+ * `jsEscapes`, JavaScript escapes decoded; invisible characters dropped;
+ * hyphens and dashes read as "-"; and every run of whitespace (a line
+ * break and the indentation after it, a non-breaking space) made one space.
  */
-export function normalizeForScan(raw: string): Normalized {
+export function normalizeForScan(raw: string, options: NormalizeOptions = {}): Normalized {
   const units: string[] = [];
   const from: number[] = [];
+  const droppedTags: [number, number][] = [];
+  const push = (text: string, at: number) => {
+    for (let k = 0; k < text.length; k += 1) {
+      units.push(text[k]!);
+      from.push(at);
+    }
+  };
+  /** The characters of a string literal's body, its escapes decoded. */
+  const pushLiteral = (start: number, end: number) => {
+    let j = start;
+    while (j < end) {
+      if (raw[j] === "\\") {
+        const escape = jsEscapeAt(raw, j);
+        if (escape && j + escape.length <= end) {
+          push(escape.text, j);
+          j += escape.length;
+          continue;
+        }
+      }
+      push(raw[j]!, j);
+      j += 1;
+    }
+  };
+
   let i = 0;
   while (i < raw.length) {
     const c = raw[i]!;
@@ -211,25 +329,44 @@ export function normalizeForScan(raw: string): Normalized {
       const m = ENTITY.exec(raw);
       const decoded = m ? decodeEntity(m[1]!) : null;
       if (m && decoded !== null) {
-        for (let k = 0; k < decoded.length; k += 1) {
-          units.push(decoded[k]!);
-          from.push(i);
-        }
+        push(decoded, i);
         i += m[0].length;
         continue;
       }
     } else if (c === "{") {
       JSX_SPACE.lastIndex = i;
-      const m = JSX_SPACE.exec(raw);
+      const space = JSX_SPACE.exec(raw);
+      if (space) {
+        push(" ", i);
+        i += space[0].length;
+        continue;
+      }
+      STRING_EXPRESSION.lastIndex = i;
+      const m = STRING_EXPRESSION.exec(raw);
       if (m) {
-        units.push(" ");
-        from.push(i);
+        const body = m[1] ?? m[2] ?? m[3] ?? "";
+        const start = i + m[0].search(/["'`]/) + 1;
+        pushLiteral(start, start + body.length);
         i += m[0].length;
         continue;
       }
+    } else if (c === "<" && !options.keepTags) {
+      TAG.lastIndex = i;
+      const m = TAG.exec(raw);
+      if (m) {
+        droppedTags.push([i, i + m[0].length]);
+        i += m[0].length;
+        continue;
+      }
+    } else if (c === "\\" && options.jsEscapes) {
+      const escape = jsEscapeAt(raw, i);
+      if (escape) {
+        push(escape.text, i);
+        i += escape.length;
+        continue;
+      }
     }
-    units.push(c);
-    from.push(i);
+    push(c, i);
     i += 1;
   }
 
@@ -250,7 +387,7 @@ export function normalizeForScan(raw: string): Normalized {
     text += u;
     origin.push(from[k]!);
   }
-  return { text, origin };
+  return { text, origin, droppedTags };
 }
 
 /** Blank out each allowlisted sentence for this file, keeping positions. */
@@ -284,9 +421,13 @@ function lineOf(starts: number[], offset: number): number {
   return lo + 1;
 }
 
+/** Files whose string literals decode JavaScript escapes when they render. */
+const SCRIPT_FILE = /\.(?:tsx?|jsx?|mjs|cjs|json)$/;
+
 /**
  * Every prohibited claim in `text`. Pass `file` (relative to apps/web) to
  * apply that file's allowlist entries; without it, nothing is allowlisted.
+ * A .ts, .tsx (or .json) file's JavaScript escapes are decoded too.
  *
  * The text is normalized first (`normalizeForScan`), so `match` is the text
  * as a reader sees it, and `line` is the line of the original where the
@@ -295,36 +436,82 @@ function lineOf(starts: number[], offset: number): number {
  */
 export function scanText(text: string, file?: string | null): Hit[] {
   const name = file ? toPosix(file) : null;
-  const normalized = normalizeForScan(text);
-  const scanned = applyAllowlist(normalized.text, name);
+  return scanNormalized(text, name, name !== null && SCRIPT_FILE.test(name));
+}
+
+/**
+ * The text is read twice: with inline and closing tags dropped, as a
+ * reader sees the words run on ("not for <strong>sale</strong>"), and with
+ * every tag kept, for words inside a dropped tag (an `aria-label`, a
+ * `title`). The second reading reports only what overlaps a dropped tag;
+ * everything else, the first has read. A hit is keyed by where it starts in
+ * the original, so a claim both readings find is reported once.
+ */
+function scanNormalized(text: string, name: string | null, jsEscapes: boolean): Hit[] {
   const starts = lineStarts(text);
-  const byIndex = new Map<number, Hit & { index: number }>();
-  for (const rule of PROHIBITED) {
-    const flags = rule.pattern.flags.includes("g")
-      ? rule.pattern.flags
-      : `${rule.pattern.flags}g`;
-    const global = new RegExp(rule.pattern.source, flags);
-    for (const found of scanned.matchAll(global)) {
-      const index = found.index ?? 0;
-      if (rule.unlessPrecededBy) {
-        const before = scanned.slice(Math.max(0, index - 40), index);
-        if (rule.unlessPrecededBy.test(before)) continue;
+  /** By offset in the original text. */
+  const byOffset = new Map<number, Hit>();
+  let droppedTags: [number, number][] = [];
+  for (const keepTags of [false, true]) {
+    if (keepTags && droppedTags.length === 0) break;
+    const normalized = normalizeForScan(text, { jsEscapes, keepTags });
+    if (!keepTags) droppedTags = normalized.droppedTags;
+    const scanned = applyAllowlist(normalized.text, name);
+    for (const rule of PROHIBITED) {
+      const flags = rule.pattern.flags.includes("g")
+        ? rule.pattern.flags
+        : `${rule.pattern.flags}g`;
+      const global = new RegExp(rule.pattern.source, flags);
+      for (const found of scanned.matchAll(global)) {
+        const index = found.index ?? 0;
+        if (rule.unlessPrecededBy) {
+          const before = scanned.slice(Math.max(0, index - 40), index);
+          if (rule.unlessPrecededBy.test(before)) continue;
+        }
+        const offset = normalized.origin[index] ?? 0;
+        if (keepTags) {
+          const end = (normalized.origin[index + found[0].length - 1] ?? offset) + 1;
+          if (!droppedTags.some(([from, to]) => offset < to && from < end)) continue;
+        }
+        const existing = byOffset.get(offset);
+        if (existing && existing.match.length >= found[0].length) continue;
+        byOffset.set(offset, {
+          file: name,
+          line: lineOf(starts, offset),
+          match: found[0],
+          pattern: rule.pattern.source,
+          reason: rule.reason,
+        });
       }
-      const existing = byIndex.get(index);
-      if (existing && existing.match.length >= found[0].length) continue;
-      byIndex.set(index, {
-        index,
-        file: name,
-        line: lineOf(starts, normalized.origin[index] ?? 0),
-        match: found[0],
-        pattern: rule.pattern.source,
-        reason: rule.reason,
-      });
     }
   }
-  return [...byIndex.values()]
-    .sort((a, b) => a.index - b.index)
-    .map(({ index: _index, ...hit }) => hit);
+  return [...byOffset.entries()].sort(([a], [b]) => a - b).map(([, hit]) => hit);
+}
+
+/** A JSON string literal, as the JSON grammar writes one. */
+const JSON_STRING = /"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"/g;
+
+/**
+ * Every prohibited claim in a JSON document, read as the pages read it:
+ * each string is scanned as `JSON.parse` gives it, so `\u0020` is a space
+ * and `\u2011` a hyphen. Each hit is reported at the line where its string
+ * starts. A document that is not JSON is scanned as it is written.
+ */
+export function scanJsonText(text: string, file?: string | null): Hit[] {
+  try {
+    JSON.parse(text);
+  } catch {
+    return scanText(text, file);
+  }
+  const name = file ? toPosix(file) : null;
+  const starts = lineStarts(text);
+  const hits: Hit[] = [];
+  for (const literal of text.matchAll(JSON_STRING)) {
+    const value = JSON.parse(literal[0]) as string;
+    const line = lineOf(starts, literal.index ?? 0);
+    for (const hit of scanNormalized(value, name, false)) hits.push({ ...hit, line });
+  }
+  return hits;
 }
 
 /* ------------------------------------------------------ the public text */
@@ -420,7 +607,7 @@ export function scanRepoPublicText(rootDir: string): ScanResult {
   const hits: Hit[] = [];
   for (const file of files) {
     const text = readFileSync(join(rootDir, file), "utf8");
-    hits.push(...scanText(text, file));
+    hits.push(...(file.endsWith(".json") ? scanJsonText(text, file) : scanText(text, file)));
   }
   return { files, hits };
 }

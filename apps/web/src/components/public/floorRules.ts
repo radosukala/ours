@@ -23,7 +23,7 @@ export const FLOOR_RULES: RuleGroup[] = [
         text: "Accounts exist only by invitation. Every account except the founder's is invited by a person.",
         more: "The founder's account is the first one, so nobody could invite it.",
         cls: "ENFORCED",
-        tests: ["tests/invites.test.ts"],
+        tests: ["tests/invites.test.ts", "tests/accounts.test.ts"],
       },
       {
         id: "invites",
@@ -65,7 +65,7 @@ export const FLOOR_RULES: RuleGroup[] = [
       {
         id: "blocking",
         text: "A block works at once and both ways. It ends the friendship and any following, hides each of you from the other, and stops new requests, follows, replies and likes between you.",
-        more: "Usernames are unique, so trying to take one tells you whether it's in use — even by someone who blocked you. Changing your username is limited to 5 times a day.",
+        more: "Usernames are unique, so trying to take one tells you whether it's in use — even by someone who blocked you. Trying a new username is limited to 5 tries a day, taken names included.",
         cls: "ENFORCED",
         tests: [
           "tests/blocks.test.ts",
@@ -88,9 +88,9 @@ export const FLOOR_RULES: RuleGroup[] = [
     rules: [
       {
         id: "audience",
-        text: "A post for friends is seen only by your friends. A post for friends and followers is seen by both. Nobody else sees either.",
+        text: "A post for friends is seen only by your friends. A post for friends and followers is seen by both. Nobody else sees either, except an administrator reading it because it was reported.",
         cls: "ENFORCED",
-        tests: ["tests/visibility.test.ts", "tests/posts.test.ts"],
+        tests: ["tests/visibility.test.ts", "tests/posts.test.ts", "tests/moderation.test.ts"],
       },
       {
         id: "feed",
@@ -153,7 +153,8 @@ export const FLOOR_RULES: RuleGroup[] = [
     rules: [
       {
         id: "export-delete",
-        text: "You can download your data, and delete your account, at any time in Settings. Deleting removes your posts, replies, likes, connections and sessions.",
+        text: "You can download your data, and delete your account, in Settings while your account is active. Deleting removes your posts, replies, likes, connections and sessions.",
+        more: "If your account is suspended, write to the data controller to get a copy or have it deleted; the address is on the privacy page once one is named.",
         cls: "ENFORCED",
         tests: ["tests/export.test.ts", "tests/accounts.test.ts"],
       },

@@ -56,6 +56,10 @@ export function joinEmail(
  * account is suspended, the statement of reasons as the administrator wrote
  * it, and where to write. While no data controller is named, it says so
  * instead of inventing an address (SPEC §2 rule 6).
+ *
+ * It also says how to get a copy of your data or have it deleted, since a
+ * suspended account can do neither in Settings, as /rules and /privacy say
+ * (the final verification's honesty-2).
  */
 export function suspensionEmail(
   reason: string,
@@ -73,6 +77,11 @@ export function suspensionEmail(
       controllerEmail
         ? `If you think this is wrong, write to ${controllerEmail}.`
         : "If you think this is wrong, the address to write to is not named yet.",
+      "",
+      "While your account is suspended, you can't download your data or delete your account in Settings.",
+      controllerEmail
+        ? `To get a copy or have it deleted, write to ${controllerEmail}.`
+        : "To get a copy or have it deleted, write to the data controller; the address to write to is not named yet.",
     ].join("\n"),
   };
 }

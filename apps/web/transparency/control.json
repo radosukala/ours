@@ -1,9 +1,9 @@
 {
-  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4, D-0011 and apps/web/SPEC.md §17. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root. The Data controller row is the one row a running server fills in: when its configuration names a controller, /power shows that name as stated in this server's configuration (SPEC §17 item 18), the same name /privacy shows.",
+  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4, D-0011 and apps/web/SPEC.md §17. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root; the records they name are published with each release. Two rows are filled in by a running server, so /power and /privacy never disagree: when its configuration names a data controller, /power shows that name as stated in this server's configuration (SPEC §17 item 18); and the Hosting row says what this server does with email, by the same test that sends it (outbox, Resend, or nothing sent because the setup is incomplete).",
   "rows": [
     {
       "asset": "The rules of OURS",
-      "who": "The founder, under bootstrap authority. Decisions are public in the OURS records.",
+      "who": "The founder, under bootstrap authority. Decisions are published with each release in the OURS records.",
       "status": "RECORDED",
       "evidence": [
         { "path": "decisions/D-0011.md", "label": "Decision D-0011" }

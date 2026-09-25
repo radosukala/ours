@@ -13,6 +13,14 @@
  * failure is the evidence. A test named "closed: …" PASSES: a door tried and
  * found shut.
  *
+ * After the final fixes (M-0010, the architect's decisions on this round),
+ * each DEFECT is titled "fixed: …". Where a line asserted the old wording of
+ * a page as the defect's starting point, it now asserts the decided wording,
+ * and a comment says so. Every assertion about behaviour is unchanged except
+ * two, each for the decided behaviour and commented: the records test (the
+ * decision is the wording, not pushing the records) and the founder-script
+ * test (its second run is now refused, where the verifier expected success).
+ *
  * Every person here is FICTIONAL, with an example.test address.
  */
 import { spawnSync } from "node:child_process";
@@ -88,7 +96,7 @@ afterEach(() => vi.unstubAllEnvs());
 /* ====================================================================== */
 
 describe("claims scan: the text as a reader sees it", () => {
-  it("DEFECT: a claim split by inline markup or by a JSX string expression passes the scan, though the page renders it whole", () => {
+  it("fixed: a claim split by inline markup or by a JSX string expression passes the scan, though the page renders it whole", () => {
     // claims.ts says the text is normalized "as a reader would see it". A
     // reader of <p>OURS is not for <strong>sale</strong>.</p> reads "OURS is
     // not for sale."; the scan reads the raw source, where a tag or `"}`
@@ -129,7 +137,7 @@ describe("claims scan: the text as a reader sees it", () => {
     }
   });
 
-  it("DEFECT: a claim written with a JSON or JavaScript escape (\\u0020) passes the scan, though /power or /rules shows it", () => {
+  it("fixed: a claim written with a JSON or JavaScript escape (\\u0020) passes the scan, though /power or /rules shows it", () => {
     // control.json is rendered verbatim on /power; floorRules.ts on /rules.
     // Neither escape is an HTML entity, so the normalization leaves it.
     const json = '{ "rows": [ { "who": "OURS is not for\\u0020sale." } ] }';
@@ -156,7 +164,7 @@ describe("claims scan: the text as a reader sees it", () => {
     }
   });
 
-  it("DEFECT: present-tense ownership claims in the kernel's and D-0011's own word family still pass (owned by its members, owned by you, member owned, en-dash forms)", () => {
+  it("fixed: present-tense ownership claims in the kernel's and D-0011's own word family still pass (owned by its members, owned by you, member owned, en-dash forms)", () => {
     // SPEC §17 item 15 added near forms for "owned by the people"; the
     // commonest co-operative phrase, "owned by its members", and the
     // second-person form still pass. D-0011: "any claim of ownership, in the
@@ -250,7 +258,7 @@ describe("/costs and the ledger", () => {
     ],
   });
 
-  it("DEFECT: a RECORDED expense whose evidence is a placeholder word ('none', 'TBD', 'n/a', '.') is accepted and counted as paid", () => {
+  it("fixed: a RECORDED expense whose evidence is a placeholder word ('none', 'TBD', 'n/a', '.') is accepted and counted as paid", () => {
     // SPEC §17 item 16: "A RECORDED contribution or expense without evidence
     // is refused." The only check is that the value looks like a repository
     // path, and every one of these does; none names a record.
@@ -301,7 +309,7 @@ describe("/costs and the ledger", () => {
 describe("/power and /privacy", () => {
   beforeEach(reset);
 
-  it("DEFECT: /privacy says 'Resend delivers the emails OURS sends' whenever MAIL_TRANSPORT=resend, even where the transport refuses and nothing is sent or kept", async () => {
+  it("fixed: /privacy says 'Resend delivers the emails OURS sends' whenever MAIL_TRANSPORT=resend, even where the transport refuses and nothing is sent or kept", async () => {
     // SPEC §17 item 17: the provider line is derived from the configuration.
     // It reads one variable; sendMail also needs production, a key and a
     // sender, and otherwise refuses (SPEC §2 rule 5). Here nothing reaches
@@ -322,7 +330,7 @@ describe("/power and /privacy", () => {
     expect(saysResend, "/privacy names Resend as a recipient of data that is never sent to it").toBe(false);
   });
 
-  it("DEFECT: under a production configuration that sends through Resend, /privacy names Resend while /power says email sending is 'None yet' (RECORDED), and /privacy's own hosting line says OURS is not deployed", () => {
+  it("fixed: under a production configuration that sends through Resend, /privacy names Resend while /power says email sending is 'None yet' (RECORDED), and /privacy's own hosting line says OURS is not deployed", () => {
     // SPEC §17 item 18 made the controller row follow the configuration "so
     // /privacy and /power never disagree"; the email line of /privacy now
     // follows the configuration too, and the /power row does not.
@@ -397,7 +405,7 @@ describe("what the pages call public", () => {
   const haveRemote = git(["rev-parse", "--verify", "--quiet", "origin/main"]).status === 0;
 
   it.skipIf(!haveRemote)(
-    "DEFECT: /power records 'Decisions are public' (RECORDED) and /rules 'every decision is a public record', yet D-0011 and M-0010, which govern this build, are not in the public repository",
+    "fixed: /power records 'Decisions are public' (RECORDED) and /rules 'every decision is a public record', yet D-0011 and M-0010, which govern this build, are not in the public repository",
     () => {
       // SPEC §17 item 18 made "The code" STATED — "public once this build is
       // pushed" — because it is not public yet. The decision and mandate the
@@ -408,15 +416,28 @@ describe("what the pages call public", () => {
       expect(rows["The code"]?.who).toMatch(/public once this build is pushed/);
       const rulesRow = rows["The rules of OURS"]!;
       expect(rulesRow.status).toBe("RECORDED");
-      expect(rulesRow.who).toContain("Decisions are public in the OURS records.");
-      expect(textOf(renderToStaticMarkup(createElement(RulesPage)))).toContain(
-        "Every decision is a public record in the open code .",
-      );
+      // Decided (final fixes, honesty-8): the records are not pushed by this
+      // build, so the pages say they are published with each release, and
+      // never that they are public now. The verifier's version asserted the
+      // old wording and that every RECORDED record was already on
+      // origin/main; the architect chose the wording instead.
+      expect(rulesRow.who).toContain("Decisions are published with each release in the OURS records.");
+      const rules = textOf(renderToStaticMarkup(createElement(RulesPage)));
+      expect(rules).toContain("Every decision is published with each release in the OURS records .");
       const unpublished = loadControl()
         .filter((r) => r.status === "RECORDED")
-        .flatMap((r) => (r.evidence ?? []).map((e) => e.path))
-        .filter((path) => git(["cat-file", "-e", `origin/main:${path}`]).status !== 0);
-      expect(unpublished, "RECORDED evidence /power links to that the public repository does not have").toEqual([]);
+        .filter((r) => (r.evidence ?? []).some((e) => git(["cat-file", "-e", `origin/main:${e.path}`]).status !== 0));
+      const publicNow = /\b(?:are|is) public\b|\bpublic record\b|\bin the open code\b/i;
+      for (const r of unpublished) {
+        expect(r.who, `${r.asset}: cites a record origin/main does not have`).not.toMatch(publicNow);
+      }
+      const power = textOf(renderToStaticMarkup(createElement(PowerPage)));
+      const costs = textOf(renderToStaticMarkup(createElement(CostsPage)));
+      for (const [page, text] of [["/rules", rules], ["/power", power], ["/costs", costs]] as const) {
+        expect(text, page).not.toMatch(publicNow);
+      }
+      expect(power).toContain("The list is a file in the OURS records, published with each release: control.json .");
+      expect(costs).toContain("The ledger is a file in the OURS records, published with each release: ledger.json .");
     },
   );
 });
@@ -428,7 +449,7 @@ describe("what the pages call public", () => {
 describe("/rules", () => {
   beforeEach(reset);
 
-  it("DEFECT: 'Every account except the founder's is invited by a person' is ENFORCED, but the founder script makes an uninvited administrator every time it runs (the fixer's rewrite checks only that the script says invitedBy: null)", async () => {
+  it("fixed: 'Every account except the founder's is invited by a person' is ENFORCED, but the founder script makes an uninvited administrator every time it runs (the fixer's rewrite checks only that the script says invitedBy: null)", async () => {
     // verify-honesty's rewritten test asserts the new sentence and that
     // seed-founder.ts contains `invitedBy: null` once. The script is "the
     // first account" in its own words, but it checks only that the address
@@ -450,6 +471,7 @@ describe("/rules", () => {
       NODE_ENV: "test",
     } as NodeJS.ProcessEnv;
     const tsx = join(WEB_ROOT, "node_modules/.bin/tsx");
+    const statuses: (number | null)[] = [];
     for (const [email, handle] of [
       ["fic_founder_a@example.test", "fic_founder_a"],
       ["fic_founder_b@example.test", "fic_founder_b"],
@@ -459,16 +481,25 @@ describe("/rules", () => {
         ["scripts/seed-founder.ts", "--email", email!, "--handle", handle!, "--name", "FICTIONAL Founder"],
         { cwd: WEB_ROOT, encoding: "utf8", env },
       );
-      expect(out.status, out.stderr).toBe(0);
+      statuses.push(out.status);
+      if (statuses.length === 1) expect(out.status, out.stderr).toBe(0);
     }
+    // Decided (final fixes, honesty-9): the script makes the first account
+    // only; the second run is refused. (The verifier's version expected
+    // both runs to succeed, which was the defect.)
+    expect(statuses[1], "the second run of seed-founder is refused").not.toBe(0);
     const uninvited = await db().select({ handle: accounts.handle }).from(accounts).where(isNull(accounts.invitedBy));
     expect(uninvited.map((a) => a.handle), "accounts no person invited").toHaveLength(1);
   }, 60_000);
 
-  it("DEFECT: 'You can download your data, and delete your account, at any time' is ENFORCED, but a suspended account can do neither, as the cited tests themselves assert", async () => {
+  it("fixed: 'You can download your data, and delete your account, at any time' is ENFORCED, but a suspended account can do neither, as the cited tests themselves assert", async () => {
     const r = rule("export-delete");
     expect(r.cls).toBe("ENFORCED");
-    expect(r.text).toContain("You can download your data, and delete your account, at any time in Settings.");
+    // Decided wording (final fixes, honesty-2); it read "… at any time in Settings."
+    expect(r.text).toContain(
+      "You can download your data, and delete your account, in Settings while your account is active.",
+    );
+    expect(r.more).toContain("If your account is suspended, write to the data controller to get a copy or have it deleted");
     const sam = await makeAccount({ handle: "sam_f", suspended: true });
     const exportCode = await codeOf(exportAccount(db(), sam.id));
     const deleteCode = await codeOf(deleteAccount(db(), sam.id, "sam_f"));
@@ -480,13 +511,15 @@ describe("/rules", () => {
     ).toBe(false);
   });
 
-  it("DEFECT: 'Nobody else sees either' (audience, ENFORCED) is false by design: the administrator reads a reported friends-only post", async () => {
+  it("fixed: 'Nobody else sees either' (audience, ENFORCED) is false by design: the administrator reads a reported friends-only post", async () => {
     // The same page's queue rule says admins read reported content "whoever
     // it was shared with"; the audience rule's absolute does not name it
     // (AGENTS.md §10: an absolute quantifier is a factual claim).
     const r = rule("audience");
     expect(r.cls).toBe("ENFORCED");
-    expect(r.text).toContain("Nobody else sees either.");
+    // Decided wording (final fixes, honesty-10); it read "Nobody else sees either."
+    expect(r.text).toContain("Nobody else sees either, except an administrator reading it because it was reported.");
+    expect(r.tests).toContain("tests/moderation.test.ts");
     const author = await makeAccount({ handle: "author_f" });
     const friend = await makeAccount({ handle: "friend_f" });
     const admin = await makeAccount({ handle: "admin_f", isAdmin: true });
@@ -503,7 +536,7 @@ describe("/rules", () => {
     ).toBe(false);
   });
 
-  it("DEFECT: 'Changing your username is limited to 5 times a day' (part of the ENFORCED blocking rule) is asserted by no test /rules cites; the only test is one /rules cannot cite", () => {
+  it("fixed: 'Changing your username is limited to 5 times a day' (part of the ENFORCED blocking rule) is asserted by no test /rules cites; the only test is one /rules cannot cite", () => {
     // SPEC §17 item 19: "It cites the tests that assert each part of a
     // rule." The limit is asserted only in tests/identity-fixes.test.ts,
     // which SPEC §14 assigns to no module, so transparency.test.ts forbids
@@ -511,7 +544,8 @@ describe("/rules", () => {
     // changes.
     const r = rule("blocking");
     expect(r.cls).toBe("ENFORCED");
-    expect(r.more).toContain("Changing your username is limited to 5 times a day.");
+    // Decided wording (final fixes, honesty-11); it read "Changing your username is limited to 5 times a day."
+    expect(r.more).toContain("Trying a new username is limited to 5 tries a day, taken names included.");
     const assertsLimit = (text: string) => /changeHandle/.test(text) && /RATE_LIMITED/.test(text);
     expect(assertsLimit(read("tests/identity-fixes.test.ts"))).toBe(true);
     expect(r.tests).not.toContain("tests/identity-fixes.test.ts");

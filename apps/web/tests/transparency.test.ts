@@ -6,12 +6,13 @@
  * Denial paths first: a proposal is never received, an estimate is never
  * paid, and an entry whose status is unknown is refused, not guessed at.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import CostsPage from "@/app/(public)/costs/page";
 import * as PublicLayout from "@/app/(public)/layout";
 import PowerPage from "@/app/(public)/power/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
@@ -25,9 +26,16 @@ import { ENFORCEMENT_WORDS } from "@/components/public/RuleList";
 import { STATUS_LINE } from "@/components/RightColumn";
 import { DEFAULT_INVITES } from "@/core/config";
 import { counts, health } from "@/core/health";
+import { sendMail } from "@/core/mail";
+import { suspensionEmail } from "@/core/mail-templates";
+import { mailLog, outbox } from "@/core/schema";
 import {
   controlStatusWords,
   DATA_CONTROLLER_ASSET,
+  EMAIL_PROVIDER_WORDS,
+  type EmailSending,
+  emailSending,
+  HOSTING_ASSET,
   ledgerStatusWords,
   ledgerSummary,
   loadControl,
@@ -36,8 +44,18 @@ import {
   parseLedger,
   TransparencyError,
   withConfiguredController,
+  withEmailSending,
 } from "@/core/transparency";
 import { at, befriend, db, makeAccount, plus, post, reset } from "./helpers";
+
+// Resend itself is never reached from a test: this stands in for the SDK,
+// so a test can see that sendMail hands a message to it.
+const resendSend = vi.hoisted(() => vi.fn(async () => ({ data: { id: "FICTIONAL" }, error: null })));
+vi.mock("resend", () => ({
+  Resend: class {
+    emails = { send: resendSend };
+  },
+}));
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const REPO_ROOT = join(WEB_ROOT, "..", "..");
@@ -214,6 +232,48 @@ describe("ledger: what is never counted", () => {
       expect(() => parseLedger(ledgerWith([entry({ evidence })])), evidence).toThrow(/is not a repository path/);
     }
   });
+
+  it("refuses RECORDED evidence that names no record: a placeholder word, a folder, a file outside receipts/ or with no extension (final verification, honesty-5)", () => {
+    const placeholders = [
+      "none",
+      "TBD",
+      "n/a",
+      "pending",
+      ".",
+      "-",
+      "receipts",
+      "receipts/",
+      "receipts/2026",
+      "receipts/2026/",
+      "receipts/invoice",
+      "receipts/.pdf",
+      "receipts/2026/.hidden",
+      "receipts//invoice.pdf",
+      "docs/invoice.pdf",
+      "decisions/D-0011.md",
+      "apps/web/transparency/ledger.json",
+    ];
+    for (const evidence of placeholders) {
+      for (const kind of ["contribution", "expense", "commitment"]) {
+        expect(() => parseLedger(ledgerWith([entry({ kind, evidence })])), `${kind}: ${evidence}`).toThrow(
+          TransparencyError,
+        );
+      }
+    }
+    // A file under receipts/, with its extension, is evidence.
+    for (const evidence of [EVIDENCE, "receipts/2026-09-24-L-0100.md", "receipts/2026/09/L_0100.invoice.PDF"]) {
+      const summary = ledgerSummary(parseLedger(ledgerWith([entry({ evidence, amount: 120 })])));
+      expect(summary.paid.total, evidence).toBe(120);
+    }
+    // An entry not yet recorded may still point at another record, or none.
+    expect(
+      ledgerSummary(
+        parseLedger(
+          ledgerWith([entry({ kind: "commitment", status: "PROPOSED", evidence: "decisions/D-0011.md" })]),
+        ),
+      ).coming,
+    ).toHaveLength(1);
+  });
 });
 
 describe("ledger: unknown status is refused", () => {
@@ -290,6 +350,19 @@ describe("ledger: unknown status is refused", () => {
 });
 
 describe("the ledger file", () => {
+  it("every evidence path in ledger.json is a file in the repository (final verification, honesty-5)", () => {
+    const raw = JSON.parse(readFileSync(join(WEB_ROOT, "transparency/ledger.json"), "utf8")) as {
+      entries: { id: string; evidence?: string | null }[];
+    };
+    const ledger = loadLedger();
+    expect(ledger.entries.map((e) => e.evidence)).toEqual(raw.entries.map((e) => e.evidence ?? null));
+    for (const e of ledger.entries) {
+      if (e.evidence === null) continue;
+      const path = join(REPO_ROOT, e.evidence);
+      expect(existsSync(path) && statSync(path).isFile(), `${e.id}: ${e.evidence}`).toBe(true);
+    }
+  });
+
   it("loads, and holds only the proposal and the estimate SPEC §11 records", () => {
     const ledger = loadLedger();
     expect(ledger.currency).toBe("USD");
@@ -583,10 +656,89 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     // The test configuration writes mail to the outbox.
     expect(others).toContain("Email provider None. This server sends no email");
     expect(others).not.toContain("Resend");
+    // MAIL_TRANSPORT=resend alone sends nothing (sendMail refuses), so
+    // Resend is not named (final verification, honesty-6).
     vi.stubEnv("MAIL_TRANSPORT", "resend");
+    const refused = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
+    expect(refused).toContain("Email provider None. No email is sent: this server's email setup is incomplete.");
+    expect(refused).not.toContain("Resend");
+    expect(refused).not.toContain("each message is written to a test outbox");
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("RESEND_API_KEY", "re_FICTIONAL");
+    vi.stubEnv("MAIL_FROM", "ours@example.test");
     const resend = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     expect(resend).toContain("Resend delivers the emails OURS sends");
     expect(resend).not.toContain("This server sends no email");
+  });
+
+  it("/rules and /privacy say download and deletion work while the account is active, and a suspended person writes to the controller (final verification, honesty-2)", () => {
+    const rule = FLOOR_RULES.flatMap((g) => g.rules).find((r) => r.id === "export-delete")!;
+    expect(rule.text).toBe(
+      "You can download your data, and delete your account, in Settings while your account is active. Deleting removes your posts, replies, likes, connections and sessions.",
+    );
+    expect(rule.more).toBe(
+      "If your account is suspended, write to the data controller to get a copy or have it deleted; the address is on the privacy page once one is named.",
+    );
+    const rules = textOf(renderToStaticMarkup(createElement(RulesPage)));
+    expect(rules).not.toContain("at any time");
+    const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
+    expect(privacy).toContain("See and take your data. While your account is active, download everything in");
+    expect(privacy).toContain("Delete it. While your account is active, delete it in");
+    expect(privacy).toContain(
+      "If your account is suspended, you can't sign in to do either: write to the controller at controller@example.test to get a copy or have it deleted.",
+    );
+    vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
+    expect(textOf(renderToStaticMarkup(createElement(PrivacyPage)))).toContain(
+      "write to the controller (not yet named) to get a copy or have it deleted.",
+    );
+  });
+
+  it("the suspension notice says how to get a copy of your data or have it deleted, with or without a controller named", () => {
+    const named = suspensionEmail("FICTIONAL statement of reasons.", "controller@example.test").body;
+    expect(named).toContain(
+      "While your account is suspended, you can't download your data or delete your account in Settings.\nTo get a copy or have it deleted, write to controller@example.test.",
+    );
+    const unnamed = suspensionEmail("FICTIONAL statement of reasons.", null).body;
+    expect(unnamed).toContain(
+      "To get a copy or have it deleted, write to the data controller; the address to write to is not named yet.",
+    );
+    expect(unnamed).not.toContain("@");
+  });
+
+  it("/rules names the administrator's exception to who sees a post, the username limit in tries, and cites the tests for both (final verification, honesty-9, -10, -11)", () => {
+    const rules = FLOOR_RULES.flatMap((g) => g.rules);
+    const audience = rules.find((r) => r.id === "audience")!;
+    expect(audience.text).toContain("Nobody else sees either, except an administrator reading it because it was reported.");
+    expect(audience.tests).toContain("tests/moderation.test.ts");
+    const blocking = rules.find((r) => r.id === "blocking")!;
+    expect(blocking.more).toContain("Trying a new username is limited to 5 tries a day, taken names included.");
+    expect(blocking.tests).toContain("tests/accounts.test.ts");
+    const accountsTests = readFileSync(join(WEB_ROOT, "tests/accounts.test.ts"), "utf8");
+    expect(accountsTests).toMatch(/changeHandle\(.*\), "RATE_LIMITED"\)/);
+    // The invite-only rule cites the test that runs the founder script twice (honesty-9).
+    expect(rules.find((r) => r.id === "invite-only")!.tests).toContain("tests/accounts.test.ts");
+    expect(accountsTests).toContain("scripts/seed-founder.ts");
+    const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
+    expect(text).not.toContain("Nobody else sees either.");
+    expect(text).not.toContain("Changing your username is limited to 5 times a day.");
+  });
+
+  it("no page says the records are public now: they are published with each release (final verification, honesty-8)", () => {
+    const rows = Object.fromEntries(loadControl().map((r) => [r.asset, r]));
+    expect(rows["The rules of OURS"]?.who).toBe(
+      "The founder, under bootstrap authority. Decisions are published with each release in the OURS records.",
+    );
+    const rules = textOf(renderToStaticMarkup(createElement(RulesPage)));
+    const power = textOf(renderToStaticMarkup(createElement(PowerPage)));
+    const costs = textOf(renderToStaticMarkup(createElement(CostsPage)));
+    expect(rules).toContain("Every decision is published with each release in the OURS records .");
+    expect(power).toContain("The list is a file in the OURS records, published with each release: control.json .");
+    expect(costs).toContain("The ledger is a file in the OURS records, published with each release: ledger.json .");
+    const publicNow = /\b(?:are|is) public\b|\bpublic record\b|\bin the open code\b/i;
+    for (const [page, text] of [["/rules", rules], ["/power", power], ["/costs", costs]] as const) {
+      expect(text, page).not.toMatch(publicNow);
+    }
+    for (const row of loadControl()) expect(row.who, row.asset).not.toMatch(publicNow);
   });
 
   it("every public page and the not-found page render per request, so the version is this server's", () => {
@@ -620,6 +772,115 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     // It hides only where the right column shows the same footer.
     const css = readFileSync(join(WEB_ROOT, "src/components/public/public.module.css"), "utf8");
     expect(css).toMatch(/@media \(min-width: 1000px\) \{\s*\.inAppFooter \{\s*display: none;/);
+  });
+});
+
+describe("email sending: /privacy, /power and sendMail say the same thing (final verification, honesty-6/7)", () => {
+  beforeEach(reset);
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    resendSend.mockClear();
+  });
+
+  const SETUPS: Record<EmailSending, Record<string, string>> = {
+    outbox: {},
+    refused: { MAIL_TRANSPORT: "resend" },
+    resend: {
+      NODE_ENV: "production",
+      MAIL_TRANSPORT: "resend",
+      RESEND_API_KEY: "re_FICTIONAL",
+      MAIL_FROM: "ours@example.test",
+    },
+  };
+
+  /** The /power hosting row as rendered text: asset, badge, who. */
+  function hostingRow(): string {
+    const html = renderToStaticMarkup(createElement(PowerPage));
+    const start = html.indexOf(HOSTING_ASSET);
+    return textOf(html.slice(start, html.indexOf("</li>", start)));
+  }
+
+  it("the three states follow the configuration, by the test sendMail makes", () => {
+    const cases: [Record<string, string>, EmailSending][] = [
+      [{}, "outbox"],
+      [{ MAIL_TRANSPORT: "Resend" }, "outbox"], // anything but exactly "resend" is the outbox
+      [{ MAIL_TRANSPORT: "resend" }, "refused"],
+      [{ MAIL_TRANSPORT: "resend", NODE_ENV: "production" }, "refused"],
+      [{ MAIL_TRANSPORT: "resend", NODE_ENV: "production", RESEND_API_KEY: "re_FICTIONAL" }, "refused"],
+      [{ MAIL_TRANSPORT: "resend", NODE_ENV: "production", MAIL_FROM: "ours@example.test" }, "refused"],
+      [{ MAIL_TRANSPORT: "resend", RESEND_API_KEY: "re_FICTIONAL", MAIL_FROM: "ours@example.test" }, "refused"],
+      [SETUPS.resend, "resend"],
+      [{ ...SETUPS.resend, MAIL_TRANSPORT: "outbox" }, "outbox"],
+    ];
+    for (const [env, expected] of cases) {
+      vi.unstubAllEnvs();
+      for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+      expect(emailSending(), JSON.stringify(env)).toBe(expected);
+    }
+  });
+
+  for (const sending of ["outbox", "refused", "resend"] as const) {
+    it(`${sending}: sendMail does what both pages say`, async () => {
+      for (const [key, value] of Object.entries(SETUPS[sending])) vi.stubEnv(key, value);
+      const quiet = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      expect(emailSending()).toBe(sending);
+      const result = await sendMail(db(), {
+        to: "anna_f@example.test",
+        subject: "FICTIONAL",
+        body: "FICTIONAL",
+        kind: "sign_in",
+      });
+      const kept = await db().select().from(outbox);
+      const [log] = await db().select().from(mailLog);
+      quiet.mockRestore();
+      if (sending === "outbox") {
+        expect(result).toEqual({ ok: true });
+        expect(kept).toHaveLength(1);
+        expect(resendSend).not.toHaveBeenCalled();
+      } else if (sending === "refused") {
+        expect(result).toEqual({ ok: false, errorCode: "transport_refused" });
+        expect(kept).toHaveLength(0);
+        expect(log?.status).toBe("failed");
+        expect(resendSend).not.toHaveBeenCalled();
+      } else {
+        expect(result).toEqual({ ok: true });
+        expect(kept).toHaveLength(0);
+        expect(resendSend).toHaveBeenCalledTimes(1);
+      }
+
+      const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
+      expect(privacy).toContain(`Email provider ${EMAIL_PROVIDER_WORDS[sending]}`);
+      expect(privacy.includes("Resend"), "/privacy names Resend").toBe(sending === "resend");
+      // Hosting stays what the records say, whatever sends the email.
+      expect(privacy).toContain("Hosting none yet — OURS is not deployed.");
+
+      const row = hostingRow();
+      expect(row.includes("Resend"), "/power names Resend").toBe(sending === "resend");
+      expect(row).toBe(
+        {
+          outbox:
+            "Hosting, database, email sending recorded None yet. OURS is not deployed. This server sends no email: each message is written to a test outbox instead. Record: Build record M-0010: nothing deployed",
+          refused:
+            "Hosting, database, email sending recorded None yet. OURS is not deployed. No email is sent: this server's email setup is incomplete. Record: Build record M-0010: nothing deployed",
+          resend:
+            "Hosting, database, email sending stated in this server's configuration Email: Resend delivers the emails this server sends. Hosting and database: none yet; OURS is not deployed. Record: Build record M-0010: nothing deployed",
+        }[sending],
+      );
+    });
+  }
+
+  it("refuses a control file whose hosting row is missing, doubled, or says anything but that nothing is hosted", () => {
+    const file = parseControl({
+      rows: [
+        { asset: HOSTING_ASSET, who: "None yet. OURS is not deployed.", status: "RECORDED", evidence: [{ path: "mandates/M-0010.md", label: "x" }] },
+      ],
+    });
+    expect(withEmailSending(file, "outbox")[0]?.status).toBe("RECORDED");
+    expect(withEmailSending(file, "resend")[0]).toMatchObject({ status: "STATED", statedBy: "configuration" });
+    expect(() => withEmailSending([], "outbox")).toThrow(/no "Hosting, database, email sending" row/);
+    expect(() => withEmailSending([...file, file[0]!], "outbox")).toThrow(/appears twice/);
+    expect(() => withEmailSending([{ ...file[0]!, who: "FICTIONAL Host, Inc." }], "outbox")).toThrow(TransparencyError);
+    expect(() => withEmailSending([{ ...file[0]!, status: "STATED" }], "outbox")).toThrow(TransparencyError);
   });
 });
 

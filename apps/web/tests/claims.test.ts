@@ -6,21 +6,46 @@
  *
  * CHECKED, not ENFORCED: a pattern cannot read polarity. These tests show
  * what the patterns catch, not that no claim can be made in other words.
+ *
+ * The source scan reads what is written; the last part of this file also
+ * scans what people are shown: every public page the tests can render, the
+ * footers, and every mail template (the final verification's honesty-1).
  */
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { createElement, type ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import AppNotFound from "@/app/(app)/not-found";
+import CostsPage from "@/app/(public)/costs/page";
+import PublicLayout from "@/app/(public)/layout";
+import LandingPage from "@/app/(public)/page";
+import PowerPage from "@/app/(public)/power/page";
+import PrivacyPage from "@/app/(public)/privacy/page";
+import RulesPage from "@/app/(public)/rules/page";
+import RootNotFound from "@/app/not-found";
+import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
+import { SiteFooter } from "@/components/RightColumn";
 import {
   ALLOWLIST,
   formatHit,
   normalizeForScan,
   PROHIBITED,
   publicTextFiles,
+  scanJsonText,
   scanRepoPublicText,
   scanText,
 } from "@/core/claims";
+import * as mailTemplates from "@/core/mail-templates";
+
+// The landing page reads the session cookie; outside a request there is
+// none, and the page renders for a visitor who is not signed in.
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: () => undefined }),
+  headers: async () => new Headers(),
+}));
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
@@ -43,6 +68,9 @@ const SAMPLES: Record<string, string[]> = {
     "owned by everyone",
   ],
   "community[- ]owned": ["A community-owned home.", "community owned"],
+  "\\bowned by (?:its |our |the )?members\\b": ["OURS is owned by its members.", "Owned by its members"],
+  "\\bmembers?[- ]owned": ["A member owned network.", "A members-owned network.", "members owned"],
+  "\\bowned by you\\b": ["A home owned by you.", "OWNED BY YOU"],
   "\\byou own\\b": ["The network you own."],
   "\\bwe own\\b": ["Something we own together."],
   "(?<!\\bat )\\bstakes?\\b": ["Take a stake in OURS.", "Hold stakes in OURS."],
@@ -261,6 +289,249 @@ describe("the text is read as a reader sees it (SPEC §17 item 15)", () => {
   it("reports a claim once where two patterns match at the same place", () => {
     expect(scanText("Become a co-owner.").map((h) => h.match)).toEqual(["co-owner"]);
     expect(scanText("They co-own it.").map((h) => h.match)).toEqual(["co-own"]);
+  });
+});
+
+describe("markup, string expressions and escapes are read as they render (final verification, honesty-1, -3, -4)", () => {
+  const file = "src/app/(public)/page.tsx";
+
+  it("drops inline tags and closing tags, so a claim split by emphasis or a link is whole again", () => {
+    for (const claim of [
+      "OURS is not for <strong>sale</strong>.",
+      "Contributions are <em>tax-</em>deductible.",
+      "A <b>user</b>-<i>owned</i> network.",
+      "A <span className={styles.x}>member</span> owned network.",
+      "not for <code>sale</code>",
+      "not for <mark>sale</mark>",
+      "not for <small>sale</small>",
+      'not for <Link href="/costs">sale</Link>',
+      [
+        "OURS is not for{\" \"}",
+        "<a",
+        '  href={repositoryUrl("decisions", true)}',
+        '  rel="noopener noreferrer"',
+        '  target="_blank"',
+        ">",
+        "  sale",
+        "</a>",
+      ].join("\n"),
+    ]) {
+      expect(scanText(claim, file).length, claim).toBeGreaterThan(0);
+    }
+  });
+
+  it("still reads the words inside a dropped tag, and a denial in emphasis is still a denial", () => {
+    // An aria-label or a title is read out or shown: dropping the tag must not drop them.
+    expect(scanText('<a aria-label="OURS is not for sale" href="/">OURS</a>', file).map((h) => h.match)).toEqual([
+      "not for sale",
+    ]);
+    expect(scanText('<span title="A user-owned network">OURS</span>', file).map((h) => h.match)).toEqual([
+      "user-owned",
+    ]);
+    // Reported once, where both readings find it.
+    expect(scanText("OURS is <em>not for sale</em>.", file)).toHaveLength(1);
+    expect(scanText("They won't be <em>tax-deductible</em> unless the recipient qualifies.", file)).toEqual([]);
+    expect(scanText("They won't be <em>tax-</em>deductible.", file)).toEqual([]);
+  });
+
+  it("reads a JSX string expression as the text it renders, joined to the text around it", () => {
+    for (const claim of [
+      '{"member-"}owned',
+      "not for{' sale'}",
+      '{"not for"} sale',
+      "tax{`-`}deductible",
+      '{"They will be tax-deductible."}',
+      '{"user\\u2011owned"}',
+    ]) {
+      expect(scanText(claim, file).length, claim).toBeGreaterThan(0);
+    }
+    // A denial inside a string expression is still a denial.
+    expect(
+      scanText(`{"They won't be tax-deductible unless the recipient qualifies."}`, file),
+    ).toEqual([]);
+    expect(scanText(`{'They won\\'t be tax-deductible.'}`, file)).toEqual([]);
+  });
+
+  it("decodes JavaScript escapes in .ts and .tsx files", () => {
+    for (const claim of [
+      'const A = "OURS is not for\\u0020sale.";',
+      'const A = "A user\\u2011owned network.";',
+      'const A = "A user\\u{2011}owned network.";',
+      'const A = "Contributions are tax\\x20deductible.";',
+      'const A = "not for\\nsale";',
+    ]) {
+      expect(scanText(claim, "src/components/public/x.ts").length, claim).toBeGreaterThan(0);
+      expect(scanText(claim, "src/app/x.tsx").length, claim).toBeGreaterThan(0);
+    }
+    // An escaped backslash is a backslash: "\\u0020" renders as those six characters.
+    expect(normalizeForScan('"not for\\\\u0020sale"', { jsEscapes: true }).text).toBe('"not for\\u0020sale"');
+    expect(scanText('const A = "not for\\\\u0020sale";', "src/app/x.tsx")).toEqual([]);
+    // A denial written with an escaped apostrophe is still a denial.
+    expect(scanText("const A = 'They won\\'t be tax-deductible.';", "src/app/x.ts")).toEqual([]);
+  });
+
+  it("reads each JSON string as JSON.parse gives it, and reports the line where the string starts", () => {
+    const json = [
+      "{", // 1
+      '  "note": "Fine.",', // 2
+      '  "rows": [', // 3
+      '    { "who": "OURS is not for\\u0020sale." },', // 4
+      '    { "who": "A user\\u2011owned network, tax\\u2013deductible." }', // 5
+      "  ]", // 6
+      "}", // 7
+    ].join("\n");
+    expect(scanJsonText(json, "transparency/x.json").map((h) => [h.line, h.match])).toEqual([
+      [4, "not for sale"],
+      [5, "user-owned"],
+      [5, "tax-deductible"],
+    ]);
+    // A file that is not JSON is read as it is written, never skipped.
+    expect(scanJsonText('{ "who": "not for sale", }', "transparency/x.json").length).toBe(1);
+  });
+
+  it("reads the figure dash, the en dash (and &ndash;) and the minus sign as a hyphen, and not the em dash", () => {
+    for (const claim of [
+      "A user\u2012owned network.",
+      "A user\u2013owned network.",
+      "Contributions are tax&ndash;deductible.",
+      "Contributions are tax\u2212deductible.",
+    ]) {
+      expect(scanText(claim, file).length, claim).toBeGreaterThan(0);
+    }
+    expect(normalizeForScan("before \u2014 after").text).toBe("before \u2014 after");
+  });
+
+  it("keeps block elements apart, and never reads a comparison as a tag", () => {
+    // Two paragraphs are two sentences to a reader.
+    expect(scanText("<p>OURS is not for</p>\n<p>sale by the pound</p>", file)).toEqual([]);
+    expect(normalizeForScan("if (i<b && b>a) return;").text).toBe("if (i<b && b>a) return;");
+    expect(normalizeForScan("const n = a <b ? 1 : 2;").text).toBe("const n = a <b ? 1 : 2;");
+  });
+
+  it("reports a claim after dropped markup at the line where it starts", () => {
+    const source = [
+      "<p>", // 1
+      '  <a href={x} rel="noopener noreferrer">', // 2
+      "    Open code", // 3
+      "  </a>", // 4
+      "  and a <strong>stake</strong>", // 5
+      "</p>", // 6
+    ].join("\n");
+    expect(scanText(source, file).map((h) => [h.line, h.match])).toEqual([[5, "stake"]]);
+  });
+});
+
+/* ---------------------------------------------- what people are shown */
+
+/** Visible text of rendered HTML: every tag a space, entities decoded. */
+function textOf(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x27;|&apos;|&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * The claims in a rendered page, read two ways: the markup through the
+ * scan's own normalization (inline tags dropped, so a claim split by
+ * <strong> is whole), and the plain text with every tag a space.
+ */
+function renderedHits(html: string, file: string | null = null) {
+  return [...scanText(html, file), ...scanText(textOf(html), file)].map(formatHit);
+}
+
+/** The rules page's data file: its one allowlisted sentence is shown only on /rules. */
+const RULES_FILE = "src/components/public/floorRules.ts";
+
+describe("what people are shown: every public page, the footers and every mail, rendered (final verification, honesty-1)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  /** The pages, under the configuration in force when called. */
+  async function pages(): Promise<[string, string, string | null][]> {
+    const landing = (await LandingPage()) as ReactElement;
+    return [
+      ["/", renderToStaticMarkup(landing), null],
+      ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
+      ["/privacy", renderToStaticMarkup(createElement(PrivacyPage)), null],
+      ["/power", renderToStaticMarkup(createElement(PowerPage)), null],
+      ["/costs", renderToStaticMarkup(createElement(CostsPage)), null],
+      ["not-found", renderToStaticMarkup(createElement(RootNotFound)), null],
+      ["not-found in the app", renderToStaticMarkup(createElement(AppNotFound)), null],
+      ["the footer", renderToStaticMarkup(createElement(SiteFooter)), null],
+      ["the in-app footer", renderToStaticMarkup(createElement(InAppSiteFooter)), null],
+      ["the public layout", renderToStaticMarkup(createElement(PublicLayout, null, "FICTIONAL page")), null],
+    ];
+  }
+
+  it("the rendered scan catches a claim that only markup splits", () => {
+    const html = renderToStaticMarkup(
+      createElement("p", null, "OURS is not for ", createElement("strong", null, "sale"), "."),
+    );
+    expect(html).toBe("<p>OURS is not for <strong>sale</strong>.</p>");
+    expect(renderedHits(html).length).toBeGreaterThan(0);
+    expect(scanText(html).map((h) => h.match)).toEqual(["not for sale"]);
+  });
+
+  it("finds no prohibited claim on any public page, whatever this server's configuration", async () => {
+    const configurations: Record<string, Record<string, string>> = {
+      "the test configuration": {},
+      "no data controller": { DATA_CONTROLLER: "", DATA_CONTROLLER_EMAIL: "" },
+      "resend, set up": {
+        NODE_ENV: "production",
+        MAIL_TRANSPORT: "resend",
+        RESEND_API_KEY: "re_FICTIONAL",
+        MAIL_FROM: "ours@example.test",
+        OURS_VERSION: "v0-FICTIONAL",
+      },
+      "resend, set up incompletely": { MAIL_TRANSPORT: "resend" },
+    };
+    for (const [name, env] of Object.entries(configurations)) {
+      vi.unstubAllEnvs();
+      for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+      const rendered = await pages();
+      expect(rendered).toHaveLength(10);
+      for (const [page, html, file] of rendered) {
+        expect(textOf(html).length, `${name}: ${page}`).toBeGreaterThan(0);
+        expect(renderedHits(html, file), `${name}: ${page}`).toEqual([]);
+      }
+    }
+  });
+
+  it("shows the one allowlisted sentence only on /rules", async () => {
+    for (const [page, html, file] of await pages()) {
+      const shows = textOf(html).includes(ALLOWLIST[0]!.sentence);
+      expect(shows, page).toBe(page === "/rules");
+      if (file === null) expect(scanText(html).filter((h) => /algorithm/i.test(h.match)), page).toEqual([]);
+    }
+  });
+
+  it("finds no prohibited claim in any email, and renders every template there is", () => {
+    const url = "http://localhost:3000/auth#FICTIONAL";
+    const mails = [
+      mailTemplates.signInEmail(url),
+      mailTemplates.joinEmail(url, "FICTIONAL Anna"),
+      mailTemplates.joinEmail(url, "FICTIONAL Anna", "anna_f"),
+      mailTemplates.suspensionEmail("FICTIONAL statement of reasons.", "controller@example.test"),
+      mailTemplates.suspensionEmail("FICTIONAL statement of reasons.", null),
+      mailTemplates.digestEmail(
+        Array.from({ length: 7 }, (_, i) => ({ name: `FICTIONAL Person ${i}`, posts: i + 1 })),
+        "http://localhost:3000",
+        "http://localhost:3000/unsubscribe#FICTIONAL",
+      ),
+    ];
+    for (const mail of mails) {
+      const text = `${mail.subject}\n${mail.body}`;
+      expect(scanText(text).map(formatHit), mail.subject).toEqual([]);
+    }
+    // Every template the module exports is one of those rendered above.
+    const exported = Object.entries(mailTemplates)
+      .filter(([, value]) => typeof value === "function")
+      .map(([name]) => name)
+      .sort();
+    expect(exported).toEqual(["digestEmail", "joinEmail", "signInEmail", "suspensionEmail"]);
   });
 });
 

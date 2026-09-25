@@ -9,6 +9,12 @@
  * from the environment. It names no supervisory authority: no record states
  * the controller's jurisdiction yet (FOUNDING-AUTHORITY §3 leaves it to be
  * confirmed), so it says "the data protection authority where you live".
+ *
+ * The email-provider line comes from `emailSending`, the same test
+ * `sendMail` makes and /power reads, so Resend is named only where email
+ * is actually sent through it (the final verification's honesty-6/7).
+ * Download and deletion work while an account is active; a suspended
+ * person writes to the controller (honesty-2).
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,10 +22,10 @@ import styles from "@/components/public/public.module.css";
 import {
   controller,
   EMAIL_TOKEN_TTL_MINUTES,
-  mailTransport,
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
 } from "@/core/config";
+import { EMAIL_PROVIDER_WORDS, emailSending } from "@/core/transparency";
 
 export const dynamic = "force-dynamic";
 
@@ -108,17 +114,18 @@ const KEPT: Kept[] = [
   },
   {
     title: "Test outbox",
-    what: "Only in builds that send no real email: each email's address, subject and text, written here instead of being sent.",
+    what: "Only on a server set to write email to a test outbox instead of sending it: each email's address, subject and text.",
     why: "To build and test OURS without emailing anyone.",
     howLong: `${NOT_REMOVED_YET} What was written to your address is deleted when you delete your account.`,
   },
 ];
 
-/** Who delivers email, from this server's configuration (SPEC §17 item 17). */
+/**
+ * Who delivers email, from this server's configuration (SPEC §17 item 17),
+ * by the same test sendMail makes (`emailSending`).
+ */
 function emailProvider(): string {
-  return mailTransport() === "resend"
-    ? "Resend delivers the emails OURS sends: sign-in and join links, the weekly email and notices. It receives your email address and each email's subject and text."
-    : "None. This server sends no email: each message is written to a test outbox instead.";
+  return EMAIL_PROVIDER_WORDS[emailSending()];
 }
 
 export default function PrivacyPage() {
@@ -214,7 +221,8 @@ export default function PrivacyPage() {
         <h2 id="privacy-rights">Your rights</h2>
         <ul className="prose">
           <li>
-            <strong>See and take your data.</strong> Download everything in{" "}
+            <strong>See and take your data.</strong> While your account is
+            active, download everything in{" "}
             <Link href="/settings/export">Settings → Export</Link>.
           </li>
           <li>
@@ -222,9 +230,22 @@ export default function PrivacyPage() {
             <Link href="/settings">Settings</Link>.
           </li>
           <li>
-            <strong>Delete it.</strong> Delete your account in{" "}
-            <Link href="/settings/delete">Settings → Delete</Link>. Your
-            posts, replies, likes, connections and sessions go with it.
+            <strong>Delete it.</strong> While your account is active, delete
+            it in <Link href="/settings/delete">Settings → Delete</Link>.
+            Your posts, replies, likes, connections and sessions go with it.
+          </li>
+          <li>
+            <strong>If your account is suspended,</strong> you can&apos;t
+            sign in to do either: write to the controller
+            {named ? (
+              <>
+                {" "}
+                at <a href={`mailto:${named.email}`}>{named.email}</a>
+              </>
+            ) : (
+              " (not yet named)"
+            )}{" "}
+            to get a copy or have it deleted.
           </li>
           <li>
             <strong>Stop the weekly email</strong> in Settings, or with the

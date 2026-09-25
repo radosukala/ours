@@ -3,6 +3,9 @@
  * it is held, and who decides today. Plain words; says plainly who decides,
  * and that the founder can change or remove any check without notice
  * (FOUNDING-AUTHORITY §6: saying so is a requirement, not a disclaimer).
+ * Decisions are published with each release: it does not say they are in
+ * the public repository before they are pushed (the final verification's
+ * honesty-8).
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -30,14 +33,14 @@ export default function RulesPage() {
         <h2 id="rules-who">Who decides today</h2>
         <p>
           The founder, under bootstrap authority: the starting authority of
-          the person who began OURS, used in the open. Every decision is a
-          public record in the{" "}
+          the person who began OURS, used in the open. Every decision is
+          published with each release in the{" "}
           <a
             href={repositoryUrl("decisions", true)}
             rel="noopener noreferrer"
             target="_blank"
           >
-            open code
+            OURS records
           </a>
           .
         </p>

@@ -18,16 +18,27 @@
  *   provider credits are `credit`s, never money;
  * - a RECORDED contribution or expense names its evidence (SPEC §17 item
  *   16; D-0011 §C.2: "costs paid, with redacted evidence"): money counted
- *   as received or paid on nobody's record is refused.
+ *   as received or paid on nobody's record is refused;
+ * - the evidence of a RECORDED entry is a file under receipts/, with a file
+ *   extension (the final verification's honesty-5): "none", "TBD", "." or
+ *   a bare folder names no record, and is refused.
  *
  * A refused entry refuses the whole ledger: a page that silently dropped
  * one entry would show sums that are not the ledger's.
  *
- * The control map's data-controller row is the one row this server fills
- * in from its configuration (SPEC §17 item 18), so /privacy and /power
- * never disagree: see `loadControl`.
+ * Two rows of the control map are filled in from this server's
+ * configuration, so /privacy and /power never disagree: the data
+ * controller (SPEC §17 item 18) and the email-sending part of "Hosting,
+ * database, email sending" (the final verification's honesty-6/7), which
+ * comes from `emailSending`, the same test `sendMail` makes. See
+ * `loadControl`.
  */
-import { controller as configuredController } from "./config";
+import {
+  controller as configuredController,
+  isProduction,
+  mailTransport,
+  resendSettings,
+} from "./config";
 import controlFile from "../../transparency/control.json";
 import ledgerFile from "../../transparency/ledger.json";
 
@@ -129,6 +140,15 @@ const ENTRY_ID = /^L-\d{4}$/;
 /** A repository-relative path: no scheme, no leading slash, no "..". */
 const REPO_PATH = /^(?!\/)(?!.*\.\.)(?!.*:\/\/)[A-Za-z0-9_.\-/]+$/;
 
+/**
+ * The evidence of a RECORDED ledger entry: a file under receipts/, each
+ * folder and the file named, and the file with an extension
+ * (receipts/2026/L-0003-invoice.pdf). Not "none", "TBD", "n/a", ".", "-" or
+ * "receipts/", which name no record. tests/transparency.test.ts checks that
+ * every evidence path in ledger.json is a file in the repository.
+ */
+const RECEIPT_PATH = /^receipts\/(?:[A-Za-z0-9_][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*\.[A-Za-z0-9]+$/;
+
 function isLedgerStatus(value: unknown): value is LedgerStatus {
   return (LEDGER_STATUSES as readonly unknown[]).includes(value);
 }
@@ -182,6 +202,11 @@ function parseEntry(raw: unknown, index: number): LedgerEntry {
   ) {
     throw new TransparencyError(
       `${at}: a RECORDED ${raw.kind} must name its evidence. It is not counted as ${raw.kind === "contribution" ? "received" : "paid"} without it.`,
+    );
+  }
+  if (raw.status === "RECORDED" && evidence !== null && !RECEIPT_PATH.test(evidence)) {
+    throw new TransparencyError(
+      `${at}: evidence "${evidence}" names no record. A RECORDED entry's evidence is a file under receipts/, with its extension (receipts/…/invoice.pdf).`,
     );
   }
   return {
@@ -323,7 +348,8 @@ export type ControlRow = {
   evidence: Evidence[] | null;
   /**
    * Where a STATED row's statement comes from: the founder (in the file),
-   * or this server's configuration (the data controller, SPEC §17 item 18).
+   * or this server's configuration (the data controller, SPEC §17 item 18;
+   * email sent through Resend, see `withEmailSending`).
    */
   statedBy?: "founder" | "configuration";
 };
@@ -419,16 +445,100 @@ export function withConfiguredController(
   return rows.map((r, i) => (i === at ? shown : r));
 }
 
+/* ---------------------------------------------------------- email sending */
+
+/**
+ * What this server does with an email, by the same test `sendMail`
+ * (core/mail.ts) makes:
+ *
+ * - "outbox": MAIL_TRANSPORT is not "resend"; each message is written to
+ *   the test outbox and sent to nobody;
+ * - "resend": MAIL_TRANSPORT is "resend", NODE_ENV is production, and
+ *   RESEND_API_KEY and MAIL_FROM are both set; messages go to Resend;
+ * - "refused": MAIL_TRANSPORT is "resend" but the rest is missing; the
+ *   transport refuses, and nothing is sent or written to the outbox.
+ *
+ * /privacy and /power both read it, so they never disagree, and neither
+ * names Resend as a recipient of data it is never sent.
+ * tests/transparency.test.ts checks it against what `sendMail` does.
+ */
+export type EmailSending = "outbox" | "resend" | "refused";
+
+export function emailSending(): EmailSending {
+  if (mailTransport() !== "resend") return "outbox";
+  return isProduction() && resendSettings() ? "resend" : "refused";
+}
+
+/** /privacy's "Email provider" line, for each `EmailSending`. */
+export const EMAIL_PROVIDER_WORDS: Readonly<Record<EmailSending, string>> = {
+  outbox: "None. This server sends no email: each message is written to a test outbox instead.",
+  resend:
+    "Resend delivers the emails OURS sends: sign-in and join links, the weekly email and notices. It receives your email address and each email's subject and text.",
+  refused: "None. No email is sent: this server's email setup is incomplete.",
+};
+
+/** The asset name of the row whose email-sending part this server fills in. */
+export const HOSTING_ASSET = "Hosting, database, email sending";
+
+/** What the file says of hosting, which only a record changes. */
+const HOSTING_NONE = "None yet. OURS is not deployed.";
+
+/**
+ * The hosting row as this server shows it: the file's record that nothing
+ * is hosted, with the email-sending part from `emailSending`.
+ *
+ * - "outbox" and "refused": still RECORDED, with what happens to email;
+ * - "resend": STATED, as "stated in this server's configuration", like a
+ *   configured data controller: no record names Resend, only this server's
+ *   settings do. The hosting part and its record stay as the file has them.
+ *
+ * The file's row must say exactly that nothing is hosted, RECORDED: the
+ * words here are written for that row and no other.
+ */
+export function withEmailSending(rows: ControlRow[], sending: EmailSending): ControlRow[] {
+  const at = rows.findIndex((r) => r.asset === HOSTING_ASSET);
+  if (at === -1) {
+    throw new TransparencyError(`control: there is no "${HOSTING_ASSET}" row.`);
+  }
+  if (rows.findIndex((r, i) => i > at && r.asset === HOSTING_ASSET) !== -1) {
+    throw new TransparencyError(`control: "${HOSTING_ASSET}" appears twice.`);
+  }
+  const fileRow = rows[at]!;
+  if (fileRow.status !== "RECORDED" || fileRow.who !== HOSTING_NONE) {
+    throw new TransparencyError(
+      `control row "${HOSTING_ASSET}": the file must say "${HOSTING_NONE}" (RECORDED); email sending comes from this server's configuration.`,
+    );
+  }
+  const shown: ControlRow =
+    sending === "resend"
+      ? {
+          ...fileRow,
+          who: "Email: Resend delivers the emails this server sends. Hosting and database: none yet; OURS is not deployed.",
+          status: "STATED",
+          statedBy: "configuration",
+        }
+      : {
+          ...fileRow,
+          who:
+            sending === "outbox"
+              ? `${HOSTING_NONE} This server sends no email: each message is written to a test outbox instead.`
+              : `${HOSTING_NONE} No email is sent: this server's email setup is incomplete.`,
+        };
+  return rows.map((r, i) => (i === at ? shown : r));
+}
+
 /**
  * The rows /power shows: apps/web/transparency/control.json, validated,
  * with the data-controller row from this server's configuration (see
- * `withConfiguredController`). Pass `configured` to show another
- * configuration; by default it is read now, not at import.
+ * `withConfiguredController`) and the email-sending part of the hosting
+ * row (see `withEmailSending`). Pass `configured` or `sending` to show
+ * another configuration; by default each is read now, not at import.
  */
 export function loadControl(
   configured: { name: string; email: string } | null = configuredController(),
+  sending: EmailSending = emailSending(),
 ): ControlRow[] {
-  return withConfiguredController(parseControl(controlFile), configured);
+  return withEmailSending(withConfiguredController(parseControl(controlFile), configured), sending);
 }
 
 /** A control status in words, for the page. */

@@ -74,7 +74,8 @@ export default function CostsPage() {
       )}
 
       <p className={styles.meta}>
-        The ledger is a file in the open code:{" "}
+        The ledger is a file in the OURS records, published with each
+        release:{" "}
         <a href={repositoryUrl(LEDGER_PATH)} rel="noopener noreferrer" target="_blank">
           ledger.json
         </a>
