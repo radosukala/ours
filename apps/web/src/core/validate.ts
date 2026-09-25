@@ -92,8 +92,30 @@ export function validHandle(input: unknown): string {
   return handle;
 }
 
-/** 1–50 characters after trimming; runs of whitespace become one space. */
+/**
+ * Invisible formatting and text-direction characters: zero-width spaces and
+ * joiners, the direction marks, embeddings, overrides and isolates, the
+ * word joiner and invisible operators, and the byte-order mark. In a name
+ * they can reorder whatever follows it, such as "(@handle)".
+ */
+const FORMAT_CHARACTERS = /[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/u;
+/** An at sign (or its full-width or small form) followed by a letter, digit or underscore. */
+const HANDLE_LIKE = /[@\uFF20\uFE6B][\p{L}\p{N}_\uFF3F]/u;
+
+/**
+ * 1–50 characters after trimming; runs of whitespace become one space.
+ *
+ * A name is shown as "Name (@handle)" wherever a person must know who is
+ * asking (SPEC §17 items 1–2), and the handle is what cannot be copied. So
+ * a name may not carry something that reads as a handle, nor characters
+ * that reorder the text after it (the second verification's identity
+ * defect 2).
+ */
 export function validDisplayName(input: unknown): string {
+  // Before whitespace is collapsed: JavaScript counts U+FEFF as a space.
+  if (FORMAT_CHARACTERS.test(asString(input))) {
+    throw invalid("A name can't include invisible or text-direction characters.");
+  }
   const name = asString(input)
     .replace(/[\u0000-\u001F\u007F]/g, " ")
     .replace(/\s+/g, " ")
@@ -102,6 +124,9 @@ export function validDisplayName(input: unknown): string {
   if (n < 1) throw invalid("Enter a name.");
   if (n > LIMITS.displayNameMax) {
     throw invalid(`A name can be at most ${LIMITS.displayNameMax} characters.`);
+  }
+  if (HANDLE_LIKE.test(name)) {
+    throw invalid("A name can't include an @username. Your username is shown next to it.");
   }
   return name;
 }

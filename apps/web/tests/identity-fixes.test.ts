@@ -71,6 +71,7 @@ import {
   requestSignIn,
   saveProfile,
   SIGN_IN_REQUESTS_OFF,
+  openEmailLink,
   SignedInElsewhere,
   signOutEverywhere,
   verifyEmailLink,
@@ -84,7 +85,7 @@ import {
   sessionFromCookie,
   signValue,
 } from "@/core/auth";
-import { clientIpHeader, runningVersion } from "@/core/config";
+import { clientIpHeader, controller, runningVersion } from "@/core/config";
 import { block as blockCore } from "@/core/connections";
 import { isCoreError } from "@/core/errors";
 import {
@@ -113,7 +114,7 @@ import {
 } from "@/core/schema";
 import { areFriends } from "@/core/visibility";
 import { afterResponse } from "@/web/actions";
-import { clientIpHash } from "@/web/request";
+import { clientIpHash, rateLimitAddress } from "@/web/request";
 import {
   cookieName,
   INVITE_COOKIE,
@@ -287,9 +288,12 @@ describe("a join link for an existing account asks before it connects (SPEC §17
     const [value, mac] = offer.cookieValue.split(".") as [string, string];
     const other = await makeAccount({ handle: "other_f" });
     const retargeted = value.replace(vera.id, other.id);
+    // A last character that differs from the real one: a fixed "A" was the
+    // real value whenever the MAC already ended in "A" (1 run in 16).
+    const tamperedLast = mac.endsWith("A") ? "B" : "A";
     for (const forged of [
       `${retargeted}.${mac}`,
-      `${value}.${mac.slice(0, -1)}A`,
+      `${value}.${mac.slice(0, -1)}${tamperedLast}`,
       signValue(`${invite.id}`), // a signed value without the tag
       signValue(`invite-offer:${invite.id}:${vera.id}:soon`),
       (await createSession(db(), vera.id)).cookieValue, // a session cookie
@@ -416,6 +420,33 @@ describe("the client address comes from a header each deployment names (SPEC §1
     expect(await clientIpHash()).toBe(rateKeyHash("unknown"));
   });
 
+  it("an IPv6 client is counted by its /64; IPv4, and IPv4 written as IPv6, by the address", () => {
+    // RFC 3849 and RFC 5737 documentation addresses.
+    expect(rateLimitAddress("2001:db8:1:2::1")).toBe("2001:db8:1:2::/64");
+    expect(rateLimitAddress("2001:0DB8:0001:0002:ffff:0:0:19")).toBe("2001:db8:1:2::/64");
+    expect(rateLimitAddress("[2001:db8:1:2::7]:443")).toBe("2001:db8:1:2::/64");
+    expect(rateLimitAddress("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
+    expect(rateLimitAddress("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    expect(rateLimitAddress("2001:db8:1:3::1")).toBe("2001:db8:1:3::/64");
+    expect(rateLimitAddress("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    expect(rateLimitAddress("203.0.113.7")).toBe("203.0.113.7");
+    expect(rateLimitAddress("local")).toBe("local");
+    expect(rateLimitAddress("not:an:address::x")).toBe("not:an:address::x");
+  });
+
+  it("clientIpHash gives one bucket to a /64 and another to the next /64", async () => {
+    vi.stubEnv("CLIENT_IP_HEADER", "x-vercel-forwarded-for");
+    web.headers.set("x-vercel-forwarded-for", "2001:db8:1:2::1");
+    const first = await clientIpHash();
+    web.headers.set("x-vercel-forwarded-for", "2001:db8:1:2:aaaa:bbbb:cccc:dddd");
+    expect(await clientIpHash()).toBe(first);
+    expect(first).toBe(rateKeyHash("2001:db8:1:2::/64"));
+    web.headers.set("x-vercel-forwarded-for", "2001:db8:1:3::1");
+    expect(await clientIpHash()).not.toBe(first);
+    web.headers.set("x-vercel-forwarded-for", "::ffff:203.0.113.7");
+    expect(await clientIpHash()).toBe(rateKeyHash("203.0.113.7"));
+  });
+
   it("production without CLIENT_IP_HEADER: sign-in and join requests are CLOSED, record nothing and send nothing", async () => {
     const anna = await makeAccount({ handle: "anna_f" });
     const invite = await createInvite(db(), anna.id, {});
@@ -505,6 +536,37 @@ describe("the client address comes from a header each deployment names (SPEC §1
 });
 
 /* ------------------------------------------- item 4: mail after the response */
+
+describe("a placeholder is not a controller (SPEC §2 rule 6)", () => {
+  it("controller() is null unless the address is an email address and neither value holds [CONFIRM]", () => {
+    vi.stubEnv("DATA_CONTROLLER", "FICTIONAL Controller");
+    vi.stubEnv("DATA_CONTROLLER_EMAIL", "controller@example.test");
+    expect(controller()).toEqual({ name: "FICTIONAL Controller", email: "controller@example.test" });
+    for (const [name, email] of [
+      ["[CONFIRM]", "controller@example.test"],
+      ["FICTIONAL Controller [confirm]", "controller@example.test"],
+      ["FICTIONAL Controller", "[CONFIRM]"],
+      ["FICTIONAL Controller", "controller+[CONFIRM]@example.test"],
+      ["FICTIONAL Controller", "not an address"],
+      ["FICTIONAL Controller", "controller@localhost"],
+      ["", "controller@example.test"],
+    ] as const) {
+      vi.stubEnv("DATA_CONTROLLER", name);
+      vi.stubEnv("DATA_CONTROLLER_EMAIL", email);
+      expect(controller(), `${name} / ${email}`).toBeNull();
+    }
+  });
+
+  it("with a placeholder, account creation is closed: no join link is made", async () => {
+    const anna = await makeAccount({ handle: "anna_f" });
+    const invite = await createInvite(db(), anna.id, {});
+    vi.stubEnv("DATA_CONTROLLER_EMAIL", "[CONFIRM]");
+    expect(
+      await codeOf(requestJoin(db(), { code: invite.code, email: "n_f@example.test", ipHash: IP })),
+    ).toBe("CLOSED");
+    expect(await db().select().from(emailTokens)).toHaveLength(0);
+  });
+});
 
 describe("mail leaves after the response (SPEC §17 item 4)", () => {
   it("the sign-in action hands the lookup and the mail to Next's after; the request writes the same for any address", async () => {
@@ -658,6 +720,54 @@ describe("sign out everywhere retires the address's unused links (SPEC §17 item
 
     const fresh = await createEmailToken(db(), { email: kim.email, purpose: "sign_in" });
     expect(await verifyEmailLink(db(), { token: fresh })).toEqual({ kind: "signed_in", accountId: kim.id });
+  });
+
+  it("sign out everywhere in flight first: a link opened meanwhile waits for it, then is refused, and starts no session", async () => {
+    const kim = await makeAccount({ handle: "kim_f" });
+    const token = await createEmailToken(db(), { email: kim.email, purpose: "sign_in" });
+    await createSession(db(), kim.id);
+    const holder = new pg.Client({ connectionString: inject("databaseUrl") });
+    await holder.connect();
+    let opened: ReturnType<typeof openEmailLinkAction> | null = null;
+    try {
+      await holder.query("begin");
+      // Sign out everywhere, by hand on the holder's connection, left
+      // uncommitted: the account row for update, then the sessions and links.
+      await holder.query("select id from accounts where id = $1 for update", [kim.id]);
+      await holder.query("update sessions set revoked_at = now() where account_id = $1", [kim.id]);
+      await holder.query(
+        "update email_tokens set used_at = now() where email = $1 and used_at is null",
+        [kim.email],
+      );
+      opened = openEmailLinkAction(token);
+      await untilWaiting(1);
+      await holder.query("commit");
+    } finally {
+      await holder.end();
+    }
+    expect(await opened).toEqual({ ok: false, error: "This link has expired or was already used." });
+    expect(web.jar.has(SESSION_COOKIE)).toBe(false);
+    expect(
+      await db().select().from(sessions).where(and(eq(sessions.accountId, kim.id), isNull(sessions.revokedAt))),
+    ).toHaveLength(0);
+  });
+
+  it("the /auth action starts its session in the link's own transaction (openEmailLink)", async () => {
+    const kim = await makeAccount({ handle: "kim_f" });
+    const token = await createEmailToken(db(), { email: kim.email, purpose: "sign_in" });
+    const opened = await openEmailLink(db(), { token });
+    expect(opened).toMatchObject({ kind: "signed_in", accountId: kim.id });
+    const session = (opened as { session: { id: string; cookieValue: string } }).session;
+    expect(await sessionFromCookie(db(), session.cookieValue)).toBe(kim.id);
+    // Used once: a second open is refused and starts nothing.
+    expect(await codeOf(openEmailLink(db(), { token }))).toBe("NOT_FOUND");
+    expect(await db().select().from(sessions).where(eq(sessions.accountId, kim.id))).toHaveLength(1);
+    // A pending join starts no session.
+    const anna = await makeAccount({ handle: "anna_f" });
+    const invite = await createInvite(db(), anna.id, {});
+    const join = await joinToken("n_f@example.test", invite.id);
+    expect(await openEmailLink(db(), { token: join })).toMatchObject({ kind: "join_pending" });
+    expect(await db().select().from(sessions)).toHaveLength(1);
   });
 
   it("signOutEverywhere revokes every session and is NOT_FOUND for a missing account", async () => {
@@ -881,6 +991,27 @@ describe("username changes are limited to 5 a day (SPEC §17 item 9)", () => {
     expect(await codeOf(save("me_five", plus.hours(t0, 25)))).toBe("OK");
     const [row] = await db().select().from(accounts).where(eq(accounts.id, me.id));
     expect(row!.handle).toBe("me_five");
+  });
+
+  it("the join form counts tries the same way, per pending join, taken names included", async () => {
+    const anna = await makeAccount({ handle: "anna_f" });
+    await makeAccount({ handle: "taken_f" });
+    const invite = await createInvite(db(), anna.id, {});
+    const pj = await createPendingJoin(db(), { email: "n_f@example.test", inviteId: invite.id });
+    const tryName = (handle: string, displayName = "FICTIONAL Newcomer") =>
+      codeOf(completeJoin(db(), { pendingJoinId: pj.id, displayName, handle, adultConfirmed: true }));
+    // A malformed or reserved name is refused before it counts.
+    expect(await tryName("admin")).toBe("INVALID");
+    expect(await tryName("x")).toBe("INVALID");
+    for (let i = 0; i < 5; i++) expect(await tryName("taken_f")).toBe("CONFLICT");
+    // The sixth is refused, free name or not, and creates no one.
+    expect(await tryName("taken_f")).toBe("RATE_LIMITED");
+    expect(await tryName("free_f")).toBe("RATE_LIMITED");
+    expect(await db().select().from(accounts).where(eq(accounts.handle, "free_f"))).toHaveLength(0);
+    const keys = (await db().select().from(rateEvents)).map((r) => r.key);
+    expect(keys.filter((k) => k === `handle:join:${pj.id}`)).toHaveLength(5);
+    // Counted against the pending join, not against any account.
+    expect(keys.filter((k) => k.startsWith("handle:") && !k.startsWith("handle:join:"))).toEqual([]);
   });
 
   it("the limit is per account", async () => {

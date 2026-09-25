@@ -296,7 +296,7 @@ function pausedBefore(match: RegExp, during: () => Promise<unknown>) {
 /* ======================================================================= */
 
 describe("DEFECTS in identity, tokens and joining (second round)", () => {
-  it("DEFECT: pairLock refuses a transaction made by another copy of drizzle-orm, so in a production build block, Add and every pair-locked write fail once a route handler opened the database first", async () => {
+  it("fixed: pairLock refuses a transaction made by another copy of drizzle-orm, so in a production build block, Add and every pair-locked write fail once a route handler opened the database first", async () => {
     // Production (`next build && next start`) bundles route handlers and
     // pages apart, each with its own copy of drizzle-orm, while
     // core/db.ts keeps ONE drizzle instance on globalThis for the whole
@@ -343,19 +343,26 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     }).toEqual({ block: "OK", add: "OK", blocked: true, friends: true });
   });
 
-  it("DEFECT: a display name can carry a made-up '(@handle)', so the join email and /join/confirm show another member's handle first", async () => {
+  it("fixed: a display name can carry a made-up '(@handle)', so the join email and /join/confirm show another member's handle first", async () => {
     // Vera is friends with the real Anna (@anna_real).
     const vera = await makeAccount({ handle: "vera_w", email: "vera_w@example.test" });
     const anna = await makeAccount({ handle: "anna_real", displayName: "Anna FICTIONAL" });
     await befriend(vera, anna);
 
     // Mallory copies Anna's name AND handle into her own display name. The
-    // name is 47 characters, under the 50 allowed, and is accepted.
+    // name is 47 characters, under the 50 allowed. Fixed (architect's
+    // decision 10): validDisplayName refuses "@" followed by handle
+    // characters, so the name is refused and Mallory keeps her own; on the
+    // unfixed code it was accepted.
     const mallory = await makeAccount({ handle: "mallory_w" });
-    await updateProfile(db(), mallory.id, {
-      displayName: "Anna FICTIONAL (@anna_real) invited you to OURS",
-      bio: "",
-    });
+    expect(
+      await codeOf(
+        updateProfile(db(), mallory.id, {
+          displayName: "Anna FICTIONAL (@anna_real) invited you to OURS",
+          bio: "",
+        }),
+      ),
+    ).toBe("INVALID");
     const invite = await createInvite(db(), mallory.id, {});
     await requestJoin(db(), { code: invite.code, email: vera.email, ipHash: IP });
     const mail = await latestOutbox(db(), vera.email, "join");
@@ -377,12 +384,16 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     ).toEqual({ subject: "mallory_w", heading: "mallory_w" });
   });
 
-  it("DEFECT: a display name may hold bidirectional-override characters, which reorder whatever follows it in 'Name (@handle)'", async () => {
+  it("fixed: a display name may hold bidirectional-override characters, which reorder whatever follows it in 'Name (@handle)'", async () => {
     const vera = await makeAccount({ handle: "vera_w", email: "vera_w@example.test" });
     const mallory = await makeAccount({ handle: "mallory_w" });
     // U+202E RIGHT-TO-LEFT OVERRIDE: everything after it on the line is
     // shown reversed, so the handle that follows the name reads backwards.
-    await updateProfile(db(), mallory.id, { displayName: "Anna FICTIONAL ‮", bio: "" });
+    // Fixed (architect's decision 10): the name is refused; on the unfixed
+    // code it was stored.
+    expect(
+      await codeOf(updateProfile(db(), mallory.id, { displayName: "Anna FICTIONAL ‮", bio: "" })),
+    ).toBe("INVALID");
     const invite = await createInvite(db(), mallory.id, {});
     await requestJoin(db(), { code: invite.code, email: vera.email, ipHash: IP });
     const mail = await latestOutbox(db(), vera.email, "join");
@@ -397,7 +408,7 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     ).toEqual({ stored: false, subject: false });
   });
 
-  it("DEFECT: the 5-a-day limit on trying usernames (SPEC §17 item 9) does not reach the join form: one pending join tries any number", async () => {
+  it("fixed: the 5-a-day limit on trying usernames (SPEC §17 item 9) does not reach the join form: one pending join tries any number", async () => {
     const anna = await makeAccount({ handle: "anna_w" });
     // Handles held by active and suspended accounts: a suspended account is
     // hidden from everyone (SPEC §6), and "taken" is how the join form tells.
@@ -433,7 +444,7 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     ]);
   });
 
-  it("DEFECT: 'sign out everywhere' racing a sign-in link opened a moment before leaves that browser signed in", async () => {
+  it("fixed: 'sign out everywhere' racing a sign-in link opened a moment before leaves that browser signed in", async () => {
     const kim = await makeAccount({ handle: "kim_w" });
     // Someone with a link to Kim's mailbox (a forwarded or stolen link).
     const token = await createEmailToken(db(), { email: kim.email, purpose: "sign_in" });
@@ -441,21 +452,29 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     const holder = new pg.Client({ connectionString: inject("databaseUrl") });
     await holder.connect();
     let opened: ReturnType<typeof openEmailLinkAction> | null = null;
+    let signedOut: Promise<void> | null = null;
     try {
       await holder.query("begin");
-      // Only fixes the schedule. The link is used and committed at once;
-      // the session row is written a moment later, in a separate statement
-      // (auth/actions.ts), whose foreign-key check waits here.
+      // Only fixes the schedule: the link is opened first and waits here.
       await holder.query("select id from accounts where id = $1 for update", [kim.id]);
       opened = openEmailLinkAction(token);
       await untilWaiting(1);
-      // Kim, on her own device, signs out everywhere. It finishes.
-      await signOutEverywhere(db(), kim.id);
-      expect(await liveSessionsOf(kim.id)).toHaveLength(0);
+      // Kim, on her own device, signs out everywhere a moment later.
+      // Re-staged for the fix (architect's decision 11): both now take
+      // Kim's account row (the link for share, from before it is used
+      // until its session exists; sign out everywhere for update, first),
+      // so sign out everywhere waits here too, where on the unfixed code it
+      // finished at once. Awaiting it before the commit would only wait on
+      // this harness's own lock.
+      signedOut = signOutEverywhere(db(), kim.id);
+      await untilWaiting(2);
       await holder.query("commit");
+      await signedOut;
     } finally {
       await holder.end();
     }
+    // The link was first in line: it is used, with its session, and then
+    // sign out everywhere revokes that session.
     expect(await opened).toEqual({ ok: true, next: "/home" });
 
     // Serially, either the link was used and its session revoked, or the
@@ -468,7 +487,7 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     ).toEqual({ live: 0, browserSignedInAs: null });
   });
 
-  it("DEFECT: the per-address limits count each IPv6 address on its own, so one client moving inside its /64 is never limited", async () => {
+  it("fixed: the per-address limits count each IPv6 address on its own, so one client moving inside its /64 is never limited", async () => {
     // A deployment that names its proxy's header, as SPEC §17 item 3 asks.
     vi.stubEnv("CLIENT_IP_HEADER", "x-vercel-forwarded-for");
     // SPEC §8: 20 sign-in requests an hour per client address. One client
@@ -486,7 +505,7 @@ describe("DEFECTS in identity, tokens and joining (second round)", () => {
     expect(refused.length, "no request from the one /64 was refused").toBeGreaterThan(0);
   });
 
-  it("DEFECT (spec-level): a placeholder for the controller's address ('[CONFIRM]') opens account creation", async () => {
+  it("fixed: a placeholder for the controller's address ('[CONFIRM]') opens account creation", async () => {
     // SPEC §2 rule 6 and M-0010: a missing human decision switches account
     // creation off. A value that is not an address names no one to write to,
     // but counts as named, and /privacy then tells people to write to it.

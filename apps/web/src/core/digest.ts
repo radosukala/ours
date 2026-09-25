@@ -145,6 +145,13 @@ export type DigestRun = {
  * run that stops between claim and confirmation leaves a record that says
  * the send was not confirmed, rather than a second email.
  *
+ * Accounts change while the run is under way (the second verification's
+ * abuse defects 3–4). So each recipient is read again when their turn
+ * comes, and skipped unless they are still active with `weekly_email`; and
+ * one recipient's error (an account deleted between that read and its
+ * delivery row, say) is counted as failed and logged without its message,
+ * and the run goes on to the next.
+ *
  * The app URL and the secret are resolved first, so a missing setting
  * fails the run before any week is claimed.
  */
@@ -157,8 +164,8 @@ export async function runWeeklyDigest(
   const weekStart = weekStartOf(now);
   const run: DigestRun = { weekStart, sent: 0, skipped: 0, failed: 0 };
 
-  const recipients = await db
-    .select({ id: accounts.id, email: accounts.email })
+  const due = await db
+    .select({ id: accounts.id })
     .from(accounts)
     .where(
       and(
@@ -173,64 +180,98 @@ export async function runWeeklyDigest(
     )
     .orderBy(asc(accounts.id));
 
-  for (const recipient of recipients) {
-    const lines = await digestFor(db, recipient.id, now);
-
-    if (lines.length === 0) {
-      const recorded = await db
-        .insert(digestDeliveries)
-        .values({ accountId: recipient.id, weekStart, status: "skipped", createdAt: now })
-        .onConflictDoNothing()
-        .returning({ accountId: digestDeliveries.accountId });
-      if (recorded.length > 0) run.skipped += 1;
-      continue;
-    }
-
-    const claimed = await db
-      .insert(digestDeliveries)
-      .values({ accountId: recipient.id, weekStart, status: "failed", createdAt: now })
-      .onConflictDoNothing()
-      .returning({ accountId: digestDeliveries.accountId });
-    if (claimed.length === 0) continue; // another run has this week
-
-    let delivered = false;
+  for (const { id } of due) {
     try {
-      const mail = digestEmail(
-        lines.map(({ name, posts: n }) => ({ name, posts: n })),
-        base,
-        digestUnsubscribeUrl(recipient.id, base),
-      );
-      const result = await sendMail(db, {
-        to: recipient.email,
-        subject: mail.subject,
-        body: mail.body,
-        kind: "digest",
-        accountId: recipient.id,
-      });
-      delivered = result.ok;
+      const outcome = await deliverOne(db, id, { weekStart, base, now });
+      if (outcome) run[outcome] += 1;
     } catch (error) {
+      run.failed += 1;
       // Never the message: it can carry an address or a query.
       console.error(
-        "[ours] weekly email: sending to one account failed:",
+        "[ours] weekly email: one account failed:",
         error instanceof Error ? error.name : "unknown error",
       );
-    }
-
-    if (delivered) {
-      await db
-        .update(digestDeliveries)
-        .set({ status: "sent" })
-        .where(
-          and(
-            eq(digestDeliveries.accountId, recipient.id),
-            eq(digestDeliveries.weekStart, weekStart),
-          ),
-        );
-      run.sent += 1;
-    } else {
-      run.failed += 1;
     }
   }
 
   return run;
+}
+
+/**
+ * This week's email for one account, if it is still due one. Returns what
+ * to count, or null when there is nothing to count (the account no longer
+ * qualifies, or another run has the week).
+ */
+async function deliverOne(
+  db: Db,
+  accountId: string,
+  { weekStart, base, now }: { weekStart: string; base: string; now: Date },
+): Promise<"sent" | "skipped" | "failed" | null> {
+  // Read again at its turn: suspended, deleted or unsubscribed since the
+  // run began means no email.
+  const [recipient] = await db
+    .select({ id: accounts.id, email: accounts.email })
+    .from(accounts)
+    .where(
+      and(
+        eq(accounts.id, accountId),
+        isNull(accounts.suspendedAt),
+        eq(accounts.weeklyEmail, true),
+      ),
+    )
+    .limit(1);
+  if (!recipient) return null;
+
+  const lines = await digestFor(db, recipient.id, now);
+
+  if (lines.length === 0) {
+    const recorded = await db
+      .insert(digestDeliveries)
+      .values({ accountId: recipient.id, weekStart, status: "skipped", createdAt: now })
+      .onConflictDoNothing()
+      .returning({ accountId: digestDeliveries.accountId });
+    return recorded.length > 0 ? "skipped" : null;
+  }
+
+  const claimed = await db
+    .insert(digestDeliveries)
+    .values({ accountId: recipient.id, weekStart, status: "failed", createdAt: now })
+    .onConflictDoNothing()
+    .returning({ accountId: digestDeliveries.accountId });
+  if (claimed.length === 0) return null; // another run has this week
+
+  let delivered = false;
+  try {
+    const mail = digestEmail(
+      lines.map(({ name, posts: n }) => ({ name, posts: n })),
+      base,
+      digestUnsubscribeUrl(recipient.id, base),
+    );
+    const result = await sendMail(db, {
+      to: recipient.email,
+      subject: mail.subject,
+      body: mail.body,
+      kind: "digest",
+      accountId: recipient.id,
+    });
+    delivered = result.ok;
+  } catch (error) {
+    // Never the message: it can carry an address or a query.
+    console.error(
+      "[ours] weekly email: sending to one account failed:",
+      error instanceof Error ? error.name : "unknown error",
+    );
+  }
+
+  if (!delivered) return "failed";
+  await db
+    .update(digestDeliveries)
+    .set({ status: "sent" })
+    .where(
+      and(
+        eq(digestDeliveries.accountId, recipient.id),
+        eq(digestDeliveries.weekStart, weekStart),
+      ),
+    );
+  return "sent";
 }

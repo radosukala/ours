@@ -13,6 +13,8 @@ import {
   consumeEmailToken,
   createEmailToken,
   createPendingJoin,
+  createSession,
+  peekEmailToken,
   retireEmailTokens,
   revokeAllSessions,
 } from "./auth";
@@ -387,6 +389,12 @@ export async function deleteAccount(
  * Sign out everywhere (SPEC §8, §17 item 6): revoke every session of the
  * account, and mark every unused sign-in and join link to its address as
  * used, so a link requested before cannot sign anyone in afterwards.
+ *
+ * It locks the account row for update first. A link being opened holds
+ * that row for share from before it is used until its session exists
+ * (`openEmailLink`), so the two serialize, and no session started by a
+ * link opened a moment before outlives this (the second verification's
+ * identity defect 4).
  */
 export async function signOutEverywhere(
   db: Db,
@@ -398,6 +406,7 @@ export async function signOutEverywhere(
       .select({ email: accounts.email })
       .from(accounts)
       .where(eq(accounts.id, accountId))
+      .for("update")
       .limit(1);
     if (!me) throw notFound();
     await revokeAllSessions(tx, accountId, now);
@@ -464,6 +473,15 @@ export type VerifyEmailLinkResult =
   /** A join link for an existing account: signed in, the invite offered, nothing applied. */
   | { kind: "joined_existing"; accountId: string; inviteId: string };
 
+/** A session `openEmailLink` started: its id, the cookie value and when it ends. */
+export type StartedSession = { id: string; cookieValue: string; expiresAt: Date };
+
+/** What /auth does with a link: `VerifyEmailLinkResult`, with the session it started. */
+export type OpenedEmailLink =
+  | { kind: "join_pending"; pendingJoinId: string }
+  | { kind: "signed_in"; accountId: string; session: StartedSession }
+  | { kind: "joined_existing"; accountId: string; inviteId: string; session: StartedSession };
+
 /**
  * Use an emailed link (SPEC §8, as amended by §17 items 1 and 5), in one
  * transaction:
@@ -483,68 +501,108 @@ export type VerifyEmailLinkResult =
  * (CONFLICT) and nothing is used: the person signs out first.
  *
  * Unknown, used and expired links, and links for a suspended or deleted
- * account, are all the same NOT_FOUND. The caller creates the session for
- * `signed_in` and `joined_existing`, and sets the join cookie for
- * `join_pending`. A refusal rolls back, so the token is marked used only
- * when the link did what it was for.
+ * account, are all the same NOT_FOUND. A refusal rolls back, so the token
+ * is marked used only when the link did what it was for.
+ *
+ * This decides only; /auth calls `openEmailLink`, which also starts the
+ * session in the same transaction.
  */
 export async function verifyEmailLink(
   db: Db,
   input: { token: string; now?: Date; signedInAs?: string | null },
 ): Promise<VerifyEmailLinkResult> {
+  return withTx(db, (tx) => verifyEmailLinkWithin(tx, input));
+}
+
+/**
+ * `verifyEmailLink` and, for `signed_in` and `joined_existing`, the new
+ * session, in ONE transaction, with the link's account locked for share
+ * from before the link is used until the session exists.
+ *
+ * `signOutEverywhere` locks the same row for update before it revokes the
+ * sessions and retires the links, so the two cannot interleave (the second
+ * verification's identity defect 4): either the link commits first, with
+ * its session, and sign out everywhere then revokes that session too; or
+ * sign out everywhere commits first, having retired the link, and the link
+ * is refused. No session outlives a finished "sign out everywhere".
+ */
+export async function openEmailLink(
+  db: Db,
+  input: { token: string; now?: Date; signedInAs?: string | null },
+): Promise<OpenedEmailLink> {
   const now = input.now ?? new Date();
-  return withTx(db, async (tx): Promise<VerifyEmailLinkResult> => {
-    let link: Awaited<ReturnType<typeof consumeEmailToken>>;
-    try {
-      link = await consumeEmailToken(tx, input.token, now);
-    } catch (error) {
-      if (isCoreError(error) && error.code === "NOT_FOUND") {
-        throw notFound(LINK_REFUSED);
-      }
-      throw error;
-    }
+  return withTx(db, async (tx): Promise<OpenedEmailLink> => {
+    const link = await verifyEmailLinkWithin(tx, { ...input, now });
+    if (link.kind === "join_pending") return link;
+    const session = await createSession(tx, link.accountId, now);
+    return { ...link, session };
+  });
+}
 
-    const [account] = await tx
-      .select({ id: accounts.id, suspendedAt: accounts.suspendedAt })
+async function verifyEmailLinkWithin(
+  tx: Db,
+  input: { token: string; now?: Date; signedInAs?: string | null },
+): Promise<VerifyEmailLinkResult> {
+  const now = input.now ?? new Date();
+
+  // Read the link first, without using it, to learn whose account it
+  // names; lock that account for share; only then use the link. Lock
+  // order: the account, then the link, as sign out everywhere takes them.
+  const named = await peekEmailToken(tx, input.token, now);
+  if (!named) throw notFound(LINK_REFUSED);
+  const [account] = await tx
+    .select({ id: accounts.id, suspendedAt: accounts.suspendedAt })
+    .from(accounts)
+    .where(eq(accounts.email, named.email))
+    .for("share")
+    .limit(1);
+
+  let link: Awaited<ReturnType<typeof consumeEmailToken>>;
+  try {
+    // Used, retired or deleted since it was read: refused here.
+    link = await consumeEmailToken(tx, input.token, now);
+  } catch (error) {
+    if (isCoreError(error) && error.code === "NOT_FOUND") {
+      throw notFound(LINK_REFUSED);
+    }
+    throw error;
+  }
+
+  if (account?.suspendedAt) throw notFound(LINK_REFUSED);
+  if (link.purpose === "sign_in" && !account) throw notFound(LINK_REFUSED);
+  if (link.purpose === "join" && !link.inviteId) throw notFound(LINK_REFUSED);
+
+  // A browser signed in as someone else is not switched (SPEC §17 item
+  // 5). Thrown inside the transaction, so the link stays unused.
+  if (input.signedInAs && input.signedInAs !== account?.id) {
+    const [current] = await tx
+      .select({ handle: accounts.handle })
       .from(accounts)
-      .where(eq(accounts.email, link.email))
+      .where(activeAccount(input.signedInAs))
       .limit(1);
-    if (account?.suspendedAt) throw notFound(LINK_REFUSED);
-    if (link.purpose === "sign_in" && !account) throw notFound(LINK_REFUSED);
-    if (link.purpose === "join" && !link.inviteId) throw notFound(LINK_REFUSED);
+    if (current) throw new SignedInElsewhere(current.handle);
+  }
 
-    // A browser signed in as someone else is not switched (SPEC §17 item
-    // 5). Thrown inside the transaction, so the link stays unused.
-    if (input.signedInAs && input.signedInAs !== account?.id) {
-      const [current] = await tx
-        .select({ handle: accounts.handle })
-        .from(accounts)
-        .where(activeAccount(input.signedInAs))
-        .limit(1);
-      if (current) throw new SignedInElsewhere(current.handle);
-    }
+  if (link.purpose === "sign_in") {
+    return { kind: "signed_in", accountId: account!.id };
+  }
 
-    if (link.purpose === "sign_in") {
-      return { kind: "signed_in", accountId: account!.id };
-    }
-
-    if (account) {
-      const offer = await inviteOfferForViewer(tx, {
-        inviteId: link.inviteId!,
-        viewerId: account.id,
-        now,
-      });
-      return offer.kind === "can_add"
-        ? { kind: "joined_existing", accountId: account.id, inviteId: offer.invite.inviteId }
-        : { kind: "signed_in", accountId: account.id };
-    }
-
-    if (!accountCreationOpen()) throw closed();
-    const pending = await createPendingJoin(tx, {
-      email: link.email,
+  if (account) {
+    const offer = await inviteOfferForViewer(tx, {
       inviteId: link.inviteId!,
+      viewerId: account.id,
       now,
     });
-    return { kind: "join_pending", pendingJoinId: pending.id };
+    return offer.kind === "can_add"
+      ? { kind: "joined_existing", accountId: account.id, inviteId: offer.invite.inviteId }
+      : { kind: "signed_in", accountId: account.id };
+  }
+
+  if (!accountCreationOpen()) throw closed();
+  const pending = await createPendingJoin(tx, {
+    email: link.email,
+    inviteId: link.inviteId!,
+    now,
   });
+  return { kind: "join_pending", pendingJoinId: pending.id };
 }

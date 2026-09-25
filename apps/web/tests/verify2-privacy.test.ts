@@ -65,6 +65,7 @@ import {
   inviteForViewer,
   inviteOfferForViewer,
   requestJoin,
+  revokeInvite,
 } from "@/core/invites";
 import { rateKeyHash } from "@/core/limits";
 import { countIncomingRequests, countUnread } from "@/core/notifications";
@@ -145,7 +146,7 @@ async function whileHeld(
 /* ================================================================ DEFECTS */
 
 describe("a person who blocked you must be indistinguishable from nothing (SPEC §2 rule 3, §6, §17 item 11)", () => {
-  it("DEFECT: blocking by id someone who blocked you (or is suspended) puts their current name and handle — even one chosen after the block — in /settings/blocked and the export, while a deleted account leaves nothing", async () => {
+  it("fixed: blocking by id someone who blocked you (or is suspended) puts their current name and handle — even one chosen after the block — in /settings/blocked and the export, while a deleted account leaves nothing", async () => {
     const me = await makeAccount({ handle: "bl_me" });
     const vera = await makeAccount({ handle: "bl_vera_old", displayName: "FICTIONAL Vera" });
     const banned = await makeAccount({ handle: "bl_banned" });
@@ -180,7 +181,7 @@ describe("a person who blocked you must be indistinguishable from nothing (SPEC 
     ).toEqual({ page: [], exported: [] });
   });
 
-  it("DEFECT: the export's invited_by_handle names an inviter who has since blocked you — with the username they chose after the block — or who is suspended, while a deleted inviter is null", async () => {
+  it("fixed: the export's invited_by_handle names an inviter who has since blocked you — with the username they chose after the block — or who is suspended, while a deleted inviter is null", async () => {
     const blocker = await makeAccount({ handle: "ib_old", displayName: "FICTIONAL Inviter" });
     const banned = await makeAccount({ handle: "ib_banned" });
     const leaver = await makeAccount({ handle: "ib_leaver" });
@@ -204,7 +205,7 @@ describe("a person who blocked you must be indistinguishable from nothing (SPEC 
     expect(invitedBy).toEqual({ blockedMe: null, suspended: null, deleted: null });
   });
 
-  it("DEFECT: the export's likes name a suspended author (author_handle), whom every page hides, while a deleted author's likes are gone", async () => {
+  it("fixed: the export's likes name a suspended author (author_handle), whom every page hides, while a deleted author's likes are gone", async () => {
     const me = await makeAccount({ handle: "lk_me" });
     const banned = await makeAccount({ handle: "lk_banned" });
     await fx.befriend(me, banned);
@@ -218,7 +219,7 @@ describe("a person who blocked you must be indistinguishable from nothing (SPEC 
     expect(JSON.stringify(exported.likes)).not.toContain("lk_banned");
   });
 
-  it("DEFECT: declining or cancelling a friend request answers ok for a suspended person but NOT_FOUND for a deleted one, so it tells a suspension apart from a deletion", async () => {
+  it("fixed: declining or cancelling a friend request answers ok for a suspended person but NOT_FOUND for a deleted one, so it tells a suspension apart from a deletion", async () => {
     const me = await makeAccount({ handle: "rq_me" });
     const banned = await makeAccount({ handle: "rq_banned" });
     const leaver = await makeAccount({ handle: "rq_leaver" });
@@ -250,10 +251,16 @@ describe("a person who blocked you must be indistinguishable from nothing (SPEC 
     }).toEqual({ decline: answers.declineDeleted, cancel: answers.cancelDeleted });
   });
 
-  it("DEFECT (spec-level): a person the inviter blocked, holding the inviter's unused invite link, is told 'can't be used' signed in — and signed out sees the inviter's current name and new username, which also proves the block", async () => {
+  it("recorded: a person the inviter blocked, holding the inviter's unused invite link, is told 'can't be used' signed in — and signed out sees the inviter's current name and new username, which also proves the block", async () => {
+    // RECORDED, not fixed (architect's decision 9). SPEC §8 shows an invite
+    // link's inviter to anyone signed out who holds the code; the page
+    // cannot know who holds it. The build receipt names this, and the
+    // remedy it names is the inviter's own: revoke the unused invite (the
+    // last assertion). This test asserts the behaviour as it stands, so a
+    // change to it is seen.
     const inviter = await makeAccount({ handle: "iv_old", displayName: "FICTIONAL Inviter" });
     const guest = await makeAccount({ handle: "iv_guest" });
-    const { code } = await createInvite(db(), inviter.id, { note: "FICTIONAL note" });
+    const { id: inviteId, code } = await createInvite(db(), inviter.id, { note: "FICTIONAL note" });
     // The guest was given the link (a group chat, or before they joined another way).
     await block(db(), inviter.id, guest.id);
     await changeHandle(db(), inviter.id, "iv_new");
@@ -265,12 +272,19 @@ describe("a person who blocked you must be indistinguishable from nothing (SPEC 
     // inviter from reads the name and the username chosen after the block.
     expect(
       signedOut.kind === "unusable" ? null : `${signedOut.invite.inviter.displayName} @${signedOut.invite.inviter.handle}`,
-    ).toBeNull();
+    ).toBe("FICTIONAL Inviter @iv_new");
+    // The note never leaves the inviter, signed in or out.
+    expect(JSON.stringify({ signedIn, signedOut })).not.toContain("FICTIONAL note");
+
+    // The remedy: once the inviter revokes the unused invite, the link shows
+    // no one, signed out as well.
+    await revokeInvite(db(), inviter.id, inviteId);
+    expect((await inviteForViewer(db(), { code, viewerId: null })).kind).toBe("unusable");
   });
 });
 
 describe("the username oracle SPEC §17 item 9 accepts, and limits", () => {
-  it("DEFECT: the join form answers 'That username is taken' for any number of tries — the 5-a-day limit on the oracle does not reach completeJoin, so a held handle (a suspended account's too) can be probed without end", async () => {
+  it("fixed: the join form answers 'That username is taken' for any number of tries — the 5-a-day limit on the oracle does not reach completeJoin, so a held handle (a suspended account's too) can be probed without end", async () => {
     // The first round's accepted tests (verify-privacy, verify-identity)
     // were rewritten to assert the limit on changeHandle; the first
     // round's identity report named completeJoin as the oracle's other door.
@@ -304,7 +318,7 @@ describe("the username oracle SPEC §17 item 9 accepts, and limits", () => {
 });
 
 describe("the race SPEC §17 item 10 leaves out: a reply and a block", () => {
-  it("DEFECT: a reply written while a block is being made leaves its notification to the blocker behind the block, and unblocking brings it back (createReply takes no pair lock)", async () => {
+  it("fixed: a reply written while a block is being made leaves its notification to the blocker behind the block, and unblocking brings it back (createReply takes no pair lock)", async () => {
     const author = await makeAccount({ handle: "rr_author" });
     const replier = await makeAccount({ handle: "rr_replier" });
     await fx.befriend(author, replier);
@@ -314,8 +328,13 @@ describe("the race SPEC §17 item 10 leaves out: a reply and a block", () => {
       (tx) => block(tx, author.id, replier.id),
       () => createReply(db(), replier.id, p.id, { body: "A FICTIONAL reply." }),
     );
-    expect(result.ok).toBe(true); // it checked before the block committed
-    expect(waited, "createReply never waits for a block in flight").toBe(false);
+    // Fixed (architect's decision 6): createReply takes the pair lock inside
+    // its transaction, so it waits for the block in flight, then checks
+    // again under the lock, finds the block and refuses. On the unfixed
+    // code the reply passed its check before the block committed and never
+    // waited (result ok, waited false).
+    expect(result).toEqual({ ok: false, code: "NOT_FOUND", message: "That isn't available." });
+    expect(waited, "createReply waits for a block in flight").toBe(true);
 
     // SPEC §6: the block "deletes notifications whose actor is the other
     // person". Either order, done one after the other, leaves none.
@@ -333,7 +352,7 @@ describe("the race SPEC §17 item 10 leaves out: a reply and a block", () => {
 });
 
 describe("postPage's own rule (SPEC §17 item 12)", () => {
-  it("DEFECT: a raw condition with a top-level OR widens postPage past the visibility rule: it is appended without parentheses, so a stranger gets a friends-only post", async () => {
+  it("fixed: a raw condition with a top-level OR widens postPage past the visibility rule: it is appended without parentheses, so a stranger gets a friends-only post", async () => {
     const author = await makeAccount({ handle: "pw_author" });
     const stranger = await makeAccount({ handle: "pw_stranger" });
     const secret = await fx.post(author, {
@@ -351,7 +370,7 @@ describe("postPage's own rule (SPEC §17 item 12)", () => {
 });
 
 describe("what the author of removed content receives (reporters are not named to authors)", () => {
-  it("DEFECT: the content_removed notification hands the author the id of the report against them — a ULID that says, to the millisecond, when they were reported", async () => {
+  it("fixed: the content_removed notification hands the author the id of the report against them — a ULID that says, to the millisecond, when they were reported", async () => {
     const author = await makeAccount({ handle: "rm_author" });
     const reporter = await makeAccount({ handle: "rm_reporter" });
     const admin = await makeAccount({ handle: "rm_admin", isAdmin: true });

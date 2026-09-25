@@ -3,8 +3,9 @@
 /**
  * Using an emailed link (SPEC §8, "Sign in" step 5 and "Join from an
  * invite" step 2, as amended by §17 items 1 and 5). The core decides what
- * the link does (`verifyEmailLink`); this action only moves the result
- * into cookies:
+ * the link does and starts the session in the same transaction as it uses
+ * the link (`openEmailLink`), so "sign out everywhere" cannot slip between
+ * the two; this action only moves the result into cookies:
  *
  * - signed in: a new session, and any session this browser had before is
  *   revoked; then /home.
@@ -19,9 +20,8 @@
  * Public: the person may not be signed in yet. The token is the only
  * input, and the core refuses anything that is not a live, unused token.
  */
-import { SignedInElsewhere, verifyEmailLink } from "@/core/accounts";
+import { openEmailLink, SignedInElsewhere } from "@/core/accounts";
 import {
-  createSession,
   inviteOfferCookieValue,
   revokeSession,
   sessionFromCookie,
@@ -50,9 +50,9 @@ export async function openEmailLinkAction(token: string): Promise<OpenLinkResult
     const db = getDb();
     const now = new Date();
     const current = await sessionFromCookie(db, await readSessionCookie(), now);
-    let link: Awaited<ReturnType<typeof verifyEmailLink>>;
+    let link: Awaited<ReturnType<typeof openEmailLink>>;
     try {
-      link = await verifyEmailLink(db, {
+      link = await openEmailLink(db, {
         token: typeof token === "string" ? token : "",
         now,
         signedInAs: current,
@@ -70,7 +70,7 @@ export async function openEmailLinkAction(token: string): Promise<OpenLinkResult
       return { next: "/join" as const };
     }
 
-    const session = await createSession(db, link.accountId, now);
+    const { session } = link;
     const previous = await currentSessionId();
     if (previous) await revokeSession(db, previous, now);
     await setSessionCookie(session.cookieValue, session.expiresAt);

@@ -12,13 +12,19 @@
  * Like every account, it can be created only while a data controller is
  * named (DATA_CONTROLLER and DATA_CONTROLLER_EMAIL): a missing human
  * decision switches account creation off, including here.
+ *
+ * It makes the FIRST account only, and refuses once any account exists:
+ * /rules says every account except the founder's is invited by a person
+ * (the second verification's honesty defect 9). The check and the insert
+ * share one transaction under an advisory lock, so two runs at once cannot
+ * both pass it.
  */
 import { parseArgs } from "node:util";
 import { config } from "dotenv";
-import { eq, or } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { createEmailToken } from "../src/core/auth";
 import { accountCreationOpen, appUrl, DEFAULT_INVITES } from "../src/core/config";
-import { closeDb, getDb } from "../src/core/db";
+import { closeDb, getDb, withTx } from "../src/core/db";
 import { isCoreError } from "../src/core/errors";
 import { newId } from "../src/core/ids";
 import { accounts } from "../src/core/schema";
@@ -83,28 +89,29 @@ async function main(): Promise<void> {
   }
 
   const db = getDb();
-  const existing = await db
-    .select({ id: accounts.id })
-    .from(accounts)
-    .where(or(eq(accounts.email, email), eq(accounts.handle, handle)))
-    .limit(1);
-  if (existing.length) {
-    fail("Refused: an account with that address or handle already exists.");
-  }
-
   const now = new Date();
-  const id = newId();
-  await db.insert(accounts).values({
-    id,
-    email,
-    handle,
-    displayName: name,
-    invitedBy: null,
-    invitesRemaining: invites,
-    isAdmin: true,
-    adultConfirmedAt: now,
-    createdAt: now,
+  const created = await withTx(db, async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended('seed:founder', 0))`);
+    const existing = await tx.select({ id: accounts.id }).from(accounts).limit(1);
+    if (existing.length) return false;
+    await tx.insert(accounts).values({
+      id: newId(),
+      email,
+      handle,
+      displayName: name,
+      invitedBy: null,
+      invitesRemaining: invites,
+      isAdmin: true,
+      adultConfirmedAt: now,
+      createdAt: now,
+    });
+    return true;
   });
+  if (!created) {
+    fail(
+      "Refused: an account already exists. The founder's account is the first one; every other account is invited by a person.",
+    );
+  }
 
   const token = await createEmailToken(db, { email, purpose: "sign_in", now });
   console.log(`Created @${handle} (administrator, ${invites} invites).`);

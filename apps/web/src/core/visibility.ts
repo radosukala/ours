@@ -13,7 +13,7 @@
  * blocks, the friendship and the follow, so it needs nothing else joined.
  */
 import { and, eq, type SQL, sql } from "drizzle-orm";
-import { type AnyPgColumn, PgTransaction } from "drizzle-orm/pg-core";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { FRIEND_REQUEST_TTL_DAYS } from "./config";
 import type { Db } from "./db";
 import { type Post, posts, replies, type Reply } from "./schema";
@@ -111,13 +111,26 @@ export function visibleReplyPredicate(
  * ONE RULE FOR SHOWING A PERSON (SPEC §17 item 11): the person is active,
  * and there is no block either way with the viewer. Every list of people
  * that is not the viewer's own act uses it: the likers of a post, the actor
- * of a notification, who used an invite (the list and the export), and the
- * muted list. A person it hides is indistinguishable from a deleted one
- * (SPEC §2 rule 3).
+ * of a notification, who used an invite (the list and the export), who
+ * invited the viewer and whose posts they liked (the export), and the muted
+ * list. A person it hides is indistinguishable from a deleted one (SPEC §2
+ * rule 3).
+ *
+ * The blocked list (the page and the export) uses it with
+ * `besidesOwnBlock`: the viewer's own block of that person is what the list
+ * is made of, so only a block from the other person hides them. Their block
+ * row stays either way, and holds if the other person later unblocks.
  *
  * Posts never use this: their rule is `visiblePostPredicate` alone.
  */
-export function personShownTo(viewerId: string, personId: AnyPgColumn): SQL {
+export function personShownTo(
+  viewerId: string,
+  personId: AnyPgColumn,
+  options: { besidesOwnBlock?: boolean } = {},
+): SQL {
+  const ownBlock = options.besidesOwnBlock
+    ? sql`false`
+    : sql`(shown_block.blocker_id = ${viewerId} and shown_block.blocked_id = ${personId})`;
   return sql`(
     exists (
       select 1 from accounts shown_person
@@ -125,7 +138,7 @@ export function personShownTo(viewerId: string, personId: AnyPgColumn): SQL {
     )
     and not exists (
       select 1 from blocks shown_block
-      where (shown_block.blocker_id = ${viewerId} and shown_block.blocked_id = ${personId})
+      where ${ownBlock}
          or (shown_block.blocker_id = ${personId} and shown_block.blocked_id = ${viewerId})
     )
   )`;
@@ -139,24 +152,37 @@ export function personShownTo(viewerId: string, personId: AnyPgColumn): SQL {
  * the transaction ends.
  *
  * `block`, `unblock`, `useInviteAsExisting`, `sendFriendRequest`,
- * `acceptFriendRequest`, `follow` and `toggleLike` (liker and author) take
- * it first inside their transaction and then re-check the block, so a
- * block either commits before the write (which then sees it and refuses)
- * or after it (and then removes what the write made). Neither order leaves
- * a connection across a block.
+ * `acceptFriendRequest`, `follow`, `toggleLike` (liker and author) and
+ * `createReply` (replier and author) take it first inside their
+ * transaction and then re-check the block, so a block either commits
+ * before the write (which then sees it and refuses) or after it (and then
+ * removes what the write made). Neither order leaves a connection across a
+ * block.
  *
  * Only meaningful inside a transaction: outside one the lock would be
  * released as soon as it was taken, so that is refused as a programming
  * error.
  */
 export async function pairLock(tx: Db, a: string, b: string): Promise<void> {
-  if (!(tx instanceof PgTransaction)) {
+  if (!isTransaction(tx)) {
     throw new Error("pairLock must be taken inside a transaction.");
   }
   const [low, high] = a < b ? [a, b] : [b, a];
   await tx.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${`pair:${low}:${high}`}, 0))`,
   );
+}
+
+/**
+ * Whether `db` is a transaction rather than the root database, told by its
+ * shape and never by its class: a production build bundles more than one
+ * copy of drizzle-orm, and one process shares a single database handle, so
+ * a transaction made by one copy is not an instance of another copy's
+ * `PgTransaction` (the second verification's HIGH defect). Of the two, only
+ * a transaction has `rollback()`.
+ */
+export function isTransaction(db: Db): boolean {
+  return typeof (db as { rollback?: unknown }).rollback === "function";
 }
 
 /* ------------------------------------------------------------ single rows */

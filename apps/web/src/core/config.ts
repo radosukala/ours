@@ -6,6 +6,7 @@
  * sees. A missing human decision (the data controller) switches a feature
  * off; it is never defaulted (SPEC §2 rule 6).
  */
+import { normEmail } from "./validate";
 
 /** Invites each new account starts with. A founder default, recorded on /rules. */
 export const DEFAULT_INVITES = 10;
@@ -50,13 +51,33 @@ export function appUrl(): string {
 }
 
 /**
+ * The placeholder a draft leaves where a human decision is still open: the
+ * word CONFIRM in square brackets, in any case. (Written as a pattern, so
+ * this file never carries the placeholder itself; the claims scan looks
+ * for it in every public file.)
+ */
+const UNCONFIRMED = /\[\s*confirm\b/i;
+
+/**
  * The data controller: the person or body answerable for the data.
- * Null unless both the name and the address are set.
+ *
+ * Null unless both the name and the address are set, the address is an
+ * email address, and neither holds the confirmation placeholder: a value
+ * that names no one to write to is a missing decision, and switches
+ * account creation off like an empty one (SPEC §2 rule 6; the second
+ * verification's identity defect 6).
  */
 export function controller(): { name: string; email: string } | null {
   const name = env("DATA_CONTROLLER");
   const email = env("DATA_CONTROLLER_EMAIL");
-  return name && email ? { name, email } : null;
+  if (!name || !email) return null;
+  if (UNCONFIRMED.test(name) || UNCONFIRMED.test(email)) return null;
+  try {
+    normEmail(email);
+  } catch {
+    return null;
+  }
+  return { name, email };
 }
 
 /** New accounts can be created only while a controller is named (SPEC §8). */

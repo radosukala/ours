@@ -9,13 +9,15 @@
  * - Connections (friends, following, followers) are listed as the owner
  *   sees them now: people who are active and with no block either way,
  *   and followers only while the owner accepts followers (SPEC §6).
- * - Records of the owner's own acts (likes, blocks, who invited them) name
- *   the other person's handle as recorded.
- * - Who used an invite, and the muted list, follow the one rule for
- *   showing a person (`personShownTo`, SPEC §17 item 11), exactly as
- *   /people/invites and /settings/blocked do: someone suspended, or with a
- *   block either way, is left out like a deleted account, so the export is
- *   never a way around those pages.
+ * - Every other person it names follows the one rule for showing a person
+ *   (`personShownTo`, SPEC §17 item 11), exactly as the pages do: who used
+ *   an invite, who invited the owner, the author of a post they liked, and
+ *   the muted and blocked lists (the blocked list besides the owner's own
+ *   block, as /settings/blocked). Someone suspended, or with a block from
+ *   them, is left out or given as null, like a deleted account, so the
+ *   export is never a way around those pages (the second verification's
+ *   privacy defects 1–3). The owner's own records stay whole: a like keeps
+ *   its post id, a block row stays in force.
  *
  * The function takes the owner's id from the session; there is no way to
  * ask it for someone else.
@@ -68,8 +70,11 @@ export type AccountExport = {
     removal_category: string | null;
     removal_reason: string | null;
   }[];
-  /** Post ids and author handles of posts you liked. */
-  likes: { post_id: string; author_handle: string; created_at: string }[];
+  /**
+   * Post ids of posts you liked, and each author's handle while that author
+   * may be shown to you (null otherwise).
+   */
+  likes: { post_id: string; author_handle: string | null; created_at: string }[];
   friends: Person[];
   following: Person[];
   followers: Person[];
@@ -130,6 +135,7 @@ export async function exportAccount(
       acceptsFollowers: accounts.acceptsFollowers,
       createdAt: accounts.createdAt,
       invitedByHandle: inviter.handle,
+      invitedByShown: sql<boolean>`${personShownTo(accountId, accounts.invitedBy)}`,
     })
     .from(accounts)
     .leftJoin(inviter, eq(inviter.id, accounts.invitedBy))
@@ -164,6 +170,7 @@ export async function exportAccount(
       .select({
         postId: likes.postId,
         authorHandle: other.handle,
+        authorShown: sql<boolean>`${personShownTo(me.id, posts.authorId)}`,
         createdAt: likes.createdAt,
       })
       .from(likes)
@@ -226,7 +233,12 @@ export async function exportAccount(
       .select({ handle: other.handle, since: blocks.createdAt })
       .from(blocks)
       .innerJoin(other, eq(other.id, blocks.blockedId))
-      .where(eq(blocks.blockerId, me.id))
+      .where(
+        and(
+          eq(blocks.blockerId, me.id),
+          personShownTo(me.id, blocks.blockedId, { besidesOwnBlock: true }),
+        ),
+      )
       .orderBy(asc(blocks.createdAt), asc(other.handle)),
     db
       .select({ handle: other.handle, since: mutes.createdAt })
@@ -263,7 +275,7 @@ export async function exportAccount(
       bio: me.bio,
       email: me.email,
       created_at: iso(me.createdAt),
-      invited_by_handle: me.invitedByHandle ?? null,
+      invited_by_handle: me.invitedByShown === true ? (me.invitedByHandle ?? null) : null,
     },
     posts: myPosts.map((p) => ({
       id: p.id,
@@ -285,7 +297,7 @@ export async function exportAccount(
     })),
     likes: myLikes.map((l) => ({
       post_id: l.postId,
-      author_handle: l.authorHandle,
+      author_handle: l.authorShown === true ? l.authorHandle : null,
       created_at: iso(l.createdAt),
     })),
     friends: friendRows.map(person),

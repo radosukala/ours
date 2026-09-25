@@ -9,8 +9,11 @@
  * notifications) are inserted here as fixtures, never through another
  * module's functions.
  */
-import { eq, or } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { execFile } from "node:child_process";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { eq, isNull, or } from "drizzle-orm";
+import { beforeEach, describe, expect, inject, it } from "vitest";
 import {
   changeHandle,
   deleteAccount,
@@ -235,6 +238,28 @@ describe("updateProfile", () => {
     );
     const row = await accountRow(anna.id);
     expect(row!.displayName).toBe(anna.displayName);
+  });
+
+  it("refuses a name that carries an @username or text-direction characters, with INVALID", async () => {
+    // "Name (@handle)" names a person where it matters (SPEC §17 items
+    // 1–2); a name must not bring a handle of its own, nor reorder the
+    // handle after it.
+    const anna = await makeAccount();
+    for (const displayName of [
+      "Petr FICTIONAL (@petr_k)",
+      "@petr_k",
+      "Petr \uFF20petr_k",
+      "Anna \u202E",
+      "Anna\u200B",
+      "Anna \u2066Bo\u2069",
+      "\uFEFFAnna",
+    ]) {
+      await expectCode(updateProfile(db(), anna.id, { displayName, bio: "" }), "INVALID");
+    }
+    expect((await accountRow(anna.id))!.displayName).toBe(anna.displayName);
+    // An at sign on its own is not a handle.
+    await updateProfile(db(), anna.id, { displayName: "Anna @ home", bio: "" });
+    expect((await accountRow(anna.id))!.displayName).toBe("Anna @ home");
   });
 
   it("refuses a suspended or unknown account with NOT_FOUND", async () => {
@@ -614,4 +639,106 @@ describe("deleteAccount: what goes", () => {
     expect(usedInvite!.usedAt).not.toBeNull();
     expect(await sessionFromCookie(d, petrSession.cookieValue, t0)).toBe(petr.id);
   });
+});
+
+describe("username tries are limited to 5 a day (SPEC §17 item 9)", () => {
+  it("counts every try at a new username, taken names included: the sixth in a day is refused, taken or free", async () => {
+    const anna = await makeAccount({ handle: "anna" });
+    await makeAccount({ handle: "petr_k" });
+    await makeAccount({ handle: "sam", suspended: true });
+
+    // Five tries in one day: three names that are taken, two that are free.
+    await expectCode(changeHandle(db(), anna.id, "petr_k", t0), "CONFLICT");
+    await expectCode(changeHandle(db(), anna.id, "sam", plus.hours(t0, 1)), "CONFLICT");
+    expect(await changeHandle(db(), anna.id, "anna_two", plus.hours(t0, 2))).toEqual({
+      handle: "anna_two",
+    });
+    await expectCode(changeHandle(db(), anna.id, "petr_k", plus.hours(t0, 3)), "CONFLICT");
+    expect(await changeHandle(db(), anna.id, "anna_three", plus.hours(t0, 4))).toEqual({
+      handle: "anna_three",
+    });
+
+    // The sixth is refused whether the name is taken or free, so it no
+    // longer says whether anyone holds it.
+    await expectCode(changeHandle(db(), anna.id, "petr_k", plus.hours(t0, 5)), "RATE_LIMITED");
+    await expectCode(changeHandle(db(), anna.id, "anna_free", plus.hours(t0, 5)), "RATE_LIMITED");
+    expect((await accountRow(anna.id))!.handle).toBe("anna_three");
+    // Keeping your own name is not a try.
+    expect(await changeHandle(db(), anna.id, "anna_three", plus.hours(t0, 5))).toEqual({
+      handle: "anna_three",
+    });
+
+    // A day after the first try, that try no longer counts.
+    expect(
+      await changeHandle(db(), anna.id, "anna_four", plus.minutes(plus.hours(t0, 24), 1)),
+    ).toEqual({ handle: "anna_four" });
+  });
+});
+
+describe("the founder script makes the first account only (/rules: every account except the founder's is invited by a person)", () => {
+  const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+  /** Run scripts/seed-founder.ts against the test database. */
+  function seedFounder(
+    email: string,
+    handle: string,
+  ): Promise<{ status: number; stdout: string; stderr: string }> {
+    const env = {
+      PATH: process.env.PATH ?? "",
+      HOME: process.env.HOME ?? "",
+      USER: process.env.USER ?? "",
+      DATABASE_URL: inject("databaseUrl"),
+      SESSION_SECRET: process.env.SESSION_SECRET!,
+      DATA_CONTROLLER: "FICTIONAL Controller",
+      DATA_CONTROLLER_EMAIL: "controller@example.test",
+      APP_URL: "http://localhost:3000",
+      NODE_ENV: "test",
+    } as NodeJS.ProcessEnv;
+    return new Promise((resolve) => {
+      execFile(
+        join(WEB_ROOT, "node_modules/.bin/tsx"),
+        ["scripts/seed-founder.ts", "--email", email, "--handle", handle, "--name", "FICTIONAL Founder"],
+        { cwd: WEB_ROOT, env, encoding: "utf8" },
+        (error, stdout, stderr) => {
+          const status = error ? (typeof error.code === "number" ? error.code : 1) : 0;
+          resolve({ status, stdout, stderr });
+        },
+      );
+    });
+  }
+
+  async function uninvited(): Promise<string[]> {
+    const rows = await db()
+      .select({ handle: accounts.handle })
+      .from(accounts)
+      .where(isNull(accounts.invitedBy));
+    return rows.map((r) => r.handle);
+  }
+
+  it("run twice, the second run is refused, and at most one account has no inviter", async () => {
+    const first = await seedFounder("fic_founder_a@example.test", "fic_founder_a");
+    expect(first.status, first.stderr).toBe(0);
+    const second = await seedFounder("fic_founder_b@example.test", "fic_founder_b");
+    expect(second.status).toBe(1);
+    expect(second.stderr).toContain("Refused: an account already exists.");
+    expect(await uninvited()).toEqual(["fic_founder_a"]);
+    expect(await db().select().from(accounts)).toHaveLength(1);
+  }, 60_000);
+
+  it("refuses once any account exists, and two runs at once make one account", async () => {
+    const someone = await makeAccount({ handle: "anna" });
+    await makeAccount({ handle: "bo_f", invitedBy: someone });
+    const refused = await seedFounder("fic_founder_c@example.test", "fic_founder_c");
+    expect(refused.status).toBe(1);
+    expect(await db().select().from(accounts)).toHaveLength(2);
+
+    await reset();
+    const runs = await Promise.all([
+      seedFounder("fic_founder_d@example.test", "fic_founder_d"),
+      seedFounder("fic_founder_e@example.test", "fic_founder_e"),
+    ]);
+    expect(runs.map((r) => r.status).sort()).toEqual([0, 1]);
+    expect(await uninvited()).toHaveLength(1);
+    expect(await db().select().from(accounts)).toHaveLength(1);
+  }, 60_000);
 });

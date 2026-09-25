@@ -293,7 +293,7 @@ function paused() {
 /* ============================================ blocks and the pair lock */
 
 describe("a block racing a reply (SPEC §6; M-0010: a block refuses new replies)", () => {
-  it("DEFECT: a reply notification written while a block commits survives the block, and unblocking brings it back to the blocker", async () => {
+  it("fixed: a reply notification written while a block commits survives the block, and unblocking brings it back to the blocker", async () => {
     // createReply (src/core/posts.ts:370) takes no pair lock: its notify()
     // checks for a block, then inserts. A block that commits in between
     // cannot delete a row that is not there yet.
@@ -335,7 +335,7 @@ describe("a block racing a reply (SPEC §6; M-0010: a block refuses new replies)
     });
   });
 
-  it("DEFECT: a reply that commits after a block has committed is accepted, and after unblocking the blocker sees it on their post", async () => {
+  it("fixed: a reply that commits after a block has committed is accepted, and after unblocking the blocker sees it on their post", async () => {
     // The pause is between the permission check and the write (at the
     // reply's rate-limit event): the block has fully committed before the
     // reply's transaction begins. toggleLike re-checks under the pair lock
@@ -379,7 +379,7 @@ describe("a block racing a reply (SPEC §6; M-0010: a block refuses new replies)
 });
 
 describe("a moderation removal racing a reply (SPEC §6 canReply = canSeePost and active)", () => {
-  it("DEFECT: a reply whose post is removed between the check and the write lands on the removed post, and its author is notified of it", async () => {
+  it("fixed: a reply whose post is removed between the check and the write lands on the removed post, and its author is notified of it", async () => {
     // Same root cause as above: createReply checks canReply once, before
     // its transaction, and never again.
     const admin = await makeAccount({ isAdmin: true });
@@ -725,7 +725,7 @@ describe("the weekly email run while accounts change (SPEC §8 'For each active 
     ).length;
   }
 
-  it("DEFECT: one account deleted while the run is under way aborts the run, and everyone after it gets nothing that week", async () => {
+  it("fixed: one account deleted while the run is under way aborts the run, and everyone after it gets nothing that week", async () => {
     const { now, r1, r2, r3 } = await week();
     const { deleteAccount } = await import("@/core/accounts");
     const { runWeeklyDigest } = await import("@/core/digest");
@@ -752,7 +752,7 @@ describe("the weekly email run while accounts change (SPEC §8 'For each active 
     });
   });
 
-  it("DEFECT: an account suspended while the run is under way is still sent the weekly email", async () => {
+  it("fixed: an account suspended while the run is under way is still sent the weekly email", async () => {
     const { now, r2 } = await week();
     const admin = await makeAccount({ isAdmin: true, weeklyEmail: false });
     const reporter = await makeAccount({ weeklyEmail: false });

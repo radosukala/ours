@@ -99,6 +99,39 @@ export async function createEmailToken(
 }
 
 /**
+ * What a token would do if it were used now, without using it or locking
+ * it, or null for an unknown, used or expired token. A caller that must
+ * lock something the link names (its account) before using it reads the
+ * link with this first; `consumeEmailToken` then decides, so a link used
+ * or retired in between is still refused.
+ */
+export async function peekEmailToken(
+  db: Db,
+  token: unknown,
+  now: Date = new Date(),
+): Promise<{ email: string; purpose: EmailTokenPurpose; inviteId: string | null } | null> {
+  if (typeof token !== "string" || !token || token.length > MAX_TOKEN_LENGTH) {
+    return null;
+  }
+  const [row] = await db
+    .select({
+      email: emailTokens.email,
+      purpose: emailTokens.purpose,
+      inviteId: emailTokens.inviteId,
+    })
+    .from(emailTokens)
+    .where(
+      and(
+        eq(emailTokens.tokenHash, sha256(token)),
+        isNull(emailTokens.usedAt),
+        gt(emailTokens.expiresAt, now),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
  * Use a token. It is marked used in the same statement that checks it, so
  * two requests racing with one token cannot both succeed. Unknown, used and
  * expired tokens are all the same NOT_FOUND.

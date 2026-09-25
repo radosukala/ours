@@ -245,7 +245,10 @@ export async function postPage(
     .select(postViewColumns(viewerId))
     .from(posts)
     .innerJoin(accounts, eq(accounts.id, posts.authorId))
-    .where(and(visiblePostPredicate(viewerId), where))
+    // `where` in parentheses of its own: drizzle's and() does not bracket a
+    // raw sql chunk, so a top-level OR in it would otherwise bind looser than
+    // the rule and widen it (the second verification's privacy defect 7).
+    .where(and(visiblePostPredicate(viewerId), where ? sql`(${where})` : undefined))
     .orderBy(desc(posts.createdAt), desc(posts.id))
     .limit(pageSize + 1)) as PostViewRow[];
   const more = rows.length > pageSize;
@@ -366,7 +369,16 @@ export async function listPostsByAuthor(
 
 /* ---------------------------------------------------------------- replies */
 
-/** Requires canReply(V, P). Rate-limited to 200 a day. */
+/**
+ * Requires canReply(V, P). Rate-limited to 200 a day.
+ *
+ * The write serializes with a block between the replier and the post's
+ * author, and with a removal of the post (the second verification's privacy
+ * defect 6 and abuse defects 1–2): inside its transaction it takes the pair
+ * lock and locks the post row for share, then checks canReply again, so a
+ * reply (and its notification) never outlives a block, and never lands on a
+ * post removed before it was written. Refused with NOT_FOUND.
+ */
 export async function createReply(
   db: Db,
   authorId: string,
@@ -383,6 +395,21 @@ export async function createReply(
   await hit(db, `reply:${authorId}`, { ...RATE.reply, now });
   const replyId = newId();
   await withTx(db, async (tx) => {
+    await pairLock(tx, authorId, post.authorId);
+    const [held] = await tx
+      .select({ id: posts.id })
+      .from(posts)
+      .where(eq(posts.id, post.id))
+      .for("share");
+    // Again under the locks: a block, a removal or a suspension may have
+    // committed since the check above.
+    if (
+      !held ||
+      !(await isActiveAccount(tx, authorId)) ||
+      !(await canSeePost(tx, authorId, post.id))
+    ) {
+      throw notFound();
+    }
     await tx.insert(replies).values({
       id: replyId,
       postId: post.id,

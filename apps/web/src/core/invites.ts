@@ -29,7 +29,7 @@ import {
 } from "./config";
 import { insertFriendship, isUniqueViolation } from "./connections";
 import { type Db, withTx } from "./db";
-import { closed, conflict, CoreError, forbidden, invalid, notFound } from "./errors";
+import { closed, conflict, forbidden, invalid, isCoreError, notFound } from "./errors";
 import { newId, randomToken, sha256 } from "./ids";
 import { hit, RATE, rateKeyHash } from "./limits";
 import { type Defer, nowOrDeferred, sendMail } from "./mail";
@@ -501,6 +501,13 @@ export async function describePendingJoin(
  * join and starts a session. The caller deletes the join cookie and sets
  * the session cookie.
  *
+ * Every username tried counts against one pending join, 5 a day
+ * (`handle:join:<pendingJoinId>`, RATE.handle), as a username change does
+ * (SPEC §17 item 9): "That username is taken" says the name is held, so
+ * the join form is limited like the settings form (the second
+ * verification's privacy defect 5 and identity defect 3). The try is
+ * recorded before the transaction, so a refusal does not roll it back.
+ *
  * Lock order (SPEC §17 item 7): the invite, then the pending join, then
  * (by inserting `invited_by`) the inviter's account. `deleteAccount` locks
  * the account's invites before the account, and its cascade reaches the
@@ -527,6 +534,10 @@ export async function completeJoin(
   if (input.adultConfirmed !== true) {
     throw invalid("OURS is for adults. Confirm that you're 18 or older.");
   }
+  if (typeof input.pendingJoinId !== "string" || !ID_PATTERN.test(input.pendingJoinId)) {
+    throw notFound(JOIN_EXPIRED);
+  }
+  await hit(db, `handle:join:${input.pendingJoinId}`, { ...RATE.handle, now });
 
   try {
     return await withTx(db, async (tx) => {
@@ -612,7 +623,8 @@ export async function completeJoin(
   } catch (error) {
     // Two joins racing for one handle or email: the loser gets the same
     // answer as if it had come second.
-    if (error instanceof CoreError) throw error;
+    // By shape, not by class: a bundle may hold another copy of this module.
+    if (isCoreError(error)) throw error;
     if (isUniqueViolation(error, "accounts_handle_unique")) throw conflict(HANDLE_TAKEN);
     if (isUniqueViolation(error, "accounts_email_unique")) throw conflict(EMAIL_TAKEN);
     throw error;

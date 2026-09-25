@@ -389,6 +389,12 @@ export async function declineFriendRequest(
   now: Date = new Date(),
 ): Promise<void> {
   await assertActive(db, accountId);
+  // A person you may not see is the same NOT_FOUND as a request that is
+  // not there, as for accept: a suspension is not told apart from a
+  // deletion (the second verification's privacy defect 4).
+  if (accountId === fromId || !(await canSeeAccount(db, accountId, fromId))) {
+    throw notFound(REQUEST_NOT_FOUND);
+  }
   await expireStaleForPair(db, accountId, fromId, now);
   await withTx(db, async (tx) => {
     const rows = await tx
@@ -424,6 +430,10 @@ export async function cancelFriendRequest(
   now: Date = new Date(),
 ): Promise<void> {
   await assertActive(db, accountId);
+  // As for decline: someone you may not see is a request that is not there.
+  if (accountId === toId || !(await canSeeAccount(db, accountId, toId))) {
+    throw notFound(REQUEST_NOT_FOUND);
+  }
   await expireStaleForPair(db, accountId, toId, now);
   await withTx(db, async (tx) => {
     const rows = await tx
@@ -844,8 +854,12 @@ export async function listFollowers(
 }
 
 /**
- * People you blocked, newest first. Your own list, so a suspended account
- * stays in it: you can still unblock it.
+ * People you blocked, newest first, as far as they may be shown to you
+ * (`personShownTo` besides your own block, SPEC §17 item 11): someone
+ * suspended, or who blocked you, drops out like a deleted account, so the
+ * list never names a person whose profile is not found to you (the second
+ * verification's privacy defect 1). The block row stays and holds: if they
+ * unblock you, or are reinstated, they are listed again.
  */
 export async function listBlocked(
   db: Db,
@@ -855,7 +869,12 @@ export async function listBlocked(
     .select({ ...person, since: blocks.createdAt })
     .from(blocks)
     .innerJoin(accounts, eq(accounts.id, blocks.blockedId))
-    .where(eq(blocks.blockerId, accountId))
+    .where(
+      and(
+        eq(blocks.blockerId, accountId),
+        personShownTo(accountId, blocks.blockedId, { besidesOwnBlock: true }),
+      ),
+    )
     .orderBy(desc(blocks.createdAt), accounts.handle);
 }
 

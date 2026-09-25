@@ -25,6 +25,7 @@ export type NotificationView = {
   actor: { id: string; handle: string; displayName: string } | null;
   postId: string | null;
   replyId: string | null;
+  /** The reporter's own report, for report_outcome only; null for every other kind. */
   reportId: string | null;
   /** The statement of reasons, for content_removed and report_outcome. */
   body: string | null;
@@ -116,7 +117,11 @@ export async function listNotifications(
         : null,
     postId: row.postId,
     replyId: row.replyId,
-    reportId: row.reportId,
+    // Only the reporter's own outcome names its report. The author of
+    // removed content is not handed the id of the report against them: a
+    // ulid says, to the millisecond, when they were reported (the second
+    // verification's privacy defect 8).
+    reportId: row.kind === "report_outcome" ? row.reportId : null,
     body: row.body,
     linkPostId: row.linkPostId ?? null,
     postSnippet: snippet(row.postText ?? null),

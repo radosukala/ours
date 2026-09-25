@@ -12,6 +12,7 @@
  *
  * Everyone here is FICTIONAL, with example.test addresses.
  */
+import { createRequire } from "node:module";
 import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
@@ -23,6 +24,7 @@ import {
   cancelFriendRequest,
   declineFriendRequest,
   follow,
+  listBlocked,
   listMuted,
   mute,
   sendFriendRequest,
@@ -35,7 +37,8 @@ import { exportAccount } from "@/core/export";
 import { listNotifications } from "@/core/inbox";
 import { applyInviteAsExisting, createInvite, listInvites } from "@/core/invites";
 import { countUnread, notify } from "@/core/notifications";
-import { postPage, toggleLike } from "@/core/posts";
+import { createReply, postPage, toggleLike } from "@/core/posts";
+import { createReport, removeContent } from "@/core/reports";
 import * as schema from "@/core/schema";
 import {
   accounts,
@@ -43,8 +46,10 @@ import {
   friendRequests,
   invites,
   notifications,
+  posts,
+  replies,
 } from "@/core/schema";
-import { pairLock } from "@/core/visibility";
+import { isBlocked, isTransaction, pairLock } from "@/core/visibility";
 import * as fx from "./helpers";
 import { at, db, makeAccount, plus, reset } from "./helpers";
 
@@ -119,6 +124,32 @@ describe("pairLock (SPEC §17 item 10)", () => {
     const a = await makeAccount();
     const b = await makeAccount();
     await expect(pairLock(db(), a.id, b.id)).rejects.toThrow(/inside a transaction/);
+  });
+
+  it("is taken in a transaction made by another copy of drizzle-orm, and refused on that copy's root database", async () => {
+    // A production build bundles several copies of drizzle-orm while one
+    // process shares one database handle; the check is by shape, not by
+    // class (the second verification's HIGH defect). drizzle-orm's CommonJS
+    // build stands in for the other copy.
+    const other = createRequire(import.meta.url)("drizzle-orm/node-postgres") as {
+      drizzle: (pool: pg.Pool, config: { schema: typeof schema }) => unknown;
+    };
+    const pool = new pg.Pool({ connectionString: inject("databaseUrl"), max: 2 });
+    try {
+      const otherDb = other.drizzle(pool, { schema }) as Db;
+      const a = await makeAccount();
+      const b = await makeAccount();
+      expect(isTransaction(otherDb)).toBe(false);
+      await expect(pairLock(otherDb, a.id, b.id)).rejects.toThrow(/inside a transaction/);
+      await otherDb.transaction(async (tx) => {
+        expect(isTransaction(tx as unknown as Db)).toBe(true);
+        await pairLock(tx as unknown as Db, a.id, b.id);
+      });
+      // And a block through that copy works end to end.
+      expect(await outcome(() => block(otherDb, a.id, b.id))).toEqual({ ok: true });
+    } finally {
+      await pool.end();
+    }
   });
 
   it("is one lock for the unordered pair: unblock waits while the pair is held the other way round", async () => {
@@ -322,6 +353,71 @@ describe("one rule for showing a person (SPEC §17 item 11)", () => {
     expect((await exportAccount(db(), me.id)).muted.map((m) => m.handle)).toEqual([plain.handle]);
   });
 
+  it("the blocked list (and its export) leaves out someone who blocked you or is suspended; your block holds and shows again when theirs goes", async () => {
+    const me = await makeAccount({ handle: "bl_me_f" });
+    const vera = await makeAccount({ handle: "bl_vera_f" });
+    const sam = await makeAccount({ handle: "bl_sam_f" });
+    const olga = await makeAccount({ handle: "bl_olga_f" });
+    await block(db(), vera.id, me.id);
+    await block(db(), me.id, vera.id); // the same answer as for anyone
+    await block(db(), me.id, sam.id);
+    await db().update(accounts).set({ suspendedAt: new Date() }).where(eq(accounts.id, sam.id));
+    await block(db(), me.id, olga.id);
+
+    const listed = async () => ({
+      page: (await listBlocked(db(), me.id)).map((p) => p.handle),
+      exported: (await exportAccount(db(), me.id)).blocked.map((b) => b.handle),
+    });
+    expect(await listed()).toEqual({ page: ["bl_olga_f"], exported: ["bl_olga_f"] });
+
+    // Vera unblocks me: my own block still holds, and she is listed again.
+    await unblock(db(), vera.id, me.id);
+    expect(await isBlocked(db(), me.id, vera.id)).toBe(true);
+    expect((await listed()).page.sort()).toEqual(["bl_olga_f", "bl_vera_f"]);
+    // Sam is reinstated: listed again too.
+    await db().update(accounts).set({ suspendedAt: null }).where(eq(accounts.id, sam.id));
+    expect((await listed()).exported.sort()).toEqual(["bl_olga_f", "bl_sam_f", "bl_vera_f"]);
+  });
+
+  it("the export names who invited you, and whose posts you liked, only while they may be shown to you", async () => {
+    const inviter = await makeAccount({ handle: "ex_inviter_f" });
+    const guest = await makeAccount({ handle: "ex_guest_f", invitedBy: inviter });
+    await fx.befriend(inviter, guest);
+    const p = await fx.post(inviter, { audience: "friends" });
+    await toggleLike(db(), guest.id, p.id);
+    const seen = async () => {
+      const e = await exportAccount(db(), guest.id);
+      return { invitedBy: e.account.invited_by_handle, liked: e.likes.map((l) => l.author_handle) };
+    };
+    expect(await seen()).toEqual({ invitedBy: "ex_inviter_f", liked: ["ex_inviter_f"] });
+    await db().update(accounts).set({ suspendedAt: new Date() }).where(eq(accounts.id, inviter.id));
+    // The like is still the guest's own record, without the hidden name.
+    expect(await seen()).toEqual({ invitedBy: null, liked: [null] });
+    await db().update(accounts).set({ suspendedAt: null }).where(eq(accounts.id, inviter.id));
+    expect(await seen()).toEqual({ invitedBy: "ex_inviter_f", liked: ["ex_inviter_f"] });
+  });
+
+  it("decline and cancel answer a hidden person exactly as a request that is not there", async () => {
+    const me = await makeAccount();
+    const sam = await makeAccount();
+    await sendFriendRequest(db(), sam.id, me.id);
+    await db().update(accounts).set({ suspendedAt: new Date() }).where(eq(accounts.id, sam.id));
+    const nobody = "01ZZZZZZZZZZZZZZZZZZZZZZZZ";
+    expect(await outcome(() => declineFriendRequest(db(), me.id, sam.id))).toEqual(
+      await outcome(() => declineFriendRequest(db(), me.id, nobody)),
+    );
+    expect(await outcome(() => cancelFriendRequest(db(), me.id, sam.id))).toEqual(
+      await outcome(() => cancelFriendRequest(db(), me.id, nobody)),
+    );
+    expect(await outcome(() => declineFriendRequest(db(), me.id, me.id))).toEqual({
+      ok: false,
+      code: "NOT_FOUND",
+    });
+    // Reinstated, the request is there again, and can be declined.
+    await db().update(accounts).set({ suspendedAt: null }).where(eq(accounts.id, sam.id));
+    expect(await outcome(() => declineFriendRequest(db(), me.id, sam.id))).toEqual({ ok: true });
+  });
+
   it("mute and block of a missing account write nothing and answer like any other", async () => {
     const me = await makeAccount();
     const missing = "01ZZZZZZZZZZZZZZZZZZZZZZZZ";
@@ -344,6 +440,97 @@ describe("postPage applies the visibility rule itself (SPEC §17 item 12)", () =
     await fx.post(stranger, { audience: "friends" });
     const page = await postPage(db(), me.id, undefined);
     expect(page.items.map((p) => p.id)).toEqual([seen.id]);
+  });
+});
+
+describe("a reply serializes with a block and a removal (the second verification's privacy 6, abuse 1–2)", () => {
+  it("a reply waits for a removal of its post in flight, then is refused, and nobody is notified", async () => {
+    const admin = await makeAccount({ isAdmin: true });
+    const author = await makeAccount();
+    const replier = await makeAccount();
+    const reporter = await makeAccount();
+    await fx.befriend(author, replier);
+    await fx.befriend(author, reporter);
+    const p = await fx.post(author, { audience: "friends" });
+    const report = await createReport(db(), reporter.id, { kind: "post", targetId: p.id, category: "spam" });
+    const { result, waited } = await whileHeld(
+      (tx) =>
+        removeContent(tx, admin.id, report.id, {
+          category: "spam",
+          reason: "FICTIONAL statement of reasons.",
+        }),
+      () => createReply(db(), replier.id, p.id, { body: "A FICTIONAL late reply." }),
+    );
+    expect({ result, waited }).toEqual({ result: { ok: false, code: "NOT_FOUND" }, waited: true });
+    expect(await db().select().from(replies).where(eq(replies.postId, p.id))).toHaveLength(0);
+    expect(
+      await db()
+        .select()
+        .from(notifications)
+        .where(and(eq(notifications.recipientId, author.id), eq(notifications.kind, "reply"))),
+    ).toHaveLength(0);
+  });
+
+  it("a reply to your own post, and to a friend's, still goes through", async () => {
+    const author = await makeAccount();
+    const friend = await makeAccount();
+    await fx.befriend(author, friend);
+    const p = await fx.post(author, { audience: "friends" });
+    expect(await outcome(() => createReply(db(), author.id, p.id, { body: "FICTIONAL own reply." }))).toEqual({
+      ok: true,
+    });
+    expect(await outcome(() => createReply(db(), friend.id, p.id, { body: "FICTIONAL reply." }))).toEqual({
+      ok: true,
+    });
+    expect(await db().select().from(replies).where(eq(replies.postId, p.id))).toHaveLength(2);
+  });
+});
+
+describe("postPage keeps a caller's condition inside the rule (the second verification's privacy 7)", () => {
+  it("a raw condition with a top-level OR cannot widen the rule", async () => {
+    const author = await makeAccount();
+    const stranger = await makeAccount();
+    await fx.post(author, { audience: "friends", body: "FICTIONAL hidden" });
+    await fx.post(stranger, { audience: "friends", body: "FICTIONAL own" });
+    for (const where of [
+      sql`${posts.authorId} = ${stranger.id} or ${posts.authorId} = ${author.id}`,
+      sql`true or true`,
+      sql`${posts.removedAt} is null or ${posts.removedAt} is not null`,
+    ]) {
+      const page = await postPage(db(), stranger.id, where);
+      expect(page.items.map((i) => i.body)).toEqual(["FICTIONAL own"]);
+    }
+  });
+});
+
+describe("what a notification hands its recipient (the second verification's privacy 8)", () => {
+  it("the reporter's report_outcome carries the report's id; the author's content_removed does not", async () => {
+    const admin = await makeAccount({ isAdmin: true });
+    const author = await makeAccount();
+    const reporter = await makeAccount();
+    await fx.befriend(author, reporter);
+    const p = await fx.post(author, { audience: "friends" });
+    const report = await createReport(db(), reporter.id, { kind: "post", targetId: p.id, category: "spam" });
+    await removeContent(db(), admin.id, report.id, {
+      category: "spam",
+      reason: "FICTIONAL statement of reasons.",
+    });
+    const [toAuthor] = await listNotifications(db(), author.id);
+    const [toReporter] = await listNotifications(db(), reporter.id);
+    expect({ kind: toAuthor!.kind, reportId: toAuthor!.reportId }).toEqual({
+      kind: "content_removed",
+      reportId: null,
+    });
+    expect({ kind: toReporter!.kind, reportId: toReporter!.reportId }).toEqual({
+      kind: "report_outcome",
+      reportId: report.id,
+    });
+    // The stored row keeps it; only what reaches the author's browser drops it.
+    const [stored] = await db()
+      .select({ reportId: notifications.reportId })
+      .from(notifications)
+      .where(and(eq(notifications.recipientId, author.id), eq(notifications.kind, "content_removed")));
+    expect(stored!.reportId).toBe(report.id);
   });
 });
 
