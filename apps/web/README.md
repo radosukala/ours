@@ -35,9 +35,16 @@ What "tested" means here:
 - **Not tested here:** no test drives a browser or sends an HTTP request to
   a running server, and no signed-in page is rendered in a test.
 
-Four independent verifiers who did not build it attacked it. Each finding
-is a test in `tests/verify-*.test.ts`, and [`SPEC.md`](./SPEC.md) §17
-records the decisions on them.
+Nine agents that did not build it verified it in two rounds and a
+re-check. Each finding is a test in `tests/verify-*.test.ts`,
+`tests/verify2-*.test.ts` and `tests/verify3-recheck.test.ts`, and
+[`SPEC.md`](./SPEC.md) §17 records the decisions on them. The build
+receipt for M-0010 is in
+[`receipts/builds/2026-09-24-M-0010.md`](../../receipts/builds/2026-09-24-M-0010.md),
+with screenshots and the residual risks. The verification report for
+M-0010 is in
+[`receipts/conformance/2026-09-24-M-0010.verification.md`](../../receipts/conformance/2026-09-24-M-0010.verification.md).
+No human has reviewed the code yet.
 
 ## Run it locally
 
