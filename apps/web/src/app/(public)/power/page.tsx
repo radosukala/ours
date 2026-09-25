@@ -50,7 +50,7 @@ export default function PowerPage() {
         <ControlList rows={result.rows} />
       )}
 
-      <p>This page changes when control changes. Every change is a public commit.</p>
+      <p>This page changes when control changes. Every change is a commit in the OURS records, published with each release.</p>
       <p className={styles.meta}>
         The list is a file in the OURS records, published with each
         release:{" "}

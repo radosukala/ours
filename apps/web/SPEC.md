@@ -900,7 +900,7 @@ Rendered by `/power`. The initial content is from
 | If the founder stops | Not yet arranged | NOT_YET_RECORDED |
 
 `/power` shows the rows in plain words, with the status line and *"This
-page changes when control changes. Every change is a public commit."*
+page changes when control changes. Every change is a commit in the OURS records, published with each release."*
 
 ## 12. The claims scan
 
@@ -1200,7 +1200,8 @@ section governs.
       `pg_advisory_xact_lock` on the unordered pair.
     - These take it inside their transaction, then re-check the block:
       `block`, `unblock`, `useInviteAsExisting`, `sendFriendRequest`,
-      `acceptFriendRequest`, `follow` and `toggleLike` (author and liker).
+      `acceptFriendRequest`, `follow`, `toggleLike` (author and liker) and
+      `createReply` (replier and post author; added after the second round).
     - `follow` also locks the followee's account row (`for share`) and
       re-checks `accepts_followers`. `setAcceptsFollowers` updates that
       row before deleting follows.
@@ -1266,7 +1267,7 @@ section governs.
       with a statement of reasons."*
     - *"Every account except the founder's is invited by a person."*
     - Under *Who decides today*: *"The founder can change or remove any of
-      these checks without notice; every change is a public commit."*
+      these checks without notice; every change is a commit in the OURS records, published with each release."*
     - It cites the tests that assert each part of a rule.
 20. **The running version is shown everywhere:**
     - `runningVersion()` uses `OURS_VERSION`, then `VERCEL_GIT_COMMIT_SHA`

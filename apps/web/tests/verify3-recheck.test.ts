@@ -76,7 +76,7 @@ describe("a display name that reads as another member's handle (verify2-identity
     "U+E0020 tag space": "\u{E0020}",
   };
 
-  it("DEFECT: an invisible character between '@' and the handle passes validDisplayName, so the forged '(@anna_real)' is stored", async () => {
+  it("fixed: an invisible character between '@' and the handle passes validDisplayName, so the forged '(@anna_real)' is stored", async () => {
     const mallory = await makeAccount({ handle: "mallory_r3" });
     const accepted: string[] = [];
     for (const [label, ch] of Object.entries(INVISIBLE)) {
@@ -88,7 +88,7 @@ describe("a display name that reads as another member's handle (verify2-identity
     expect(accepted, "names that read as '(@anna_real)' and were accepted").toEqual([]);
   });
 
-  it("DEFECT: with a soft hyphen after the '@', the join email Vera receives names @anna_real first, as she reads it", async () => {
+  it("fixed: with a soft hyphen after the '@', the join email Vera receives names @anna_real first, as she reads it", async () => {
     // Vera is friends with the real Anna (@anna_real).
     const vera = await makeAccount({ handle: "vera_r3", email: "vera_r3@example.test" });
     const anna = await makeAccount({ handle: "anna_real", displayName: "Anna FICTIONAL" });
@@ -185,7 +185,7 @@ describe("what the pages call public (verify2-honesty, rewritten)", () => {
   // point was that the pages must not call public what is not public yet.
   // A fourth phrase says the same thing and is on three pages, next to the
   // row that says the code is "public once this build is pushed".
-  it("DEFECT (spec-level): /power, /costs and /rules say every change is a public commit, while /power says the code is public only once this build is pushed", () => {
+  it("fixed (spec-level): /power, /costs and /rules say every change is a public commit, while /power says the code is public only once this build is pushed", () => {
     const code = loadControl().find((r) => r.asset === "The code");
     expect(code?.who).toMatch(/public once this build is pushed/);
     const pages = {

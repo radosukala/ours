@@ -772,6 +772,10 @@ describe("the records about this build", () => {
       NODE_ENV: "test",
     } as NodeJS.ProcessEnv;
     const tsx = join(WEB_ROOT, "node_modules/.bin/tsx");
+    // Since the final fixes the script makes the first account only: the
+    // second run is refused (architect, after the re-check found this test
+    // still expected two administrators).
+    const statuses: (number | null)[] = [];
     for (const [email, handle] of [
       ["first_admin@example.test", "fic_admin_one"],
       ["second_admin@example.test", "fic_admin_two"],
@@ -781,8 +785,10 @@ describe("the records about this build", () => {
         ["scripts/seed-founder.ts", "--email", email!, "--handle", handle!, "--name", "FICTIONAL Admin"],
         { cwd: WEB_ROOT, encoding: "utf8", env },
       );
-      expect(out.status, out.stderr).toBe(0);
+      statuses.push(out.status);
     }
+    expect(statuses[0]).toBe(0);
+    expect(statuses[1]).not.toBe(0);
     const admins = await db().select().from(accounts).where(eq(accounts.isAdmin, true));
     const row = loadControl().find((r) => r.asset === "Moderation")!;
     // SPEC §17 item 18: STATED, in the decision's words, and not on this script.
@@ -790,7 +796,8 @@ describe("the records about this build", () => {
     expect(row.who).toBe("No administrator exists until something is deployed; the founder will be the only one.");
     expect(row.evidence?.map((e) => e.path) ?? []).not.toContain("apps/web/scripts/seed-founder.ts");
     expect(admins.every((a) => a.email.endsWith("@example.test"))).toBe(true);
-    // Why the row cannot be RECORDED on the script: it still makes one administrator per run.
-    expect(admins.length).toBe(2);
+    // The script now makes at most one administrator; the row stays STATED
+    // because nothing is deployed and no administrator exists outside tests.
+    expect(admins.length).toBe(1);
   });
 });

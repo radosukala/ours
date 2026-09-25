@@ -98,7 +98,11 @@ export function validHandle(input: unknown): string {
  * word joiner and invisible operators, and the byte-order mark. In a name
  * they can reorder whatever follows it, such as "(@handle)".
  */
-const FORMAT_CHARACTERS = /[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/u;
+// Every default-ignorable (invisible) code point and every bidi control, so
+// a soft hyphen or a letter mark cannot break "@handle" apart unseen (the
+// re-check's finding). The emoji variation selectors U+FE0E/U+FE0F are
+// allowed: they only choose how an emoji is drawn.
+const FORMAT_CHARACTERS = /(?![\uFE0E\uFE0F])[\p{Default_Ignorable_Code_Point}\p{Bidi_Control}]/u;
 /** An at sign (or its full-width or small form) followed by a letter, digit or underscore. */
 const HANDLE_LIKE = /[@\uFF20\uFE6B][\p{L}\p{N}_\uFF3F]/u;
 

@@ -581,7 +581,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
     expect(text).toContain("Who decides today");
     expect(text).toContain(
-      "The founder can change or remove any of these checks without notice; every change is a public commit.",
+      "The founder can change or remove any of these checks without notice; every change is a commit in the OURS records, published with each release.",
     );
     expect(text).toContain(STATUS_LINE);
     for (const words of Object.values(ENFORCEMENT_WORDS)) expect(text).toContain(words);
@@ -621,7 +621,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     );
     expect(text).not.toContain("Not yet named.");
     expect(text).toContain(STATUS_LINE);
-    expect(text).toContain("This page changes when control changes. Every change is a public commit.");
+    expect(text).toContain("This page changes when control changes. Every change is a commit in the OURS records, published with each release.");
     expect(text).toContain("Running version: v0-FICTIONAL-power.");
   });
 

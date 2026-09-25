@@ -96,7 +96,7 @@ const KEPT: Kept[] = [
   },
   {
     title: "Limits on repeated actions",
-    what: "Your account's id, or a scrambled code made from your email or network address, and a time. Not the address itself. A limit on one invite link holds that invite's id.",
+    what: "Your account's id, or a scrambled code made from your email or network address, and a time. Not the address itself. A limit on one invite link holds that invite's id, and a limit on one join in progress holds that join's id.",
     why: "To stop floods of emails, posts, replies, requests, invites and reports.",
     howLong: "Entries older than 24 hours are removed whenever a new one is counted.",
   },

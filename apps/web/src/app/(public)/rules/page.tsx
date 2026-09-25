@@ -46,7 +46,7 @@ export default function RulesPage() {
         </p>
         <p>
           The founder can change or remove any of these checks
-          without notice; every change is a public commit.
+          without notice; every change is a commit in the OURS records, published with each release.
         </p>
         <p className="muted">{STATUS_LINE}</p>
         <p>

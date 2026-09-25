@@ -381,13 +381,15 @@ describe("/power and /privacy", () => {
     expect(keys.length).toBeGreaterThanOrEqual(12);
     for (const key of keys) {
       const hashed = /rateKeyHash|ipHash/.test(key);
-      const accountId = /^(post|reply|friendreq|follow|report|invite|handle):/.test(key);
+      // handle:join:<pendingJoinId> holds a join in progress, not an account (architect, after G1's note).
+      const joinId = key.startsWith("handle:join:");
+      const accountId = !joinId && /^(post|reply|friendreq|follow|report|invite|handle):/.test(key);
       const inviteId = key.startsWith("join:invite:");
-      expect(hashed || accountId || inviteId, key).toBe(true);
+      expect(hashed || accountId || inviteId || joinId, key).toBe(true);
     }
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     expect(privacy).toContain(
-      "Your account's id, or a scrambled code made from your email or network address, and a time. Not the address itself. A limit on one invite link holds that invite's id.",
+      "Your account's id, or a scrambled code made from your email or network address, and a time. Not the address itself. A limit on one invite link holds that invite's id, and a limit on one join in progress holds that join's id.",
     );
     const session = read("src/web/session.ts");
     const cookies = [...session.matchAll(/export const [A-Z_]+_COOKIE = "([a-z_]+)"/g)].map((m) => m[1]);
@@ -555,7 +557,7 @@ describe("/rules", () => {
 
   it("closed: /rules, rendered, says the founder can change or remove any check without notice, and every cited test file exists", () => {
     const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
-    expect(text).toContain("The founder can change or remove any of these checks without notice; every change is a public commit.");
+    expect(text).toContain("The founder can change or remove any of these checks without notice; every change is a commit in the OURS records, published with each release.");
     for (const r of FLOOR_RULES.flatMap((g) => g.rules)) {
       for (const f of r.tests ?? []) expect(() => read(f), `${r.id}: ${f}`).not.toThrow();
       if (r.cls === "DECLARED" || r.cls === "INTERPRETED") expect(r.tests ?? [], r.id).toEqual([]);

@@ -79,7 +79,7 @@ export default function CostsPage() {
         <a href={repositoryUrl(LEDGER_PATH)} rel="noopener noreferrer" target="_blank">
           ledger.json
         </a>
-        . Every change to it is a public commit.
+        . Every change to it is a commit in the OURS records, published with each release.
       </p>
       <p className="muted">{STATUS_LINE}</p>
     </article>
