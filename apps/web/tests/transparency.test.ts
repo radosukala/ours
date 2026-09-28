@@ -431,7 +431,7 @@ describe("control", () => {
     expect(by["Moderation"]?.who).toBe(
       "No administrator exists until something is deployed; the founder will be the only one.",
     );
-    expect(by["The code"]?.who).toMatch(/^Apache-2\.0; public once this build is pushed to the public repository\./);
+    expect(by["The code"]?.who).toMatch(/^Apache-2\.0, and public: anyone can read it, run it or copy it\./);
     // Nothing in the file is STATED on the configuration's word.
     expect(rows.every((r) => r.statedBy === undefined)).toBe(true);
   });

@@ -198,11 +198,11 @@ describe("the names outside the pages", () => {
     const maintainer = rows.find((r) => r.asset === "The maintainer")!;
     expect(maintainer.status).toBe("RECORDED");
     expect(maintainer.who).toBe(
-      "Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
+      "Ctrl AI, Inc., the founder's company, is the maintainer and the data controller.",
     );
     expect(maintainer.evidence?.map((e) => e.path)).toEqual(["decisions/D-0013.md"]);
     const text = textOf(html(createElement(PowerPage)));
-    expect(text).toContain("The maintainer recorded Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.");
+    expect(text).toContain("The maintainer recorded Ctrl AI, Inc., the founder's company, is the maintainer and the data controller.");
     expect(text).toContain("Maintained by its founder. Handed to its members at 100,000.");
   });
 

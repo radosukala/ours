@@ -347,7 +347,7 @@ describe("/power", () => {
     expect(readRepo("authority/FOUNDING-AUTHORITY.md")).toMatch(/treasury \/ bank \| none opened/);
     expect(rows["The maintainer"]?.status).toBe("RECORDED");
     expect(rows["The maintainer"]?.who).toBe(
-      "Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
+      "Ctrl AI, Inc., the founder's company, is the maintainer and the data controller.",
     );
     expect(rows["The maintainer"]?.evidence?.[0]?.path).toBe("decisions/D-0013.md");
     expect(rows["If the founder stops"]?.status).toBe("NOT_YET_RECORDED");

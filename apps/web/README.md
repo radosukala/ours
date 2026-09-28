@@ -70,6 +70,11 @@ work name a FICTIONAL controller in `.env.local`, as the tests do
 (`DATA_CONTROLLER="FICTIONAL Controller"`,
 `DATA_CONTROLLER_EMAIL=controller@example.test`).
 
+`DATA_CONTROLLER_REPRESENTATIVE` names the controller's representative in
+the EU (GDPR Article 27) on `/privacy`, reached at the controller's address.
+A controller inside the EU needs none; blank names none and switches nothing
+off.
+
 Two more settings are human decisions for a deployment, never defaults:
 
 - **`CLIENT_IP_HEADER`** names the header the host sets with the visitor's

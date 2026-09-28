@@ -351,7 +351,7 @@ describe("the rest of the page, word for word (SPEC §18.2)", () => {
     expect(pairs).toEqual([
       [
         "Why should I believe you?",
-        "Don't take my word for it. Read the contract: it is the terms you join under. The code will be public from launch, and every cost is public.",
+        "Don't take my word for it. Read the contract: it is the terms you join under. The code is public, and so is every cost.",
       ],
       [
         "Why not hand it over now?",

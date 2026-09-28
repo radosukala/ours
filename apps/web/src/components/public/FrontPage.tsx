@@ -82,7 +82,7 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
   {
     question: "Why should I believe you?",
     answer:
-      "Don't take my word for it. Read the contract: it is the terms you join under. The code will be public from launch, and every cost is public.",
+      "Don't take my word for it. Read the contract: it is the terms you join under. The code is public, and so is every cost.",
   },
   {
     question: "Why not hand it over now?",

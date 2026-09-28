@@ -735,6 +735,12 @@ describe("closed doors: a seat or a place in line while no data controller is na
 /* ============================================ closed: the public count */
 
 describe("closed doors: the public count", () => {
+  // Changed after the build (SPEC §18.14): the first version asked at the
+  // real clock, with the line stamped at t0. Before 10:00 UTC on 28
+  // September 2026, the clock was earlier than t0, so kai joined the line
+  // ahead of w2 and took the second seat. From 10:00 UTC the line went
+  // first, as it should, and the test failed. It now runs at a fixed time
+  // after the line formed, and joins through a seat the line received.
   it("closed: it leaves out suspended accounts, the waiting list, seats not yet used and joins not finished; a seat joiner counts once joined, and not once suspended", async () => {
     await maintainer();
     await makeAccount({ handle: "sus_f", suspended: true });
@@ -743,22 +749,25 @@ describe("closed doors: the public count", () => {
       ["w2_f@example.test", t0],
     ]);
     await setOpen(2);
-    await ask("kai_f@example.test", { now: new Date() });
-    await ask("una_f@example.test", { now: new Date() });
+    const now = plus.minutes(t0, 5);
+    await ask("kai_f@example.test", { now });
+    await ask("una_f@example.test", { now });
     expect(await memberCount(db())).toBe(1);
+    // The line went first: the two seats went to w1 and w2.
+    expect(await line()).toEqual(["kai_f@example.test", "una_f@example.test"]);
 
-    const opened = await openEmailLink(db(), { token: await linkTo("kai_f@example.test"), now: new Date() });
+    const opened = await openEmailLink(db(), { token: await linkTo("w1_f@example.test"), now });
     if (opened.kind !== "join_pending") throw new Error(opened.kind);
     expect(await memberCount(db())).toBe(1); // a join not finished
-    const kai = await completeJoin(db(), {
+    const w1 = await completeJoin(db(), {
       pendingJoinId: opened.pendingJoinId,
-      displayName: "Kai FICTIONAL",
-      handle: "kai_f",
+      displayName: "Wren FICTIONAL",
+      handle: "w1_f",
       adultConfirmed: true,
-      now: new Date(),
+      now,
     });
     expect(await memberCount(db())).toBe(2);
-    await db().update(accounts).set({ suspendedAt: new Date() }).where(eq(accounts.id, kai.accountId));
+    await db().update(accounts).set({ suspendedAt: now }).where(eq(accounts.id, w1.accountId));
     expect(await memberCount(db())).toBe(1);
   });
 });

@@ -430,6 +430,19 @@ describe("the code (promise 6, the front page, /power)", () => {
       front().includes("The code is open, and every cost is public.");
     expect(powerSaysNotYet && pagesSayOpenNow, "two public pages disagree about the code today").toBe(false);
   });
+
+  // Changed after the push (SPEC §18.14): the code is public, so the three
+  // pages say so together, and none still says it will be.
+  it("changed after the push: /contract, the front page and /power all say the code is public", () => {
+    const power = page(PowerPage);
+    const contract = page(ContractPage);
+    expect(contract).toContain("The code is public, under an open licence (Apache-2.0): anyone can read it, run it or copy it.");
+    expect(front()).toContain("The code is public, and so is every cost.");
+    expect(power).toContain("Apache-2.0, and public: anyone can read it, run it or copy it.");
+    for (const [name, text] of [["/contract", contract], ["the front page", front()], ["/power", power]] as const) {
+      expect(text, name).not.toMatch(/public once this build is pushed|will be public|until it is published/);
+    }
+  });
 });
 
 /* ====================================================================== */

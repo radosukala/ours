@@ -55,8 +55,8 @@ const PROMISES: readonly ContractPromise[] = [
     link: { label: "Costs", href: "/costs" },
   },
   {
-    promise: "The code will be public from launch, under an open licence (Apache-2.0): anyone will be able to read it, run it or copy it.",
-    heldBy: "this contract until it is published, then the licence.",
+    promise: "The code is public, under an open licence (Apache-2.0): anyone can read it, run it or copy it.",
+    heldBy: "this contract and the licence.",
     link: { label: "Open code", href: OPEN_CODE_URL, external: true },
   },
   {

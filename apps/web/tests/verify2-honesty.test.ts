@@ -362,7 +362,7 @@ describe("/power and /privacy", () => {
         expect(text, String(fact)).not.toMatch(fact);
       }
       expect(text).toContain(
-        "The maintainer recorded Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
+        "The maintainer recorded Ctrl AI, Inc., the founder's company, is the maintainer and the data controller.",
       );
       expect(text).toContain(
         configured
@@ -412,10 +412,13 @@ describe("what the pages call public", () => {
       // SPEC §17 item 18 made "The code" STATED — "public once this build is
       // pushed" — because it is not public yet. The decision and mandate the
       // other rows cite sit in the same unpushed history, and their links on
-      // /power (…/blob/main/decisions/D-0011.md) do not resolve.
+      // /power (…/blob/main/decisions/D-0011.md) do not resolve. Changed
+      // after the push (SPEC §18.14): the row says the code is public, and
+      // origin/main must have it.
       const rows = Object.fromEntries(loadControl().map((r) => [r.asset, r]));
       expect(rows["The code"]?.status).toBe("STATED");
-      expect(rows["The code"]?.who).toMatch(/public once this build is pushed/);
+      expect(rows["The code"]?.who).toMatch(/^Apache-2\.0, and public: /);
+      expect(git(["cat-file", "-e", "origin/main:apps/web/LICENSE"]).status, "the code row says public; origin/main must have the code").toBe(0);
       const rulesRow = rows["The rules of our.one"]!;
       expect(rulesRow.status).toBe("RECORDED");
       // Decided (final fixes, honesty-8): the records are not pushed by this

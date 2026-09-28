@@ -19,12 +19,18 @@
  * A seat request (SPEC §18.4) is a purpose of its own, in one paragraph:
  * the address is kept to send the join link, or in line until a seat opens
  * and it is invited, or until its owner asks for it to be deleted.
+ *
+ * The controller's representative in the EU (GDPR Articles 13(1)(a) and 27;
+ * D-0014, SPEC §18.14) is named under "Who is responsible" and in Contact,
+ * from the configuration, and only while a controller is named. It is
+ * reached at the controller's address.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
 import styles from "@/components/public/public.module.css";
 import {
   controller,
+  controllerRepresentative,
   EMAIL_TOKEN_TTL_MINUTES,
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
@@ -134,6 +140,7 @@ function emailProvider(): string {
 
 export default function PrivacyPage() {
   const named = controller();
+  const representative = controllerRepresentative();
 
   return (
     <article className={styles.page}>
@@ -150,12 +157,20 @@ export default function PrivacyPage() {
       <section aria-labelledby="privacy-who">
         <h2 id="privacy-who">Who is responsible</h2>
         {named ? (
-          <p>
-            The data controller — the person or body answerable for your
-            data — is <strong>{named.name}</strong>, as stated in this
-            server&apos;s configuration. Write to{" "}
-            <a href={`mailto:${named.email}`}>{named.email}</a>.
-          </p>
+          <>
+            <p>
+              The data controller — the person or body answerable for your
+              data — is <strong>{named.name}</strong>, as stated in this
+              server&apos;s configuration. Write to{" "}
+              <a href={`mailto:${named.email}`}>{named.email}</a>.
+            </p>
+            {representative ? (
+              <p>
+                Its representative in the EU, under Article 27 of the GDPR,
+                is <strong>{representative}</strong>, at the same address.
+              </p>
+            ) : null}
+          </>
         ) : (
           <p>
             The data controller is not yet named — no new accounts can be
@@ -281,9 +296,17 @@ export default function PrivacyPage() {
       <section aria-labelledby="privacy-contact">
         <h2 id="privacy-contact">Contact</h2>
         {named ? (
-          <p>
-            {named.name}: <a href={`mailto:${named.email}`}>{named.email}</a>
-          </p>
+          <>
+            <p>
+              {named.name}: <a href={`mailto:${named.email}`}>{named.email}</a>
+            </p>
+            {representative ? (
+              <p>
+                {`Its representative in the EU: ${representative}, at `}
+                <a href={`mailto:${named.email}`}>{named.email}</a>
+              </p>
+            ) : null}
+          </>
         ) : (
           <p>
             Not yet named — no new accounts can be created until it is.

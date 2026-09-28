@@ -109,8 +109,8 @@ describe("/contract, word for word (SPEC §18.3)", () => {
       ],
       ["Every cost is public. Money buys no reach and no say.", "Held today by: this contract. Costs", ["Costs", "/costs"]],
       [
-        "The code will be public from launch, under an open licence (Apache-2.0): anyone will be able to read it, run it or copy it.",
-        "Held today by: this contract until it is published, then the licence. Open code",
+        "The code is public, under an open licence (Apache-2.0): anyone can read it, run it or copy it.",
+        "Held today by: this contract and the licence. Open code",
         ["Open code", OPEN_CODE_URL],
       ],
       [

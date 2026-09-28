@@ -945,6 +945,7 @@ first, and throws `CoreError` with `code: 'NOT_FOUND' | 'FORBIDDEN' |
   - `appUrl()`;
   - `accountCreationOpen()`;
   - `controller()` → `{ name, email } | null`;
+  - `controllerRepresentative()` → `string | null` (§18.14);
   - `sessionSecret()`, which throws at use if missing or shorter than 32
     chars;
   - `cronSecret()`;
@@ -1141,6 +1142,7 @@ RESEND_API_KEY=
 MAIL_FROM=
 DATA_CONTROLLER=          # the person or body answerable for the data; blank = no new accounts
 DATA_CONTROLLER_EMAIL=
+DATA_CONTROLLER_REPRESENTATIVE=   # its representative in the EU (GDPR Art. 27), if it has one (§18.14)
 CRON_SECRET=
 OURS_VERSION=             # shown in the footer; set by the release; blank = "development build"
 ```
@@ -1807,3 +1809,31 @@ product.**
   and the fair questions, word for word as before.
 - **Unchanged:** no copy changed, and every test that pins the copy still
   passes.
+
+### 18.14 The EU representative, and the code made public (28 September 2026)
+
+**D-0014:** the controller's contact is `privacy@ctrlai.com`. The founder is
+Ctrl AI's representative in the EU under GDPR Article 27.
+
+- **`/privacy` names the representative** under "Who is responsible" and in
+  Contact, reached at the controller's address.
+  - It comes from `DATA_CONTROLLER_REPRESENTATIVE`, through
+    `controllerRepresentative()`.
+  - It is shown only while a controller is named, and never when the value
+    is blank or the confirmation placeholder.
+  - A blank value names none and switches nothing off: a controller inside
+    the EU needs no representative.
+- **No other page names it.** `/power` keeps the maintainer's name and role.
+- **The maintainer's row drops "(Delaware)".** D-0013 §A allows its name
+  and role only, and FOUNDING-AUTHORITY §4.1 records the form as the
+  founder's statement, unverified.
+
+**The code was pushed to `github.com/radosukala/ours` (D-0013 §F).** The
+pages that said it would be public now say it is:
+
+- **Promise 6:** "The code is public, under an open licence (Apache-2.0):
+  anyone can read it, run it or copy it." Held today by: this contract and
+  the licence.
+- **The front page's first fair question** ends "The code is public, and so
+  is every cost."
+- **`/power`'s code row** begins "Apache-2.0, and public". It stays STATED.

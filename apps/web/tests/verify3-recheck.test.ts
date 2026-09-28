@@ -183,11 +183,13 @@ describe("what the pages call public (verify2-honesty, rewritten)", () => {
   // The rewrite replaced "every RECORDED record is on origin/main" with a
   // list of three phrases no page may use (`publicNow`). The verifier's
   // point was that the pages must not call public what is not public yet.
-  // A fourth phrase says the same thing and is on three pages, next to the
-  // row that says the code is "public once this build is pushed".
-  it("fixed (spec-level): /power, /costs and /rules say every change is a public commit, while /power says the code is public only once this build is pushed", () => {
+  // A fourth phrase says the same thing and is on three pages. Changed
+  // after the push (SPEC §18.14): the code row now says the code is public,
+  // because it is; the pages still call a change a commit published with
+  // each release, not a public commit.
+  it("fixed (spec-level): /power, /costs and /rules say every change is a public commit; changed after the push: /power says the code is public", () => {
     const code = loadControl().find((r) => r.asset === "The code");
-    expect(code?.who).toMatch(/public once this build is pushed/);
+    expect(code?.who).toMatch(/^Apache-2\.0, and public: /);
     const pages = {
       "/power": textOf(renderToStaticMarkup(createElement(PowerPage))),
       "/costs": textOf(renderToStaticMarkup(createElement(CostsPage))),

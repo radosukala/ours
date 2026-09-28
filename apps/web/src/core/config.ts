@@ -91,6 +91,22 @@ export function controller(): { name: string; email: string } | null {
   return { name, email };
 }
 
+/**
+ * The controller's representative in the EU (GDPR Article 27; D-0014 §B),
+ * reached at the controller's address (SPEC §18.14).
+ *
+ * Null unless a controller is named and DATA_CONTROLLER_REPRESENTATIVE
+ * holds a name that is not the confirmation placeholder. A controller
+ * inside the EU needs none, so an empty value names none; it never
+ * switches anything off.
+ */
+export function controllerRepresentative(): string | null {
+  if (!controller()) return null;
+  const name = env("DATA_CONTROLLER_REPRESENTATIVE");
+  if (!name || UNCONFIRMED.test(name)) return null;
+  return name;
+}
+
 /** New accounts can be created only while a controller is named (SPEC §8). */
 export function accountCreationOpen(): boolean {
   return controller() !== null;
