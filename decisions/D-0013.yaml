@@ -1,0 +1,58 @@
+schema: ours.decision/v0.1
+decision_id: D-0013
+title: The release setup — the controller, the hosting, the final texts, the push
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0013.md
+
+proposal: P-0008
+prerequisite_decisions: [D-0011, D-0012]
+
+outcome: >
+  Ctrl AI, Inc., the founder's company, is our.one's maintainer and data
+  controller; public pages name it and its role only (AGENTS.md §9). The
+  contract's values are confirmed as proposed (threshold 100,000; promises 1
+  and 2 unamendable; 60 days' notice; "Rado"), as the agent reads the
+  founder's answer. No separate legal review before release, by the
+  founder's choice. Hosting Vercel, database Neon, email Resend, all the
+  founder's accounts, with every secret entered by the founder. The founder
+  moves ONE to oneburger.cz and points our.one at Vercel. The push to the
+  public remote is authorized. M-0012 (DEPLOY) is authorized as a draft,
+  adopted on the founder's go.
+
+authorizes:
+  mandate_classes: [DEPLOY]
+  mandate_ids: [M-0012]
+
+prohibits:
+  - publishing any fact about Ctrl AI, Inc. beyond its name and role without a verified legal record
+  - an agent entering or storing any secret
+  - deploying before M-0012 is adopted
+
+effective_from: 2026-09-28T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The architect's earlier recommendation of an EU controller
+  was noted and not taken. The founder's review of this exact wording is
+  pending; §B and §C are the agent's reading of one answer and are open to
+  correction.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

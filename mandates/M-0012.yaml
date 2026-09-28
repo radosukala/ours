@@ -1,0 +1,120 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0012
+title: Deploy our.one — the verified build of apps/web to Vercel, with Neon and Resend, at our.one
+status: DRAFT
+class: DEPLOY
+
+authority:
+  source_decision: D-0013
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-28T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0011, D-0012, D-0013]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0012.md
+
+objective: >
+  Publish the verified commit of apps/web as our.one: a Vercel production
+  deployment from the public repository, with a Neon Postgres database and
+  Resend for email, every secret entered by the founder; migrate the
+  database; create the founder's own account as the one administrator; and
+  prove over HTTP that the deployed pages are the verified ones. Seats stay
+  closed until the founder opens them.
+
+human_outcome: >
+  Anyone can open our.one and read the front page, the contract, the rules,
+  privacy, costs and who controls what, naming Ctrl AI, Inc. as the
+  maintainer and data controller. The founder can sign in. Nobody else can
+  join until the founder opens seats or sends invites.
+
+adopted_constraints:
+  - The deployed commit is the one verified under M-0011, or a later one verified the same way; the release receipt names it.
+  - Every secret is entered by the founder in the provider's own dashboard; no agent enters, stores or prints one.
+  - Exactly one real person's address is used by an agent's action, the founder's, for his own administrator account.
+  - Seats stay at zero until the founder opens them.
+  - Nothing public says the handover has happened, and nothing public states a fact about Ctrl AI beyond its name and role.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - receipts/releases/**
+      - apps/web/transparency/**
+      - apps/web/package.json
+      - apps/web/vercel.json
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+  external_systems:
+    - vercel (founder's account)
+    - neon (founder's account)
+    - resend (founder's account)
+    - dns for our.one (founder's registrar account)
+
+risk:
+  class: HIGH
+  reversibility: REVERSIBLE
+  affected_groups: [everyone who opens our.one, the founder]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-BUILD-DEPLOY
+    - R-TRUTHFUL-STATUS
+    - R-PUBLIC-PRIVATE
+    - R-ROLLBACK
+  security: [secrets-entered-by-founder-only, no-secret-exposure, client-ip-header-named]
+  privacy: [controller-named, one-real-address-only]
+
+preconditions:
+  - D-0013 §A's open items settled: the controller's contact email, and the GDPR Article 27 choice (an EU representative, or an establishment in the EU)
+  - the founder's Vercel project linked to github.com/radosukala/ours, root directory apps/web
+  - a Neon database in an EU region, its URL entered by the founder in Vercel
+  - Resend with the our.one domain verified (its DNS records added by the founder)
+  - "the founder's secrets in Vercel: DATABASE_URL, SESSION_SECRET (32+ random bytes), CRON_SECRET, RESEND_API_KEY, MAIL_FROM, MAIL_TRANSPORT=resend, DATA_CONTROLLER, DATA_CONTROLLER_EMAIL, CLIENT_IP_HEADER=x-vercel-forwarded-for, APP_URL=https://our.one, OURS_VERSION"
+  - ONE moved to oneburger.cz, and our.one pointed at Vercel
+
+acceptance:
+  tests:
+    - The deployed commit equals the named verified commit.
+    - GET / returns 200 with the headline, the live count and "Joining opens soon." until seats are opened; /contract, /rules, /privacy, /costs and /power return 200; /privacy and /power name Ctrl AI, Inc. and the contact email and nothing more about it.
+    - GET /api/health reports the database reachable.
+    - The founder receives his sign-in link by email and signs in as the one administrator.
+    - A request for a seat while none is open puts the address in line and sends nothing.
+    - The weekly-email cron is protected by CRON_SECRET.
+  evidence:
+    - a release receipt in receipts/releases/ naming the commit, the environment, every check and its result, and what was not checked
+    - screenshots of the live pages
+
+limits:
+  stop_conditions:
+    - any precondition does not hold
+    - a secret would have to pass through an agent
+    - the deployed build differs from the verified commit
+
+release:
+  deploy_authority_required: true
+  environments: [production]
+  production_allowed: true
+
+rollback:
+  method: >
+    Vercel's instant rollback to the previous deployment, or removing the
+    our.one alias; the database restored from Neon's point-in-time history.
+  irreversible_residue: emails already sent, and anything a visitor saw
+
+human_approvals:
+  adoption: the founder's explicit go in chat to deploy, once the preconditions hold
+  deploy: the founder
