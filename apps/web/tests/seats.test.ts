@@ -951,3 +951,24 @@ describe("seats never offer friendship, and stay out of the maintainer's export 
     expect(JSON.stringify(data.invites)).not.toContain(SEAT_NOTE);
   });
 });
+
+describe("/join tells a seat joiner the truth (SPEC §18.12)", () => {
+  it("a pending join through a seat is marked as a seat, so /join doesn't promise a friendship", async () => {
+    const { describePendingJoin } = await import("@/core/invites");
+    await maintainer();
+    await setOpen(1);
+    await ask("uma_f@example.test");
+    const link = (await latestOutbox(db(), "uma_f@example.test"))?.body ?? "";
+    const opened = await openEmailLink(db(), { token: tokenFromLink(link) ?? "", now: plus.minutes(t0, 1) });
+    if (opened.kind !== "join_pending") throw new Error(`expected a pending join, got ${opened.kind}`);
+    const { signValue } = await import("@/core/auth");
+    const details = await describePendingJoin(db(), signValue(opened.pendingJoinId), plus.minutes(t0, 2));
+    expect(details?.seat).toBe(true);
+  });
+
+  it("the /join page's seat line says a seat, not a friendship", () => {
+    const source = readFileSync(fileURLToPath(new URL("../src/app/(public)/join/page.tsx", import.meta.url)), "utf8");
+    expect(source).toContain("You took a seat on our.one.");
+    expect(source).toMatch(/pending\.seat \?/);
+  });
+});

@@ -1662,6 +1662,14 @@ section changes §18.1–§18.11, it governs.
     - "Have an invite? Sign in" stays visible while joining is closed;
     - the Contract link comes first in the footer.
 
+12. **/join tells a seat joiner the truth.**
+    - `describePendingJoin` returns `seat`. For a seat, `/join` says: "You
+      took a seat on our.one. Choose your name and username, then bring your
+      people: you'll have {DEFAULT_INVITES} invites."
+    - *Why:* the architect found in the browser that it said "<inviter>
+      invited you. When you join, you're friends", and a seat makes no
+      friendship.
+
 **Residual, recorded rather than fixed**
 
 - **Someone with many addresses and client addresses can use up open

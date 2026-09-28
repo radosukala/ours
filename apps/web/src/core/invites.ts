@@ -512,6 +512,11 @@ export type PendingJoinDetails = {
   pendingJoinId: string;
   email: string;
   inviter: { handle: string; displayName: string };
+  /**
+   * Whether this join is through a seat (SPEC §18.4, §18.12): a seat makes
+   * no friendship, so /join must not say it does.
+   */
+  seat: boolean;
 };
 
 /**
@@ -527,7 +532,7 @@ export async function describePendingJoin(
   const pending = await pendingJoinFromCookie(db, cookieValue, now);
   if (!pending) return null;
   const [row] = await db
-    .select({ handle: accounts.handle, displayName: accounts.displayName })
+    .select({ handle: accounts.handle, displayName: accounts.displayName, note: invites.note })
     .from(invites)
     .innerJoin(
       accounts,
@@ -536,7 +541,12 @@ export async function describePendingJoin(
     .where(and(eq(invites.id, pending.inviteId), usable(now)))
     .limit(1);
   if (!row) return null;
-  return { pendingJoinId: pending.id, email: pending.email, inviter: row };
+  return {
+    pendingJoinId: pending.id,
+    email: pending.email,
+    inviter: { handle: row.handle, displayName: row.displayName },
+    seat: row.note === SEAT_NOTE,
+  };
 }
 
 /**

@@ -744,6 +744,7 @@ describe("completeJoin: the whole join, in one transaction", () => {
       pendingJoinId: pj.id,
       email: "mara@example.test",
       inviter: { handle: "anna", displayName: "Anna FICTIONAL" },
+      seat: false,
     });
     const now = plus.minutes(t0, 3);
     const result = await completeJoin(db(), {

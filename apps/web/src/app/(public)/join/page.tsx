@@ -6,6 +6,7 @@
  * While no data controller is named, no account can be created, and the
  * page says so instead of showing the form (SPEC §8 "Controller gate").
  */
+import { DEFAULT_INVITES } from "@/core/config";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -58,10 +59,16 @@ export default async function JoinPage() {
     <section className="stack stack--lg">
       <div className="stack">
         <h1 className="headline">Join our.one</h1>
-        <p className="lede">
-          {pending.inviter.displayName} (@{pending.inviter.handle}) invited you.
-          When you join, you&apos;re friends.
-        </p>
+        {pending.seat ? (
+          <p className="lede">
+            {`You took a seat on our.one. Choose your name and username, then bring your people: you'll have ${DEFAULT_INVITES} invites.`}
+          </p>
+        ) : (
+          <p className="lede">
+            {pending.inviter.displayName} (@{pending.inviter.handle}) invited you.
+            When you join, you&apos;re friends.
+          </p>
+        )}
         <p className="muted small">Joining as {pending.email}</p>
       </div>
       <JoinForm />
