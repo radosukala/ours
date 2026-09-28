@@ -102,7 +102,8 @@ export default function ContractPage() {
       </p>
       <p>
         The maintainer keeps our.one running and safe, acts on reports, and
-        pays the bills. Today that is me, {MAINTAINER}. Until {THRESHOLD}{" "}
+        pays the bills. Today that is me, {MAINTAINER}, through my company,
+        Ctrl AI, Inc. Until {THRESHOLD}{" "}
         members I also hold the domain, the data and the keys, and I&apos;m
         not paid.
       </p>

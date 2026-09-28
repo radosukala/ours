@@ -15,7 +15,7 @@
  * left out: the page renders with no error and no number.
  */
 import Link from "next/link";
-import { LinkButton } from "@/components/Button";
+import { FeedPreview } from "./FeedPreview";
 import { GetInForm } from "./GetInForm";
 import { formatCount, MAINTAINER, NOTICE_DAYS, THRESHOLD } from "./handover";
 import styles from "./public.module.css";
@@ -106,7 +106,11 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
 
 export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
   return (
-    <article className={styles.front}>
+    <article className={`${styles.front} front-wide`}>
+      {/* The first screen (SPEC §18.13): the words and one action beside a
+          picture of the product, as the apps people know do it. */}
+      <div className={styles.fold}>
+      <div className={styles.heroColumn}>
       <header className={styles.hero}>
         <h1 className={`headline ${styles.frontHeadline}`}>
           <span>{HEADLINE[0]}</span> <span>{HEADLINE[1]}</span>
@@ -118,8 +122,10 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
         {count !== null ? <p className={styles.count}>{countLine(count)}</p> : null}
       </header>
 
-      <section className={`${styles.frontSection} ${styles.getIn}`} aria-labelledby="front-get-in">
-        <h2 id="front-get-in">Get in</h2>
+      <section className={styles.getIn} aria-labelledby="front-get-in">
+        <h2 id="front-get-in" className="visually-hidden">
+          Get in
+        </h2>
         {joining ? (
           <>
             <GetInForm />
@@ -135,13 +141,18 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
         ) : (
           <p className="notice">Joining opens soon.</p>
         )}
-        <div className={styles.haveInvite}>
-          <p>Have an invite? Open the link you were sent.</p>
-          <LinkButton href="/signin" kind="outline">
+        <p className={styles.haveInvite}>
+          Have an invite? Open the link you were sent.{" "}
+          <Link href="/signin" className="link">
             Sign in
-          </LinkButton>
-        </div>
+          </Link>
+        </p>
       </section>
+      </div>
+      <FeedPreview />
+      </div>
+
+      <div className={styles.below}>
 
       <section className={styles.frontSection} aria-labelledby="front-promise">
         <h2 id="front-promise">The promise</h2>
@@ -198,6 +209,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
           ))}
         </dl>
       </section>
+      </div>
     </article>
   );
 }

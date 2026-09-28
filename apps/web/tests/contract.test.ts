@@ -77,7 +77,7 @@ describe("/contract, word for word (SPEC §18.3)", () => {
     const text = textOf(contract());
     expect(text).toContain(
       "The contract Between the people who use our.one and its maintainer. Most terms of service list what you can't do. This one lists what the maintainer can't do, and says what holds each promise today: this contract, the code, or the law. " +
-        `The maintainer keeps our.one running and safe, acts on reports, and pays the bills. Today that is me, Rado. Until ${THRESHOLD} members I also hold the domain, the data and the keys, and I'm not paid.`,
+        `The maintainer keeps our.one running and safe, acts on reports, and pays the bills. Today that is me, Rado, through my company, Ctrl AI, Inc. Until ${THRESHOLD} members I also hold the domain, the data and the keys, and I'm not paid.`,
     );
   });
 

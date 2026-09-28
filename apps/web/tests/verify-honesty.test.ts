@@ -339,15 +339,17 @@ describe("/power", () => {
     }
   });
 
-  it("closed: the rows agree with FOUNDING-AUTHORITY §4 and D-0011 §F, and the operator is only STATED", () => {
+  it("closed: the rows agree with FOUNDING-AUTHORITY §4 and D-0013 §A: the maintainer and controller is recorded, with its name and role only", () => {
     const rows = Object.fromEntries(loadControl().map((r) => [r.asset, r]));
     expect(rows["The domain our.one"]?.who).toMatch(/founder's registrar account/);
     expect(readRepo("authority/FOUNDING-AUTHORITY.md")).toMatch(/\| `our\.one` \| founder \| founder's registrar account/);
     expect(rows["Money"]?.who).toBe("No account and nothing received");
     expect(readRepo("authority/FOUNDING-AUTHORITY.md")).toMatch(/treasury \/ bank \| none opened/);
-    expect(rows["The maintainer"]?.status).toBe("STATED");
-    expect(rows["The maintainer"]?.who).toMatch(/is proposed as the starting operator/);
-    expect(rows["The maintainer"]?.who).toMatch(/not yet recorded/);
+    expect(rows["The maintainer"]?.status).toBe("RECORDED");
+    expect(rows["The maintainer"]?.who).toBe(
+      "Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
+    );
+    expect(rows["The maintainer"]?.evidence?.[0]?.path).toBe("decisions/D-0013.md");
     expect(rows["If the founder stops"]?.status).toBe("NOT_YET_RECORDED");
     const html = renderToStaticMarkup(createElement(ControlList, { rows: loadControl() }));
     expect(textOf(html)).toContain("stated by the founder, not verified");

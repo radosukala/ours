@@ -350,7 +350,7 @@ describe("/power and /privacy", () => {
     ).toBe(false);
   });
 
-  it("closed: /power shows no [CONFIRM] fact: the operator is only proposed and STATED, the controller follows the configuration, and the six subjects of D-0011 §C.3 are there", () => {
+  it("closed: /power shows no [CONFIRM] fact: the maintainer is recorded by name and role only (D-0013), the controller follows the configuration, and the six subjects of D-0011 §C.3 are there", () => {
     for (const configured of [true, false]) {
       if (!configured) {
         vi.stubEnv("DATA_CONTROLLER", "");
@@ -362,7 +362,7 @@ describe("/power and /privacy", () => {
         expect(text, String(fact)).not.toMatch(fact);
       }
       expect(text).toContain(
-        "The maintainer stated by the founder, not verified The founder, through a company not yet confirmed. Ctrl AI, Inc. (Delaware) is proposed as the starting operator. Its authority, assets and responsibility for our.one are not yet recorded.",
+        "The maintainer recorded Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
       );
       expect(text).toContain(
         configured

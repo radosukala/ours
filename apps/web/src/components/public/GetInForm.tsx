@@ -46,7 +46,7 @@ export function GetInFormView({
 
   return (
     <div className="stack">
-      <form action={action} className="form" noValidate>
+      <form action={action} className="form get-in-form" noValidate>
         <Field
           label="Your email"
           name="email"

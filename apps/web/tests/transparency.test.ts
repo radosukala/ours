@@ -409,7 +409,7 @@ describe("control", () => {
     }
     expect(html.match(/data-status="NOT_YET_RECORDED"[^>]*>not yet recorded</g)).toHaveLength(2);
     // The maintainer's row says in its own words that its facts are not yet recorded.
-    expect(html).toContain("responsibility for our.one are not yet recorded");
+    expect(html).toContain("is the maintainer and the data controller.");
     expect(html).toContain("stated by the founder, not verified");
   });
 
@@ -418,7 +418,7 @@ describe("control", () => {
     expect(rows.map((r) => [r.asset, r.status])).toEqual([
       ["The rules of our.one", "RECORDED"],
       ["The domain our.one", "RECORDED"],
-      ["The maintainer", "STATED"],
+      ["The maintainer", "RECORDED"],
       ["The code", "STATED"],
       ["Hosting, database, email sending", "RECORDED"],
       ["Releases", "RECORDED"],

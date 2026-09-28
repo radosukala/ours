@@ -1781,3 +1781,29 @@ Each finding is a test in `tests/verify4-honesty.test.ts` or
   the uniform number.
 - **The wordmark at medium widths** has not been checked in a browser by
   the builders. The architect checks it before screenshots.
+
+### 18.13 The first screen, redesigned (28 September 2026)
+
+**The founder's note:** the front page should be as simple as Instagram's or
+X's, and it read as a document.
+
+**The first screen is now the words and one action beside a picture of the
+product.**
+
+- **Left:**
+  - the headline;
+  - the one-line lede;
+  - the live count, with a dot that says it is live;
+  - Get in, with the address and the button on one row once there is room;
+  - the seat line and the privacy note;
+  - "Have an invite? … Sign in" as a text link, not a second button.
+- **Right:** a phone showing a feed of the people you chose, ending at
+  "You're caught up". The phone is static, with fictional people, and says
+  so: "Fictional people, for illustration."
+- **Width:** the page widens to 1,072px through `:has(.front-wide)`. A
+  browser without `:has()` keeps the 600px column. Every other public page
+  keeps its reading column.
+- **Below the first screen,** in the reading column: the promise, the story
+  and the fair questions, word for word as before.
+- **Unchanged:** no copy changed, and every test that pins the copy still
+  passes.

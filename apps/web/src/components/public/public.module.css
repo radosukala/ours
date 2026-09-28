@@ -9,12 +9,51 @@
 
 .front {
   display: grid;
-  gap: 32px;
+  gap: 48px;
+}
+
+/* The first screen (SPEC §18.13): the words and one action, beside a
+   picture of the product. One column on a phone; two from 900px. */
+.fold {
+  display: grid;
+  gap: 40px;
+  align-items: center;
+}
+
+.heroColumn {
+  display: grid;
+  gap: 24px;
+  max-width: 560px;
 }
 
 .hero {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .fold {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 64px;
+    padding: 40px 0 16px;
+  }
+
+  .hero .headline {
+    font-size: 44px;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Everything below the first screen: the reading column. */
+.below {
+  display: grid;
+  gap: 40px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
 }
 
 /* SPEC §18.2: one h1 on two lines (31px / 800 from .headline, SPEC §9). */
@@ -22,11 +61,25 @@
   display: block;
 }
 
-/* The count, shown as a rank. No progress bar (D-0012 §D). */
+/* The count, shown as a rank. No progress bar (D-0012 §D). The dot says
+   the number is live. */
 .count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 17px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.count::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ba7c;
+  box-shadow: 0 0 0 4px rgba(0, 186, 124, 0.16);
 }
 
 .frontSection {
@@ -42,9 +95,8 @@
 }
 
 .getIn {
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  display: grid;
+  gap: 10px;
 }
 
 .seats {
@@ -53,11 +105,104 @@
 }
 
 .haveInvite {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* The picture of the product: a phone with a feed that ends. */
+.preview {
   display: grid;
-  gap: 12px;
-  justify-items: start;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  gap: 10px;
+  justify-items: center;
+  margin: 0;
+}
+
+.phone {
+  width: 100%;
+  max-width: 340px;
+  overflow: hidden;
+  border: 1px solid var(--outline-border);
+  border-radius: 36px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.phoneBar {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.phoneTitle {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.phoneFeed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phonePost {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.phoneAvatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.phoneBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneMeta {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneMeta strong {
+  color: var(--text);
+}
+
+.phoneText {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.phoneEnd {
+  display: grid;
+  gap: 4px;
+  padding: 20px 18px 26px;
+  text-align: center;
+}
+
+.phoneEnd span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.previewCaption {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .more {

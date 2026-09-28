@@ -442,3 +442,15 @@ describe("the copy survives Next's compiler", () => {
     expect(files.flatMap((f) => spacesNextDrops(f, readFileSync(join(WEB_ROOT, f), "utf8")))).toEqual([]);
   });
 });
+
+describe("the first screen's picture of the product (SPEC §18.13)", () => {
+  it("shows a feed that ends, with fictional people, and says they are fictional", async () => {
+    const { FeedPreview } = await import("@/components/public/FeedPreview");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { createElement } = await import("react");
+    const html = renderToStaticMarkup(createElement(FeedPreview));
+    expect(html).toContain("Fictional people, for illustration.");
+    expect(html).toContain("You&#x27;re caught up");
+    expect(html).not.toMatch(/\bOURS\b/);
+  });
+});

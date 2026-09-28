@@ -1516,6 +1516,28 @@ hr {
   padding: 24px 0 48px;
 }
 
+/* The front page's first screen is wider than the reading column
+   (SPEC §18.13): the header, the page and the footer widen with it. A
+   browser without :has() keeps the 600px column, and the page still
+   reads top to bottom. */
+.public:has(.front-wide) {
+  max-width: 1072px;
+}
+
+/* Get in: the address and the button on one line once there is room. */
+@media (min-width: 540px) {
+  .get-in-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+    align-items: end;
+  }
+
+  .get-in-form > .btn {
+    min-height: 44px;
+  }
+}
+
 .public-footer {
   padding: 16px 0 calc(32px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);

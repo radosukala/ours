@@ -6,7 +6,10 @@
       "who": "The founder, under bootstrap authority. Decisions are published with each release in the our.one records.",
       "status": "RECORDED",
       "evidence": [
-        { "path": "decisions/D-0011.md", "label": "Decision D-0011" }
+        {
+          "path": "decisions/D-0011.md",
+          "label": "Decision D-0011"
+        }
       ]
     },
     {
@@ -22,11 +25,13 @@
     },
     {
       "asset": "The maintainer",
-      "who": "The founder, through a company not yet confirmed. Ctrl AI, Inc. (Delaware) is proposed as the starting operator. Its authority, assets and responsibility for our.one are not yet recorded.",
-      "status": "STATED",
+      "who": "Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
+      "status": "RECORDED",
       "evidence": [
-        { "path": "decisions/D-0012.md", "label": "Decision D-0012, part A" },
-        { "path": "decisions/D-0011.md", "label": "Decision D-0011, part F" }
+        {
+          "path": "decisions/D-0013.md",
+          "label": "Decision D-0013, part A"
+        }
       ]
     },
     {
@@ -34,7 +39,10 @@
       "who": "Apache-2.0; public once this build is pushed to the public repository. The running version is shown at the bottom of every public page, of Settings, and of the not-found page; on a wide screen, beside every signed-in page.",
       "status": "STATED",
       "evidence": [
-        { "path": "apps/web/LICENSE", "label": "Licence (Apache-2.0)" }
+        {
+          "path": "apps/web/LICENSE",
+          "label": "Licence (Apache-2.0)"
+        }
       ]
     },
     {
@@ -42,7 +50,10 @@
       "who": "None yet. our.one is not deployed.",
       "status": "RECORDED",
       "evidence": [
-        { "path": "mandates/M-0010.md", "label": "Build record M-0010: nothing deployed" }
+        {
+          "path": "mandates/M-0010.md",
+          "label": "Build record M-0010: nothing deployed"
+        }
       ]
     },
     {
@@ -50,7 +61,10 @@
       "who": "The founder, only under a release decision",
       "status": "RECORDED",
       "evidence": [
-        { "path": "mandates/M-0010.yaml", "label": "Build record M-0010: build only" }
+        {
+          "path": "mandates/M-0010.yaml",
+          "label": "Build record M-0010: build only"
+        }
       ]
     },
     {
@@ -58,7 +72,10 @@
       "who": "No administrator exists until something is deployed; the founder will be the only one.",
       "status": "STATED",
       "evidence": [
-        { "path": "mandates/M-0010.md", "label": "Build record M-0010: nothing deployed" }
+        {
+          "path": "mandates/M-0010.md",
+          "label": "Build record M-0010: nothing deployed"
+        }
       ]
     },
     {
@@ -70,7 +87,10 @@
           "path": "authority/FOUNDING-AUTHORITY.md",
           "label": "Founding authority, section 4: no bank account"
         },
-        { "path": "apps/web/transparency/ledger.json", "label": "The public ledger" }
+        {
+          "path": "apps/web/transparency/ledger.json",
+          "label": "The public ledger"
+        }
       ]
     },
     {

@@ -196,13 +196,13 @@ describe("the names outside the pages", () => {
     expect(rows.map((r) => r.asset)).toContain("The rules of our.one");
     expect(rows.map((r) => r.asset)).not.toContain("The operator");
     const maintainer = rows.find((r) => r.asset === "The maintainer")!;
-    expect(maintainer.status).toBe("STATED");
+    expect(maintainer.status).toBe("RECORDED");
     expect(maintainer.who).toBe(
-      "The founder, through a company not yet confirmed. Ctrl AI, Inc. (Delaware) is proposed as the starting operator. Its authority, assets and responsibility for our.one are not yet recorded.",
+      "Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.",
     );
-    expect(maintainer.evidence?.map((e) => e.path)).toEqual(["decisions/D-0012.md", "decisions/D-0011.md"]);
+    expect(maintainer.evidence?.map((e) => e.path)).toEqual(["decisions/D-0013.md"]);
     const text = textOf(html(createElement(PowerPage)));
-    expect(text).toContain("The maintainer stated by the founder, not verified The founder, through a company not yet confirmed.");
+    expect(text).toContain("The maintainer recorded Ctrl AI, Inc. (Delaware), the founder's company, is the maintainer and the data controller.");
     expect(text).toContain("Maintained by its founder. Handed to its members at 100,000.");
   });
 
