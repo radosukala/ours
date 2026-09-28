@@ -17,7 +17,7 @@ import { Field } from "@/components/Field";
 
 /** The one answer to every valid submission (SPEC §18.2). */
 export const CHECK_YOUR_EMAIL =
-  "Check your email. If a seat was open, your link is there. If not, you're in line, and we'll write when one opens.";
+  "Check your email. If a seat was open, your link is there. If not, you're in line, and we'll write when one opens. If this address already has an account, just sign in.";
 
 export function GetInForm() {
   const [state, formAction, pending] = useActionState<SeatResult | null, FormData>(

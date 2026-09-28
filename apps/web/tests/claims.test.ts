@@ -39,6 +39,7 @@ import {
   scanRepoPublicText,
   scanText,
 } from "@/core/claims";
+import { HANDOVER_THRESHOLD } from "@/core/config";
 import * as mailTemplates from "@/core/mail-templates";
 
 // The landing page reads the session cookie; outside a request there is
@@ -89,6 +90,28 @@ const SAMPLES: Record<string, string[]> = {
   "\\bviral\\b": ["Built to go viral."],
   "algorithm-free": ["An algorithm-free feed."],
   "no algorithm": ["There is no algorithm.", "No algorithms here.", "No algorithm decides what you see."],
+  // D-0012's prohibitions (M-0011; the fourth verification, honesty 8).
+  "\\b(?:first|only) (?:social )?(?:network|platform|app|service)\\b": [
+    "our.one is the first social network its founder gives away.",
+    "the only network whose maintainer can be replaced",
+  ],
+  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b": [
+    "our.one has been handed over to its members.",
+    "It was handed to them.",
+  ],
+  "\\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\\b": [
+    "our.one now belongs to its members.",
+    "It will belong to the people.",
+  ],
+  "\\bwill (?:be )?own(?:ed)?\\b|\\bwill (?:be )?(?:yours|ours|theirs)\\b": [
+    "At 100,000 members, you will own our.one.",
+    "It will be ours.",
+  ],
+  [`\\bit(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is) ours\\b`]: ["It's ours.", "it is ours"],
+  "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bgives? it away\\b": [
+    "I will hand it over next year.",
+    "She gives it away.",
+  ],
 };
 
 describe("each prohibited pattern is caught", () => {
@@ -166,14 +189,21 @@ describe("denials pass only where the scan says why", () => {
     }
   });
 
-  it("every allowlist entry has a reason, names a real file, and its sentence is in it", () => {
+  it("every allowlist entry has a reason, names a real file, and its sentence is in it (a handover sentence's rendered form, with the threshold filled in, is in it in source form)", () => {
     expect(ALLOWLIST.length).toBeGreaterThan(0);
+    const threshold = HANDOVER_THRESHOLD.toLocaleString("en-US");
     for (const entry of ALLOWLIST) {
       expect(entry.reason.length).toBeGreaterThan(20);
-      const text = readFileSync(join(WEB_ROOT, entry.file), "utf8");
-      expect(text, `${entry.file} should contain the allowlisted sentence`).toContain(
+      const text = normalizeForScan(readFileSync(join(WEB_ROOT, entry.file), "utf8")).text;
+      const forms = [
         entry.sentence,
-      );
+        entry.sentence.split(threshold).join("${THRESHOLD}"),
+        entry.sentence.split(threshold).join("{THRESHOLD}"),
+      ];
+      expect(
+        forms.some((form) => text.includes(normalizeForScan(form).text)),
+        `${entry.file} should contain: ${entry.sentence}`,
+      ).toBe(true);
     }
   });
 
@@ -217,15 +247,18 @@ describe("denials pass only where the scan says why", () => {
 
   it("promise 1 passes only in the file holding the /contract copy, only in its exact words, and nothing imports that file (SPEC §18.7)", () => {
     const file = "src/app/(public)/contract/page.tsx";
-    const sentence = "It won't be sold, and nobody will invest in it for a return.";
-    expect(ALLOWLIST.filter((e) => e.file === file).map((e) => e.sentence)).toEqual([sentence]);
-    expect(ALLOWLIST.find((e) => e.file === file)?.reason).toMatch(/D-0012 §A, promise 1/);
+    const sentence = "Neither our.one nor any part of it will be sold, and nobody will invest in it for a return.";
+    // Besides the listed handover sentences (M-0011), promise 1 is the file's only allowance.
+    expect(
+      ALLOWLIST.filter((e) => e.file === file && !/hand(?:ed)? over/i.test(e.sentence)).map((e) => e.sentence),
+    ).toEqual([sentence]);
+    expect(ALLOWLIST.find((e) => e.sentence === sentence)?.reason).toMatch(/D-0012 §A, promise 1/);
     expect(scanText(sentence, file)).toEqual([]);
-    expect(scanText("It won&apos;t be sold, and nobody will\n      invest in it for a return.", file)).toEqual([]);
+    expect(scanText("Neither our.one nor any part of it will be sold, and nobody will\n      invest in it for a return.", file)).toEqual([]);
     // Anywhere else, or in other words, it is a hit.
     expect(scanText(sentence, "src/components/public/FrontPage.tsx").length).toBe(1);
     expect(scanText("Nobody will invest in it for a return.", file).length).toBe(1);
-    expect(scanText("It won't be sold, and nobody will invest in it.", file).length).toBe(1);
+    expect(scanText("Neither our.one nor any part of it will be sold, and nobody will invest in it.", file).length).toBe(1);
     expect(scanText(`${sentence} Invest now.`, file).length).toBe(1);
     // A page file is imported by nothing, so the sentence cannot travel.
     const importers: string[] = [];
@@ -475,6 +508,8 @@ function renderedHits(html: string, file: string | null = null) {
 const RULES_FILE = "src/components/public/floorRules.ts";
 /** The file holding the /contract copy: its one allowlisted sentence is shown only on /contract (SPEC §18.7). */
 const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
+/** The front page's copy: its listed handover sentences are shown only on / (M-0011, SPEC §18.12). */
+const FRONT_FILE = "src/components/public/FrontPage.tsx";
 
 describe("what people are shown: every public page, the footers and every mail, rendered (final verification, honesty-1)", () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -483,7 +518,7 @@ describe("what people are shown: every public page, the footers and every mail, 
   async function pages(): Promise<[string, string, string | null][]> {
     const landing = (await LandingPage()) as ReactElement;
     return [
-      ["/", renderToStaticMarkup(landing), null],
+      ["/", renderToStaticMarkup(landing), FRONT_FILE],
       ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
       ["/privacy", renderToStaticMarkup(createElement(PrivacyPage)), null],
@@ -533,11 +568,15 @@ describe("what people are shown: every public page, the footers and every mail, 
 
   it("shows each allowlisted sentence only on its own page: 'No algorithm…' on /rules, promise 1 on /contract", async () => {
     const rendered = await pages();
-    const home: Record<string, string> = { [RULES_FILE]: "/rules", [CONTRACT_FILE]: "/contract" };
-    expect(ALLOWLIST.map((e) => e.file).sort()).toEqual(Object.keys(home).sort());
+    const home: Record<string, string> = { [RULES_FILE]: "/rules", [CONTRACT_FILE]: "/contract", [FRONT_FILE]: "/" };
+    expect([...new Set(ALLOWLIST.map((e) => e.file))].sort()).toEqual(Object.keys(home).sort());
     for (const entry of ALLOWLIST) {
+      // A source-form entry (with {THRESHOLD} or ${THRESHOLD}) is never shown as such.
+      const sourceForm = /\{THRESHOLD\}|\$\{THRESHOLD\}/.test(entry.sentence);
       for (const [page, html] of rendered) {
-        expect(textOf(html).includes(entry.sentence), `${page}: ${entry.sentence}`).toBe(page === home[entry.file]);
+        expect(textOf(html).includes(entry.sentence), `${page}: ${entry.sentence}`).toBe(
+          !sourceForm && page === home[entry.file],
+        );
       }
     }
     for (const [page, html, file] of rendered) {

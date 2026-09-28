@@ -58,7 +58,11 @@ export function JoinForm() {
         <Link href="/rules" className="link">
           rules
         </Link>{" "}
-        and have read the{" "}
+        and the{" "}
+        <Link href="/contract" className="link">
+          contract
+        </Link>
+        , and have read the{" "}
         <Link href="/privacy" className="link">
           privacy notice
         </Link>

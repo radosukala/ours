@@ -7,6 +7,7 @@
  * the public repository before they are pushed (the final verification's
  * honesty-8).
  */
+import { NOTICE_DAYS } from "@/components/public/handover";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FLOOR_RULES } from "@/components/public/floorRules";
@@ -45,8 +46,7 @@ export default function RulesPage() {
           .
         </p>
         <p>
-          The founder can change or remove any of these checks
-          without notice; every change is a commit in the our.one records, published with each release.
+          {`These checks are code, and the founder can change or remove any of them without notice: nothing technical stops that. What they promise is bound by the contract: a change to a promise is announced ${NOTICE_DAYS} days ahead, with the reason, and you can leave with everything first. Every change is a commit in the our.one records, published with each release.`}
         </p>
         <p className="muted">{STATUS_LINE}</p>
         <p>

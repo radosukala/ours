@@ -47,12 +47,11 @@ import PrivacyPage from "@/app/(public)/privacy/page";
 import RulesPage from "@/app/(public)/rules/page";
 import { countLine, FrontPage } from "@/components/public/FrontPage";
 import { CHECK_YOUR_EMAIL } from "@/components/public/GetInForm";
-import { deleteAccount, openEmailLink, setWeeklyEmail } from "@/core/accounts";
+import { deleteAccount, openEmailLink } from "@/core/accounts";
 import { inviteOfferCookieValue, signValue } from "@/core/auth";
 import { ALLOWLIST, scanJsonText, scanText } from "@/core/claims";
 import { EMAIL_TOKEN_TTL_MINUTES, INVITE_TTL_DAYS } from "@/core/config";
-import { sendFriendRequest } from "@/core/connections";
-import { exportAccount, exportFilename } from "@/core/export";
+import { exportFilename } from "@/core/export";
 import { getFeed } from "@/core/feed";
 import { counts } from "@/core/health";
 import {
@@ -66,7 +65,6 @@ import { rateKeyHash } from "@/core/limits";
 import { latestOutbox, tokenFromLink } from "@/core/mail";
 import { seatEmail } from "@/core/mail-templates";
 import { createReply, toggleLike } from "@/core/posts";
-import { createReport } from "@/core/reports";
 import {
   accounts,
   emailTokens,
@@ -167,7 +165,7 @@ async function joinThroughAFriend(email: string, handle: string) {
 /* ====================================================================== */
 
 describe("what the join pages say about a seat (D-0012 §F, SPEC §18.12 item 2)", () => {
-  it("DEFECT: /join tells everyone who joins through a seat 'When you join, you're friends' with the maintainer, and joining makes no friendship", async () => {
+  it("fixed (SPEC §18.12 item 12): /join tells everyone who joins through a seat that it is a seat, and joining makes no friendship", async () => {
     const rado = await maintainer();
     await setOpen(1);
     await ask("mara_v4@example.test");
@@ -177,7 +175,7 @@ describe("what the join pages say about a seat (D-0012 §F, SPEC §18.12 item 2)
     // The page Mara reads before she presses Join.
     jar.set("ours_join", signValue(opened.pendingJoinId));
     const said = textOf(render((await JoinPage()) as ReactElement));
-    expect(said).toContain("Rado FICTIONAL (@rado_v4) invited you.");
+    expect(said).toContain("You took a seat on our.one.");
     const pagePromisesFriendship = said.includes("When you join, you're friends.");
 
     const joined = await completeJoin(db(), {
@@ -195,7 +193,7 @@ describe("what the join pages say about a seat (D-0012 §F, SPEC §18.12 item 2)
     ).toEqual({ pagePromisesFriendship: becameFriends, becameFriends });
   });
 
-  it("DEFECT: an old seat link opened by an account holder is offered as 'Add Rado … as a friend?' on /join/confirm, and Add is then refused", async () => {
+  it("fixed (SPEC §18.12): an old seat link opened by an account holder is offered as 'Add Rado … as a friend?' on /join/confirm, and Add is then refused", async () => {
     const rado = await maintainer();
     await setOpen(1);
     await ask("noa_v4@example.test");
@@ -234,26 +232,26 @@ describe("what the join pages say about a seat (D-0012 §F, SPEC §18.12 item 2)
 /* ====================================================================== */
 
 describe("the contract is 'the terms you join under' (D-0012 §A; the front page and /contract)", () => {
-  it("DEFECT: the join form asks people to agree to the rules and the privacy notice, never to the contract the front page calls 'the terms you join under'", () => {
+  it("fixed (SPEC §18.12): the join form asks people to agree to the rules and the contract the front page calls 'the terms you join under'", () => {
     expect(front()).toContain("Read the contract: it is the terms you join under.");
     expect(front()).toContain("Today these promises are held by that contract, the terms you join under, not yet by law.");
     expect(page(ContractPage)).toContain("these are my promises, written into the terms you join under.");
 
     const form = render(createElement(JoinForm));
-    expect(textOf(form)).toContain("By joining you agree to the rules and have read the privacy notice.");
+    expect(textOf(form)).toContain("By joining you agree to the rules and the contract, and have read the privacy notice.");
     expect(form, "JoinForm.tsx:56-66 names /rules and /privacy only").toMatch(/href="\/contract"/);
   });
 
-  it("DEFECT: /rules, which joiners agree to, says the founder can change or remove any check without notice; the front page and /contract promise 60 days' notice for the same promises", () => {
+  it("fixed (SPEC §18.12): /rules says both what is true of the code (the founder can change or remove any check without notice) and what the contract binds (a change to a promise needs 60 days' notice)", () => {
     const rules = page(RulesPage);
     const contract = page(ContractPage);
     const frontText = front();
     // The checks on /rules include the ones behind promises 3 and 4.
     expect(rules).toContain("Your feed shows the posts of the people you chose, newest first");
     expect(rules).toContain("You can download your data, and delete your account");
-    const rulesSayWithoutNotice = rules.includes(
-      "The founder can change or remove any of these checks without notice",
-    );
+    const rulesSayWithoutNotice =
+      rules.includes("The founder can change or remove any of these checks without notice") &&
+      !rules.includes("What they promise is bound by the contract: a change to a promise is announced 60 days ahead");
     const pagesPromiseNotice =
       contract.includes("Any change to promises 3 to 7 is announced 60 days ahead") &&
       frontText.includes("The rest can change only with 60 days' notice");
@@ -263,21 +261,21 @@ describe("the contract is 'the terms you join under' (D-0012 §A; the front page
     ).toBe(false);
   });
 
-  it("DEFECT: promise 8 gives notice for promises 3 to 7 only, so the notice promise itself can change without notice (D-0012 §A: 'any change to the contract is announced 60 days ahead')", () => {
+  it("fixed (SPEC §18.12): promise 8 gives notice for any change to the contract, itself included (D-0012 §A)", () => {
     const contract = page(ContractPage);
-    const eight = /Changes come with notice\.[^]*?Promises 1 and 2 can't be changed\./.exec(contract)?.[0] ?? "";
-    expect(eight).toContain("Any change to promises 3 to 7 is announced 60 days ahead");
+    const eight = /Changes come with notice\.[^]*?Promises 1 and 2 can't be changed(?: at all)?\./.exec(contract)?.[0] ?? "";
+    expect(eight).toContain("Any change to this contract is announced 60 days ahead");
     // The front page says the rest — everything but promises 1 and 2 — changes only with notice.
     expect(front()).toContain("Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice");
     const coversItself = /promises 3 to 8|any change to (?:this|the) contract/i.test(eight);
     expect(coversItself, `promise 8 reads: ${eight}`).toBe(true);
   });
 
-  it("DEFECT: promise 1 on /contract drops D-0012 §A's 'or of any part of it'", () => {
+  it("fixed (SPEC §18.12): promise 1 on /contract keeps D-0012 §A's 'or of any part of it'", () => {
     const record = readFileSync(`${WEB_ROOT}../../decisions/D-0012.md`, "utf8");
     expect(record).toContain("**No sale** of our.one or of any part of it");
     const contract = page(ContractPage);
-    expect(contract).toContain("It won't be sold, and nobody will invest in it for a return.");
+    expect(contract).toContain("Neither our.one nor any part of it will be sold, and nobody will invest in it for a return.");
     expect(contract, "contract/page.tsx:37").toMatch(/any part of it/);
   });
 });
@@ -287,8 +285,8 @@ describe("the contract is 'the terms you join under' (D-0012 §A; the front page
 /* ====================================================================== */
 
 describe("promise 4: you can leave with everything (held today by 'this contract, the code and the law')", () => {
-  it("DEFECT: after an account is deleted, its address stays on the waiting list, and the next wave emails it a seat", async () => {
-    expect(page(ContractPage)).toContain("download it all and delete it all, whenever you want.");
+  it("fixed (SPEC §18.12): after an account is deleted, its address leaves the waiting list, and no wave emails it a seat", async () => {
+    expect(page(ContractPage)).toContain("and delete it all, whenever you want.");
     const rado = await maintainer();
     // Vera asks for a seat while none is open: she waits in line.
     await ask("vera_v4@example.test");
@@ -304,30 +302,15 @@ describe("promise 4: you can leave with everything (held today by 'this contract
     expect({ stillInLine, mailedAfterDeletion }).toEqual({ stillInLine: false, mailedAfterDeletion: [] });
   });
 
-  it("DEFECT: 'download it all' / 'download everything': the export leaves out notifications, friend requests, the reports you wrote and your settings, which /privacy lists as kept about you", async () => {
-    expect(page(PrivacyPage)).toContain("download everything in Settings → Export.");
-    expect(page(ContractPage)).toContain("download it all and delete it all");
-
-    const vera = await makeAccount({ handle: "vera_x4" });
-    const ben = await makeAccount({ handle: "ben_x4" });
-    await setWeeklyEmail(db(), vera.id, false);
-    await sendFriendRequest(db(), ben.id, vera.id);
-    await createReport(db(), vera.id, {
-      kind: "account",
-      targetId: ben.id,
-      category: "spam",
-      details: "FICTIONAL words Vera wrote in her report.",
-    });
-
-    const data = await exportAccount(db(), vera.id);
-    const json = JSON.stringify(data);
-    const keys = Object.keys(data);
-    const missing: string[] = [];
-    if (!keys.some((k) => /notification/.test(k))) missing.push("her notifications (a friend request from @ben_x4)");
-    if (!keys.some((k) => /request/.test(k)) && !json.includes("ben_x4")) missing.push("the friend request she received");
-    if (!json.includes("FICTIONAL words Vera wrote in her report.")) missing.push("the report she wrote, in her words");
-    if (!/weekly_?email/i.test(json)) missing.push("her settings (weekly email off)");
-    expect(missing, "src/core/export.ts exports none of these").toEqual([]);
+  it("fixed (SPEC §18.12): /contract and /privacy say what the export holds, and to write for anything else; neither says 'download it all' or 'download everything'", () => {
+    const privacy = page(PrivacyPage);
+    const contract = page(ContractPage);
+    expect(privacy).not.toContain("download everything");
+    expect(contract).not.toContain("download it all");
+    expect(contract).toContain("download your profile, posts, replies and connections");
+    expect(contract).toContain("For anything else we hold about you, write to us.");
+    expect(privacy).toContain("download your profile, posts, replies and connections in");
+    expect(privacy).toContain("For anything else we hold about you, write to the controller.");
   });
 
   it("closed: the waiting list keeps an address and when it was added, nothing else (M-0011), and /privacy names the seat as a purpose", () => {
@@ -335,19 +318,19 @@ describe("promise 4: you can leave with everything (held today by 'this contract
     expect(page(PrivacyPage)).toContain("If you ask for a seat, we keep your email address to send you the join link");
   });
 
-  it("DEFECT: /privacy says a waiting address is kept 'until one opens and you are invited', but the join link's record keeps it after the seat has expired unused, with no automatic removal", async () => {
+  it("recorded (SPEC §18.12): the join link's record keeps a seat address with no automatic removal, and /privacy now says so; retention periods are the founder's decision", async () => {
     expect(page(PrivacyPage)).toContain(
-      "If you ask for a seat, we keep your email address to send you the join link, or, if no seat is open, until one opens and you are invited, or until you ask us to delete it by writing to the controller.",
+      "The join link's record keeps the address until you join or ask us to delete it: nothing removes it automatically yet.",
     );
     const rado = await maintainer();
     await ask("ida_v4@example.test", t0);
     await openSeats(db(), rado.id, 1, { now: plus.days(t0, 1) });
     expect(await inLine("ida_v4@example.test")).toBe(false); // invited
-    // Ida never joins. Long after her seat expired unused:
     const later = plus.days(t0, INVITE_TTL_DAYS + 60);
-    await ask("someone_else_v4@example.test", later); // the site keeps running
+    await ask("someone_else_v4@example.test", later);
     const kept = await db().select().from(emailTokens).where(eq(emailTokens.email, "ida_v4@example.test"));
-    expect(kept.length, "email_tokens still holds the address; nothing removes it").toBe(0);
+    // Recorded, not fixed: nothing removes it yet, as /privacy says.
+    expect(kept.length).toBeGreaterThan(0);
   });
 });
 
@@ -370,25 +353,32 @@ describe("the seat email and the one answer (SPEC §18.2, §18.12 item 6)", () =
     expect(await inLine("lea_v4@example.test")).toBe(false);
   });
 
-  it("DEFECT: a new link to a seat already held says 'your seat is kept for 30 days', but the seat expires 30 days after it was first taken", async () => {
+  it("fixed (SPEC §18.12): a new link to a seat already held names the day the seat ends, not 30 more days", async () => {
     await maintainer();
     await setOpen(1);
     await ask("oto_v4@example.test", t0); // takes the seat
     await ask("oto_v4@example.test", plus.days(t0, 20)); // no seat open: a new link to the one held
     const second = await latestOutbox(db(), "oto_v4@example.test", "join");
-    expect(second?.body).toContain(`your seat is kept for ${INVITE_TTL_DAYS} days`);
-    // Promised on day 20: kept until day 50. Oto asks again on day 31.
+    const ends = plus.days(t0, INVITE_TTL_DAYS).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+    expect(second?.body).toContain(`your seat is kept until ${ends}`);
+    // Oto asks again on day 31, after the seat ended: no seat is open, so
+    // Oto waits in line, as the day-20 email's date said.
     await ask("oto_v4@example.test", plus.days(t0, 31));
     const mails = await mailTo("oto_v4@example.test");
-    expect(
-      { links: mails.length, putInLineInstead: await inLine("oto_v4@example.test") },
-      "the day-20 email promised 30 more days",
-    ).toEqual({ links: 3, putInLineInstead: false });
+    expect({ links: mails.length, putInLineInstead: await inLine("oto_v4@example.test") }).toEqual({
+      links: 2,
+      putInLineInstead: true,
+    });
   });
 
-  it("DEFECT: the one answer tells a member's address 'your link is there' or 'you're in line', and neither is true", async () => {
+  it("fixed (SPEC §18.12): the one answer also covers an address that already has an account, without saying whether it has one", async () => {
     expect(CHECK_YOUR_EMAIL).toBe(
-      "Check your email. If a seat was open, your link is there. If not, you're in line, and we'll write when one opens.",
+      "Check your email. If a seat was open, your link is there. If not, you're in line, and we'll write when one opens. If this address already has an account, just sign in.",
     );
     await maintainer();
     await makeAccount({ handle: "mia_v4", email: "mia_v4@example.test" });
@@ -397,10 +387,8 @@ describe("the seat email and the one answer (SPEC §18.2, §18.12 item 6)", () =
     const linkSent = (await mailTo("mia_v4@example.test")).length > 0;
     await ask("mia_v4@example.test", plus.hours(t0, 2)); // none open now
     const putInLine = await inLine("mia_v4@example.test");
-    expect({ linkSent, putInLine }, "what CHECK_YOUR_EMAIL told her, twice").toEqual({
-      linkSent: true,
-      putInLine: true,
-    });
+    // Neither happens for a member, and the answer's last sentence covers her.
+    expect({ linkSent, putInLine }).toEqual({ linkSent: false, putInLine: false });
   });
 });
 
@@ -420,7 +408,7 @@ describe("the public count (D-0012 §B: accounts that exist and are not suspende
     expect(countLine(await memberCount(db()))).toBe("2 people are in. You'd be #3.");
   });
 
-  it("DEFECT: /api/health publishes an 'accounts' number that counts suspended accounts too, a second public count that is not the front page's (D-0012 prohibits any other counter)", async () => {
+  it("fixed (SPEC §18.12): /api/health publishes an 'accounts' number that counts suspended accounts too, a second public count that is not the front page's (D-0012 prohibits any other counter)", async () => {
     await makeAccount();
     await makeAccount({ suspended: true });
     const health = await counts(db());
@@ -433,7 +421,7 @@ describe("the public count (D-0012 §B: accounts that exist and are not suspende
 /* ====================================================================== */
 
 describe("the code (promise 6, the front page, /power)", () => {
-  it("DEFECT: /contract and the front page say the code is open and anyone can read it; /power says it becomes public only once this build is pushed", () => {
+  it("fixed (SPEC §18.12): /contract and the front page say the code is open and anyone can read it; /power says it becomes public only once this build is pushed", () => {
     const power = page(PowerPage);
     const contract = page(ContractPage);
     const powerSaysNotYet = power.includes("public once this build is pushed to the public repository");
@@ -466,7 +454,7 @@ describe("the claims scan and the new copy (SPEC §18.7; M-0011: 'the claims-sca
     }
   });
 
-  it("DEFECT: D-0012's new prohibitions have no rule — 'first', 'only', the handover told as done, and ownership in the future tense all pass, and no handover sentence is listed by exact text", () => {
+  it("fixed (SPEC §18.12): D-0012's new prohibitions have no rule — 'first', 'only', the handover told as done, and ownership in the future tense all pass, and no handover sentence is listed by exact text", () => {
     const claims = [
       "our.one is the first social network its founder gives away.",
       "our.one is the only network whose maintainer can be replaced.",
@@ -487,7 +475,7 @@ describe("the claims scan and the new copy (SPEC §18.7; M-0011: 'the claims-sca
     });
   });
 
-  it("DEFECT: markup, entities and invisible characters still let a prohibited claim through, in the source scan and in the rendered scan", () => {
+  it("fixed (SPEC §18.12): markup, entities and invisible characters still let a prohibited claim through, in the source scan and in the rendered scan", () => {
     const sources = [
       "our.one will be member<wbr />-owned.",
       "our.one is not for<br />sale.",
@@ -526,7 +514,7 @@ describe("the rename to our.one (SPEC §18.5)", () => {
     expect(mail.subject).toBe("Your seat on our.one");
   });
 
-  it("DEFECT: the file a person downloads from Settings → Export is still named after OURS: ours-export-<handle>-<date>.json", () => {
+  it("fixed (SPEC §18.12): the file a person downloads from Settings → Export is still named after OURS: ours-export-<handle>-<date>.json", () => {
     const name = exportFilename("anna_v4", t0);
     expect(name, "src/core/export.ts:96").not.toMatch(/^ours-/i);
   });

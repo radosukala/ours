@@ -581,7 +581,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
     expect(text).toContain("Who decides today");
     expect(text).toContain(
-      "The founder can change or remove any of these checks without notice; every change is a commit in the our.one records, published with each release.",
+      "These checks are code, and the founder can change or remove any of them without notice: nothing technical stops that. What they promise is bound by the contract: a change to a promise is announced 60 days ahead, with the reason, and you can leave with everything first. Every change is a commit in the our.one records, published with each release.",
     );
     expect(text).toContain(STATUS_LINE);
     for (const words of Object.values(ENFORCEMENT_WORDS)) expect(text).toContain(words);
@@ -682,7 +682,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     const rules = textOf(renderToStaticMarkup(createElement(RulesPage)));
     expect(rules).not.toContain("at any time");
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
-    expect(privacy).toContain("See and take your data. While your account is active, download everything in");
+    expect(privacy).toContain("See and take your data. While your account is active, download your profile, posts, replies and connections in");
     expect(privacy).toContain("Delete it. While your account is active, delete it in");
     expect(privacy).toContain(
       "If your account is suspended, you can't sign in to do either: write to the controller at controller@example.test to get a copy or have it deleted.",
@@ -896,11 +896,12 @@ describe("the counts", () => {
     await post(a, { at: plus.days(now, -1) });
     await post(b, { at: plus.days(now, -6) });
     await post(b, { at: plus.days(now, -8) });
-    expect(await counts(db(), now)).toEqual({ accounts: 3, friendships: 1, postsLast7Days: 2 });
+    // One of the four accounts is suspended: the public count leaves it out (D-0012 §B).
+    expect(await counts(db(), now)).toEqual({ accounts: 2, friendships: 1, postsLast7Days: 2 });
     const report = await health(() => db(), now);
     expect(report).toEqual({
       database: true,
-      counts: { accounts: 3, friendships: 1, postsLast7Days: 2 },
+      counts: { accounts: 2, friendships: 1, postsLast7Days: 2 },
     });
     expect(JSON.stringify(report)).not.toMatch(/example\.test|FICTIONAL/);
   });

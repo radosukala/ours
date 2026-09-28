@@ -34,7 +34,7 @@ type ContractPromise = {
 /** The promises, numbered as the page numbers them (promise 8 names 1, 2 and 3 to 7). */
 const PROMISES: readonly ContractPromise[] = [
   {
-    promise: "It won't be sold, and nobody will invest in it for a return.",
+    promise: "Neither our.one nor any part of it will be sold, and nobody will invest in it for a return.",
     heldBy: "this contract. This promise can never be changed.",
   },
   {
@@ -46,7 +46,7 @@ const PROMISES: readonly ContractPromise[] = [
     heldBy: "this contract and the code.",
   },
   {
-    promise: "You can leave with everything: download it all and delete it all, whenever you want. If your account is suspended, write to us and we will do it for you.",
+    promise: "You can leave with everything: download your profile, posts, replies and connections, and delete it all, whenever you want. For anything else we hold about you, write to us. If your account is suspended, write to us and we will do it for you.",
     heldBy: "this contract, the code and the law (GDPR).",
   },
   {
@@ -55,8 +55,8 @@ const PROMISES: readonly ContractPromise[] = [
     link: { label: "Costs", href: "/costs" },
   },
   {
-    promise: "The code is open. Anyone can read it, run it or copy it.",
-    heldBy: "the licence (Apache-2.0).",
+    promise: "The code will be public from launch, under an open licence (Apache-2.0): anyone will be able to read it, run it or copy it.",
+    heldBy: "this contract until it is published, then the licence.",
     link: { label: "Open code", href: OPEN_CODE_URL, external: true },
   },
   {
@@ -65,7 +65,7 @@ const PROMISES: readonly ContractPromise[] = [
     link: { label: "Who controls what", href: "/power" },
   },
   {
-    promise: `Changes come with notice. Any change to promises 3 to 7 is announced ${NOTICE_DAYS} days ahead, with the reason, and you can leave with everything before it applies. Promises 1 and 2 can't be changed.`,
+    promise: `Changes come with notice. Any change to this contract is announced ${NOTICE_DAYS} days ahead, with the reason, and you can leave with everything before it applies. Promises 1 and 2 can't be changed at all.`,
     heldBy: "this contract.",
   },
 ];

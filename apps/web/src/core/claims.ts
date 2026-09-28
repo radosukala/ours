@@ -37,6 +37,7 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { HANDOVER_THRESHOLD } from "./config";
 
 export type Prohibited = {
   pattern: RegExp;
@@ -120,6 +121,32 @@ export const PROHIBITED: readonly Prohibited[] = [
     pattern: /\bviral\b/i,
     reason: "No claim that a launch will spread (AGENTS.md §9).",
   },
+  // D-0012's prohibitions (M-0011; the fourth verification, honesty 8).
+  {
+    pattern: /\b(?:first|only) (?:social )?(?:network|platform|app|service)\b/i,
+    reason: "D-0012: never call our.one the first or the only anything without a checked source.",
+  },
+  {
+    pattern: /\b(?:has|have|had) been handed\b|\bwas handed\b/i,
+    reason: "D-0012: the handover has not happened; never write it as done.",
+  },
+  {
+    pattern: /\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\b/i,
+    reason: "D-0012: no claim of ownership, in the present or as done.",
+  },
+  {
+    pattern: /\bwill (?:be )?own(?:ed)?\b|\bwill (?:be )?(?:yours|ours|theirs)\b/i,
+    reason: "D-0012 and M-0011: ownership in the future tense only in the listed handover sentences.",
+  },
+  {
+    pattern: new RegExp(`\\bit(?:${APOS}s| is) ours\\b`, "i"),
+    reason: "D-0012: a members' body gives control, not ownership; \"it's ours\" was dropped.",
+  },
+  {
+    pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bgives? it away\b/i,
+    reason:
+      "M-0011: every sentence about the handover is listed by exact text in ALLOWLIST; any other is refused until it is reviewed and listed.",
+  },
   {
     pattern: /algorithm-free/i,
     reason: "Overclaims. The order is newest first; say that instead.",
@@ -131,6 +158,13 @@ export const PROHIBITED: readonly Prohibited[] = [
   },
 ];
 
+/** The threshold as the pages write it, for the handover sentences' rendered form. */
+const T = HANDOVER_THRESHOLD.toLocaleString("en-US");
+const FRONT_FILE = "src/components/public/FrontPage.tsx";
+const CONTRACT_PAGE = "src/app/(public)/contract/page.tsx";
+const HANDOVER_REASON =
+  "D-0012 §B and §D, M-0011: a sentence about the handover, reviewed and listed by exact text (source and rendered form).";
+
 export type AllowEntry = {
   /** The file, relative to apps/web, with forward slashes. */
   file: string;
@@ -140,6 +174,22 @@ export type AllowEntry = {
 };
 
 export const ALLOWLIST: readonly AllowEntry[] = [
+  // The handover sentences (M-0011: the only ones the handover rule lets
+  // through). Each is listed twice: as the source writes it, and as a
+  // person reads it with the threshold filled in.
+  ...[
+    "At ${THRESHOLD} members, I give it away.",
+    `At ${T} members, I give it away.`,
+    "When {THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.",
+    `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
+    "Why not hand it over now?",
+    "Then nothing is handed over.",
+  ].map((sentence) => ({ file: FRONT_FILE, sentence, reason: HANDOVER_REASON })),
+  ...[
+    "At ${THRESHOLD} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.",
+    `At ${T} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.`,
+    "Nothing is handed over.",
+  ].map((sentence) => ({ file: CONTRACT_PAGE, sentence, reason: HANDOVER_REASON })),
   {
     // The /rules page's data. Only src/app/(public)/rules/page.tsx imports
     // it; tests/claims.test.ts checks that, so the sentence stays on /rules.
@@ -152,7 +202,7 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     // The file holding the /contract copy (SPEC §18.7). A page file is
     // imported by nothing else, so the sentence stays on /contract.
     file: "src/app/(public)/contract/page.tsx",
-    sentence: "It won't be sold, and nobody will invest in it for a return.",
+    sentence: "Neither our.one nor any part of it will be sold, and nobody will invest in it for a return.",
     reason:
       "D-0012 §A, promise 1: a denial of investment. SPEC §18.7 allows it on /contract only, in this exact sentence.",
   },
@@ -194,7 +244,12 @@ const NAMED_ENTITIES: Readonly<Record<string, string>> = {
   ndash: "\u2013",
   mdash: "\u2014",
   hyphen: "-",
+  minus: "\u2212",
   shy: "",
+  zwj: "\u200d",
+  zwnj: "\u200c",
+  lrm: "\u200e",
+  rlm: "\u200f",
 };
 
 const ENTITY = /&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[a-zA-Z]{2,8});/y;
@@ -212,7 +267,7 @@ const STRING_EXPRESSION =
  * them. A block element (<p>, <li>, <h2>) is kept, so it still separates.
  */
 const INLINE_NAMES =
-  "a|abbr|b|bdi|bdo|cite|code|data|del|dfn|em|i|ins|kbd|Link|mark|q|s|samp|small|span|strong|sub|sup|time|u|var";
+  "a|abbr|b|bdi|bdo|cite|code|data|del|dfn|em|i|ins|kbd|Link|mark|q|s|samp|small|span|strong|sub|sup|time|u|var|wbr";
 /** An attribute value: "…", '…', or a JSX expression up to three braces deep. */
 const ATTR_VALUE = String.raw`(?:"[^"]*"|'[^']*'|\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})`;
 const ATTR = String.raw`\s+(?:[A-Za-z_][\w:.-]*(?:\s*=\s*${ATTR_VALUE})?|\{\s*\.\.\.[^{}]*\})`;
@@ -225,6 +280,8 @@ const TAG = new RegExp(
   String.raw`<(?:(?:${INLINE_NAMES})(?:${ATTR})*\s*\/?|\/[A-Za-z][\w.:-]*\s*)>`,
   "y",
 );
+/** A line break element, which a reader sees as a break between words. */
+const LINE_BREAK = /<br\s*\/?>/iy;
 /**
  * A JavaScript escape: \uXXXX, \u{X…}, \xXX, \n \r \t \v \f (whitespace
  * where it renders), \' \" \` \\, and a backslash before a line break
@@ -233,7 +290,7 @@ const TAG = new RegExp(
 const JS_ESCAPE =
   /\\(?:u([0-9a-fA-F]{4})|u\{([0-9a-fA-F]{1,6})\}|x([0-9a-fA-F]{2})|([nrtvf])|(['"`\\])|(\r\n|\n|\r))/y;
 /** Characters that render as nothing: soft hyphen, zero-width space and joiners, BOM. */
-const INVISIBLE = /[\u00ad\u200b\u200c\u200d\u2060\ufeff]/;
+const INVISIBLE = /[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
 /**
  * Hyphens and dashes a claim may be written with, read as "-": the Unicode
  * hyphen and non-breaking hyphen, the figure dash, the en dash (and so
@@ -359,6 +416,14 @@ export function normalizeForScan(raw: string, options: NormalizeOptions = {}): N
         continue;
       }
     } else if (c === "<" && !options.keepTags) {
+      LINE_BREAK.lastIndex = i;
+      const br = LINE_BREAK.exec(raw);
+      if (br) {
+        droppedTags.push([i, i + br[0].length]);
+        push(" ", i);
+        i += br[0].length;
+        continue;
+      }
       TAG.lastIndex = i;
       const m = TAG.exec(raw);
       if (m) {

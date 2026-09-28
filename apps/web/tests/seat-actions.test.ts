@@ -177,8 +177,12 @@ describe("takeSeat: the front page's Get in form (SPEC §18.4)", () => {
     expect(web.later).toHaveLength(4);
 
     await runLater();
-    expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual(["new_f@example.test"]);
-    expect(await line()).toEqual(["listed_f@example.test", "other_f@example.test"]);
+    // The line goes first (SPEC §18.12): the seat went to the address already waiting.
+    expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual([
+      "listed_f@example.test",
+      "listed_f@example.test",
+    ]);
+    expect(await line()).toEqual(["new_f@example.test", "other_f@example.test"]);
   });
 
   it("an unexpected failure is one generic sentence, logged without the address, with nothing counted", async () => {

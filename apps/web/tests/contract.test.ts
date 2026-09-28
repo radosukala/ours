@@ -88,7 +88,7 @@ describe("/contract, word for word (SPEC §18.3)", () => {
     const items = [...list.matchAll(/<li[^>]*>(.*?)<\/li>/g)].map((m) => m[1]!);
     const expected: [string, string, [string, string] | null][] = [
       [
-        "It won't be sold, and nobody will invest in it for a return.",
+        "Neither our.one nor any part of it will be sold, and nobody will invest in it for a return.",
         "Held today by: this contract. This promise can never be changed.",
         null,
       ],
@@ -103,14 +103,14 @@ describe("/contract, word for word (SPEC §18.3)", () => {
         null,
       ],
       [
-        "You can leave with everything: download it all and delete it all, whenever you want. If your account is suspended, write to us and we will do it for you.",
+        "You can leave with everything: download your profile, posts, replies and connections, and delete it all, whenever you want. For anything else we hold about you, write to us. If your account is suspended, write to us and we will do it for you.",
         "Held today by: this contract, the code and the law (GDPR).",
         null,
       ],
       ["Every cost is public. Money buys no reach and no say.", "Held today by: this contract. Costs", ["Costs", "/costs"]],
       [
-        "The code is open. Anyone can read it, run it or copy it.",
-        "Held today by: the licence (Apache-2.0). Open code",
+        "The code will be public from launch, under an open licence (Apache-2.0): anyone will be able to read it, run it or copy it.",
+        "Held today by: this contract until it is published, then the licence. Open code",
         ["Open code", OPEN_CODE_URL],
       ],
       [
@@ -119,7 +119,7 @@ describe("/contract, word for word (SPEC §18.3)", () => {
         ["Who controls what", "/power"],
       ],
       [
-        "Changes come with notice. Any change to promises 3 to 7 is announced 60 days ahead, with the reason, and you can leave with everything before it applies. Promises 1 and 2 can't be changed.",
+        "Changes come with notice. Any change to this contract is announced 60 days ahead, with the reason, and you can leave with everything before it applies. Promises 1 and 2 can't be changed at all.",
         "Held today by: this contract.",
         null,
       ],

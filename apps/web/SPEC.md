@@ -1670,6 +1670,76 @@ section changes §18.1–§18.11, it governs.
       invited you. When you join, you're friends", and a seat makes no
       friendship.
 
+**After the fourth verification (two verifiers, 28 September 2026)**
+
+Each finding is a test in `tests/verify4-honesty.test.ts` or
+`tests/verify4-seats.test.ts`, now titled `fixed:` or `recorded:`.
+
+13. **The contract is the terms people join under.** The join form reads
+    "By joining you agree to the rules and the contract, and have read the
+    privacy notice." (HIGH, honesty 2)
+14. **/rules says both truths.**
+    - The founder can change or remove any check without notice, because
+      nothing technical stops that. This is FOUNDING-AUTHORITY §6, which
+      the M-0010 verification required.
+    - What the checks promise is bound by the contract: 60 days' notice.
+15. **The contract's promises:**
+    - Promise 8 covers any change to the contract, itself included.
+    - Promise 1 reads "Neither our.one nor any part of it will be sold, and
+      nobody will invest in it for a return." (D-0012 §A)
+    - Promise 4 and /privacy name what the export holds (profile, posts,
+      replies, connections) and say to write for anything else. "Download
+      it all" and "download everything" were more than the export does.
+    - Promise 6 and the front page say the code *will be* public from launch.
+      Pushing the code is a release precondition.
+16. **The WhatsApp lines follow their sources:**
+    - "In 2014, Facebook agreed to buy it…";
+    - "In 2016, WhatsApp announced it would share…";
+    - the full sentence "I sold my users' privacy to a larger benefit."
+17. **Leaving the line:**
+    - Joining by any invite, or deleting an account, removes the address
+      from the seat line.
+    - Removing a seat holder at their request gives the unused seat back.
+18. **The line goes first.**
+    - While anyone older waits, an open seat goes to the oldest waiting
+      address, and the newcomer takes a place in line.
+    - A seat given back after a failed email so reaches the person who was
+      waiting for it.
+19. **A seat email that throws is a failure too.** The seat goes back, and
+    the failure is logged without the address.
+20. **The seat email names the day the seat ends.** A link sent again never
+    promises more time than the seat has.
+21. **The one answer adds "If this address already has an account, just
+    sign in."** It stays true for a member without saying whether the
+    address is one.
+22. **`/api/health` counts accounts that are not suspended.** It is the same
+    number as the front page's.
+23. **An old seat link opened by an account holder only signs them in.** It
+    is never offered as a friendship.
+24. **The claims scan knows D-0012's prohibitions:**
+    - calling our.one the first or the only anything;
+    - the handover told as done;
+    - "belongs to" its members;
+    - ownership in the future tense;
+    - "it's ours".
+
+    Every sentence about the handover must be listed by exact text in
+    ALLOWLIST, in source and rendered form. Nine are listed.
+25. **The claims scan reads more markup:** `<wbr>` as nothing, `<br>` as a
+    space, `&zwj;` `&zwnj;` `&lrm;` `&rlm;` `&minus;`, and the bidi marks,
+    embeddings and isolates.
+26. **The export file** is named `our.one-export-<handle>-<date>.json`.
+
+**Recorded after the fourth verification**
+
+- **A wave's emails run in one task after the response.** If that task
+  never runs, those addresses hold seats they were not told about. Asking
+  again on the front page sends a link to the seat each holds. A durable
+  queue of owed emails is a later build.
+- **The join link's record keeps a seat address, with no automatic
+  removal.** /privacy says so. Retention periods are the founder's decision
+  (also M-0010's residual).
+
 **Residual, recorded rather than fixed**
 
 - **Someone with many addresses and client addresses can use up open

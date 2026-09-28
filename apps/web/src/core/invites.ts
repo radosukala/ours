@@ -40,7 +40,7 @@ import { hit, RATE, rateKeyHash } from "./limits";
 import { type Defer, nowOrDeferred, sendMail } from "./mail";
 import { joinEmail } from "./mail-templates";
 import { notify } from "./notifications";
-import { accounts, friendRequests, invites, pendingJoins } from "./schema";
+import { accounts, friendRequests, invites, pendingJoins, waitlist } from "./schema";
 import {
   normEmail,
   validDisplayName,
@@ -209,17 +209,18 @@ export async function createSeatInvite(
   tx: Db,
   maintainerId: string,
   now: Date,
-): Promise<{ id: string }> {
+): Promise<{ id: string; expiresAt: Date }> {
   const id = newId();
+  const expiresAt = new Date(now.getTime() + INVITE_TTL_DAYS * DAY_MS);
   await tx.insert(invites).values({
     id,
     codeHash: sha256(randomToken(16)),
     inviterId: maintainerId,
     note: SEAT_NOTE,
     createdAt: now,
-    expiresAt: new Date(now.getTime() + INVITE_TTL_DAYS * DAY_MS),
+    expiresAt,
   });
-  return { id };
+  return { id, expiresAt };
 }
 
 /**
@@ -436,7 +437,14 @@ export async function inviteOfferForViewer(
   if (typeof inviteId !== "string" || !ID_PATTERN.test(inviteId)) {
     return { kind: "unusable" };
   }
-  const invite = await findUsableInvite(db, eq(invites.id, inviteId), now, viewerId);
+  // A seat is never offered as a friendship (SPEC §18.12 item 2): an
+  // account holder who opens an old seat link is only signed in.
+  const invite = await findUsableInvite(
+    db,
+    and(eq(invites.id, inviteId), ne(invites.note, SEAT_NOTE))!,
+    now,
+    viewerId,
+  );
   if (!invite) return { kind: "unusable" };
   return stateForSignedIn(db, invite, viewerId);
 }
@@ -682,6 +690,9 @@ export async function completeJoin(
         .update(pendingJoins)
         .set({ completedAt: now })
         .where(eq(pendingJoins.id, pending.id));
+      // Joined, by whatever invite: the address leaves the seat line
+      // (SPEC §18.12), so a later wave never mails it a seat.
+      await tx.delete(waitlist).where(eq(waitlist.email, pending.email));
       const session = await createSession(tx, accountId, now);
       return { accountId, session };
     });

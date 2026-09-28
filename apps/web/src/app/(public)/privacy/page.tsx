@@ -182,10 +182,7 @@ export default function PrivacyPage() {
           ))}
         </ul>
         <p>
-          If you ask for a seat, we keep your email address to send you the
-          join link, or, if no seat is open, until one opens and you are
-          invited, or until you ask us to delete it by writing to the
-          controller.
+          {"If you ask for a seat, we keep your email address to send you the join link. If no seat is open, it waits in line until one opens and you are invited. The join link's record keeps the address until you join or ask us to delete it: nothing removes it automatically yet. To be deleted, write to the controller."}
         </p>
         <p>
           Three cookies, all needed for the site to work: one keeps you
@@ -232,8 +229,9 @@ export default function PrivacyPage() {
         <ul className="prose">
           <li>
             <strong>See and take your data.</strong> While your account is
-            active, download everything in{" "}
-            <Link href="/settings/export">Settings → Export</Link>.
+            active, download your profile, posts, replies and connections in{" "}
+            <Link href="/settings/export">Settings → Export</Link>
+            {". For anything else we hold about you, write to the controller."}
           </li>
           <li>
             <strong>Correct it.</strong> Change your name and bio in{" "}

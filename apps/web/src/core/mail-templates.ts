@@ -128,7 +128,17 @@ export function digestEmail(
  * link is an ordinary join link, so its lifetime is the join link's, and
  * the body states it from the same constant.
  */
-export function seatEmail(url: string): MailContent {
+/** A date as the seat email writes it: 28 October 2026 (UTC). */
+function seatDate(date: Date): string {
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export function seatEmail(url: string, keptUntil?: Date): MailContent {
   return {
     subject: "Your seat on our.one",
     body: [
@@ -136,7 +146,9 @@ export function seatEmail(url: string): MailContent {
       "",
       url,
       "",
-      `If the link expires, ask again on the front page: your seat is kept for ${INVITE_TTL_DAYS} days. If you didn't ask, ignore this email.`,
+      keptUntil
+        ? `If the link expires, ask again on the front page: your seat is kept until ${seatDate(keptUntil)}. If you didn't ask, ignore this email.`
+        : `If the link expires, ask again on the front page: your seat is kept for ${INVITE_TTL_DAYS} days. If you didn't ask, ignore this email.`,
     ].join("\n"),
   };
 }

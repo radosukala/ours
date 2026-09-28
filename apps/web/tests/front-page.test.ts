@@ -271,7 +271,7 @@ describe("Get in", () => {
     const view = (state: { ok: true } | { error: string } | null) =>
       renderToStaticMarkup(createElement(GetInFormView, { state, action: () => {}, pending: false }));
     expect(CHECK_YOUR_EMAIL).toBe(
-      "Check your email. If a seat was open, your link is there. If not, you're in line, and we'll write when one opens.",
+      "Check your email. If a seat was open, your link is there. If not, you're in line, and we'll write when one opens. If this address already has an account, just sign in.",
     );
     const answered = view({ ok: true });
     expect(answered).toMatch(/<p class="notice notice--ok" role="status">Check your email\./);
@@ -323,13 +323,13 @@ describe("the rest of the page, word for word (SPEC §18.2)", () => {
         "In 2012, WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
         "https://blog.whatsapp.com/why-we-don-t-sell-ads",
       ],
-      ["In 2014, Facebook bought it for about $19 billion.", "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/"],
+      ["In 2014, Facebook agreed to buy it for about $19 billion.", "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/"],
       [
-        "In 2016, WhatsApp began sharing users' phone numbers with Facebook.",
+        "In 2016, WhatsApp announced it would share users' phone numbers with Facebook.",
         "https://www.eff.org/deeplinks/2016/08/what-facebook-and-whatsapps-data-sharing-plans-really-mean-user-privacy-0",
       ],
       [
-        "In 2018, one of its founders said: “I sold my users' privacy.”",
+        "In 2018, one of its founders said: “I sold my users' privacy to a larger benefit.”",
         "https://www.cnbc.com/2018/09/26/whatsapp-co-founder-explains-why-he-left-facebook.html",
       ],
       ["In 2025, ads came to WhatsApp.", "https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html"],
@@ -351,7 +351,7 @@ describe("the rest of the page, word for word (SPEC §18.2)", () => {
     expect(pairs).toEqual([
       [
         "Why should I believe you?",
-        "Don't take my word for it. Read the contract: it is the terms you join under. The code is open, and every cost is public.",
+        "Don't take my word for it. Read the contract: it is the terms you join under. The code will be public from launch, and every cost is public.",
       ],
       [
         "Why not hand it over now?",

@@ -427,8 +427,14 @@ describe("requestSeat: the same answer, and the same work in the request, for ev
       expect(await openNow()).toBe(2);
 
       for (const task of later) await task();
-      expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual(["new_f@example.test"]);
-      expect(await line()).toEqual(["listed_f@example.test", "other_f@example.test"]);
+      // The member's request used a seat; the line goes first (SPEC §18.12),
+      // so the other seat went to the address already waiting, and her own
+      // request then sent her a new link to it. The newcomers wait in line.
+      expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual([
+        "listed_f@example.test",
+        "listed_f@example.test",
+      ]);
+      expect(await line()).toEqual(["new_f@example.test", "other_f@example.test"]);
       expect(await openNow()).toBe(0);
     } finally {
       await pool.end();

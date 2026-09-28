@@ -93,7 +93,7 @@ const isoOrNull = (d: Date | null) => (d ? d.toISOString() : null);
 
 /** `ours-export-<handle>-<yyyy-mm-dd>.json`, the date in UTC. */
 export function exportFilename(handle: string, now: Date = new Date()): string {
-  return `ours-export-${handle}-${now.toISOString().slice(0, 10)}.json`;
+  return `our.one-export-${handle}-${now.toISOString().slice(0, 10)}.json`;
 }
 
 /** No block either way between the owner and `other`. */

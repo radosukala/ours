@@ -4,7 +4,7 @@
  * addresses — and whether the database answered, as a yes or no. An error's
  * message is never returned: it can carry a host name or a query.
  */
-import { count, gt } from "drizzle-orm";
+import { count, gt, isNull } from "drizzle-orm";
 import type { Db } from "./db";
 import { accounts, friendships, posts } from "./schema";
 
@@ -20,7 +20,9 @@ export type Counts = {
 export async function counts(db: Db, now: Date = new Date()): Promise<Counts> {
   const since = new Date(now.getTime() - 7 * DAY_MS);
   const [a, f, p] = await Promise.all([
-    db.select({ n: count() }).from(accounts),
+    // The same number as the front page's (D-0012 §B): accounts that exist
+    // and are not suspended.
+    db.select({ n: count() }).from(accounts).where(isNull(accounts.suspendedAt)),
     db.select({ n: count() }).from(friendships),
     db.select({ n: count() }).from(posts).where(gt(posts.createdAt, since)),
   ]);

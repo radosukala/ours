@@ -335,9 +335,9 @@ describe("exportAccount: exactly the fields SPEC §8 lists", () => {
     ]);
   });
 
-  it("names the file ours-export-<handle>-<yyyy-mm-dd>.json in UTC", () => {
+  it("names the file our.one-export-<handle>-<yyyy-mm-dd>.json in UTC", () => {
     expect(exportFilename("anna", at("2026-09-10T23:59:59Z"))).toBe(
-      "ours-export-anna-2026-09-10.json",
+      "our.one-export-anna-2026-09-10.json",
     );
   });
 });
@@ -371,7 +371,7 @@ describe("GET /settings/export", () => {
     expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
     const today = new Date().toISOString().slice(0, 10);
     expect(response.headers.get("content-disposition")).toBe(
-      `attachment; filename="ours-export-anna-${today}.json"`,
+      `attachment; filename="our.one-export-anna-${today}.json"`,
     );
     expect(response.headers.get("cache-control")).toContain("no-store");
     const data = (await response.json()) as AccountExport;

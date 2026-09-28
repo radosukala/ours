@@ -60,16 +60,16 @@ const STORY: readonly { text: string; source: string }[] = [
     source: "https://blog.whatsapp.com/why-we-don-t-sell-ads",
   },
   {
-    text: "In 2014, Facebook bought it for about $19 billion.",
+    text: "In 2014, Facebook agreed to buy it for about $19 billion.",
     source: "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/",
   },
   {
-    text: "In 2016, WhatsApp began sharing users' phone numbers with Facebook.",
+    text: "In 2016, WhatsApp announced it would share users' phone numbers with Facebook.",
     source:
       "https://www.eff.org/deeplinks/2016/08/what-facebook-and-whatsapps-data-sharing-plans-really-mean-user-privacy-0",
   },
   {
-    text: "In 2018, one of its founders said: “I sold my users' privacy.”",
+    text: "In 2018, one of its founders said: “I sold my users' privacy to a larger benefit.”",
     source: "https://www.cnbc.com/2018/09/26/whatsapp-co-founder-explains-why-he-left-facebook.html",
   },
   {
@@ -82,7 +82,7 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
   {
     question: "Why should I believe you?",
     answer:
-      "Don't take my word for it. Read the contract: it is the terms you join under. The code is open, and every cost is public.",
+      "Don't take my word for it. Read the contract: it is the terms you join under. The code will be public from launch, and every cost is public.",
   },
   {
     question: "Why not hand it over now?",

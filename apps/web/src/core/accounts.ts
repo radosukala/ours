@@ -31,6 +31,7 @@ import {
   invites,
   outbox,
   pendingJoins,
+  waitlist,
 } from "./schema";
 import {
   HANDLE_PATTERN,
@@ -379,6 +380,9 @@ export async function deleteAccount(
     await tx.delete(emailTokens).where(eq(emailTokens.email, me.email));
     await tx.delete(pendingJoins).where(eq(pendingJoins.email, me.email));
     await tx.delete(outbox).where(eq(outbox.toAddress, me.email));
+    // A place in the seat line under this address goes too (SPEC §18.12):
+    // otherwise the next wave would email a seat to someone who left.
+    await tx.delete(waitlist).where(eq(waitlist.email, me.email));
     await tx.delete(accounts).where(eq(accounts.id, me.id));
   });
 }

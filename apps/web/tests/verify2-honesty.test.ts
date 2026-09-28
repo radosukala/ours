@@ -557,7 +557,7 @@ describe("/rules", () => {
 
   it("closed: /rules, rendered, says the founder can change or remove any check without notice, and every cited test file exists", () => {
     const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
-    expect(text).toContain("The founder can change or remove any of these checks without notice; every change is a commit in the our.one records, published with each release.");
+    expect(text).toContain("These checks are code, and the founder can change or remove any of them without notice: nothing technical stops that. What they promise is bound by the contract: a change to a promise is announced 60 days ahead, with the reason, and you can leave with everything first. Every change is a commit in the our.one records, published with each release.");
     for (const r of FLOOR_RULES.flatMap((g) => g.rules)) {
       for (const f of r.tests ?? []) expect(() => read(f), `${r.id}: ${f}`).not.toThrow();
       if (r.cls === "DECLARED" || r.cls === "INTERPRETED") expect(r.tests ?? [], r.id).toEqual([]);
