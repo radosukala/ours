@@ -473,7 +473,7 @@ export function emailSending(): EmailSending {
 export const EMAIL_PROVIDER_WORDS: Readonly<Record<EmailSending, string>> = {
   outbox: "None. This server sends no email: each message is written to a test outbox instead.",
   resend:
-    "Resend delivers the emails OURS sends: sign-in and join links, the weekly email and notices. It receives your email address and each email's subject and text.",
+    "Resend delivers the emails our.one sends: sign-in and join links, the weekly email and notices. It receives your email address and each email's subject and text.",
   refused: "None. No email is sent: this server's email setup is incomplete.",
 };
 
@@ -481,7 +481,7 @@ export const EMAIL_PROVIDER_WORDS: Readonly<Record<EmailSending, string>> = {
 export const HOSTING_ASSET = "Hosting, database, email sending";
 
 /** What the file says of hosting, which only a record changes. */
-const HOSTING_NONE = "None yet. OURS is not deployed.";
+const HOSTING_NONE = "None yet. our.one is not deployed.";
 
 /**
  * The hosting row as this server shows it: the file's record that nothing
@@ -513,7 +513,7 @@ export function withEmailSending(rows: ControlRow[], sending: EmailSending): Con
     sending === "resend"
       ? {
           ...fileRow,
-          who: "Email: Resend delivers the emails this server sends. Hosting and database: none yet; OURS is not deployed.",
+          who: "Email: Resend delivers the emails this server sends. Hosting and database: none yet; our.one is not deployed.",
           status: "STATED",
           statedBy: "configuration",
         }

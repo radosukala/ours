@@ -25,8 +25,8 @@ export default function PublicLayout({
   return (
     <div className="public">
       <header className="public-header">
-        <Link href="/" className="wordmark" aria-label="OURS, home">
-          OURS
+        <Link href="/" className="wordmark" aria-label="our.one, home">
+          our.one
         </Link>
         <Link href="/signin" className="public-header__signin">
           Sign in

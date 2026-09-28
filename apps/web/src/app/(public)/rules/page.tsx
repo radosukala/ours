@@ -17,7 +17,7 @@ import { STATUS_LINE } from "@/components/RightColumn";
 
 export const metadata: Metadata = {
   title: "Rules",
-  description: "The rules OURS runs on, and how each one is held.",
+  description: "The rules our.one runs on, and how each one is held.",
 };
 
 export default function RulesPage() {
@@ -25,7 +25,7 @@ export default function RulesPage() {
     <article className={styles.page}>
       <h1 className="headline">Rules</h1>
       <p className="lede">
-        The rules OURS runs on, in plain words. Each one says how it&apos;s
+        The rules our.one runs on, in plain words. Each one says how it&apos;s
         held: by the code, by a check, by a person, or only on paper so far.
       </p>
 
@@ -33,20 +33,20 @@ export default function RulesPage() {
         <h2 id="rules-who">Who decides today</h2>
         <p>
           The founder, under bootstrap authority: the starting authority of
-          the person who began OURS, used in the open. Every decision is
+          the person who began our.one, used in the open. Every decision is
           published with each release in the{" "}
           <a
             href={repositoryUrl("decisions", true)}
             rel="noopener noreferrer"
             target="_blank"
           >
-            OURS records
+            our.one records
           </a>
           .
         </p>
         <p>
           The founder can change or remove any of these checks
-          without notice; every change is a commit in the OURS records, published with each release.
+          without notice; every change is a commit in the our.one records, published with each release.
         </p>
         <p className="muted">{STATUS_LINE}</p>
         <p>

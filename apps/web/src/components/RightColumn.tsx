@@ -6,17 +6,23 @@
 import Link from "next/link";
 import { runningVersion } from "@/core/config";
 import { LinkButton } from "./Button";
+import { THRESHOLD } from "./public/handover";
 
 export const OPEN_CODE_URL =
   "https://github.com/radosukala/ours/tree/main/apps/web";
 
-export const STATUS_LINE =
-  "Founder-led and founder-funded at launch. Working toward control by the people using it.";
+/**
+ * The status line (D-0012 §D, SPEC §18.1), wherever control is described.
+ * The number is the handover threshold's one constant.
+ */
+export const STATUS_LINE = `Maintained by its founder. Handed to its members at ${THRESHOLD}.`;
 
 export function SiteFooter({ className }: { className?: string }) {
   return (
     <div className={`site-footer${className ? ` ${className}` : ""}`}>
-      <nav className="site-footer__links" aria-label="About OURS">
+      <nav className="site-footer__links" aria-label="About our.one">
+        <Link href="/contract">Contract</Link>
+        <span aria-hidden="true"> · </span>
         <a href={OPEN_CODE_URL} rel="noopener noreferrer" target="_blank">
           Open code
         </a>

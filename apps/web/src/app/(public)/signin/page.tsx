@@ -30,7 +30,7 @@ export default async function SignInPage({
   return (
     <div className="stack stack--lg">
       <div className="stack">
-        <h1 className="headline">Sign in to OURS</h1>
+        <h1 className="headline">Sign in to our.one</h1>
         <p className="lede">
           Enter the email address of your account. We&apos;ll send you a link
           that signs you in. There&apos;s no password.
@@ -43,7 +43,7 @@ export default async function SignInPage({
       ) : null}
       <SignInForm />
       <p className="muted small">
-        New here? OURS is invite-only: ask someone you know to send you an
+        New here? our.one is invite-only: ask someone you know to send you an
         invite link.
       </p>
     </div>

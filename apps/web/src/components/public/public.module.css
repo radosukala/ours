@@ -1,72 +1,138 @@
 /*
- * The public pages (M5): landing, rules, privacy, costs, power and
- * unsubscribe. Only what the foundation's vocabulary (globals.css) does not
- * already have; every colour is a token from SPEC §9.
+ * The public pages (M5, M-0011): the front page, contract, rules, privacy,
+ * costs, power and unsubscribe. Only what the foundation's vocabulary
+ * (globals.css) does not already have; every colour is a token from
+ * SPEC §9.
  */
 
-/* ---------------------------------------------------------------- landing */
+/* ------------------------------------------------------------ front page */
 
-.landing {
+.front {
   display: grid;
-  gap: 16px;
+  gap: 32px;
 }
 
-.landing h1 {
-  /* SPEC §9: the landing headline in 31px / 800 (.headline). */
-  margin-bottom: 4px;
-}
-
-.promises {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.promises a {
-  color: var(--text);
-}
-
-.promises a:hover {
-  text-decoration: underline;
-}
-
-.connect {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.invite {
+.hero {
   display: grid;
   gap: 12px;
-  justify-items: start;
-  margin-top: 8px;
+}
+
+/* SPEC §18.2: one h1 on two lines (31px / 800 from .headline, SPEC §9). */
+.frontHeadline span {
+  display: block;
+}
+
+/* The count, shown as a rank. No progress bar (D-0012 §D). */
+.count {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.frontSection {
+  display: grid;
+  gap: 12px;
+  line-height: 1.45;
+}
+
+.frontSection h2 {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.getIn {
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 16px;
 }
 
-.invite p {
-  font-size: 17px;
+.seats {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
-.status {
+.haveInvite {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.more {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+.signature {
   color: var(--muted);
 }
 
-.links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
+/* Why: each sentence is the link to its source, underlined, in the text colour. */
+.story {
+  display: grid;
+  gap: 12px;
 }
 
-.links a {
-  color: var(--accent);
-}
-
-.links a:hover {
+.story a {
+  color: var(--text);
   text-decoration: underline;
+  text-decoration-color: var(--outline-border);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.story a:hover {
+  text-decoration-color: currentColor;
+}
+
+.moral {
+  font-size: 17px;
+}
+
+.questions {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+
+.questions dt {
+  font-weight: 700;
+}
+
+.questions dd {
+  margin: 4px 0 0;
+}
+
+/* --------------------------------------------------------------- contract */
+
+/* The promises keep their numbers: promise 8 refers to 1, 2 and 3 to 7. */
+.promiseList {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.promiseItem {
+  padding-left: 4px;
+}
+
+.promiseItem + .promiseItem {
+  margin-top: 16px;
+}
+
+.promiseItem::marker {
+  font-weight: 800;
+}
+
+.heldBy {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 /* ------------------------------------------------------------------ pages */

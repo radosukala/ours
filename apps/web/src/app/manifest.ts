@@ -1,13 +1,14 @@
 /**
- * The web app manifest (SPEC §9 PWA): name OURS, standalone, the theme
+ * The web app manifest (SPEC §9 PWA; the name from SPEC §18.5): name
+ * our.one, standalone, the theme
  * colours of the light tokens, and the SVG monogram.
  */
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "OURS",
-    short_name: "OURS",
+    name: "our.one",
+    short_name: "our.one",
     description: "A home for friends and people you choose to follow.",
     start_url: "/",
     scope: "/",

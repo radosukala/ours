@@ -125,7 +125,7 @@ export const FLOOR_RULES: RuleGroup[] = [
       {
         id: "reports",
         text: "Anyone can report a post, a reply or a person. A person reads every report and decides what happens.",
-        more: "No administrator exists until OURS is deployed; then it will be the founder, the only one. If you think a decision is wrong, write to the data controller, whose address is on the privacy page once one is named.",
+        more: "No administrator exists until our.one is deployed; then it will be the founder, the only one. If you think a decision is wrong, write to the data controller, whose address is on the privacy page once one is named.",
         cls: "INTERPRETED",
       },
       {
@@ -176,7 +176,7 @@ export const FLOOR_RULES: RuleGroup[] = [
     rules: [
       {
         id: "claims",
-        text: "The public pages make no claim that hasn't happened, such as who owns OURS, how contributions are taxed, or how fast it will grow.",
+        text: "The public pages make no claim that hasn't happened, such as who owns our.one, how contributions are taxed, or how fast it will grow.",
         more: "The check looks for words, not meaning: it can't tell a claim from its denial, or spot one made in other words. So it reports, and a person reads what it flags.",
         cls: "CHECKED",
         tests: ["tests/claims.test.ts"],

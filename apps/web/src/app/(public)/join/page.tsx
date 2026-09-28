@@ -28,9 +28,9 @@ export default async function JoinPage() {
   if (!accountCreationOpen()) {
     return (
       <section className="stack stack--lg">
-        <h1 className="headline">Join OURS</h1>
+        <h1 className="headline">Join our.one</h1>
         <p className="notice">
-          OURS isn&apos;t open for new accounts yet.{" "}
+          our.one isn&apos;t open for new accounts yet.{" "}
           <Link href="/privacy">Read why in the privacy notice.</Link>
         </p>
       </section>
@@ -43,7 +43,7 @@ export default async function JoinPage() {
   if (!pending) {
     return (
       <section className="stack stack--lg">
-        <h1 className="headline">Join OURS</h1>
+        <h1 className="headline">Join our.one</h1>
         <p className="lede">{JOIN_EXPIRED}</p>
         <div>
           <LinkButton href="/signin" kind="outline">
@@ -57,7 +57,7 @@ export default async function JoinPage() {
   return (
     <section className="stack stack--lg">
       <div className="stack">
-        <h1 className="headline">Join OURS</h1>
+        <h1 className="headline">Join our.one</h1>
         <p className="lede">
           {pending.inviter.displayName} (@{pending.inviter.handle}) invited you.
           When you join, you&apos;re friends.

@@ -65,8 +65,8 @@ export function Nav({ viewer, counts }: { viewer: NavViewer; counts: NavCounts }
   return (
     <nav className="nav" aria-label="Main">
       <div className="nav__inner">
-        <Link href="/home" className="nav__brand" aria-label="OURS home">
-          <span className="wordmark">OURS</span>
+        <Link href="/home" className="nav__brand" aria-label="our.one home">
+          <span className="wordmark">our.one</span>
         </Link>
         <ul className="nav__list">
           {navItems(viewer, counts).map((item) => {

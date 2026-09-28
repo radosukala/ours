@@ -66,7 +66,7 @@ export function notificationParts(n: NotificationView, contactEmail?: string | n
       return { text: <>{name} accepted your friend request.</>, href: toActor, quote: null, statement: null };
     case "invite_joined":
       return {
-        text: <>{name} joined OURS from your invite. You&apos;re now friends.</>,
+        text: <>{name} joined our.one from your invite. You&apos;re now friends.</>,
         href: toActor,
         quote: null,
         statement: null,

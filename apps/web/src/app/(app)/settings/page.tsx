@@ -130,7 +130,7 @@ export default async function SettingsPage() {
       <section aria-labelledby="settings-leave">
         <div className={styles.sectionHeader}>
           <h2 id="settings-leave" className={styles.heading}>
-            Leave OURS
+            Leave our.one
           </h2>
         </div>
         <SettingsLinks

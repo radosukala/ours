@@ -309,7 +309,7 @@ describe("/costs and the ledger", () => {
 describe("/power and /privacy", () => {
   beforeEach(reset);
 
-  it("fixed: /privacy says 'Resend delivers the emails OURS sends' whenever MAIL_TRANSPORT=resend, even where the transport refuses and nothing is sent or kept", async () => {
+  it("fixed: /privacy says 'Resend delivers the emails our.one sends' whenever MAIL_TRANSPORT=resend, even where the transport refuses and nothing is sent or kept", async () => {
     // SPEC §17 item 17: the provider line is derived from the configuration.
     // It reads one variable; sendMail also needs production, a key and a
     // sender, and otherwise refuses (SPEC §2 rule 5). Here nothing reaches
@@ -317,7 +317,7 @@ describe("/power and /privacy", () => {
     vi.stubEnv("MAIL_TRANSPORT", "resend");
     vi.spyOn(console, "error").mockImplementation(() => {});
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
-    const saysResend = privacy.includes("Resend delivers the emails OURS sends");
+    const saysResend = privacy.includes("Resend delivers the emails our.one sends");
     const result = await sendMail(db(), {
       to: "anna_f@example.test",
       subject: "FICTIONAL",
@@ -330,7 +330,7 @@ describe("/power and /privacy", () => {
     expect(saysResend, "/privacy names Resend as a recipient of data that is never sent to it").toBe(false);
   });
 
-  it("fixed: under a production configuration that sends through Resend, /privacy names Resend while /power says email sending is 'None yet' (RECORDED), and /privacy's own hosting line says OURS is not deployed", () => {
+  it("fixed: under a production configuration that sends through Resend, /privacy names Resend while /power says email sending is 'None yet' (RECORDED), and /privacy's own hosting line says our.one is not deployed", () => {
     // SPEC §17 item 18 made the controller row follow the configuration "so
     // /privacy and /power never disagree"; the email line of /privacy now
     // follows the configuration too, and the /power row does not.
@@ -340,10 +340,10 @@ describe("/power and /privacy", () => {
     vi.stubEnv("MAIL_FROM", "ours@example.test");
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     const power = textOf(renderToStaticMarkup(createElement(PowerPage)));
-    const privacyNamesResend = privacy.includes("Resend delivers the emails OURS sends");
-    const powerSaysNone = power.includes("Hosting, database, email sending recorded None yet. OURS is not deployed.");
+    const privacyNamesResend = privacy.includes("Resend delivers the emails our.one sends");
+    const powerSaysNone = power.includes("Hosting, database, email sending recorded None yet. our.one is not deployed.");
     expect(privacyNamesResend).toBe(true);
-    expect(privacy).toContain("Hosting none yet — OURS is not deployed.");
+    expect(privacy).toContain("Hosting none yet — our.one is not deployed.");
     expect(
       privacyNamesResend && powerSaysNone,
       "/privacy and /power, on one server, disagree about who sends email",
@@ -362,7 +362,7 @@ describe("/power and /privacy", () => {
         expect(text, String(fact)).not.toMatch(fact);
       }
       expect(text).toContain(
-        "The operator stated by the founder, not verified Ctrl AI, Inc. (Delaware) is proposed as the starting operator. Its authority, assets and responsibility for OURS are not yet recorded.",
+        "The maintainer stated by the founder, not verified The founder, through a company not yet confirmed. Ctrl AI, Inc. (Delaware) is proposed as the starting operator. Its authority, assets and responsibility for our.one are not yet recorded.",
       );
       expect(text).toContain(
         configured
@@ -416,16 +416,16 @@ describe("what the pages call public", () => {
       const rows = Object.fromEntries(loadControl().map((r) => [r.asset, r]));
       expect(rows["The code"]?.status).toBe("STATED");
       expect(rows["The code"]?.who).toMatch(/public once this build is pushed/);
-      const rulesRow = rows["The rules of OURS"]!;
+      const rulesRow = rows["The rules of our.one"]!;
       expect(rulesRow.status).toBe("RECORDED");
       // Decided (final fixes, honesty-8): the records are not pushed by this
       // build, so the pages say they are published with each release, and
       // never that they are public now. The verifier's version asserted the
       // old wording and that every RECORDED record was already on
       // origin/main; the architect chose the wording instead.
-      expect(rulesRow.who).toContain("Decisions are published with each release in the OURS records.");
+      expect(rulesRow.who).toContain("Decisions are published with each release in the our.one records.");
       const rules = textOf(renderToStaticMarkup(createElement(RulesPage)));
-      expect(rules).toContain("Every decision is published with each release in the OURS records .");
+      expect(rules).toContain("Every decision is published with each release in the our.one records .");
       const unpublished = loadControl()
         .filter((r) => r.status === "RECORDED")
         .filter((r) => (r.evidence ?? []).some((e) => git(["cat-file", "-e", `origin/main:${e.path}`]).status !== 0));
@@ -438,8 +438,8 @@ describe("what the pages call public", () => {
       for (const [page, text] of [["/rules", rules], ["/power", power], ["/costs", costs]] as const) {
         expect(text, page).not.toMatch(publicNow);
       }
-      expect(power).toContain("The list is a file in the OURS records, published with each release: control.json .");
-      expect(costs).toContain("The ledger is a file in the OURS records, published with each release: ledger.json .");
+      expect(power).toContain("The list is a file in the our.one records, published with each release: control.json .");
+      expect(costs).toContain("The ledger is a file in the our.one records, published with each release: ledger.json .");
     },
   );
 });
@@ -557,7 +557,7 @@ describe("/rules", () => {
 
   it("closed: /rules, rendered, says the founder can change or remove any check without notice, and every cited test file exists", () => {
     const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
-    expect(text).toContain("The founder can change or remove any of these checks without notice; every change is a commit in the OURS records, published with each release.");
+    expect(text).toContain("The founder can change or remove any of these checks without notice; every change is a commit in the our.one records, published with each release.");
     for (const r of FLOOR_RULES.flatMap((g) => g.rules)) {
       for (const f of r.tests ?? []) expect(() => read(f), `${r.id}: ${f}`).not.toThrow();
       if (r.cls === "DECLARED" || r.cls === "INTERPRETED") expect(r.tests ?? [], r.id).toEqual([]);

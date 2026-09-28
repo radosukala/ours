@@ -10,8 +10,8 @@ import Link from "next/link";
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
   return (
     <main id="main" className="plain-page">
-      <Link href="/" className="wordmark" aria-label="OURS, home">
-        OURS
+      <Link href="/" className="wordmark" aria-label="our.one, home">
+        our.one
       </Link>
       <h1 className="plain-page__title">Something went wrong on our side</h1>
       <p className="muted">

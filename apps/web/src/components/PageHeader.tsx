@@ -1,7 +1,7 @@
 /**
  * The sticky page header (SPEC §9): 53px, a blurred background, the page's
  * one h1. On phones (<700px) it is the top bar; on /home pass `wordmark`
- * and phones show the OURS wordmark in place of the title.
+ * and phones show the our.one wordmark in place of the title.
  *
  * `back` adds an arrow back to that address. `actions` sit on the right.
  * `children` render under the title row, inside the sticky area — use it
@@ -42,7 +42,7 @@ export function PageHeader({
           </h1>
           {wordmark ? (
             <span className="page-header__wordmark wordmark" aria-hidden="true">
-              OURS
+              our.one
             </span>
           ) : null}
           {subtitle ? <p className="page-header__subtitle">{subtitle}</p> : null}

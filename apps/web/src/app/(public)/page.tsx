@@ -1,25 +1,37 @@
 /**
- * The landing page (SPEC §1, §9, §10): the working copy, exactly; the
- * status line; how to get in; and the pages to read before joining.
- * Signed-in people go straight to /home.
+ * The front page `/` (SPEC §18.2, M-0011). Signed-in people go straight to
+ * /home.
+ *
+ * This file reads, on the server, what the page shows, and
+ * `components/public/FrontPage` renders it:
+ *
+ * - the public count, `memberCount`: accounts that exist and are not
+ *   suspended, never the waiting list (D-0012 §B);
+ * - whether the Get in form is shown: only while `accountCreationOpen()`
+ *   and `clientIpHeader()` are both true, the gates joining has;
+ * - the seats open, from `seatState`, only when the form is shown.
+ *
+ * If the count or the seats cannot be read (the database is down, or not
+ * there yet), that line is left out. The page still renders, with no error
+ * and no number.
  */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LinkButton } from "@/components/Button";
-import styles from "@/components/public/public.module.css";
-import { OPEN_CODE_URL, STATUS_LINE } from "@/components/RightColumn";
+import { FRONT_PAGE_TITLE, FrontPage } from "@/components/public/FrontPage";
+import { accountCreationOpen, clientIpHeader } from "@/core/config";
+import { getDb } from "@/core/db";
+import { memberCount, seatState } from "@/core/seats";
 import { readSessionCookie } from "@/web/session";
 import { getViewer } from "@/web/viewer";
 
 export const metadata: Metadata = {
-  title: { absolute: "OURS · Stay connected. On our terms." },
+  title: { absolute: FRONT_PAGE_TITLE },
 };
 
 /**
  * Whether this request is signed in. Without a session cookie the database
- * is not touched, so the page works while it is down; if the check fails,
- * the visitor sees the landing page rather than an error.
+ * is not touched for it; if the check fails, the visitor sees the front
+ * page rather than an error.
  */
 async function signedIn(): Promise<boolean> {
   if (!(await readSessionCookie())) return false;
@@ -27,66 +39,41 @@ async function signedIn(): Promise<boolean> {
     return (await getViewer()) !== null;
   } catch (error) {
     console.error(
-      "[ours] landing: the session could not be checked:",
+      "[ours] front page: the session could not be checked:",
       error instanceof Error ? error.name : "unknown error",
     );
     return false;
   }
 }
 
-export default async function LandingPage() {
+/** A number of people or seats, or null if it can't be shown as one. */
+function asCount(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+/** `read`'s number, or null when it fails. Logged by name only: a message can carry a host. */
+async function readNumber(what: string, read: () => Promise<number>): Promise<number | null> {
+  try {
+    return asCount(await read());
+  } catch (error) {
+    console.error(
+      `[ours] front page: ${what} could not be read:`,
+      error instanceof Error ? error.name : "unknown error",
+    );
+    return null;
+  }
+}
+
+export default async function FrontPageRoute() {
   if (await signedIn()) redirect("/home");
 
-  return (
-    <article className={styles.landing}>
-      <h1 className="headline">Stay connected. On our terms.</h1>
-      <p className="lede">
-        A home for friends and people you choose to follow. Their posts, in
-        order, with an end when you&apos;re caught up.
-      </p>
-      <p className="lede">
-        We&apos;re building OURS so our connections can stay with us as apps
-        change — and the people using it can control its future.
-      </p>
-      <p className={styles.promises}>
-        <a href={OPEN_CODE_URL} rel="noopener noreferrer" target="_blank">
-          Open code.
-        </a>{" "}
-        <Link href="/costs">Public costs.</Link>{" "}
-        <Link href="/rules">Clear rules.</Link>
-      </p>
-      <p className={styles.connect}>Connect with me on OURS.</p>
+  const joining = accountCreationOpen() && clientIpHeader() !== null;
+  const [count, seatsOpen] = await Promise.all([
+    readNumber("the count", () => memberCount(getDb())),
+    joining
+      ? readNumber("the seats", async () => (await seatState(getDb())).open)
+      : Promise.resolve(null),
+  ]);
 
-      <section className={styles.invite} aria-label="Getting in">
-        <p>Have an invite? Open the link you were sent.</p>
-        <LinkButton href="/signin" kind="primary">
-          Sign in
-        </LinkButton>
-      </section>
-
-      <p className={styles.status}>{STATUS_LINE}</p>
-
-      <nav aria-label="Before you join">
-        <ul className={styles.links}>
-          <li>
-            <Link href="/costs">Costs</Link>
-          </li>
-          <li>
-            <Link href="/power">Who controls what</Link>
-          </li>
-          <li>
-            <Link href="/rules">Rules</Link>
-          </li>
-          <li>
-            <Link href="/privacy">Privacy</Link>
-          </li>
-          <li>
-            <a href={OPEN_CODE_URL} rel="noopener noreferrer" target="_blank">
-              Open code
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </article>
-  );
+  return <FrontPage count={count} joining={joining} seatsOpen={seatsOpen} />;
 }

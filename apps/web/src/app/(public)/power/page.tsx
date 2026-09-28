@@ -16,7 +16,7 @@ import { type ControlRow, loadControl, TransparencyError } from "@/core/transpar
 
 export const metadata: Metadata = {
   title: "Who controls what",
-  description: "Who controls each part of OURS today, and what is not yet recorded.",
+  description: "Who controls each part of our.one today, and what is not yet recorded.",
 };
 
 const CONTROL_PATH = "apps/web/transparency/control.json";
@@ -38,7 +38,7 @@ export default function PowerPage() {
       <h1 className="headline">Who controls what</h1>
       <p className="lede">{STATUS_LINE}</p>
       <p>
-        Each part of OURS, who controls it today, and whether that is
+        Each part of our.one, who controls it today, and whether that is
         recorded, only stated, or not yet recorded at all.
       </p>
 
@@ -50,9 +50,9 @@ export default function PowerPage() {
         <ControlList rows={result.rows} />
       )}
 
-      <p>This page changes when control changes. Every change is a commit in the OURS records, published with each release.</p>
+      <p>This page changes when control changes. Every change is a commit in the our.one records, published with each release.</p>
       <p className={styles.meta}>
-        The list is a file in the OURS records, published with each
+        The list is a file in the our.one records, published with each
         release:{" "}
         <a href={repositoryUrl(CONTROL_PATH)} rel="noopener noreferrer" target="_blank">
           control.json

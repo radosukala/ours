@@ -13,13 +13,13 @@ export const dynamic = "force-dynamic";
 export default function NotFound() {
   return (
     <main id="main" className="plain-page">
-      <Link href="/" className="wordmark" aria-label="OURS, home">
-        OURS
+      <Link href="/" className="wordmark" aria-label="our.one, home">
+        our.one
       </Link>
       <h1 className="plain-page__title">Nothing here</h1>
       <p className="muted">This page doesn&apos;t exist, or isn&apos;t available.</p>
       <Link href="/" className="btn btn--primary">
-        Go to OURS
+        Go to our.one
       </Link>
       <footer>
         <SiteFooter />

@@ -378,14 +378,14 @@ describe("what the email says", () => {
 
     await runWeeklyDigest(db(), now);
     const [message] = await mailTo(reader.email);
-    expect(message?.subject).toBe("This week on OURS");
+    expect(message?.subject).toBe("This week on our.one");
     const body = message?.body ?? "";
     expect(body).toContain("FICTIONAL Anna posted 3 times.");
     expect(body).toContain("FICTIONAL Petr posted 2 times.");
     expect(body.indexOf("FICTIONAL Anna")).toBeLessThan(body.indexOf("FICTIONAL Petr"));
     expect(body.match(/ posted /g)).toHaveLength(5);
     expect(body).toContain("and 2 others");
-    expect(body).toContain("Open OURS: http://localhost:3000/home");
+    expect(body).toContain("Open our.one: http://localhost:3000/home");
     expect(body).toMatch(/Stop these emails: http:\/\/localhost:3000\/unsubscribe#\S+/);
   });
 });

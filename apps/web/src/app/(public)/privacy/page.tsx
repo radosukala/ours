@@ -15,6 +15,10 @@
  * is actually sent through it (the final verification's honesty-6/7).
  * Download and deletion work while an account is active; a suspended
  * person writes to the controller (honesty-2).
+ *
+ * A seat request (SPEC §18.4) is a purpose of its own, in one paragraph:
+ * the address is kept to send the join link, or in line until a seat opens
+ * and it is invited, or until its owner asks for it to be deleted.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -31,7 +35,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "What OURS keeps about you, why, for how long, and who else receives it.",
+  description: "What our.one keeps about you, why, for how long, and who else receives it.",
 };
 
 type Kept = { title: string; what: string; why: string; howLong: string };
@@ -115,7 +119,7 @@ const KEPT: Kept[] = [
   {
     title: "Test outbox",
     what: "Only on a server set to write email to a test outbox instead of sending it: each email's address, subject and text.",
-    why: "To build and test OURS without emailing anyone.",
+    why: "To build and test our.one without emailing anyone.",
     howLong: `${NOT_REMOVED_YET} What was written to your address is deleted when you delete your account.`,
   },
 ];
@@ -135,11 +139,11 @@ export default function PrivacyPage() {
     <article className={styles.page}>
       <h1 className="headline">Privacy</h1>
       <p className="lede">
-        What OURS keeps about you, why, for how long, and who else receives
+        What our.one keeps about you, why, for how long, and who else receives
         it.
       </p>
       <p className="notice">
-        OURS is not deployed yet. This notice describes what it keeps when
+        our.one is not deployed yet. This notice describes what it keeps when
         it runs.
       </p>
 
@@ -178,6 +182,12 @@ export default function PrivacyPage() {
           ))}
         </ul>
         <p>
+          If you ask for a seat, we keep your email address to send you the
+          join link, or, if no seat is open, until one opens and you are
+          invited, or until you ask us to delete it by writing to the
+          controller.
+        </p>
+        <p>
           Three cookies, all needed for the site to work: one keeps you
           signed in; one holds your place for up to {PENDING_JOIN_TTL_MINUTES}{" "}
           minutes while you join; and one holds, for up to 15 minutes, an
@@ -190,7 +200,7 @@ export default function PrivacyPage() {
       <section aria-labelledby="privacy-others">
         <h2 id="privacy-others">Who else receives your data</h2>
         <dl className={styles.facts}>
-          <dt>People on OURS</dt>
+          <dt>People on our.one</dt>
           <dd>
             Anyone signed in whom you haven&apos;t blocked, and who
             hasn&apos;t blocked you, can see your name, handle and bio. Your
@@ -202,7 +212,7 @@ export default function PrivacyPage() {
           <dd>
             Reads what is reported — a post, a reply or a profile — whoever
             it was shared with, sees who reported it, and decides what
-            happens. No administrator exists until OURS is deployed; the
+            happens. No administrator exists until our.one is deployed; the
             founder will be the only one.
           </dd>
           <dt>Whoever holds an invite link</dt>
@@ -213,7 +223,7 @@ export default function PrivacyPage() {
           <dt>Email provider</dt>
           <dd>{emailProvider()}</dd>
           <dt>Hosting</dt>
-          <dd>none yet — OURS is not deployed.</dd>
+          <dd>none yet — our.one is not deployed.</dd>
         </dl>
       </section>
 

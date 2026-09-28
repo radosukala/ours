@@ -148,6 +148,14 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     reason:
       "SPEC §12 allows \"no algorithm\" only on /rules, in this exact sentence: the feed is newest first, and nothing ranks it.",
   },
+  {
+    // The file holding the /contract copy (SPEC §18.7). A page file is
+    // imported by nothing else, so the sentence stays on /contract.
+    file: "src/app/(public)/contract/page.tsx",
+    sentence: "It won't be sold, and nobody will invest in it for a return.",
+    reason:
+      "D-0012 §A, promise 1: a denial of investment. SPEC §18.7 allows it on /contract only, in this exact sentence.",
+  },
 ];
 
 export type Hit = {

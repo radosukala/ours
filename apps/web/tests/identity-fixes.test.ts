@@ -380,12 +380,12 @@ describe("requestJoin is silent across a block, and names the inviter with the h
     expect(links.map((l) => l.email)).toEqual(["new_f@example.test"]);
   });
 
-  it("the join email says 'Name (@handle) invited you to connect on OURS'", async () => {
+  it("the join email says 'Name (@handle) invited you to connect on our.one'", async () => {
     const anna = await makeAccount({ handle: "anna_f", displayName: "Anna FICTIONAL" });
     const invite = await createInvite(db(), anna.id, {});
     await requestJoin(db(), { code: invite.code, email: "new_f@example.test", ipHash: IP });
     const mail = (await latestOutbox(db(), "new_f@example.test", "join"))!;
-    expect(mail.body).toContain("Anna FICTIONAL (@anna_f) invited you to connect on OURS.");
+    expect(mail.body).toContain("Anna FICTIONAL (@anna_f) invited you to connect on our.one.");
     expect(joinEmail("http://x/auth#t", "Anna", "anna").body).toContain("Anna (@anna) invited");
   });
 });
@@ -1042,7 +1042,7 @@ describe("a suspension is explained to the person (SPEC §17 item 14)", () => {
     const mails = await db().select().from(outbox).where(eq(outbox.toAddress, target.email));
     expect(mails).toHaveLength(1);
     expect(mails[0]!.kind).toBe("notice");
-    expect(mails[0]!.subject).toBe("Your OURS account is suspended");
+    expect(mails[0]!.subject).toBe("Your our.one account is suspended");
     expect(mails[0]!.body).toContain("FICTIONAL repeated harassment.");
     expect(mails[0]!.body).toContain("If you think this is wrong, write to controller@example.test.");
     const [log] = await db().select().from(mailLog).where(eq(mailLog.kind, "notice"));

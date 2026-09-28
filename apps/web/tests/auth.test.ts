@@ -470,12 +470,12 @@ describe("mail", () => {
       { name: "G", posts: 1 },
     ];
     const mail = digestEmail(lines, "http://localhost:3000/", "http://localhost:3000/unsubscribe#t");
-    expect(mail.subject).toBe("This week on OURS");
+    expect(mail.subject).toBe("This week on our.one");
     expect(mail.body).toContain("Anna posted 3 times.");
     expect(mail.body).toContain("Petr posted once.");
     expect(mail.body).toContain("and 2 others");
     expect(mail.body).not.toContain("F posted");
-    expect(mail.body).toContain("Open OURS: http://localhost:3000/home");
+    expect(mail.body).toContain("Open our.one: http://localhost:3000/home");
     expect(mail.body).toContain("Stop these emails: http://localhost:3000/unsubscribe#t");
     expect(joinEmail("http://x/auth#t", "Anna").subject).toContain("Anna");
   });

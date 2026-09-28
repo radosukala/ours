@@ -13,7 +13,7 @@ import { type LedgerSummary, ledgerSummary, TransparencyError } from "@/core/tra
 
 export const metadata: Metadata = {
   title: "Costs",
-  description: "What OURS has received, paid and expects to pay, in public.",
+  description: "What our.one has received, paid and expects to pay, in public.",
 };
 
 const LEDGER_PATH = "apps/web/transparency/ledger.json";
@@ -34,7 +34,7 @@ export default function CostsPage() {
     <article className={styles.page}>
       <h1 className="headline">Costs</h1>
       <p className="lede">
-        What OURS has received, what it has paid, and what&apos;s coming. A
+        What our.one has received, what it has paid, and what&apos;s coming. A
         promise is shown as a promise until the money arrives, and a figure
         as an estimate until there&apos;s an invoice.
       </p>
@@ -58,14 +58,14 @@ export default function CostsPage() {
               <>
                 <p>Contributions: open.</p>
                 <p>
-                  {"They're asked for as 'Support OURS'. They won't be tax-deductible unless the recipient qualifies, and they don't buy reach or a say."}
+                  {"They're asked for as 'Support our.one'. They won't be tax-deductible unless the recipient qualifies, and they don't buy reach or a say."}
                 </p>
               </>
             ) : (
               <>
                 <p>Contributions: not open yet.</p>
                 <p>
-                  {"When they open, they'll be asked for as 'Support OURS'. They won't be tax-deductible unless the recipient qualifies, and they don't buy reach or a say."}
+                  {"When they open, they'll be asked for as 'Support our.one'. They won't be tax-deductible unless the recipient qualifies, and they don't buy reach or a say."}
                 </p>
               </>
             )}
@@ -74,12 +74,12 @@ export default function CostsPage() {
       )}
 
       <p className={styles.meta}>
-        The ledger is a file in the OURS records, published with each
+        The ledger is a file in the our.one records, published with each
         release:{" "}
         <a href={repositoryUrl(LEDGER_PATH)} rel="noopener noreferrer" target="_blank">
           ledger.json
         </a>
-        . Every change to it is a commit in the OURS records, published with each release.
+        . Every change to it is a commit in the our.one records, published with each release.
       </p>
       <p className="muted">{STATUS_LINE}</p>
     </article>

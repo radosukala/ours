@@ -28,11 +28,12 @@ import PrivacyPage from "@/app/(public)/privacy/page";
 import RootNotFound from "@/app/not-found";
 import { ControlList } from "@/components/public/ControlList";
 import { FLOOR_RULES } from "@/components/public/floorRules";
+import { FRONT_PAGE_TITLE, FrontPage } from "@/components/public/FrontPage";
 import { LedgerView } from "@/components/public/LedgerView";
 import { ENFORCEMENT_WORDS } from "@/components/public/RuleList";
 import { SiteFooter, STATUS_LINE } from "@/components/RightColumn";
 import { PROHIBITED, publicTextFiles, scanRepoPublicText, scanText } from "@/core/claims";
-import { runningVersion } from "@/core/config";
+import { HANDOVER_THRESHOLD, runningVersion } from "@/core/config";
 import { runWeeklyDigest } from "@/core/digest";
 import { signInEmail, joinEmail } from "@/core/mail-templates";
 import { createPost, createReply, deleteReply } from "@/core/posts";
@@ -133,12 +134,14 @@ describe("claims scan: coverage of the prohibited list", () => {
   });
 
   it("closed: a one-line claim injected into the real landing page is caught by the scan of that file", () => {
-    const file = "src/app/(public)/page.tsx";
+    // Since M-0011 the front page's copy is in FrontPage.tsx (SPEC §18.2);
+    // src/app/(public)/page.tsx reads the count and renders it.
+    const file = "src/components/public/FrontPage.tsx";
     const real = read(file);
     expect(scanText(real, file)).toEqual([]);
     const injected = real.replace(
-      "<p className={styles.connect}>Connect with me on OURS.</p>",
-      "<p className={styles.connect}>Connect with me on OURS.</p><p>OURS is not for sale.</p>",
+      '<h2 id="front-promise">The promise</h2>',
+      '<h2 id="front-promise">The promise</h2><p>our.one is not for sale.</p>',
     );
     expect(injected).not.toBe(real);
     expect(scanText(injected, file).map((h) => h.match)).toEqual(["not for sale"]);
@@ -227,11 +230,13 @@ describe("claims scan: coverage of the prohibited list", () => {
 /* ====================================================================== */
 
 describe("/costs and the ledger", () => {
-  it("closed: transparency/ledger.json is exactly the JSON SPEC §11 says builders keep", () => {
+  it("closed: transparency/ledger.json is exactly the JSON SPEC §11 says builders keep, with SPEC §18.5's rename", () => {
     const spec = read("SPEC.md");
     const section = spec.slice(spec.indexOf("### `transparency/ledger.json`"));
     const block = section.slice(section.indexOf("```json") + 7, section.indexOf("```", section.indexOf("```json") + 7));
-    expect(JSON.parse(read("transparency/ledger.json"))).toEqual(JSON.parse(block));
+    // SPEC §18.5: the text in transparency/*.json says our.one where it said OURS.
+    expect(spec).toContain("and the text in\n  `transparency/*.json`.");
+    expect(JSON.parse(read("transparency/ledger.json"))).toEqual(JSON.parse(block.replaceAll("OURS", "our.one")));
   });
 
   it("closed: the page shows every ledger entry with its status in words, and counts neither as received nor paid", () => {
@@ -256,7 +261,7 @@ describe("/costs and the ledger", () => {
     expect(textOf(remaining)).toContain("Nothing received yet.");
     expect(text).toContain("Contributions: not open yet.");
     expect(text).toContain(
-      "When they open, they'll be asked for as 'Support OURS'. They won't be tax-deductible unless the recipient qualifies, and they don't buy reach or a say.",
+      "When they open, they'll be asked for as 'Support our.one'. They won't be tax-deductible unless the recipient qualifies, and they don't buy reach or a say.",
     );
     expect(text).toContain(ledger.unpaidWork);
     expect(text).toContain(ledger.scope);
@@ -340,9 +345,9 @@ describe("/power", () => {
     expect(readRepo("authority/FOUNDING-AUTHORITY.md")).toMatch(/\| `our\.one` \| founder \| founder's registrar account/);
     expect(rows["Money"]?.who).toBe("No account and nothing received");
     expect(readRepo("authority/FOUNDING-AUTHORITY.md")).toMatch(/treasury \/ bank \| none opened/);
-    expect(rows["The operator"]?.status).toBe("STATED");
-    expect(rows["The operator"]?.who).toMatch(/is proposed as the starting operator/);
-    expect(rows["The operator"]?.who).toMatch(/not yet recorded/);
+    expect(rows["The maintainer"]?.status).toBe("STATED");
+    expect(rows["The maintainer"]?.who).toMatch(/is proposed as the starting operator/);
+    expect(rows["The maintainer"]?.who).toMatch(/not yet recorded/);
     expect(rows["If the founder stops"]?.status).toBe("NOT_YET_RECORDED");
     const html = renderToStaticMarkup(createElement(ControlList, { rows: loadControl() }));
     expect(textOf(html)).toContain("stated by the founder, not verified");
@@ -599,18 +604,21 @@ describe("the running version", () => {
     expect(frozen, "public pages whose footer version is fixed when the app is built").toEqual([]);
   });
 
-  it("closed: the status line is D-0011 §B's, on /, /power, /rules and /costs, and in every public footer", () => {
-    const d11 = readRepo("decisions/D-0011.md");
-    expect(d11).toContain(
-      "*Founder-led and\nfounder-funded at launch. Working toward control by the people using it.*",
-    );
+  it("closed: the status line is D-0012 §D's, with the threshold from its constant, on /power, /rules and /costs, and in every public footer", () => {
+    // D-0012 §D replaces D-0011 §B's status line (SPEC §18.1).
+    const d12 = readRepo("decisions/D-0012.md").replace(/\s+/g, " ");
+    expect(d12).toContain('*"Maintained by its founder. Handed to its members at [threshold]."*');
     expect(STATUS_LINE).toBe(
-      "Founder-led and founder-funded at launch. Working toward control by the people using it.",
+      `Maintained by its founder. Handed to its members at ${HANDOVER_THRESHOLD.toLocaleString("en-US")}.`,
     );
-    for (const f of ["src/app/(public)/page.tsx", "src/app/(public)/power/page.tsx", "src/app/(public)/rules/page.tsx", "src/app/(public)/costs/page.tsx"]) {
+    expect(STATUS_LINE).toBe("Maintained by its founder. Handed to its members at 100,000.");
+    for (const f of ["src/app/(public)/power/page.tsx", "src/app/(public)/rules/page.tsx", "src/app/(public)/costs/page.tsx"]) {
       expect(read(f), f).toContain("{STATUS_LINE}");
     }
+    // The front page's own copy is SPEC §18.2's list; it shows the status
+    // line in the footer every public page has.
     expect(read("src/app/(public)/layout.tsx")).toContain("<SiteFooter />");
+    expect(textOf(renderToStaticMarkup(createElement(SiteFooter)))).toContain(STATUS_LINE);
   });
 });
 
@@ -619,29 +627,20 @@ describe("the running version", () => {
 /* ====================================================================== */
 
 describe("the landing page and product words", () => {
-  it("closed: the landing copy is D-0011 §B's working copy, word for word", () => {
-    const d11 = readRepo("decisions/D-0011.md");
-    const quote = d11
-      .slice(d11.indexOf("**Working copy for the v0 application**"), d11.indexOf("**The status line"))
-      .split("\n")
-      .filter((l) => l.startsWith("> "))
-      .map((l) => l.slice(2))
-      .join(" ")
-      .replace(/\*\*/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    expect(quote.startsWith("OURS · Stay connected. On our terms.")).toBe(true);
-    const page = read("src/app/(public)/page.tsx");
-    const article = page.slice(page.indexOf("<article"), page.indexOf("<section className={styles.invite}"));
-    const body = article
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\{" "\}/g, " ")
-      .replace(/&apos;/g, "'")
-      .replace(/\s+/g, " ")
-      .replace(/ \./g, ".")
-      .trim();
-    expect(page).toContain('title: { absolute: "OURS · Stay connected. On our terms." }');
-    expect(`OURS · ${body}`).toBe(quote);
+  it("closed: the front page's headline is D-0012 §D's, word for word, with the threshold from its constant; the lede is SPEC §18.2's", () => {
+    // D-0012 §D replaces D-0011 §B's working copy; SPEC §18.2 is the page.
+    const d12 = readRepo("decisions/D-0012.md").replace(/\s+/g, " ");
+    expect(d12).toContain(`*"Today it's mine. At [threshold] members, I give it away."*`);
+    const headline = `Today it's mine. At ${HANDOVER_THRESHOLD.toLocaleString("en-US")} members, I give it away.`;
+    expect(FRONT_PAGE_TITLE).toBe(`our.one · ${headline}`);
+    const html = renderToStaticMarkup(createElement(FrontPage, { count: null, joining: false, seatsOpen: null }));
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(textOf(html.slice(html.indexOf("<h1"), html.indexOf("</h1>")))).toBe(headline);
+    const spec = read("SPEC.md").replace(/\s+/g, " ");
+    const lede =
+      "our.one is a social network for your people: their posts, in order, with an end when you're caught up. No ads. No ranking.";
+    expect(spec).toContain(`**The lede:** "${lede}"`);
+    expect(textOf(html)).toContain(lede);
   });
 
   it("closed: no mechanism words (compiler, mandate, governance, constitution) in any visible public or product string", () => {

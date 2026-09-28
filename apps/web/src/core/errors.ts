@@ -55,7 +55,7 @@ export function conflict(message: string): CoreError {
 }
 
 export function closed(
-  message = "OURS isn't open for new accounts yet.",
+  message = "our.one isn't open for new accounts yet.",
 ): CoreError {
   return new CoreError("CLOSED", message);
 }

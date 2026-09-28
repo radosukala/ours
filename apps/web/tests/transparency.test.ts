@@ -408,17 +408,17 @@ describe("control", () => {
       expect(item).toContain("No record yet.");
     }
     expect(html.match(/data-status="NOT_YET_RECORDED"[^>]*>not yet recorded</g)).toHaveLength(2);
-    // The operator row says in its own words that its facts are not yet recorded.
-    expect(html).toContain("responsibility for OURS are not yet recorded");
+    // The maintainer's row says in its own words that its facts are not yet recorded.
+    expect(html).toContain("responsibility for our.one are not yet recorded");
     expect(html).toContain("stated by the founder, not verified");
   });
 
   it("holds the rows of SPEC §11, in order, with their statuses as SPEC §17 item 18 amends them", () => {
     const rows = loadControl(null);
     expect(rows.map((r) => [r.asset, r.status])).toEqual([
-      ["The rules of OURS", "RECORDED"],
+      ["The rules of our.one", "RECORDED"],
       ["The domain our.one", "RECORDED"],
-      ["The operator", "STATED"],
+      ["The maintainer", "STATED"],
       ["The code", "STATED"],
       ["Hosting, database, email sending", "RECORDED"],
       ["Releases", "RECORDED"],
@@ -455,7 +455,7 @@ describe("control", () => {
     expect(item).toBe(
       "Data controller stated in this server's configuration FICTIONAL Controller. Write to controller@example.test. No record yet.",
     );
-    // The operator's statement is still the founder's.
+    // The maintainer's statement is still the founder's.
     expect(textOf(html)).toContain("stated by the founder, not verified");
     expect(html.match(/data-status="NOT_YET_RECORDED"/g)).toHaveLength(1);
   });
@@ -581,7 +581,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     const text = textOf(renderToStaticMarkup(createElement(RulesPage)));
     expect(text).toContain("Who decides today");
     expect(text).toContain(
-      "The founder can change or remove any of these checks without notice; every change is a commit in the OURS records, published with each release.",
+      "The founder can change or remove any of these checks without notice; every change is a commit in the our.one records, published with each release.",
     );
     expect(text).toContain(STATUS_LINE);
     for (const words of Object.values(ENFORCEMENT_WORDS)) expect(text).toContain(words);
@@ -621,7 +621,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     );
     expect(text).not.toContain("Not yet named.");
     expect(text).toContain(STATUS_LINE);
-    expect(text).toContain("This page changes when control changes. Every change is a commit in the OURS records, published with each release.");
+    expect(text).toContain("This page changes when control changes. Every change is a commit in the our.one records, published with each release.");
     expect(text).toContain("Running version: v0-FICTIONAL-power.");
   });
 
@@ -648,7 +648,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     expect(text).toContain("You can complain to the data protection authority where you live.");
     const start = html.indexOf('id="privacy-others"');
     const others = textOf(html.slice(start, html.indexOf("</section>", start)));
-    for (const who of ["People on OURS", "The administrator", "Whoever holds an invite link", "Email provider", "Hosting"]) {
+    for (const who of ["People on our.one", "The administrator", "Whoever holds an invite link", "Email provider", "Hosting"]) {
       expect(others).toContain(who);
     }
     expect(others).toContain("whoever it was shared with");
@@ -667,7 +667,7 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     vi.stubEnv("RESEND_API_KEY", "re_FICTIONAL");
     vi.stubEnv("MAIL_FROM", "ours@example.test");
     const resend = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
-    expect(resend).toContain("Resend delivers the emails OURS sends");
+    expect(resend).toContain("Resend delivers the emails our.one sends");
     expect(resend).not.toContain("This server sends no email");
   });
 
@@ -725,15 +725,15 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
 
   it("no page says the records are public now: they are published with each release (final verification, honesty-8)", () => {
     const rows = Object.fromEntries(loadControl().map((r) => [r.asset, r]));
-    expect(rows["The rules of OURS"]?.who).toBe(
-      "The founder, under bootstrap authority. Decisions are published with each release in the OURS records.",
+    expect(rows["The rules of our.one"]?.who).toBe(
+      "The founder, under bootstrap authority. Decisions are published with each release in the our.one records.",
     );
     const rules = textOf(renderToStaticMarkup(createElement(RulesPage)));
     const power = textOf(renderToStaticMarkup(createElement(PowerPage)));
     const costs = textOf(renderToStaticMarkup(createElement(CostsPage)));
-    expect(rules).toContain("Every decision is published with each release in the OURS records .");
-    expect(power).toContain("The list is a file in the OURS records, published with each release: control.json .");
-    expect(costs).toContain("The ledger is a file in the OURS records, published with each release: ledger.json .");
+    expect(rules).toContain("Every decision is published with each release in the our.one records .");
+    expect(power).toContain("The list is a file in the our.one records, published with each release: control.json .");
+    expect(costs).toContain("The ledger is a file in the our.one records, published with each release: ledger.json .");
     const publicNow = /\b(?:are|is) public\b|\bpublic record\b|\bin the open code\b/i;
     for (const [page, text] of [["/rules", rules], ["/power", power], ["/costs", costs]] as const) {
       expect(text, page).not.toMatch(publicNow);
@@ -852,18 +852,18 @@ describe("email sending: /privacy, /power and sendMail say the same thing (final
       expect(privacy).toContain(`Email provider ${EMAIL_PROVIDER_WORDS[sending]}`);
       expect(privacy.includes("Resend"), "/privacy names Resend").toBe(sending === "resend");
       // Hosting stays what the records say, whatever sends the email.
-      expect(privacy).toContain("Hosting none yet — OURS is not deployed.");
+      expect(privacy).toContain("Hosting none yet — our.one is not deployed.");
 
       const row = hostingRow();
       expect(row.includes("Resend"), "/power names Resend").toBe(sending === "resend");
       expect(row).toBe(
         {
           outbox:
-            "Hosting, database, email sending recorded None yet. OURS is not deployed. This server sends no email: each message is written to a test outbox instead. Record: Build record M-0010: nothing deployed",
+            "Hosting, database, email sending recorded None yet. our.one is not deployed. This server sends no email: each message is written to a test outbox instead. Record: Build record M-0010: nothing deployed",
           refused:
-            "Hosting, database, email sending recorded None yet. OURS is not deployed. No email is sent: this server's email setup is incomplete. Record: Build record M-0010: nothing deployed",
+            "Hosting, database, email sending recorded None yet. our.one is not deployed. No email is sent: this server's email setup is incomplete. Record: Build record M-0010: nothing deployed",
           resend:
-            "Hosting, database, email sending stated in this server's configuration Email: Resend delivers the emails this server sends. Hosting and database: none yet; OURS is not deployed. Record: Build record M-0010: nothing deployed",
+            "Hosting, database, email sending stated in this server's configuration Email: Resend delivers the emails this server sends. Hosting and database: none yet; our.one is not deployed. Record: Build record M-0010: nothing deployed",
         }[sending],
       );
     });
@@ -872,7 +872,7 @@ describe("email sending: /privacy, /power and sendMail say the same thing (final
   it("refuses a control file whose hosting row is missing, doubled, or says anything but that nothing is hosted", () => {
     const file = parseControl({
       rows: [
-        { asset: HOSTING_ASSET, who: "None yet. OURS is not deployed.", status: "RECORDED", evidence: [{ path: "mandates/M-0010.md", label: "x" }] },
+        { asset: HOSTING_ASSET, who: "None yet. our.one is not deployed.", status: "RECORDED", evidence: [{ path: "mandates/M-0010.md", label: "x" }] },
       ],
     });
     expect(withEmailSending(file, "outbox")[0]?.status).toBe("RECORDED");

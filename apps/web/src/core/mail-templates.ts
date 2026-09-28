@@ -9,9 +9,9 @@ export type MailContent = { subject: string; body: string };
 
 export function signInEmail(url: string): MailContent {
   return {
-    subject: "Your sign-in link for OURS",
+    subject: "Your sign-in link for our.one",
     body: [
-      "Here's your link to sign in to OURS:",
+      "Here's your link to sign in to our.one:",
       "",
       url,
       "",
@@ -36,9 +36,9 @@ export function joinEmail(
   const inviter = inviterHandle ? `${inviterName} (@${inviterHandle})` : inviterName;
   return {
     // The handle is in the subject too: a display name alone can be copied.
-    subject: `${inviter} invited you to OURS`,
+    subject: `${inviter} invited you to our.one`,
     body: [
-      `${inviter} invited you to connect on OURS.`,
+      `${inviter} invited you to connect on our.one.`,
       "",
       "Open this link to join:",
       "",
@@ -66,9 +66,9 @@ export function suspensionEmail(
   controllerEmail: string | null,
 ): MailContent {
   return {
-    subject: "Your OURS account is suspended",
+    subject: "Your our.one account is suspended",
     body: [
-      "Your OURS account is suspended. You can't sign in, and your profile, posts and replies are hidden from everyone.",
+      "Your our.one account is suspended. You can't sign in, and your profile, posts and replies are hidden from everyone.",
       "",
       "The reason, as the administrator wrote it:",
       "",
@@ -110,11 +110,11 @@ export function digestEmail(
   if (rest > 0) names.push(rest === 1 ? "and 1 other" : `and ${rest} others`);
   const base = appUrl.replace(/\/+$/, "");
   return {
-    subject: "This week on OURS",
+    subject: "This week on our.one",
     body: [
       ...names,
       "",
-      `Open OURS: ${base}/home`,
+      `Open our.one: ${base}/home`,
       "",
       `Stop these emails: ${unsubUrl}`,
     ].join("\n"),

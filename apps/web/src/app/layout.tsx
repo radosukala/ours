@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "OURS", template: "%s · OURS" },
+  title: { default: "our.one", template: "%s · our.one" },
   description: "A home for friends and people you choose to follow.",
   referrer: "no-referrer",
   formatDetection: { telephone: false, email: false, address: false },

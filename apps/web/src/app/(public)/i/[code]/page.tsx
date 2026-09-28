@@ -8,7 +8,7 @@
  *   or a block either way): one generic message;
  * - signed in: "Add <Name> as a friend", or "You're already friends", or
  *   "This is your own invite" with its note;
- * - signed out, no data controller named: "OURS isn't open for new
+ * - signed out, no data controller named: "our.one isn't open for new
  *   accounts yet." and no form;
  * - signed out: an email field.
  *
@@ -55,7 +55,7 @@ export default async function InvitePage({
         <h1 className="headline">{INVITE_UNUSABLE}</h1>
         <div>
           <LinkButton href={viewer ? "/home" : "/"} kind="outline">
-            {viewer ? "Go home" : "About OURS"}
+            {viewer ? "Go home" : "About our.one"}
           </LinkButton>
         </div>
       </section>
@@ -87,7 +87,7 @@ export default async function InvitePage({
     );
   }
 
-  const heading = `${inviter.displayName} (@${inviter.handle}) invited you to connect on OURS`;
+  const heading = `${inviter.displayName} (@${inviter.handle}) invited you to connect on our.one`;
 
   return (
     <section className="stack stack--lg">
@@ -113,11 +113,11 @@ export default async function InvitePage({
         <>
           <p className="lede">{PITCH}</p>
           <p className="notice">
-            OURS isn&apos;t open for new accounts yet.{" "}
+            our.one isn&apos;t open for new accounts yet.{" "}
             <Link href="/privacy">Read why in the privacy notice.</Link>
           </p>
           <p className="muted small">
-            Already on OURS? <Link href="/signin" className="link">Sign in</Link>, then
+            Already on our.one? <Link href="/signin" className="link">Sign in</Link>, then
             open this link again.
           </p>
         </>
@@ -128,7 +128,7 @@ export default async function InvitePage({
           <p className="lede">{PITCH}</p>
           <JoinRequestForm code={code} />
           <p className="muted small">
-            Already on OURS? <Link href="/signin" className="link">Sign in</Link>, then
+            Already on our.one? <Link href="/signin" className="link">Sign in</Link>, then
             open this link again.
           </p>
         </>

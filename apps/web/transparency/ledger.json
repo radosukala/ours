@@ -1,8 +1,8 @@
 {
-  "scope": "This ledger covers OURS only. It is kept separate from any other project of the same company.",
+  "scope": "This ledger covers our.one only. It is kept separate from any other project of the same company.",
   "currency": "USD",
   "contributions_open": false,
-  "unpaid_work": "The founder works on OURS without pay. This is acknowledged here and not given a money value.",
+  "unpaid_work": "The founder works on our.one without pay. This is acknowledged here and not given a money value.",
   "entries": [
     {
       "id": "L-0001",

@@ -19,6 +19,7 @@ import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AppNotFound from "@/app/(app)/not-found";
+import ContractPage from "@/app/(public)/contract/page";
 import CostsPage from "@/app/(public)/costs/page";
 import PublicLayout from "@/app/(public)/layout";
 import LandingPage from "@/app/(public)/page";
@@ -212,6 +213,33 @@ describe("denials pass only where the scan says why", () => {
     };
     walk(join(WEB_ROOT, "src"));
     expect(importers).toEqual(["src/app/(public)/rules/page.tsx"]);
+  });
+
+  it("promise 1 passes only in the file holding the /contract copy, only in its exact words, and nothing imports that file (SPEC §18.7)", () => {
+    const file = "src/app/(public)/contract/page.tsx";
+    const sentence = "It won't be sold, and nobody will invest in it for a return.";
+    expect(ALLOWLIST.filter((e) => e.file === file).map((e) => e.sentence)).toEqual([sentence]);
+    expect(ALLOWLIST.find((e) => e.file === file)?.reason).toMatch(/D-0012 §A, promise 1/);
+    expect(scanText(sentence, file)).toEqual([]);
+    expect(scanText("It won&apos;t be sold, and nobody will\n      invest in it for a return.", file)).toEqual([]);
+    // Anywhere else, or in other words, it is a hit.
+    expect(scanText(sentence, "src/components/public/FrontPage.tsx").length).toBe(1);
+    expect(scanText("Nobody will invest in it for a return.", file).length).toBe(1);
+    expect(scanText("It won't be sold, and nobody will invest in it.", file).length).toBe(1);
+    expect(scanText(`${sentence} Invest now.`, file).length).toBe(1);
+    // A page file is imported by nothing, so the sentence cannot travel.
+    const importers: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (/\.(ts|tsx)$/.test(entry.name) && /["']@\/app\/\(public\)\/contract\/page["']|["'][^"']*\/contract\/page["']/.test(readFileSync(path, "utf8"))) {
+          importers.push(path);
+        }
+      }
+    };
+    walk(join(WEB_ROOT, "src"));
+    expect(importers).toEqual([]);
   });
 });
 
@@ -445,6 +473,8 @@ function renderedHits(html: string, file: string | null = null) {
 
 /** The rules page's data file: its one allowlisted sentence is shown only on /rules. */
 const RULES_FILE = "src/components/public/floorRules.ts";
+/** The file holding the /contract copy: its one allowlisted sentence is shown only on /contract (SPEC §18.7). */
+const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
 
 describe("what people are shown: every public page, the footers and every mail, rendered (final verification, honesty-1)", () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -454,6 +484,7 @@ describe("what people are shown: every public page, the footers and every mail, 
     const landing = (await LandingPage()) as ReactElement;
     return [
       ["/", renderToStaticMarkup(landing), null],
+      ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
       ["/privacy", renderToStaticMarkup(createElement(PrivacyPage)), null],
       ["/power", renderToStaticMarkup(createElement(PowerPage)), null],
@@ -492,7 +523,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       vi.unstubAllEnvs();
       for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
       const rendered = await pages();
-      expect(rendered).toHaveLength(10);
+      expect(rendered).toHaveLength(11);
       for (const [page, html, file] of rendered) {
         expect(textOf(html).length, `${name}: ${page}`).toBeGreaterThan(0);
         expect(renderedHits(html, file), `${name}: ${page}`).toEqual([]);
@@ -500,11 +531,17 @@ describe("what people are shown: every public page, the footers and every mail, 
     }
   });
 
-  it("shows the one allowlisted sentence only on /rules", async () => {
-    for (const [page, html, file] of await pages()) {
-      const shows = textOf(html).includes(ALLOWLIST[0]!.sentence);
-      expect(shows, page).toBe(page === "/rules");
-      if (file === null) expect(scanText(html).filter((h) => /algorithm/i.test(h.match)), page).toEqual([]);
+  it("shows each allowlisted sentence only on its own page: 'No algorithm…' on /rules, promise 1 on /contract", async () => {
+    const rendered = await pages();
+    const home: Record<string, string> = { [RULES_FILE]: "/rules", [CONTRACT_FILE]: "/contract" };
+    expect(ALLOWLIST.map((e) => e.file).sort()).toEqual(Object.keys(home).sort());
+    for (const entry of ALLOWLIST) {
+      for (const [page, html] of rendered) {
+        expect(textOf(html).includes(entry.sentence), `${page}: ${entry.sentence}`).toBe(page === home[entry.file]);
+      }
+    }
+    for (const [page, html, file] of rendered) {
+      if (file === null) expect(scanText(html).filter((h) => /algorithm|invest/i.test(h.match)), page).toEqual([]);
     }
   });
 
@@ -543,6 +580,10 @@ describe("the scan over the real files", () => {
       "transparency/control.json",
       "src/core/mail-templates.ts",
       "src/app/(public)/page.tsx",
+      "src/app/(public)/contract/page.tsx",
+      "src/components/public/FrontPage.tsx",
+      "src/components/public/GetInForm.tsx",
+      "src/components/public/handover.ts",
       "src/app/(public)/rules/page.tsx",
       "src/app/(public)/privacy/page.tsx",
       "src/app/(public)/costs/page.tsx",

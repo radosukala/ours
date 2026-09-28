@@ -3,7 +3,7 @@
 /**
  * Create an invite link (SPEC §8 "Invites"): an optional private note, then
  * the link, shown once, with Copy and — on devices that can — Share, whose
- * text is "Connect with me on OURS". Only a hash of the code is kept, so
+ * text is "Connect with me on our.one". Only a hash of the code is kept, so
  * the link cannot be shown again after you leave the page.
  */
 import {
@@ -19,7 +19,7 @@ import { Field } from "@/components/Field";
 import { Icon } from "@/components/Icon";
 import styles from "./people.module.css";
 
-export const SHARE_TEXT = "Connect with me on OURS";
+export const SHARE_TEXT = "Connect with me on our.one";
 
 const noSubscription = () => () => {};
 
@@ -84,7 +84,7 @@ function InviteLink({ url }: { url: string }) {
 
   async function share() {
     try {
-      await navigator.share({ title: "OURS", text: SHARE_TEXT, url });
+      await navigator.share({ title: "our.one", text: SHARE_TEXT, url });
     } catch {
       // Cancelled, or not allowed: nothing to do.
     }
