@@ -17,8 +17,13 @@
  * - A join link opened by someone who already has an account applies
  *   nothing: it signs them in and offers "Add <Name> (@handle) as a
  *   friend?" (SPEC §17 item 1). Only their Add calls `useInviteAsExisting`.
+ * - A seat invite (SPEC §18.4) is an invite from the maintainer with the
+ *   note "seat", made when someone takes a seat (core/seats.ts). It takes
+ *   none of the maintainer's own invites and is never refunded, listed or
+ *   revoked as one of theirs; so no invite of a person's own may carry
+ *   that note. Joining through it is the usual join.
  */
-import { and, desc, eq, gt, isNull, lte, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, ne, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { createEmailToken, createSession, pendingJoinFromCookie } from "./auth";
 import {
@@ -69,6 +74,11 @@ export const HANDLE_TAKEN = "That username is taken. Choose another.";
 export const JOIN_REQUESTS_OFF =
   "This server can't send join links yet: its setup doesn't name the header that carries each visitor's address (CLIENT_IP_HEADER).";
 
+/** The note that marks a seat invite (SPEC §18.4). */
+export const SEAT_NOTE = "seat";
+/** A person's own invite can't carry the seat note: it would be taken for a seat. */
+export const NOTE_RESERVED = "That note is reserved. Choose another.";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Codes are 22 characters; anything that cannot be a code is not looked up. */
 const CODE_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
@@ -90,6 +100,7 @@ function usable(now: Date) {
  * Mark the inviter's unused invites that have expired as expired
  * (`revoked_at = expires_at`) and give each one back. Two listings at once
  * cannot refund twice: the second update finds the rows already marked.
+ * A seat invite took none of the inviter's invites, so none is given back.
  */
 async function refundExpired(db: Db, inviterId: string, now: Date): Promise<number> {
   return withTx(db, async (tx) => {
@@ -99,6 +110,7 @@ async function refundExpired(db: Db, inviterId: string, now: Date): Promise<numb
       .where(
         and(
           eq(invites.inviterId, inviterId),
+          ne(invites.note, SEAT_NOTE),
           isNull(invites.usedAt),
           isNull(invites.revokedAt),
           lte(invites.expiresAt, now),
@@ -134,6 +146,7 @@ function statusOf(
 /**
  * Create an invite: decrements `invites_remaining` (refused at 0),
  * rate-limited to 20 a day. Returns the code, shown to the inviter once.
+ * The note "seat" is refused (INVALID): it marks seat invites.
  */
 export async function createInvite(
   db: Db,
@@ -142,6 +155,7 @@ export async function createInvite(
 ): Promise<{ id: string; code: string; expiresAt: Date }> {
   const now = input.now ?? new Date();
   const note = validNote(input.note ?? "");
+  if (note === SEAT_NOTE) throw invalid(NOTE_RESERVED);
   if (!(await isActive(db, inviterId))) throw forbidden();
 
   await refundExpired(db, inviterId, now);
@@ -183,7 +197,36 @@ export async function createInvite(
   return { id, code, expiresAt };
 }
 
-/** Your invites, newest first. Expired unused ones are marked and refunded here. */
+/**
+ * A seat invite (SPEC §18.4), made inside the transaction that takes the
+ * seat: an invite from the maintainer with the note "seat", valid for as
+ * long as any invite. It takes none of the maintainer's invites. Its code
+ * is never shown to anyone (only its hash is stored, as for every invite):
+ * the seat email carries a join link for it, and joining through that link
+ * is the usual join, with the maintainer recorded as the inviter.
+ */
+export async function createSeatInvite(
+  tx: Db,
+  maintainerId: string,
+  now: Date,
+): Promise<{ id: string }> {
+  const id = newId();
+  await tx.insert(invites).values({
+    id,
+    codeHash: sha256(randomToken(16)),
+    inviterId: maintainerId,
+    note: SEAT_NOTE,
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + INVITE_TTL_DAYS * DAY_MS),
+  });
+  return { id };
+}
+
+/**
+ * Your invites, newest first. Expired unused ones are marked and refunded
+ * here. Seat invites are not yours to list: they are the maintainer's only
+ * because a seat is an invitation from the maintainer.
+ */
 export async function listInvites(
   db: Db,
   inviterId: string,
@@ -211,7 +254,7 @@ export async function listInvites(
     })
     .from(invites)
     .leftJoin(usedBy, eq(usedBy.id, invites.usedBy))
-    .where(eq(invites.inviterId, inviterId))
+    .where(and(eq(invites.inviterId, inviterId), ne(invites.note, SEAT_NOTE)))
     .orderBy(desc(invites.createdAt), desc(invites.id));
   return {
     remaining: me?.remaining ?? 0,
@@ -228,8 +271,9 @@ export async function listInvites(
 
 /**
  * Revoke one of your unused invites; refunds one. Someone else's invite is
- * NOT_FOUND; a used one is CONFLICT; one already revoked or expired changes
- * nothing (and is not refunded again).
+ * NOT_FOUND, and so is a seat invite, which is not one of yours; a used one
+ * is CONFLICT; one already revoked or expired changes nothing (and is not
+ * refunded again).
  */
 export async function revokeInvite(
   db: Db,
@@ -246,7 +290,13 @@ export async function revokeInvite(
         revokedAt: invites.revokedAt,
       })
       .from(invites)
-      .where(and(eq(invites.id, inviteId), eq(invites.inviterId, inviterId)))
+      .where(
+        and(
+          eq(invites.id, inviteId),
+          eq(invites.inviterId, inviterId),
+          ne(invites.note, SEAT_NOTE),
+        ),
+      )
       .for("update");
     if (!row) throw notFound("That invite isn't available.");
     if (row.usedAt) throw conflict("This invite was already used.");

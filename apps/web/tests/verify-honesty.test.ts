@@ -385,7 +385,8 @@ describe("/privacy", () => {
   it("closed: every table in src/core/schema.ts is described", () => {
     const schema = read("src/core/schema.ts");
     const tables = [...schema.matchAll(/pgTable\(\s*"([a-z_]+)"/g)].map((m) => m[1]!);
-    expect(tables.length).toBe(19);
+    // 19 under M-0010; M-0011 (SPEC §18.4) adds seat_state and waitlist.
+    expect(tables.length).toBe(21);
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     const described: Record<string, string> = {
       accounts: "Your account",
@@ -407,8 +408,14 @@ describe("/privacy", () => {
       outbox: "Test outbox",
       mail_log: "Email records",
       digest_deliveries: "Weekly email record",
+      // The paragraph SPEC §18.4 adds to /privacy for a seat request.
+      waitlist: "If you ask for a seat",
     };
+    // One number (how many seats are open) and when it changed: nothing
+    // about a person, so /privacy has nothing to say about it.
+    const aboutNobody = new Set(["seat_state"]);
     for (const t of tables) {
+      if (aboutNobody.has(t)) continue;
       expect(described[t], `no plain-words entry chosen for ${t}`).toBeDefined();
       expect(privacy, t).toContain(described[t]!);
     }

@@ -1,0 +1,23 @@
+/*
+ * The Seats section on /admin (SPEC §9 tokens only). Fields, notices and
+ * buttons come from globals.css; this file sets the heading and the
+ * "Open [n] seats" sentence.
+ */
+
+.title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  width: 8em;
+  flex: none;
+}
