@@ -553,6 +553,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       mailTemplates.joinEmail(url, "FICTIONAL Anna", "anna_f"),
       mailTemplates.suspensionEmail("FICTIONAL statement of reasons.", "controller@example.test"),
       mailTemplates.suspensionEmail("FICTIONAL statement of reasons.", null),
+      mailTemplates.seatEmail(url),
       mailTemplates.digestEmail(
         Array.from({ length: 7 }, (_, i) => ({ name: `FICTIONAL Person ${i}`, posts: i + 1 })),
         "http://localhost:3000",
@@ -568,7 +569,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       .filter(([, value]) => typeof value === "function")
       .map(([name]) => name)
       .sort();
-    expect(exported).toEqual(["digestEmail", "joinEmail", "signInEmail", "suspensionEmail"]);
+    expect(exported).toEqual(["digestEmail", "joinEmail", "seatEmail", "signInEmail", "suspensionEmail"]);
   });
 });
 

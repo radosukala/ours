@@ -1,8 +1,10 @@
 /**
  * /admin (SPEC §8): open reports, oldest first, each with the reported item
  * and the reporter's handle, and the decisions Remove, Suspend account and
- * Dismiss. Anyone who is not an administrator gets the not-found page, the
- * same as for a page that does not exist.
+ * Dismiss. Then the seats (SPEC §18.4): how many are open and how many
+ * addresses wait in line, a form to open more, and one to remove an address
+ * from the line. Anyone who is not an administrator gets the not-found
+ * page, the same as for a page that does not exist.
  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -12,6 +14,7 @@ import { RelativeTime } from "@/components/RelativeTime";
 import { ModerationActions } from "@/components/safety/ModerationActions";
 import { ReportedItem } from "@/components/safety/ReportedItem";
 import styles from "@/components/safety/safety.module.css";
+import { accountCreationOpen } from "@/core/config";
 import { getDb } from "@/core/db";
 import { isCoreError } from "@/core/errors";
 import {
@@ -24,8 +27,17 @@ import {
   REPORT_CATEGORY_LABELS,
 } from "@/core/reports";
 import { REPORT_CATEGORIES } from "@/core/schema";
+import { OPEN_SEATS_MAX, SEATS_OFF, seatState } from "@/core/seats";
 import { requireViewer } from "@/web/viewer";
-import { dismissReported, removeReported, suspendReported } from "./actions";
+import {
+  dismissReported,
+  forgetAction,
+  openSeatsAction,
+  removeReported,
+  suspendReported,
+} from "./actions";
+import { SeatControls } from "./SeatControls";
+import seatStyles from "./seats.module.css";
 
 export const metadata: Metadata = { title: "Reports" };
 
@@ -125,11 +137,34 @@ function ReportEntry({
   );
 }
 
+/** "Seats open: {open}. In line: {waiting}." (SPEC §18.4) */
+function seatsLine({ open, waiting }: { open: number; waiting: number }): string {
+  return `Seats open: ${open.toLocaleString("en-US")}. In line: ${waiting.toLocaleString("en-US")}.`;
+}
+
+function Seats({ open, waiting }: { open: number; waiting: number }) {
+  return (
+    <section className="section stack" aria-labelledby="admin-seats-title">
+      <h2 id="admin-seats-title" className={seatStyles.title}>
+        Seats
+      </h2>
+      <p>{seatsLine({ open, waiting })}</p>
+      {accountCreationOpen() ? null : <p className="notice">{SEATS_OFF}</p>}
+      <SeatControls
+        openAction={openSeatsAction}
+        forgetAction={forgetAction}
+        max={OPEN_SEATS_MAX}
+      />
+    </section>
+  );
+}
+
 export default async function AdminPage() {
   const viewer = await requireViewer();
   if (!viewer.isAdmin) notFound();
   const reports = await openReports(viewer.id);
   if (!reports) notFound();
+  const seats = await seatState(getDb());
 
   return (
     <>
@@ -148,6 +183,7 @@ export default async function AdminPage() {
           <ReportEntry key={report.id} report={report} viewerId={viewer.id} />
         ))
       )}
+      <Seats open={seats.open} waiting={seats.waiting} />
     </>
   );
 }

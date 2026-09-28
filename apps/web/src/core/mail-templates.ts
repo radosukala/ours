@@ -4,6 +4,7 @@
  * No template includes a post's text: the weekly email names who posted,
  * never what (D-0011 §D.5).
  */
+import { EMAIL_TOKEN_TTL_MINUTES } from "./config";
 
 export type MailContent = { subject: string; body: string };
 
@@ -117,6 +118,25 @@ export function digestEmail(
       `Open our.one: ${base}/home`,
       "",
       `Stop these emails: ${unsubUrl}`,
+    ].join("\n"),
+  };
+}
+
+/**
+ * The seat email (SPEC §18.4): the join link for a seat, sent when someone
+ * takes one on the front page or is invited from the waiting list. The
+ * link is an ordinary join link, so its lifetime is the join link's, and
+ * the body states it from the same constant.
+ */
+export function seatEmail(url: string): MailContent {
+  return {
+    subject: "Your seat on our.one",
+    body: [
+      `You asked for a seat on our.one. Here is your link to join. It works once and expires in ${EMAIL_TOKEN_TTL_MINUTES} minutes.`,
+      "",
+      url,
+      "",
+      "If you didn't ask, ignore this email. Nothing is kept unless you join.",
     ].join("\n"),
   };
 }

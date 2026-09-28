@@ -363,7 +363,7 @@ describe("once a week", () => {
 });
 
 describe("what the email says", () => {
-  it("names up to five people, most posts first, then 'and N others', then the two links", async () => {
+  it("names up to five people, the most recent poster first, then 'and N others', then the two links", async () => {
     const reader = await makeAccount();
     const names = ["Anna", "Petr", "Eva", "Jan", "Olga", "Karel", "Zora"];
     for (const [i, name] of names.entries()) {

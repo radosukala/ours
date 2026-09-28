@@ -464,7 +464,8 @@ export const notifications = pgTable(
  * Keys: signin:email:<h>, signin:ip:<h>, join:email:<h>, join:ip:<h>,
  * join:invite:<inviteId>, post:<accountId>, reply:<accountId>,
  * friendreq:<accountId>, follow:<accountId>, report:<accountId>,
- * invite:<accountId>, handle:<accountId>. `<h>` is `rateKeyHash` (limits.ts).
+ * invite:<accountId>, handle:<accountId>, seat:email:<h>, seat:ip:<h>.
+ * `<h>` is `rateKeyHash` (limits.ts).
  *
  * The index on `created_at` alone serves the prune every `hit()` runs over
  * all keys (SPEC §17 item 3); without it that delete scans the table.
@@ -534,6 +535,42 @@ export const digestDeliveries = pgTable(
   ],
 );
 
+/* ------------------------------------------------ seat_state, waitlist */
+
+/**
+ * Seats (SPEC §18.4, M-0011): one row, id 'seats', made the first time a
+ * seat is asked for or opened. `open` is how many seats an administrator
+ * opened that nobody has taken yet. The checks keep it to that one row and
+ * never below zero, whatever the code does.
+ */
+export const seatState = pgTable(
+  "seat_state",
+  {
+    id: text("id").primaryKey(),
+    open: integer("open").notNull().default(0),
+    updatedAt: tstz("updated_at").notNull().defaultNow(),
+  },
+  () => [
+    check("seat_state_open_nonnegative", sql`"open" >= 0`),
+    check("seat_state_one_row", sql`id = 'seats'`),
+  ],
+);
+
+/**
+ * The waiting list (SPEC §18.4): an address (normalized, like
+ * `accounts.email`) and when it was added. Nothing else is kept. An address
+ * leaves when it is invited, or when its owner asks.
+ */
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    email: text("email").primaryKey(),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+  },
+  // Oldest first is the order a wave of seats invites in.
+  (t) => [index("waitlist_created_idx").on(t.createdAt, t.email)],
+);
+
 /* ----------------------------------------------------------------- types */
 
 export type Account = typeof accounts.$inferSelect;
@@ -555,3 +592,5 @@ export type RateEvent = typeof rateEvents.$inferSelect;
 export type OutboxMessage = typeof outbox.$inferSelect;
 export type MailLogEntry = typeof mailLog.$inferSelect;
 export type DigestDelivery = typeof digestDeliveries.$inferSelect;
+export type SeatState = typeof seatState.$inferSelect;
+export type WaitlistEntry = typeof waitlist.$inferSelect;

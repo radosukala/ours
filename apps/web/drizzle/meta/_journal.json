@@ -15,6 +15,13 @@
       "when": 1790280107557,
       "tag": "0001_verification_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790578989254,
+      "tag": "0002_seats",
+      "breakpoints": true
     }
   ]
 }

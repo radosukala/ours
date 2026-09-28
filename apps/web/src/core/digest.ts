@@ -8,7 +8,9 @@
  *   others". The names are the distinct authors, other than the recipient,
  *   who posted in the last 7 days, counting only posts the recipient may
  *   see — through the one visibility predicate, never a copy of it — and
- *   leaving out anyone the recipient muted.
+ *   leaving out anyone the recipient muted. The most recent poster comes
+ *   first (SPEC §18.6): ordering by how much someone posted would rank
+ *   people by activity.
  * - When there is nothing to say, nothing is sent and the week is recorded
  *   as `skipped`.
  * - The body is built by `digestEmail` in mail-templates.ts from names and
@@ -91,8 +93,10 @@ export type DigestAuthor = DigestLine & { authorId: string };
 /**
  * Who posted in the last 7 days that `recipientId` may see: distinct
  * authors other than the recipient, not muted by them, each with the
- * number of their posts the recipient may see. Most posts first, then the
- * most recent. Names and counts only; no post text is selected.
+ * number of their posts the recipient may see. The most recent post first
+ * (SPEC §18.6), then by author id so the order is stable; how many times
+ * someone posted plays no part in it. Names and counts only; no post text
+ * is selected.
  */
 export async function digestFor(
   db: Db,
@@ -122,7 +126,7 @@ export async function digestFor(
       ),
     )
     .groupBy(posts.authorId, accounts.displayName)
-    .orderBy(desc(count(posts.id)), desc(max(posts.createdAt)), asc(posts.authorId));
+    .orderBy(desc(max(posts.createdAt)), asc(posts.authorId));
   return rows.map((r) => ({ authorId: r.authorId, name: r.name, posts: Number(r.posts) }));
 }
 
