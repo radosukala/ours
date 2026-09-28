@@ -427,14 +427,16 @@ describe("requestSeat: the same answer, and the same work in the request, for ev
       expect(await openNow()).toBe(2);
 
       for (const task of later) await task();
-      // The member's request used a seat; the line goes first (SPEC §18.12),
-      // so the other seat went to the address already waiting, and her own
-      // request then sent her a new link to it. The newcomers wait in line.
+      // The line goes first for every request (SPEC §18.12 item 27): the
+      // member's request gave its seat to the address already waiting; the
+      // first newcomer took the other; the listed address's own request sent
+      // her a new link to the seat she held. The last newcomer waits.
       expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual([
         "listed_f@example.test",
+        "new_f@example.test",
         "listed_f@example.test",
       ]);
-      expect(await line()).toEqual(["new_f@example.test", "other_f@example.test"]);
+      expect(await line()).toEqual(["other_f@example.test"]);
       expect(await openNow()).toBe(0);
     } finally {
       await pool.end();

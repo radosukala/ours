@@ -29,7 +29,7 @@
  *   leaves it when it is invited, or when its owner asks
  *   (`forgetWaitlistAddress`).
  */
-import { and, asc, count as countRows, desc, eq, gt, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, count as countRows, desc, eq, gt, inArray, isNull, ne, notInArray, sql } from "drizzle-orm";
 import { createEmailToken } from "./auth";
 import { accountCreationOpen, appUrl, clientIpHeader } from "./config";
 import { type Db, withTx } from "./db";
@@ -220,25 +220,81 @@ async function seatFor(
  * place it held, or now if it held none. Nobody loses a seat to a failed
  * email.
  */
+/** How many addresses one failed seat email may be offered to in turn. */
+const SEAT_TRIES = 3;
+
 async function giveSeatBack(
   db: Db,
   { email, inviteId, waitingSince, now }: { email: string; inviteId: string; waitingSince: Date; now: Date },
-): Promise<void> {
-  await withTx(db, async (tx) => {
+): Promise<boolean> {
+  return withTx(db, async (tx) => {
     await lockSeats(tx, now);
+    // Only a seat still outstanding goes back (the re-check): one that was
+    // used meanwhile, or withdrawn by a removal, has been dealt with.
+    const withdrawn = await tx
+      .update(invites)
+      .set({ revokedAt: now })
+      .where(and(eq(invites.id, inviteId), isNull(invites.usedAt), isNull(invites.revokedAt)))
+      .returning({ id: invites.id });
+    if (withdrawn.length === 0) return false;
     await tx
       .update(seatRow)
       .set({ open: sql`${seatRow.open} + 1`, updatedAt: now })
       .where(eq(seatRow.id, SEATS_ID));
-    await tx
-      .update(invites)
-      .set({ revokedAt: now })
-      .where(and(eq(invites.id, inviteId), isNull(invites.usedAt)));
     await tx.delete(emailTokens).where(eq(emailTokens.inviteId, inviteId));
-    await tx
-      .insert(waitlist)
-      .values({ email, createdAt: waitingSince })
-      .onConflictDoNothing();
+    if (!(await hasAccount(tx, email))) {
+      await tx.insert(waitlist).values({ email, createdAt: waitingSince }).onConflictDoNothing();
+    }
+    return true;
+  });
+}
+
+/**
+ * After a failed seat email gave its seat back: offer that seat to the next
+ * address in line not yet tried, up to three tries in all (the re-check).
+ * An address whose email always fails keeps its place, but cannot keep the
+ * seats from everyone behind it.
+ */
+async function offerOnward(
+  db: Db,
+  { tried, base, now }: { tried: Set<string>; base: string; now: Date },
+): Promise<void> {
+  while (tried.size < SEAT_TRIES) {
+    const next = await withTx(db, async (tx) => {
+      const open = await lockSeats(tx, now);
+      const maintainer = await maintainerId(tx);
+      if (open <= 0 || !maintainer) return null;
+      const [oldest] = await tx
+        .select({ email: waitlist.email, createdAt: waitlist.createdAt })
+        .from(waitlist)
+        .where(notInArray(waitlist.email, [...tried]))
+        .orderBy(asc(waitlist.createdAt), asc(waitlist.email))
+        .limit(1);
+      if (!oldest) return null;
+      await useSeat(tx, now);
+      const seat = await seatFor(tx, { email: oldest.email, maintainer, now });
+      return { to: oldest.email, ...seat, waitingSince: oldest.createdAt };
+    });
+    if (!next) return;
+    tried.add(next.to);
+    const sent = await sendLogged(db, { email: next.to, token: next.token, base, keptUntil: next.expiresAt });
+    if (sent) return;
+    await giveSeatBack(db, { email: next.to, inviteId: next.inviteId, waitingSince: next.waitingSince, now });
+  }
+}
+
+/** Send a seat email; a throw is logged by name only and counts as a failure. */
+async function sendLogged(
+  db: Db,
+  link: { email: string; token: string; base: string; keptUntil: Date },
+): Promise<boolean> {
+  return sendSeatEmail(db, link).catch((error: unknown) => {
+    // Never the message: it can carry an address.
+    console.error(
+      "[ours] a seat email could not be sent:",
+      error instanceof Error ? error.name : "unknown error",
+    );
+    return false;
   });
 }
 
@@ -315,67 +371,59 @@ export async function requestSeat(
   await hit(db, `seat:email:${rateKeyHash(email)}`, { ...RATE.joinEmail, now });
 
   await nowOrDeferred(async () => {
-    type Link =
-      | { to: string; token: string; inviteId: string; expiresAt: Date; waitingSince: Date }
-      | { held: { inviteId: string; expiresAt: Date } }
-      | null;
-    const link = await withTx(db, async (tx): Promise<Link> => {
-      const open = await lockSeats(tx, now);
-      const maintainer = await maintainerId(tx);
-      const seatOpen = open > 0 && maintainer !== null;
-      if (seatOpen) await useSeat(tx, now);
-      if (await hasAccount(tx, email)) {
-        await tx.delete(waitlist).where(eq(waitlist.email, email));
-        return null;
-      }
-      const held = await heldSeat(tx, email, now);
-      if (held) return { held };
-      if (seatOpen && maintainer) {
-        // The line goes first (SPEC §18.12): while anyone older waits, the
-        // seat just used goes to the oldest of them, and this address takes
-        // its place in line. A seat given back after a failed email so
-        // reaches the person who was waiting for it, not a newcomer.
-        const [oldest] = await tx
-          .select({ email: waitlist.email, createdAt: waitlist.createdAt })
-          .from(waitlist)
-          .where(ne(waitlist.email, email))
-          .orderBy(asc(waitlist.createdAt), asc(waitlist.email))
-          .limit(1);
-        const mine = await waitingSinceOf(tx, email);
-        if (oldest && (!mine || oldest.createdAt < mine)) {
-          await tx.insert(waitlist).values({ email, createdAt: now }).onConflictDoNothing();
-          const seat = await seatFor(tx, { email: oldest.email, maintainer, now });
-          return { to: oldest.email, ...seat, waitingSince: oldest.createdAt };
+    type Seat = { to: string; token: string; inviteId: string; expiresAt: Date; waitingSince: Date };
+    const outcome = await withTx(
+      db,
+      async (tx): Promise<{ seat: Seat | null; held: { inviteId: string; expiresAt: Date } | null }> => {
+        const open = await lockSeats(tx, now);
+        const maintainer = await maintainerId(tx);
+        const seatOpen = open > 0 && maintainer !== null;
+        let seat: Seat | null = null;
+        if (seatOpen && maintainer) {
+          // Every valid request uses an open seat, whoever sends it (item 1),
+          // and the line goes first (item 18), for every request alike: a
+          // member's, a holder's and a newcomer's each give the seat to the
+          // oldest address waiting, so what that address receives says
+          // nothing about the address typed (the re-check).
+          await useSeat(tx, now);
+          const [oldest] = await tx
+            .select({ email: waitlist.email, createdAt: waitlist.createdAt })
+            .from(waitlist)
+            .where(ne(waitlist.email, email))
+            .orderBy(asc(waitlist.createdAt), asc(waitlist.email))
+            .limit(1);
+          const mine = await waitingSinceOf(tx, email);
+          if (oldest && (!mine || oldest.createdAt < mine)) {
+            seat = { to: oldest.email, ...(await seatFor(tx, { email: oldest.email, maintainer, now })), waitingSince: oldest.createdAt };
+          }
         }
-        return { to: email, ...(await seatFor(tx, { email, maintainer, now })), waitingSince: mine ?? now };
-      }
-      await tx.insert(waitlist).values({ email, createdAt: now }).onConflictDoNothing();
-      return null;
-    });
-    if (!link) return;
-    if ("held" in link) {
-      const token = await createEmailToken(db, {
-        email,
-        purpose: "join",
-        inviteId: link.held.inviteId,
-        now,
-      });
-      await sendSeatEmail(db, { email, token, base, keptUntil: link.held.expiresAt });
-      return;
-    }
-    // A send that throws is a failure too (SPEC §18.12): the seat goes back.
-    const sent = await sendSeatEmail(db, { email: link.to, token: link.token, base, keptUntil: link.expiresAt }).catch(
-      (error: unknown) => {
-        console.error(
-          "[ours] a seat email could not be sent:",
-          error instanceof Error ? error.name : "unknown error",
-        );
-        return false;
+        if (await hasAccount(tx, email)) {
+          await tx.delete(waitlist).where(eq(waitlist.email, email));
+          return { seat, held: null };
+        }
+        const held = await heldSeat(tx, email, now);
+        if (held) return { seat, held };
+        if (seatOpen && maintainer && !seat) {
+          const mine = await waitingSinceOf(tx, email);
+          return { seat: { to: email, ...(await seatFor(tx, { email, maintainer, now })), waitingSince: mine ?? now }, held: null };
+        }
+        await tx.insert(waitlist).values({ email, createdAt: now }).onConflictDoNothing();
+        return { seat, held: null };
       },
     );
-    if (!sent) {
-      await giveSeatBack(db, { email: link.to, inviteId: link.inviteId, waitingSince: link.waitingSince, now });
+
+    if (outcome.held) {
+      const token = await createEmailToken(db, { email, purpose: "join", inviteId: outcome.held.inviteId, now });
+      await sendLogged(db, { email, token, base, keptUntil: outcome.held.expiresAt });
     }
+    const seat = outcome.seat;
+    if (!seat) return;
+    const sent = await sendLogged(db, { email: seat.to, token: seat.token, base, keptUntil: seat.expiresAt });
+    if (sent) return;
+    // A seat email that fails, or throws, gives the seat back (items 3, 19),
+    // and the seat is offered onward to the next in line.
+    const back = await giveSeatBack(db, { email: seat.to, inviteId: seat.inviteId, waitingSince: seat.waitingSince, now });
+    if (back) await offerOnward(db, { tried: new Set([seat.to]), base, now });
   }, input.defer);
 }
 
@@ -463,18 +511,11 @@ export async function openSeats(
   await nowOrDeferred(async () => {
     for (const link of links) {
       try {
-        const sent = await sendSeatEmail(db, {
+        const sent = await sendLogged(db, {
           email: link.email,
           token: link.token,
           base,
           keptUntil: link.expiresAt,
-        }).catch((error: unknown) => {
-          // Never the message: it can carry an address.
-          console.error(
-            "[ours] a seat email could not be sent:",
-            error instanceof Error ? error.name : "unknown error",
-          );
-          return false;
         });
         if (!sent) {
           await giveSeatBack(db, {

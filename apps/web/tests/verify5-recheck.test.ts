@@ -199,49 +199,39 @@ function passing(claims: string[], file: string): string[] {
 /* ================================================ DEFECTS: the line goes first */
 
 describe("the line goes first (SPEC §18.12 item 18)", () => {
-  it("DEFECT: it tells the address first in line whether an address it types into Get in has an account: a stranger's address mails it the seat, a member's mails it nothing (MEDIUM)", async () => {
+  it("fixed (SPEC §18.12 item 27): the address first in line learns nothing about an address typed into Get in: a member's request and a stranger's each send it the seat", async () => {
     const rado = await maintainer();
     await makeAccount({ handle: "vera_f", email: "vera_f@example.test" });
-    await inLine([["pia_f@example.test", plus.days(t0, -2)]]);
     quietErrors();
 
-    // How the state arises by the product's own paths: a wave's email to
-    // Pia fails, so her seat reopens and she keeps her place (items 3 and
-    // 18). The front page then says "1 seat open." while Pia has had no
-    // link, so she can tell she is first in line. A removal that gives a
-    // held seat back (item 17) opens the same state, and anyone who holds a
-    // seat under a second address can ask for that removal.
-    const seatOpenWhilePiaWaits = async (now: Date) => {
+    // A seat open while someone waits, by the product's own paths: a wave's
+    // email to the waiting address fails, so the seat reopens and it keeps
+    // its place (items 3 and 18).
+    const seatOpenWhile = async (waiter: string, now: Date) => {
+      await inLine([[waiter, plus.days(now, -2)]]);
       transportRefuses();
       await openSeats(db(), rado.id, 1, { now });
       vi.unstubAllEnvs();
-      expect({ open: await openNow(), line: await line() }).toEqual({
-        open: 1,
-        line: ["pia_f@example.test"],
-      });
+      expect({ open: await openNow(), line: await line() }).toEqual({ open: 1, line: [waiter] });
     };
 
-    await seatOpenWhilePiaWaits(t0);
+    await seatOpenWhile("pia_f@example.test", t0);
     await ask("vera_f@example.test", { now: plus.minutes(t0, 1) }); // a member's address
     const openAfterMember = await openNow();
-    const afterMember = (await mailTo("pia_f@example.test")).length;
+    const toPia = (await mailTo("pia_f@example.test")).length;
 
-    await seatOpenWhilePiaWaits(plus.minutes(t0, 2));
+    await seatOpenWhile("quin_f@example.test", plus.minutes(t0, 2));
     await ask("stranger_f@example.test", { now: plus.minutes(t0, 3) }); // a stranger's
     const openAfterStranger = await openNow();
-    const afterStranger = (await mailTo("pia_f@example.test")).length - afterMember;
+    const toQuin = (await mailTo("quin_f@example.test")).length;
 
-    // The public number moves the same for both (item 1 holds)...
     expect([openAfterMember, openAfterStranger]).toEqual([0, 0]);
-    // ...but M-0011's acceptance also says an address is absorbed "without
-    // revealing whether it is ... already a member", and Pia's inbox says it.
-    expect(
-      afterStranger,
-      "a seat email reaches Pia only when the address she typed has no account (and holds no seat)",
-    ).toBe(afterMember);
+    // The line goes first for every request: each waiting address got the
+    // seat, whichever kind of address was typed.
+    expect([toPia, toQuin]).toEqual([1, 1]);
   });
 
-  it("DEFECT: one address whose seat email always fails, once it is first in line, keeps every open seat from every later newcomer: the front page goes on saying '3 seats open.' while each newcomer is put in line behind it (MEDIUM)", async () => {
+  it("fixed (SPEC §18.12, after the re-check): one address whose seat email always fails, once it is first in line, keeps every open seat from every later newcomer: the front page goes on saying '3 seats open.' while each newcomer is put in line behind it (MEDIUM)", async () => {
     await maintainer();
     await setOpen(3);
     quietErrors();
@@ -279,7 +269,7 @@ describe("the line goes first (SPEC §18.12 item 18)", () => {
 /* ======================================== DEFECTS: a seat given back twice */
 
 describe("a seat given back (SPEC §18.12 items 3, 17 and 19)", () => {
-  it("DEFECT: a wave's email that fails after its address was removed at its owner's request puts the address back in line and gives the seat back a second time; the next newcomer's request then mails that person a seat (MEDIUM)", async () => {
+  it("fixed (SPEC §18.12, after the re-check): a wave's email that fails after its address was removed at its owner's request puts the address back in line and gives the seat back a second time; the next newcomer's request then mails that person a seat (MEDIUM)", async () => {
     const rado = await maintainer();
     await inLine([["gone_f@example.test", plus.days(t0, -2)]]);
     quietErrors();
@@ -313,7 +303,7 @@ describe("a seat given back (SPEC §18.12 items 3, 17 and 19)", () => {
     ).toEqual({ afterFailure: { open: 1, line: [] }, mailedAfterRemoval: [] });
   });
 
-  it("DEFECT: a seat used while its first email was still waiting to be sent is given back when that email fails: the count gains a seat nobody gave up, the new member is put in line, and the line going first then mails the member another seat (LOW)", async () => {
+  it("fixed (SPEC §18.12, after the re-check): a seat used while its first email was still waiting to be sent is given back when that email fails: the count gains a seat nobody gave up, the new member is put in line, and the line going first then mails the member another seat (LOW)", async () => {
     const rado = await maintainer();
     await inLine([["kai_f@example.test", plus.days(t0, -2)]]);
     quietErrors();
@@ -354,7 +344,7 @@ describe("a seat given back (SPEC §18.12 items 3, 17 and 19)", () => {
     ).toEqual({ afterFailure: { open: 0, line: [] }, seatEmailsToKai: 1 });
   });
 
-  it("DEFECT: the one seat email item 19 does not reach: when a holder asks again and that email throws, requestSeat lets the throw out instead of catching it as it does a newcomer's, so in production afterResponse logs the whole error, not its name (LOW)", async () => {
+  it("fixed (SPEC §18.12, after the re-check): the one seat email item 19 does not reach: when a holder asks again and that email throws, requestSeat lets the throw out instead of catching it as it does a newcomer's, so in production afterResponse logs the whole error, not its name (LOW)", async () => {
     await maintainer();
     await setOpen(2);
     quietErrors();
@@ -382,7 +372,7 @@ describe("a seat given back (SPEC §18.12 items 3, 17 and 19)", () => {
 describe("the claims scan's new rules (SPEC §18.12 items 24 and 25)", () => {
   const FOOTER_FILE = "src/components/RightColumn.tsx";
 
-  it("DEFECT: the handover told as done passes the scan in plain words: 'The handover has happened.', the headline's own verb in the past tense, and the handover as held (MEDIUM)", () => {
+  it("fixed (SPEC §18.12, after the re-check): the handover told as done passes the scan in plain words: 'The handover has happened.', the headline's own verb in the past tense, and the handover as held (MEDIUM)", () => {
     // M-0011: "No page may say the handover has happened." Item 24 says the
     // scan knows "the handover told as done"; its rule knows only "has been
     // handed" and "was handed". The first sentence here, the prohibition's
@@ -404,7 +394,7 @@ describe("the claims scan's new rules (SPEC §18.12 items 24 and 25)", () => {
     ).toEqual([]);
   });
 
-  it("DEFECT: ownership in the future tense or the second person passes the scan in the forms people write: 'Then it's yours.', 'It will soon be yours.', 'you'll own it', 'belongs to you' (MEDIUM)", () => {
+  it("fixed (SPEC §18.12, after the re-check): ownership in the future tense or the second person passes the scan in the forms people write: 'Then it's yours.', 'It will soon be yours.', 'you'll own it', 'belongs to you' (MEDIUM)", () => {
     // M-0011's adopted constraint: "The only future-tense ownership
     // sentences allowed are the handover promise and its conditions, each
     // listed by exact text." The rules catch "will be yours" and "you own",
@@ -426,7 +416,7 @@ describe("the claims scan's new rules (SPEC §18.12 items 24 and 25)", () => {
     ).toEqual([]);
   });
 
-  it("DEFECT: a handover sentence on pages that are not listed: the status line's 'Handed to its members at 100,000.' is in the footer of every public page and of the app's right column, and on /power, /costs and /rules, and is not in ALLOWLIST, where item 24 says every sentence about the handover must be; the scan lets it through because its rule knows only 'hand (it) over' and 'give(s) it away' (LOW)", () => {
+  it("fixed (SPEC §18.12, after the re-check): a handover sentence on pages that are not listed: the status line's 'Handed to its members at 100,000.' is in the footer of every public page and of the app's right column, and on /power, /costs and /rules, and is not in ALLOWLIST, where item 24 says every sentence about the handover must be; the scan lets it through because its rule knows only 'hand (it) over' and 'give(s) it away' (LOW)", () => {
     const footer = textOf(renderToStaticMarkup(createElement(SiteFooter)));
     const aboutTheHandover = /\bhand(?:s|ed|ing)?\b|\bhandover\b|\bg(?:ive|ives|iving|iven|ave) it away\b/i;
     const sentences = footer.split(/(?<=[.?!])\s+/).filter((s) => aboutTheHandover.test(s));
@@ -442,7 +432,7 @@ describe("the claims scan's new rules (SPEC §18.12 items 24 and 25)", () => {
     ).toEqual([]);
   });
 
-  it("DEFECT: markup and characters a reader does not see still split a claim past the new rules: a <br> with an attribute, a JSX fragment, and U+034F, which renders as nothing (LOW)", () => {
+  it("fixed (SPEC §18.12, after the re-check): markup and characters a reader does not see still split a claim past the new rules: a <br> with an attribute, a JSX fragment, and U+034F, which renders as nothing (LOW)", () => {
     // Item 25 reads <br> as a space, but only a bare <br>, <br/> or <br />.
     expect(
       passing(
@@ -461,7 +451,7 @@ describe("the claims scan's new rules (SPEC §18.12 items 24 and 25)", () => {
 /* ==================================================== closed: seats given back */
 
 describe("closed doors: seats given back, and the line", () => {
-  it("closed: when the address first in line is given the seat and its email fails, whether the send returns false or throws, the seat reopens, the address keeps its place ahead of the newcomer, its seat invite is withdrawn, and the log names no address", async () => {
+  it("changed after the re-check (SPEC §18.12 item 27): when the address first in line is given the seat and its email fails, whether the send returns false or throws, it keeps its place, its seat invite is withdrawn, the seat is offered onward to the next in line, and the log names no address", async () => {
     await maintainer();
     const logged = quietErrors();
     await setOpen(1);
@@ -480,15 +470,17 @@ describe("closed doors: seats given back, and the line", () => {
       on: outboxWriteThrows(db(), (to) => to === "old_f@example.test"),
       now: plus.minutes(t0, 1),
     });
+    // Offered onward: the next in line, new1, takes the seat (its email
+    // works); old keeps its place, first in line.
     expect({ open: await openNow(), line: await line() }).toEqual({
-      open: 1,
-      line: ["old_f@example.test", "new1_f@example.test", "new2_f@example.test"],
+      open: 0,
+      line: ["old_f@example.test", "new2_f@example.test"],
     });
 
     expect(await seatsHeldBy("old_f@example.test", plus.minutes(t0, 2))).toEqual([]);
+    expect(await seatsHeldBy("new1_f@example.test", plus.minutes(t0, 2))).toHaveLength(1);
     const made = await seatInvites();
-    expect(made).toHaveLength(2);
-    expect(made.every((invite) => invite.revokedAt !== null)).toBe(true);
+    expect(made.filter((invite) => invite.revokedAt === null)).toHaveLength(1);
     expect(JSON.stringify(logged.mock.calls)).not.toMatch(/example\.test/);
   });
 
@@ -623,7 +615,8 @@ describe("closed doors: a seat link opened by an account holder", () => {
 describe("closed doors: the claims scan's handover list and new markup rules", () => {
   it("closed: each of the nine listed handover sentences passes only in its own file, and the new markup rules read <wbr>, <br/>, &zwj;, &lrm;, &minus; and bidi isolates as a reader does", () => {
     const elsewhere = "src/components/RightColumn.tsx";
-    const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence));
+    // The status line is listed too, and let through everywhere (after the re-check); the nine are the rest.
+    const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence) && !entry.everywhere);
     expect(handover).toHaveLength(9);
     for (const entry of handover) {
       expect(scanText(entry.sentence, entry.file), entry.sentence).toEqual([]);

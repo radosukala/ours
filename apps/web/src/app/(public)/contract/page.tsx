@@ -6,7 +6,7 @@
  * for word.
  *
  * Before the threshold these are promises, and the page says so: nothing
- * here says the handover has happened.
+ * here tells the handover as done.
  *
  * This file holds the /contract copy, so it is the one file where the
  * claims scan lets promise 1 through, in its exact words (SPEC §18.7; the

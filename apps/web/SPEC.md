@@ -1730,6 +1730,35 @@ Each finding is a test in `tests/verify4-honesty.test.ts` or
     embeddings and isolates.
 26. **The export file** is named `our.one-export-<handle>-<date>.json`.
 
+27. **After the re-check.** One agent re-checked. Both HIGH fixes hold,
+    proven over HTTP in a production build. Its findings, tested in
+    `tests/verify5-recheck.test.ts`, are fixed:
+    - **The line goes first for every valid request:** a member's, a
+      holder's and a newcomer's. The address first in line then learns
+      nothing about the address typed. (MEDIUM)
+    - **A failed seat email gives its seat back only if the seat is still
+      outstanding,** unused and not withdrawn, and never re-queues an
+      account. (MEDIUM, LOW)
+    - **A seat given back is offered onward to the next address in line,**
+      up to three tries. An address whose email always fails keeps its
+      place, but cannot keep the seats from everyone behind it. (MEDIUM)
+    - **A holder's re-sent link that throws** is caught, and logged by name
+      only. (LOW)
+    - **The claims scan also refuses:**
+      - "the handover has happened";
+      - "gave/given it away";
+      - "in its members' hands";
+      - "it's yours/theirs";
+      - "you'll/we'll/they'll own";
+      - "will (soon) be yours" and "its owners";
+      - "belongs to you/us/them".
+
+      The status line is listed by exact text and let through on every
+      page. A `<br>` with attributes, a JSX fragment and U+034F are read as
+      a reader sees them. (MEDIUM, LOW)
+
+    **The stopping rule is applied: there is no further round.**
+
 **Recorded after the fourth verification**
 
 - **A wave's emails run in one task after the response.** If that task

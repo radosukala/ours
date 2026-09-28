@@ -127,15 +127,17 @@ export const PROHIBITED: readonly Prohibited[] = [
     reason: "D-0012: never call our.one the first or the only anything without a checked source.",
   },
   {
-    pattern: /\b(?:has|have|had) been handed\b|\bwas handed\b/i,
-    reason: "D-0012: the handover has not happened; never write it as done.",
+    pattern:
+      /\b(?:has|have|had) been handed\b|\bwas handed\b|\bhanded (?:over|to)\b|\bhandover (?:has|had) (?:happened|taken place|been)\b|\b(?:gave|given) (?:it )?away\b|\bin (?:its|the) members(?:'|’)? hands\b/i,
+    reason: "D-0012: the handover has not happened; never write it as done. The status line is the one listed exception.",
   },
   {
     pattern: /\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\b/i,
     reason: "D-0012: no claim of ownership, in the present or as done.",
   },
   {
-    pattern: /\bwill (?:be )?own(?:ed)?\b|\bwill (?:be )?(?:yours|ours|theirs)\b/i,
+    pattern:
+      /\bwill (?:\w+ )?(?:be )?own(?:ed)?\b|\bwill (?:\w+ )?be (?:yours|ours|theirs|(?:its |the )?owners)\b|\b(?:you|we|they)(?:'ll|’ll| will) own\b|\bit(?:'s|’s| is) (?:yours|theirs)\b|\bbelongs? to (?:you|us|them)\b/i,
     reason: "D-0012 and M-0011: ownership in the future tense only in the listed handover sentences.",
   },
   {
@@ -168,6 +170,12 @@ const HANDOVER_REASON =
 export type AllowEntry = {
   /** The file, relative to apps/web, with forward slashes. */
   file: string;
+  /**
+   * Let the sentence through in every file and page, not only its own: for
+   * the status line alone, which the footer of every page carries (the
+   * re-check). Its file is still the one that holds it.
+   */
+  everywhere?: true;
   /** One exact sentence in that file. Only this sentence is let through. */
   sentence: string;
   reason: string;
@@ -185,6 +193,14 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     "Why not hand it over now?",
     "Then nothing is handed over.",
   ].map((sentence) => ({ file: FRONT_FILE, sentence, reason: HANDOVER_REASON })),
+  // The status line (D-0012 §D), in every page's footer: listed by exact
+  // text, and let through everywhere.
+  ...[`Handed to its members at \${THRESHOLD}.`, `Handed to its members at ${T}.`].map((sentence) => ({
+    file: "src/components/RightColumn.tsx",
+    sentence,
+    reason: "D-0012 §D: the status line, about the handover at the threshold; in every page's footer.",
+    everywhere: true as const,
+  })),
   ...[
     "At ${THRESHOLD} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.",
     `At ${T} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.`,
@@ -281,7 +297,9 @@ const TAG = new RegExp(
   "y",
 );
 /** A line break element, which a reader sees as a break between words. */
-const LINE_BREAK = /<br\s*\/?>/iy;
+const LINE_BREAK = /<br(?:\s+[^<>]*?)?\s*\/?>/iy;
+/** A JSX fragment's tags, <> and </>, which render as nothing. */
+const FRAGMENT = /<\/?>/y;
 /**
  * A JavaScript escape: \uXXXX, \u{X…}, \xXX, \n \r \t \v \f (whitespace
  * where it renders), \' \" \` \\, and a backslash before a line break
@@ -290,7 +308,7 @@ const LINE_BREAK = /<br\s*\/?>/iy;
 const JS_ESCAPE =
   /\\(?:u([0-9a-fA-F]{4})|u\{([0-9a-fA-F]{1,6})\}|x([0-9a-fA-F]{2})|([nrtvf])|(['"`\\])|(\r\n|\n|\r))/y;
 /** Characters that render as nothing: soft hyphen, zero-width space and joiners, BOM. */
-const INVISIBLE = /[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
+const INVISIBLE = /[\u00ad\u034f\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
 /**
  * Hyphens and dashes a claim may be written with, read as "-": the Unicode
  * hyphen and non-breaking hyphen, the figure dash, the en dash (and so
@@ -424,6 +442,13 @@ export function normalizeForScan(raw: string, options: NormalizeOptions = {}): N
         i += br[0].length;
         continue;
       }
+      FRAGMENT.lastIndex = i;
+      const fragment = FRAGMENT.exec(raw);
+      if (fragment) {
+        droppedTags.push([i, i + fragment[0].length]);
+        i += fragment[0].length;
+        continue;
+      }
       TAG.lastIndex = i;
       const m = TAG.exec(raw);
       if (m) {
@@ -465,10 +490,9 @@ export function normalizeForScan(raw: string, options: NormalizeOptions = {}): N
 
 /** Blank out each allowlisted sentence for this file, keeping positions. */
 function applyAllowlist(text: string, file: string | null): string {
-  if (!file) return text;
   let out = text;
   for (const entry of ALLOWLIST) {
-    if (entry.file !== file) continue;
+    if (entry.file !== file && !entry.everywhere) continue;
     const sentence = normalizeForScan(entry.sentence).text;
     out = out.split(sentence).join(" ".repeat(sentence.length));
   }

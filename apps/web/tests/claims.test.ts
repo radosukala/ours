@@ -95,17 +95,25 @@ const SAMPLES: Record<string, string[]> = {
     "our.one is the first social network its founder gives away.",
     "the only network whose maintainer can be replaced",
   ],
-  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b": [
+  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b|\\bhanded (?:over|to)\\b|\\bhandover (?:has|had) (?:happened|taken place|been)\\b|\\b(?:gave|given) (?:it )?away\\b|\\bin (?:its|the) members(?:'|’)? hands\\b": [
     "our.one has been handed over to its members.",
     "It was handed to them.",
+    "The handover has happened.",
+    "At 100,000 members, I gave it away.",
+    "It is now in its members' hands.",
   ],
   "\\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\\b": [
     "our.one now belongs to its members.",
     "It will belong to the people.",
   ],
-  "\\bwill (?:be )?own(?:ed)?\\b|\\bwill (?:be )?(?:yours|ours|theirs)\\b": [
+  "\\bwill (?:\\w+ )?(?:be )?own(?:ed)?\\b|\\bwill (?:\\w+ )?be (?:yours|ours|theirs|(?:its |the )?owners)\\b|\\b(?:you|we|they)(?:'ll|’ll| will) own\\b|\\bit(?:'s|’s| is) (?:yours|theirs)\\b|\\bbelongs? to (?:you|us|them)\\b": [
     "At 100,000 members, you will own our.one.",
     "It will be ours.",
+    "It will soon be yours.",
+    "At 100,000 members, you'll own it.",
+    "Then it's yours.",
+    "our.one belongs to you.",
+    "You will be its owners.",
   ],
   [`\\bit(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is) ours\\b`]: ["It's ours.", "it is ours"],
   "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bgives? it away\\b": [
@@ -209,6 +217,12 @@ describe("denials pass only where the scan says why", () => {
 
   it("an allowlisted sentence passes in its file, and is caught anywhere else", () => {
     for (const entry of ALLOWLIST) {
+      if (entry.everywhere) {
+        // The status line: let through in every file, by exact text only.
+        expect(scanText(entry.sentence)).toEqual([]);
+        expect(scanText(entry.sentence.replace("Handed to", "Handed over to")).length).toBeGreaterThan(0);
+        continue;
+      }
       // Out of context it is a hit: the allowlist is what lets it through.
       expect(scanText(entry.sentence).length).toBeGreaterThan(0);
       expect(scanText(entry.sentence, "src/app/(public)/page.tsx").length).toBeGreaterThan(0);
@@ -569,8 +583,10 @@ describe("what people are shown: every public page, the footers and every mail, 
   it("shows each allowlisted sentence only on its own page: 'No algorithm…' on /rules, promise 1 on /contract", async () => {
     const rendered = await pages();
     const home: Record<string, string> = { [RULES_FILE]: "/rules", [CONTRACT_FILE]: "/contract", [FRONT_FILE]: "/" };
-    expect([...new Set(ALLOWLIST.map((e) => e.file))].sort()).toEqual(Object.keys(home).sort());
-    for (const entry of ALLOWLIST) {
+    expect([...new Set(ALLOWLIST.filter((e) => !e.everywhere).map((e) => e.file))].sort()).toEqual(
+      Object.keys(home).sort(),
+    );
+    for (const entry of ALLOWLIST.filter((e) => !e.everywhere)) {
       // A source-form entry (with {THRESHOLD} or ${THRESHOLD}) is never shown as such.
       const sourceForm = /\{THRESHOLD\}|\$\{THRESHOLD\}/.test(entry.sentence);
       for (const [page, html] of rendered) {
