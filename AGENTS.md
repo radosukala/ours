@@ -158,14 +158,16 @@ was not. Both are required.
 ## 11. Brand and naming
 
 ```text
-BRAND               OURS
-CANONICAL ADDRESS   oursorg.com          the institution
-PRODUCTS            our.one              each community's tool at its own subdomain (D-0004)
+PUBLIC NAME         our.one              the network and its product (D-0012 §C)
+WORKING NAME        OURS                 this repository and its records
+RECORDS ADDRESS     oursorg.com          the institution's records
 DESCRIPTOR          the institution compiler
 ```
 
-Write `OURS` in prose. Write the address as one uninterrupted string,
-`oursorg.com`. Never style the name `OURS.ORG` — that domain belongs to a
+Since `D-0012` (28 September 2026), write `our.one` wherever a person using
+the product reads a name, always lowercase and with the dot. Write `OURS` in
+prose about this repository, its records and its institution. Write the
+records address as one uninterrupted string, `oursorg.com`. Never style the name `OURS.ORG` — that domain belongs to a
 broker. Never write `OURS Network` — that names a different project, as do
 `ours.today` and `ours.dev`.
 

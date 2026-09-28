@@ -1,0 +1,65 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0008
+title: The maintainer, the contract, our.one, and the handover at a membership threshold (100,000 proposed)
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0012
+
+human_source:
+  path: proposals/P-0008.md
+evidence:
+  - path: proposals/P-0008.evidence-conversation-2026-09-25-28.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: fact-check-agents
+    kind: agent
+    role: verifier
+  - id: cold-read-critics
+    kind: agent
+    role: reviewer
+
+affected_groups:
+  - everyone who joins our.one before 100,000 members, under a promise rather than a lock
+  - the founder, as maintainer, controller and funder until the threshold
+  - the future members' body, which receives the domain, the database and the right to replace the maintainer
+
+unresolved:
+  - the handover threshold (100,000 proposed; the founder offered 100k or 1M) [CONFIRM]
+  - the controller before 100,000 (the founder personally or a Czech company of his) [CONFIRM]
+  - the definition of a verified member at the handover, and who counts [CONFIRM]
+  - the founding procedure of the members' body, to be published before the threshold [CONFIRM]
+  - hosting, database and email accounts; CLIENT_IP_HEADER; our.one DNS after ONE moves; a short legal review of /privacy and /contract
+
+cost:
+  proposer_hours: 8
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-25
+    actor: { id: founder, kind: human }
+    position: a feed without an algorithm is not credible; a simple public contract; he is only the maintainer; unify the brand
+  - date: 2026-09-25
+    actor: { id: claude, kind: agent }
+    position: yes to the contract and maintainer, if what matters leaves the maintainer's hands (Ello's charter did not survive its sale); one name, our.one
+  - date: 2026-09-26
+    actor: { id: founder, kind: human }
+    position: yes to the contract and maintainer; go with our.one; ONE moves to oneburger.cz; the message is not bold enough
+  - date: 2026-09-27
+    actor: { id: founder, kind: human }
+    position: not a small body; unlock at a threshold such as 100k; keep it global and cheap until proof of concept
+  - date: 2026-09-28
+    actor: { id: founder, kind: human }
+    position: no complicated structure before traction; execute all promised transfers at 100k or 1M members; the message, the website and the launch now
+  - date: 2026-09-28
+    actor: { id: claude, kind: agent }
+    position: 100,000 rather than 1,000,000 (a million reads as never); the contract as the terms; honest status before the threshold; a public counter as the mechanism

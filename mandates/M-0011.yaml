@@ -1,0 +1,150 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0011
+title: The launch website — the message, the live count, the contract page, the waiting list and the rename
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0012
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-28T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0004, D-0006, D-0011, D-0012]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0011.md
+
+objective: >
+  Change apps/web so that a stranger who arrives at the front page
+  understands in ten seconds what our.one is and what is different about
+  it. Build: the front page with the message of D-0012 §D and the live
+  count shown as a rank against the handover threshold; a /contract page
+  listing the maintainer's promises and, for each, what holds it today;
+  seats and a waiting list, off until a controller is named — an
+  administrator opens seats, a visitor takes one and gets the join link at
+  once (the maintainer recorded as inviter), and with no seats open the
+  address waits in line and is invited oldest-first when seats open;
+  our.one as the name
+  everywhere a person reads it; the new status line; the weekly email
+  naming the most recent posters, not the most active; and the claims-scan
+  rules the new copy needs. Fictional data only; nothing runs anywhere but
+  this machine.
+
+human_outcome: >
+  A visitor reads the promise, sees how far the count is from the
+  threshold, reads the contract and what happens if the threshold is never
+  reached, and either joins with an invite or leaves an address to be
+  invited later. Nothing on any page claims the handover has happened.
+
+adopted_constraints:
+  - The handover threshold is one constant, used by every page and test, so the founder's confirmation of the number changes one line.
+  - The public count is accounts that exist and are not deleted or suspended, read from the database by open code; it never includes the waiting list.
+  - The waiting list stores the minimum (an address and when it was added), refuses every request while DATA_CONTROLLER is unset, is rate-limited, says on the page what is kept and why, and deletes an address when it is invited or when its owner asks.
+  - Only an administrator opens seats. A seat is an invitation from the maintainer through the existing join path; it never bypasses email confirmation, rate limits or the controller gate.
+  - Every public string passes the claims scan. The only future-tense ownership sentences allowed are the handover promise and its conditions, each listed by exact text.
+  - No real person's data, no email to a real address, no provider account, no domain touched.
+
+hypotheses:
+  - A visitor who sees the count and the contract understands the difference from other social networks without reading anything else.
+  - The waiting list plus invite waves admits a launch surge at a pace one moderator can hold.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+      - pnpm-lock.yaml
+      - .claude/launch.json
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: MEDIUM
+  reversibility: ADDITIVE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, rate-limits, admin-only-waves]
+  privacy: [no-real-person-data-under-this-mandate, minimal-data, waiting-list-deleted-on-invite]
+
+acceptance:
+  tests:
+    - The front page shows the live count of accounts that exist and are not suspended as a rank ("You'd be #N+1"), with no progress bar, and still renders when the database is down, without a number.
+    - The front page and /contract state the handover as a promise with its conditions, what holds each promise today, and what happens if the threshold is never reached; no page states the handover has happened.
+    - Seats and the waiting list refuse every request while DATA_CONTROLLER is unset; a malformed or duplicate address is refused or absorbed without revealing whether it is already listed or already a member; requests are rate-limited per address and per client address.
+    - Only an administrator opens seats; taking a seat sends the join link at once with the maintainer as inviter; with no seats open the address waits; opening seats invites the oldest waiting addresses first and removes them from the list; an address is deleted from the list when invited or when its owner asks.
+    - No page a person reads says OURS as the product's name; our.one is used instead.
+    - The weekly email names the most recent posters first.
+    - The claims scan finds no prohibited claim in any public string, and permits only the listed handover sentences.
+    - Typecheck, lint, tests and a production build pass; pnpm ours check M-0011 --changed authorises the finished working tree.
+  evidence:
+    - build receipt recording agents, files touched, dependencies added with reasons, and every failure
+    - an independent verification by an agent that did not build it, with a stopping rule declared before it starts
+    - screenshots of the front page and /contract at phone and desktop width
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - any prerequisite does not hold
+    - a required fact is marked [CONFIRM] and the work would need to resolve it
+    - the work requires a path outside the allowed scope
+    - a feature would need real personal data, a provider account, or a deployment
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Revert the M-0011 commits. The waiting-list table is additive and is
+    dropped by its down migration. Nothing runs anywhere but the builder's
+    machine.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  release: a later release mandate after D-0012 §E's conditions
+  deploy: not-authorized
+
+cost:
+  source: ESTIMATED
+  wall_minutes: null

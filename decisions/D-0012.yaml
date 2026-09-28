@@ -1,0 +1,71 @@
+schema: ours.decision/v0.1
+decision_id: D-0012
+title: The maintainer, the contract, our.one, and the handover
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0012.md
+
+proposal: P-0008
+prerequisite_decisions: [D-0004, D-0006, D-0011]
+
+outcome: >
+  our.one is run by a maintainer (the founder, through a company of his,
+  [CONFIRM]) bound by a public contract that is also the terms people join
+  under: no sale and no investment for a return; your people in order with
+  no ranking, advertising or data sales; export and deletion; public costs;
+  open code; public keys; changes with notice and an exit; and a handover
+  of the domain, the database and the right to replace the maintainer to a
+  not-for-profit body of the members, founded by their vote under rules
+  published beforehand, when verified members reach a threshold
+  ([CONFIRM], 100,000 recommended) — one number, the public count of
+  accounts that exist and are not suspended; the body's founding vote is
+  by verified members, one per person, counted by someone other than the
+  maintainer. No sale and the handover cannot be amended by the maintainer
+  ([CONFIRM]). Before the threshold the maintainer
+  holds everything (D-0007 option 3) and says so. our.one is the public
+  name; AGENTS.md §11 is amended. The message ("Today it's mine. At
+  [threshold] members, I give it away."; the count as a rank), the status
+  line and the
+  honest statement of what happens if the threshold is never reached are
+  adopted as direction. Authorize M-0011, BUILD (including seats opened by
+  an administrator, each an invitation from the maintainer, and a waiting
+  list), locally, with fictional data and nothing deployed.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0011]
+
+prohibits:
+  - any claim that the handover has happened before it has, and any present-tense claim of ownership
+  - calling our.one the first or the only anything without a checked source
+  - a public counter of anything other than accounts that exist and are not deleted or suspended
+  - deployment of anything under M-0011
+  - holding any real person's data before a release mandate and D-0012 §E's conditions
+
+effective_from: 2026-09-28T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The agent's recommendations to set up an independent
+  holder before the threshold were weighed and deferred by the founder, and
+  remain available. The founder's review of this exact wording is pending;
+  an amendment is a new record.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
