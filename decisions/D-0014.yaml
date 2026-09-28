@@ -1,0 +1,57 @@
+schema: ours.decision/v0.1
+decision_id: D-0014
+title: The privacy contact and the EU representative
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0014.md
+
+proposal: P-0008
+prerequisite_decisions: [D-0013]
+
+outcome: >
+  The controller's contact email is privacy@ctrlai.com. Ctrl AI, Inc.
+  designates the founder, Rado Sukala, as its representative in the EU under
+  GDPR Article 27, by a written designation the founder signs for Ctrl AI
+  and accepts personally; no public page names a representative until it is
+  signed.
+  The representative is reached at the same address. /privacy names the
+  representative from the server setting DATA_CONTROLLER_REPRESENTATIVE, and
+  only while a controller is named. The founder's full legal name and
+  jurisdiction of residence stay [CONFIRM] in FOUNDING-AUTHORITY §3; no
+  country or address is published. The draft M-0012 is amended to match.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+prohibits:
+  - naming a representative on a public page before the written designation is signed
+  - publishing the founder's address or country before FOUNDING-AUTHORITY §3 records them
+  - an agent resolving any FOUNDING-AUTHORITY [CONFIRM]
+
+effective_from: 2026-09-28T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending, and
+  so is a human's confirmation that the cited sources say what the record
+  cites.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
