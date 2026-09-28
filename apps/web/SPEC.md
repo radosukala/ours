@@ -1285,3 +1285,310 @@ section governs.
 - Anything lower is fixed where small, and otherwise recorded in the build
   receipt.
 - There is no third round.
+
+## 18. The launch website (M-0011, 28 September 2026)
+
+**Authority:** [`M-0011`](../../mandates/M-0011.md), under
+[`D-0012`](../../decisions/D-0012.md). Where this section changes an earlier
+one, this section governs. Nothing is deployed.
+
+### 18.1 The facts every page uses
+
+- **`HANDOVER_THRESHOLD = 100_000`** is exported from `src/core/config.ts`.
+  Every page and test reads this constant, and it is formatted as
+  "100,000". The founder confirms the number (D-0012 §B `[CONFIRM]`), and
+  it changes here only.
+- **The public count** is `memberCount(db)`: accounts whose `suspended_at`
+  is null. Deleted accounts no longer exist. Its sole purpose is the front
+  page and the handover trigger (D-0012 §B).
+- **The status line** replaces `STATUS_LINE`: **"Maintained by its founder.
+  Handed to its members at 100,000."** The number comes from the constant.
+- **The name** a person reads is **our.one**, always lowercase, with the dot.
+
+### 18.2 The front page `/` (signed out). Copy is exact
+
+The metadata title is `our.one · Today it's mine. At 100,000 members, I
+give it away.`
+
+1. **The headline.** One `<h1>` on two lines:
+   - **Today it's mine.**
+   - **At 100,000 members, I give it away.**
+2. **The lede:** "our.one is a social network for your people: their posts,
+   in order, with an end when you're caught up. No ads. No ranking."
+3. **The count,** where N is `memberCount`. If the count cannot be read,
+   the whole line is left out: the page still renders, with no error and no
+   number.
+
+   | N | Text |
+   |---|---|
+   | 0 | "Nobody is in yet. You'd be #1." |
+   | 1 | "1 person is in. You'd be #2." |
+   | 2 or more | "{N} people are in. You'd be #{N+1}." (for example "1,284") |
+
+   There is no progress bar.
+4. **Get in** (h2 "Get in"). This part renders only when
+   `accountCreationOpen()` and `clientIpHeader()` are both true. Otherwise
+   it reads "Joining opens soon."
+   - **The form:** the label "Your email", the button "Get in", and the
+     action `takeSeat`.
+   - **Under the form:**
+     - with seats open: "{open} seats open.", or "1 seat open." for one;
+     - with none: "No seats open right now. Leave your address and you'll
+       get the next one."
+   - **The privacy note, small:** "We keep your address only to send you
+     the link, and only until you're invited or you ask us to delete it."
+     Then a link to Privacy.
+   - **After any valid submission, the same words for everyone:** "Check
+     your email. If a seat was open, your link is there. If not, you're in
+     line, and we'll write when one opens."
+   - **Then the existing lines:** "Have an invite? Open the link you were
+     sent." and **Sign in**.
+5. **The promise** (h2 "The promise"):
+   - "When 100,000 people have joined, I hand over our.one's domain, its
+     data and the right to replace whoever runs it to a not-for-profit body
+     of its members, founded by their vote."
+   - "Until then I run it as its maintainer, under a public contract. Two of
+     its promises can never be changed: no sale, and the handover. The rest
+     can change only with 60 days' notice, and you can always leave with
+     everything."
+   - The link **Read the contract** → `/contract`. The signature "Rado,
+     maintainer".
+6. **Why** (h2 "Why a maintainer, not an owner"). Each sentence links to
+   its source, listed in §18.9:
+   - "In 2012, WhatsApp wrote: “when advertising is involved you the user
+     are the product.” It charged $0.99 a year after the first."
+   - "In 2014, Facebook bought it for about $19 billion."
+   - "In 2016, WhatsApp began sharing users' phone numbers with Facebook."
+   - "In 2018, one of its founders said: “I sold my users' privacy.”"
+   - "In 2025, ads came to WhatsApp."
+   - "An owner can sell it, change it or shut it down. A maintainer does
+     the job, or is replaced." This last line is bold and has no link.
+7. **Fair questions** (h2 "Fair questions"). Each question is a `<dt>` and
+   each answer a `<dd>`:
+
+   | Question | Answer |
+   |---|---|
+   | "Why should I believe you?" | "Don't take my word for it. Read the contract: it is the terms you join under. The code is open, and every cost is public." |
+   | "Why not hand it over now?" | "A proper not-for-profit body costs money and time, and I've built things before that nobody used. If 100,000 people want this, it deserves one, with their say." |
+   | "What if it never gets to 100,000?" | "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything." |
+   | "What happens at 100,000?" | "Members vote to found a not-for-profit body under rules published before that day. It gets the domain, the data and the right to replace the maintainer." |
+   | "What's a maintainer?" | "The one who keeps it running. Today that's me, and today I also hold everything. After 100,000, a body of its members holds it, and can replace me." |
+8. **The footer:** the existing `SiteFooter`, with a **Contract** link added.
+
+### 18.3 `/contract` (a public page, and linked from the footer). Copy is exact
+
+**Title:** "The contract".
+
+**Two introduction paragraphs:**
+
+- "Between the people who use our.one and its maintainer. Most terms of
+  service list what you can't do. This one lists what the maintainer can't
+  do, and says what holds each promise today: this contract, the code, or
+  the law."
+- "The maintainer keeps our.one running and safe, acts on reports, and pays
+  the bills. Today that is me, Rado. Until 100,000 members I also hold the
+  domain, the data and the keys, and I'm not paid."
+
+**The promises.** Each is an `<li>` with the promise in bold and, below it,
+"Held today by: …":
+
+1. "It won't be sold, and nobody will invest in it for a return."
+   - Held today by: this contract. This promise can never be changed.
+2. "At 100,000 members, I hand over the domain, the data and the right to
+   replace the maintainer to a not-for-profit body of the members, founded
+   by their vote under rules published before that day. The count is the
+   number on the front page: accounts that exist and are not suspended."
+   - Held today by: this contract. This promise can never be changed.
+3. "Your feed is your people, in order. No ranking, no ads, no selling your
+   data."
+   - Held today by: this contract and the code.
+4. "You can leave with everything: download it all and delete it all, at
+   any time."
+   - Held today by: this contract, the code and the law (GDPR).
+5. "Every cost is public. Money buys no reach and no say."
+   - Held today by: this contract. The line links **Costs** → `/costs`.
+6. "The code is open. Anyone can read it, run it or copy it."
+   - Held today by: the licence (Apache-2.0). The line links **Open code**.
+7. "Who holds each key is public."
+   - Held today by: this contract. The line links **Who controls what** →
+     `/power`.
+8. "Changes come with notice. Any change to promises 3 to 7 is announced
+   60 days ahead, with the reason, and you can leave with everything before
+   it applies. Promises 1 and 2 can't be changed."
+   - Held today by: this contract.
+
+**Then an h2, "If it never gets to 100,000":** "Nothing is handed over.
+Promise 1 still holds, the code stays open, and you can leave with
+everything."
+
+**Then the closing paragraph:** "Until 100,000, these are my promises,
+written into the terms you join under. That is weaker than a law, and this
+page says so."
+
+### 18.4 Seats and the waiting list
+
+**The schema.** Both tables are additive, in a new migration.
+
+| Table | Columns | Notes |
+|---|---|---|
+| `seat_state` | `id text primary key` (always `'seats'`), `open integer not null default 0 check (open >= 0)`, `updated_at` | A single row, created on first use. |
+| `waitlist` | `email text primary key` (normalized), `created_at tstz not null default now()` | Nothing else is kept. |
+
+**The core** lives in the new file `src/core/seats.ts`.
+
+- **`memberCount(db): Promise<number>`**
+- **`seatState(db): Promise<{ open: number; waiting: number }>`**
+- **`requestSeat(db, { email, ipHash, now?, defer? }): Promise<void>`**
+  - **The gates:** CLOSED unless `accountCreationOpen()` and
+    `clientIpHeader()` are both true, the same gates as `requestJoin`. It
+    also refuses (CLOSED) when there is no maintainer account (below).
+  - **Validation:** the address is validated like joining addresses.
+  - **Rate limits:** `seat:ip:<ipHash>` (`RATE.joinIp`) and
+    `seat:email:<rateKeyHash(email)>` (`RATE.joinEmail`).
+  - **The rest runs in one task after the response, via `nowOrDeferred`,**
+    so every address does the same work in the request:
+    - an address that already has an account gets nothing;
+    - otherwise, if a seat is open, the seat is taken in one transaction:
+      `open` is decremented only if it is above 0, a seat invite is created
+      and the address is removed from the waiting list. Then the seat email
+      is sent with a join token for that invite;
+    - otherwise, the address is inserted into `waitlist`. On a conflict,
+      nothing happens.
+  - **It never reveals** membership, a listing, or a seat taken by that
+    address.
+- **`openSeats(db, adminId, count, { now?, defer? }): Promise<{ opened: number; invited: number }>`**
+  - **Refusal:** NOT_FOUND unless `adminId` is an active administrator, as
+    the moderation functions do.
+  - **Count:** an integer from 1 to 10,000.
+  - **What it does:** it adds `count` to `open`. Then it invites waiting
+    addresses, oldest first, while seats are open, each as one seat taken.
+    An address that already has an account is removed without an email.
+- **`forgetWaitlistAddress(db, adminId, email): Promise<void>`** is
+  admin-only, and is how the owner's request to be deleted is carried out.
+- **The maintainer account** is the oldest active administrator.
+  - A **seat invite** is an `invites` row with `inviter_id` = the maintainer
+    and `note = 'seat'`. It does not decrement the maintainer's
+    `invites_remaining`, and is not shown in their invite list.
+  - Joining through it follows the existing join path unchanged: an email
+    token, `/auth`, `/join`, and choosing a username. The maintainer is
+    recorded as the inviter, so D-0011 §D.4 still holds.
+- **The seat email** (a new function in `mail-templates.ts`):
+  - subject: "Your seat on our.one";
+  - body: "You asked for a seat on our.one. Here is your link to join. It
+    works once and expires in 15 minutes." Then the link, then: "If you
+    didn't ask, ignore this email. Nothing is kept unless you join."
+
+  The token lifetime is whatever the join token already uses; the body
+  states it from the constant.
+
+**The web.**
+
+- `src/app/(public)/seat-actions.ts` exports **`takeSeat(prev, form)`**.
+  - It returns `{ ok: true }` or `{ error: string }`.
+  - The errors are: CLOSED → "Joining opens soon."; an invalid address →
+    the validation message; RATE_LIMITED → the rate-limit message.
+- **The admin page gains a Seats section:**
+  - "Seats open: {open}. In line: {waiting}."
+  - a form "Open [n] seats" (number input) → `openSeatsAction`;
+  - a form "Remove an address from the line" → `forgetAction`.
+
+**`/privacy` gains one paragraph, listing the seat request as a purpose:**
+"If you ask for a seat, we keep your email address to send you the join
+link, or, if no seat is open, until one opens and you are invited, or until
+you ask us to delete it by writing to the controller."
+
+### 18.5 The rename
+
+- **Every string a person reads** changes from OURS to our.one: page text,
+  metadata, `aria-label`s, email subjects and bodies, and the text in
+  `transparency/*.json`.
+- **"Invited you to OURS"** becomes "invited you to our.one".
+- **OURS stays** in code comments, the `[ours]` log prefix, cookie names
+  (`__Host-ours_*` and `ours_invite`), and anything not read by a person.
+- **`/power`'s words:**
+  - "The rules of our.one";
+  - the operator row names the *maintainer*;
+  - the status line follows §18.1.
+
+### 18.6 The weekly email
+
+The names are ordered by **most recent post first**:
+`orderBy(desc(max(posts.createdAt)), asc(posts.authorId))`. The count of
+posts per name stays in the text. This is a fix for ranking by activity.
+
+### 18.7 The claims scan
+
+- **One new allowlist entry,** the exact sentence "It won't be sold, and
+  nobody will invest in it for a return." in the file holding the
+  `/contract` copy. The reason: *D-0012 §A, promise 1: a denial of
+  investment.*
+- **The new pages are scanned** like the others: `/contract`, and the front
+  page's new copy.
+- **No other new allowance.**
+
+### 18.8 Tests
+
+**Builder A:**
+
+- **The front page:**
+  - it renders the headline with the threshold constant;
+  - the count line's three forms, and its absence when the count throws;
+  - "Joining opens soon." when the controller is unset;
+  - the form, and the seat line, when it is set.
+- **`/contract`:** it renders every promise with its "Held today by" line,
+  and the "never gets to 100,000" paragraph.
+- **The rename and the scan:**
+  - no rendered public page, footer, email subject or body contains `OURS`;
+  - the claims scan passes over everything, including `/contract`.
+
+**Builder B:**
+
+- **The count:** `memberCount` excludes suspended accounts.
+- **`requestSeat`:**
+  - CLOSED while the controller is unset;
+  - rate-limited per address and per IP;
+  - a member's address gets no mail and no row;
+  - with a seat open: the join mail is in the outbox, the seat count goes
+    down, the invite names the maintainer, and it leaves the maintainer's
+    `invites_remaining` unchanged;
+  - with no seat: the address is in `waitlist`, and a duplicate adds
+    nothing;
+  - the answer and the time taken are the same shape in every case.
+- **`openSeats`:**
+  - NOT_FOUND for a non-admin;
+  - invites the oldest first and removes them from the list;
+  - never goes below 0 under concurrent seat requests (a race harness, as
+    in §17).
+- **Joining through a seat invite** completes, and records the maintainer
+  as the inviter.
+- **The weekly email:** its names are ordered by the most recent post.
+
+### 18.9 Sources for the Why section (the front page links them)
+
+| Year | Source |
+|---|---|
+| 2012 | https://blog.whatsapp.com/why-we-don-t-sell-ads |
+| 2014 | https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/ |
+| 2016 | https://www.eff.org/deeplinks/2016/08/what-facebook-and-whatsapps-data-sharing-plans-really-mean-user-privacy-0 |
+| 2018 | https://www.cnbc.com/2018/09/26/whatsapp-co-founder-explains-why-he-left-facebook.html |
+| 2025 | https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html |
+
+### 18.10 File ownership for the two builders
+
+| Builder | Owns |
+|---|---|
+| **A** (public pages, copy, rename, scan) | `src/app/(public)/page.tsx`, `src/app/(public)/contract/**`, `src/components/public/**`, `src/components/RightColumn.tsx`, every file whose only change is the rename, `src/core/claims.ts`, `transparency/*.json`, `src/app/(public)/privacy/**`, and the tests for these |
+| **B** (seats, count, admin, email) | `src/core/seats.ts`, `src/core/config.ts` (the constant), `src/core/schema.ts`, `drizzle/**`, `src/core/invites.ts` (the seat invite only), `src/core/digest.ts`, `src/core/mail-templates.ts` (the seat email only; A does its rename), `src/app/(public)/seat-actions.ts`, `src/app/(app)/admin/**`, and the tests for these |
+
+**The interface is fixed now.** B commits stubs of `seats.ts`,
+`seat-actions.ts` and the constant, with these signatures, before A starts.
+
+### 18.11 Open, and not decided by the builders
+
+These are D-0012 `[CONFIRM]`s. The builders use the words above and mark
+them in the receipt:
+
+- the threshold;
+- the lock on promises 1 and 2 ("can never be changed");
+- the 60 days;
+- "Rado" as the maintainer's name on the site.

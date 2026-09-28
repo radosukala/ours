@@ -24,6 +24,15 @@ export const SESSION_TTL_DAYS = 60;
 export const INVITE_TTL_DAYS = 30;
 export const FRIEND_REQUEST_TTL_DAYS = 30;
 
+/**
+ * The handover threshold (D-0012 §B, SPEC §18.1): when the public count of
+ * members (accounts that exist and are not suspended) reaches it, the
+ * domain, the database and the right to replace the maintainer pass to a
+ * not-for-profit body of the members. 100,000 is recommended and awaits the
+ * founder's confirmation [CONFIRM]; every page and test reads it from here.
+ */
+export const HANDOVER_THRESHOLD = 100_000;
+
 const MIN_SECRET_LENGTH = 32;
 
 function env(name: string): string | null {
