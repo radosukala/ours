@@ -56,7 +56,7 @@ export function seatLine(open: number): string {
 /** Why a maintainer, not an owner: each sentence and its source (SPEC §18.9). */
 const STORY: readonly { text: string; source: string }[] = [
   {
-    text: "In 2012, WhatsApp wrote: “when advertising is involved you the user are the product.” It charged $0.99 a year after the first.",
+    text: "In 2012, WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
     source: "https://blog.whatsapp.com/why-we-don-t-sell-ads",
   },
   {
@@ -125,11 +125,11 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
             <GetInForm />
             {seatsOpen !== null ? <p className={styles.seats}>{seatLine(seatsOpen)}</p> : null}
             <p className="muted small">
-              We keep your address only to send you the link, and only until
-              you&apos;re invited or you ask us to delete it.{" "}
+              {"We use your address only to send you the link. What we keep, and for how long, is in "}
               <Link href="/privacy" className="link">
                 Privacy
               </Link>
+              .
             </p>
           </>
         ) : (
@@ -156,6 +156,9 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
           of its promises can never be changed: no sale, and the handover. The
           rest can change only with {NOTICE_DAYS}{" "}
           days&apos; notice, and you can always leave with everything.
+        </p>
+        <p>
+          {"Today these promises are held by that contract, the terms you join under, not yet by law."}
         </p>
         <p>
           <Link href="/contract" className={styles.more}>

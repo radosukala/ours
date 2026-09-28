@@ -196,7 +196,7 @@ describe("Get in", () => {
     expect(html).not.toContain("<form");
     expect(getIn).not.toContain("Your email");
     expect(getIn).not.toMatch(/seats? open/);
-    expect(getIn).not.toContain("We keep your address");
+    expect(getIn).not.toContain("We use your address only to send you the link");
     expect(seats.seatState).not.toHaveBeenCalled();
     // The count is still shown, and so is the way in for people with an invite.
     expect(textOf(html)).toContain("3 people are in. You'd be #4.");
@@ -239,13 +239,13 @@ describe("Get in", () => {
     expect(html).toMatch(/<button type="submit"[^>]*>Get in<\/button>/);
     expect(text).toContain("12 seats open.");
     expect(text).toContain(
-      "We keep your address only to send you the link, and only until you're invited or you ask us to delete it. Privacy",
+      "We use your address only to send you the link. What we keep, and for how long, is in Privacy.",
     );
     expect(html).toMatch(/<a [^>]*href="\/privacy"[^>]*>Privacy<\/a>/);
     expect(text).toContain("Have an invite? Open the link you were sent.");
     // The form comes first, then the seat line, then the note.
     expect(text.indexOf("Get in Your email")).toBeLessThan(text.indexOf("12 seats open."));
-    expect(text.indexOf("12 seats open.")).toBeLessThan(text.indexOf("We keep your address"));
+    expect(text.indexOf("12 seats open.")).toBeLessThan(text.indexOf("We use your address"));
   });
 
   it("the seat line: '{open} seats open.', '1 seat open.', and none", () => {
@@ -264,7 +264,7 @@ describe("Get in", () => {
     const html = section(await renderRoute(), "front-get-in");
     expect(html).toContain("<form");
     expect(textOf(html)).not.toMatch(/seats? open|No seats/);
-    expect(textOf(html)).toContain("We keep your address");
+    expect(textOf(html)).toContain("We use your address only to send you the link");
   });
 
   it("after any valid submission, everyone reads the same words; a refusal is shown at the field", () => {
@@ -308,6 +308,7 @@ describe("the rest of the page, word for word (SPEC §18.2)", () => {
         "The promise",
         `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
         "Until then I run it as its maintainer, under a public contract. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice, and you can always leave with everything.",
+        "Today these promises are held by that contract, the terms you join under, not yet by law.",
         "Read the contract",
         "Rado, maintainer",
       ].join(" "),
@@ -319,7 +320,7 @@ describe("the rest of the page, word for word (SPEC §18.2)", () => {
     const html = section(render(), "front-why");
     const story: [string, string][] = [
       [
-        "In 2012, WhatsApp wrote: “when advertising is involved you the user are the product.” It charged $0.99 a year after the first.",
+        "In 2012, WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
         "https://blog.whatsapp.com/why-we-don-t-sell-ads",
       ],
       ["In 2014, Facebook bought it for about $19 billion.", "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/"],

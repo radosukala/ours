@@ -161,7 +161,8 @@ describe("takeSeat: the front page's Get in form (SPEC §18.4)", () => {
   it("gives every valid address the same answer, and leaves the lookup and the mail to after the response", async () => {
     await maintainer();
     const vera = await makeAccount({ handle: "vera_f", email: "vera_f@example.test" });
-    await setOpen(1);
+    // Two seats: the member's request uses one (SPEC §18.12), the first new address the other.
+    await setOpen(2);
     await db().insert(waitlist).values({ email: "listed_f@example.test", createdAt: plus.days(t0, -1) });
 
     const answers = new Set<string>();

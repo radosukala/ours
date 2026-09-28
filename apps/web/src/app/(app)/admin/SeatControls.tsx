@@ -81,9 +81,7 @@ function OpenSeatsForm({ action, max }: { action: OpenSeatsAction; max: number }
           <span>seats</span>
         </label>
         <p id={hint} className="field__hint">
-          From 1 to {format(max)} at a time. The oldest addresses in line are
-          invited first, one seat each; an address that already has an account
-          leaves the line without an email.
+          {`From 1 to ${format(max)} at a time. The oldest addresses in line are invited first, one seat each; an address that already has an account leaves the line without an email.`}
         </p>
       </div>
       {state && !state.ok ? (

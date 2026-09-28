@@ -103,7 +103,7 @@ describe("/contract, word for word (SPEC §18.3)", () => {
         null,
       ],
       [
-        "You can leave with everything: download it all and delete it all, at any time.",
+        "You can leave with everything: download it all and delete it all, whenever you want. If your account is suspended, write to us and we will do it for you.",
         "Held today by: this contract, the code and the law (GDPR).",
         null,
       ],

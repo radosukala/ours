@@ -1592,3 +1592,85 @@ them in the receipt:
 - the lock on promises 1 and 2 ("can never be changed");
 - the 60 days;
 - "Rado" as the maintainer's name on the site.
+
+### 18.12 Decisions after the build (28 September 2026)
+
+The two builders reported what their parts could not settle. Where this
+section changes §18.1–§18.11, it governs.
+
+**Seats**
+
+1. **Every valid request uses a seat while one is open, whoever sends it.**
+   - This covers a member, a repeat request, and an address that already
+     holds a seat. Only the outcome differs, after the response: a member
+     gets nothing, a holder gets a new link to the seat it holds, and a
+     newcomer gets the seat.
+   - *Why:* the builder found that the public "{open} seats open." number
+     moved for a stranger and stood still for a member. That told anyone
+     watching whether an address belonged to a member, which M-0011's
+     acceptance forbids. The number stays public, and now it reveals
+     nothing.
+2. **A seat is an invitation from the maintainer, not an offer of
+   friendship.**
+   - Joining through a seat invite makes no friendship with the maintainer,
+     and sends the maintainer no notification.
+   - An account holder who opens an old seat link can't use it to become
+     the maintainer's friend: it is refused as unusable.
+   - *Why:* the unchanged join path would have made every seat joiner the
+     maintainer's friend, giving the maintainer the friends-only posts of
+     everyone who came in through a seat.
+3. **A seat email that can't be sent gives the seat back:**
+   - the seat reopens;
+   - the unused seat invite and its links are withdrawn;
+   - the address returns to its place in line, or joins it now.
+
+   This applies both to asking and to opening seats. Nobody loses a seat to
+   a failed email.
+4. **The maintainer's export leaves out seat invites.** They are the
+   maintainer's role, not the person's own invitations.
+5. **Accepted as the builder made them:**
+   - opening seats is CLOSED while no controller is named;
+   - removing an address from the line also deletes its unused join links,
+     any unfinished join, and development mail, when the address has no
+     account;
+   - a person's own invite can't carry the note "seat".
+
+**Copy**
+
+6. **The seat email** ends: "If the link expires, ask again on the front
+   page: your seat is kept for {INVITE_TTL_DAYS} days. If you didn't ask,
+   ignore this email."
+   - *Why:* "Nothing is kept unless you join" was untrue, because the
+     link's record keeps the address.
+7. **The front page's privacy note** is now: "We use your address only to
+   send you the link. What we keep, and for how long, is in Privacy."
+8. **The 2012 line** now ends "It charged its users instead." "$0.99 a year"
+   is not in the 2012 post it links to.
+9. **Promise 4 on /contract** is now: "You can leave with everything:
+   download it all and delete it all, whenever you want. If your account is
+   suspended, write to us and we will do it for you." A suspended account
+   can't do it itself (§17).
+10. **The front page's promise section** gains a sentence: "Today these
+    promises are held by that contract, the terms you join under, not yet
+    by law." M-0011 asks the front page, not only /contract, to say what
+    holds the promises.
+11. **Accepted as the builder made them:**
+    - "the our.one records" on public pages. A person reading those pages
+      reads the product's name. AGENTS.md §11 keeps OURS in prose about the
+      repository itself;
+    - the wording of /power's maintainer row;
+    - "Have an invite? Sign in" stays visible while joining is closed;
+    - the Contract link comes first in the footer.
+
+**Residual, recorded rather than fixed**
+
+- **Someone with many addresses and client addresses can use up open
+  seats.**
+  - The per-address and per-client limits slow this down.
+  - The administrator sees the count and can open more.
+  - It sends mail only to addresses that were typed, as any sign-up form
+    does.
+- **A repeat request uses a seat without adding one.** That is the price of
+  the uniform number.
+- **The wordmark at medium widths** has not been checked in a browser by
+  the builders. The architect checks it before screenshots.

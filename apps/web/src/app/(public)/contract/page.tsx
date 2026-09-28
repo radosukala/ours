@@ -46,7 +46,7 @@ const PROMISES: readonly ContractPromise[] = [
     heldBy: "this contract and the code.",
   },
   {
-    promise: "You can leave with everything: download it all and delete it all, at any time.",
+    promise: "You can leave with everything: download it all and delete it all, whenever you want. If your account is suspended, write to us and we will do it for you.",
     heldBy: "this contract, the code and the law (GDPR).",
   },
   {

@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, inject, it, vi } from "vitest"
 import { openEmailLink } from "@/core/accounts";
 import { consumeEmailToken, createEmailToken, createPendingJoin } from "@/core/auth";
 import { scanText } from "@/core/claims";
-import { EMAIL_TOKEN_TTL_MINUTES } from "@/core/config";
+import { EMAIL_TOKEN_TTL_MINUTES, INVITE_TTL_DAYS } from "@/core/config";
 import type { Db } from "@/core/db";
 import { isCoreError } from "@/core/errors";
 import {
@@ -290,7 +290,7 @@ describe("requestSeat: rate limits (SPEC §18.4)", () => {
 /* ======================================= requestSeat: after the answer */
 
 describe("requestSeat: what happens after the answer (SPEC §18.4)", () => {
-  it("an address that has an account gets no mail and no row, and takes no seat, active or suspended", async () => {
+  it("an address that has an account gets no mail and no row, active or suspended; while a seat is open its request uses one, like any other (SPEC §18.12)", async () => {
     const rado = await maintainer();
     const vera = await makeAccount({ handle: "vera_f", email: "vera_f@example.test" });
     const sam = await makeAccount({ handle: "sam_f", email: "sam_f@example.test", suspended: true });
@@ -304,7 +304,9 @@ describe("requestSeat: what happens after the answer (SPEC §18.4)", () => {
     expect(await line()).toEqual([]);
     expect(await seatInvites()).toEqual([]);
     expect(await db().select().from(emailTokens)).toEqual([]);
-    expect(await openNow()).toBe(2);
+    // Every valid request uses an open seat, whoever sends it: the public
+    // number of open seats moves the same for a member as for a stranger.
+    expect(await openNow()).toBe(0);
   });
 
   it("with a seat open: the join mail goes at once, the count goes down, and the invite is the maintainer's, taking none of theirs", async () => {
@@ -387,7 +389,8 @@ describe("requestSeat: the same answer, and the same work in the request, for ev
   it("a member, a new address, a listed address and another new one: identical statements until the response, different outcomes after", async () => {
     await maintainer();
     const vera = await makeAccount({ handle: "vera_f", email: "vera_f@example.test" });
-    await setOpen(1);
+    // Two seats: the member's request uses one (SPEC §18.12), the first new address the other.
+    await setOpen(2);
     await inLine([["listed_f@example.test", plus.days(t0, -1)]]);
 
     const statements: { query: string; params: unknown[] }[] = [];
@@ -421,7 +424,7 @@ describe("requestSeat: the same answer, and the same work in the request, for ev
       expect(await db().select().from(outbox)).toEqual([]);
       expect(await db().select().from(emailTokens)).toEqual([]);
       expect(await line()).toEqual(["listed_f@example.test"]);
-      expect(await openNow()).toBe(1);
+      expect(await openNow()).toBe(2);
 
       for (const task of later) await task();
       expect((await db().select().from(outbox)).map((m) => m.toAddress)).toEqual(["new_f@example.test"]);
@@ -645,8 +648,9 @@ describe("joining through a seat (SPEC §18.4, §18.8)", () => {
     const [seat] = await seatInvites();
     expect(seat).toMatchObject({ inviterId: rado.id, usedBy: joined.accountId });
     expect(await remaining(rado.id)).toBe(3);
-    // The usual join: the inviter and the new person are friends.
-    expect(await areFriends(db(), rado.id, joined.accountId)).toBe(true);
+    // A seat is an invitation from the maintainer, not an offer of
+    // friendship (SPEC §18.12): no friendship, and no notification to the maintainer.
+    expect(await areFriends(db(), rado.id, joined.accountId)).toBe(false);
     expect(await memberCount(db())).toBe(before + 1);
 
     // Asking again now: an account, so nothing.
@@ -711,7 +715,7 @@ describe("the seat email (SPEC §18.4)", () => {
         "",
         "http://localhost:3000/auth#FICTIONAL",
         "",
-        "If you didn't ask, ignore this email. Nothing is kept unless you join.",
+        `If the link expires, ask again on the front page: your seat is kept for ${INVITE_TTL_DAYS} days. If you didn't ask, ignore this email.`,
       ].join("\n"),
     );
     expect(mail.body).toContain("expires in 15 minutes.");
@@ -855,5 +859,95 @@ describe("the down migration (M-0011's rollback)", () => {
       await client.end();
     }
     expect(await openNow()).toBe(1);
+  });
+});
+
+/* ======================================== after the build (SPEC §18.12) */
+
+describe("the architect's amendments after the build (SPEC §18.12)", () => {
+  it("a seat email that cannot be sent gives the seat back and keeps the address's place in line", async () => {
+    await maintainer();
+    await setOpen(1);
+    await inLine([["mara_f@example.test", plus.days(t0, -3)]]);
+    // Resend chosen but not configured: the transport refuses, and sendMail
+    // records the failure without throwing.
+    vi.stubEnv("MAIL_TRANSPORT", "resend");
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("MAIL_FROM", "");
+    await ask("mara_f@example.test");
+    vi.unstubAllEnvs();
+
+    expect(await openNow()).toBe(1);
+    expect(await line()).toEqual(["mara_f@example.test"]);
+    const [row] = await db().select().from(waitlist).where(eq(waitlist.email, "mara_f@example.test"));
+    expect(row?.createdAt.toISOString()).toBe(plus.days(t0, -3).toISOString());
+    const seats = await seatInvites();
+    expect(seats).toHaveLength(1);
+    expect(seats[0]!.revokedAt).not.toBeNull();
+    expect(await db().select().from(emailTokens)).toEqual([]);
+  });
+
+  it("a wave whose email cannot be sent gives that seat back, too", async () => {
+    const rado = await maintainer();
+    await inLine([["ivo_f@example.test", plus.days(t0, -2)]]);
+    vi.stubEnv("MAIL_TRANSPORT", "resend");
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("MAIL_FROM", "");
+    await openSeats(db(), rado.id, 1, { now: t0 });
+    vi.unstubAllEnvs();
+
+    expect(await openNow()).toBe(1);
+    expect(await line()).toEqual(["ivo_f@example.test"]);
+  });
+
+  it("joining through a seat tells the maintainer nothing", async () => {
+    const rado = await maintainer();
+    await setOpen(1);
+    await ask("lea_f@example.test");
+    const link = (await latestOutbox(db(), "lea_f@example.test"))?.body ?? "";
+    const opened = await openEmailLink(db(), {
+      token: tokenFromLink(link) ?? "",
+      now: plus.minutes(t0, 1),
+    });
+    if (opened.kind !== "join_pending") throw new Error(`expected a pending join, got ${opened.kind}`);
+    const joined = await completeJoin(db(), {
+      pendingJoinId: opened.pendingJoinId,
+      displayName: "Lea FICTIONAL",
+      handle: "lea_f",
+      adultConfirmed: true,
+      now: plus.minutes(t0, 2),
+    });
+    expect(await areFriends(db(), rado.id, joined.accountId)).toBe(false);
+    const told = await db().select().from(schema.notifications).where(eq(schema.notifications.recipientId, rado.id));
+    expect(told).toEqual([]);
+  });
+});
+
+describe("seats never offer friendship, and stay out of the maintainer's export (SPEC §18.12)", () => {
+  it("an account holder who opens an old seat link cannot use it to befriend the maintainer", async () => {
+    const { applyInviteAsExisting } = await import("@/core/invites");
+    const rado = await maintainer();
+    await setOpen(1);
+    await ask("noa_f@example.test");
+    const [seat] = await seatInvites();
+    // Noa then joins another way, and later opens the old seat link.
+    const noa = await makeAccount({ handle: "noa_f", email: "noa_f@example.test" });
+    expect(
+      await codeOf(applyInviteAsExisting(db(), { accountId: noa.id, inviteId: seat!.id, now: plus.minutes(t0, 5) })),
+    ).toBe("NOT_FOUND");
+    expect(await areFriends(db(), rado.id, noa.id)).toBe(false);
+  });
+
+  it("the maintainer's export lists their own invites, not the seats", async () => {
+    const { exportAccount } = await import("@/core/export");
+    const rado = await maintainer();
+    await createInvite(db(), rado.id, { note: "for Ida", now: t0 });
+    await setOpen(2);
+    await ask("ema_f@example.test");
+    await ask("oto_f@example.test");
+    expect(await seatInvites()).toHaveLength(2);
+    const data = await exportAccount(db(), rado.id, plus.minutes(t0, 1));
+    expect(data.invites).toHaveLength(1);
+    expect(JSON.stringify(data.invites)).not.toContain(SEAT_NOTE);
   });
 });

@@ -4,7 +4,7 @@
  * No template includes a post's text: the weekly email names who posted,
  * never what (D-0011 §D.5).
  */
-import { EMAIL_TOKEN_TTL_MINUTES } from "./config";
+import { EMAIL_TOKEN_TTL_MINUTES, INVITE_TTL_DAYS } from "./config";
 
 export type MailContent = { subject: string; body: string };
 
@@ -136,7 +136,7 @@ export function seatEmail(url: string): MailContent {
       "",
       url,
       "",
-      "If you didn't ask, ignore this email. Nothing is kept unless you join.",
+      `If the link expires, ask again on the front page: your seat is kept for ${INVITE_TTL_DAYS} days. If you didn't ask, ignore this email.`,
     ].join("\n"),
   };
 }

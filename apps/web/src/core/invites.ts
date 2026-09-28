@@ -582,7 +582,7 @@ export async function completeJoin(
   const displayName = validDisplayName(input.displayName);
   const handle = validHandle(input.handle);
   if (input.adultConfirmed !== true) {
-    throw invalid("OURS is for adults. Confirm that you're 18 or older.");
+    throw invalid("our.one is for adults. Confirm that you're 18 or older.");
   }
   if (typeof input.pendingJoinId !== "string" || !ID_PATTERN.test(input.pendingJoinId)) {
     throw notFound(JOIN_EXPIRED);
@@ -601,7 +601,7 @@ export async function completeJoin(
       if (!named) throw notFound(JOIN_EXPIRED);
 
       const [invite] = await tx
-        .select({ id: invites.id, inviterId: invites.inviterId })
+        .select({ id: invites.id, inviterId: invites.inviterId, note: invites.note })
         .from(invites)
         .innerJoin(
           accounts,
@@ -656,13 +656,18 @@ export async function completeJoin(
         .update(invites)
         .set({ usedAt: now, usedBy: accountId })
         .where(eq(invites.id, invite.id));
-      await insertFriendship(tx, invite.inviterId, accountId, now);
-      await notify(tx, {
-        recipientId: invite.inviterId,
-        kind: "invite_joined",
-        actorId: accountId,
-        now,
-      });
+      // A seat is an invitation from the maintainer, not an offer of
+      // friendship (SPEC §18.4, as amended after the build): joining through
+      // one makes no friendship and tells the maintainer nothing.
+      if (invite.note !== SEAT_NOTE) {
+        await insertFriendship(tx, invite.inviterId, accountId, now);
+        await notify(tx, {
+          recipientId: invite.inviterId,
+          kind: "invite_joined",
+          actorId: accountId,
+          now,
+        });
+      }
       await tx
         .update(pendingJoins)
         .set({ completedAt: now })
@@ -703,7 +708,7 @@ export async function useInviteAsExisting(
   const { accountId } = input;
   return withTx(db, async (tx) => {
     const [invite] = await tx
-      .select({ id: invites.id, inviterId: invites.inviterId })
+      .select({ id: invites.id, inviterId: invites.inviterId, note: invites.note })
       .from(invites)
       .innerJoin(
         accounts,
@@ -712,6 +717,8 @@ export async function useInviteAsExisting(
       .where(and(eq(invites.id, input.inviteId), usable(now)))
       .for("update", { of: invites });
     if (!invite) throw notFound(INVITE_UNUSABLE);
+    // A seat never offers friendship with the maintainer (SPEC §18.4).
+    if (invite.note === SEAT_NOTE) throw notFound(INVITE_UNUSABLE);
     if (invite.inviterId === accountId) return { status: "own_invite" };
     // Serialize with a block between the two (SPEC §17 item 10), then check
     // for one under the lock: a block either committed before (refused

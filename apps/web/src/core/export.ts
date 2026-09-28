@@ -22,7 +22,7 @@
  * The function takes the owner's id from the session; there is no way to
  * ask it for someone else.
  */
-import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Db } from "./db";
 import { notFound } from "./errors";
@@ -37,6 +37,7 @@ import {
   posts,
   replies,
 } from "./schema";
+import { SEAT_NOTE } from "./invites";
 import { personShownTo } from "./visibility";
 
 type Person = { handle: string; display_name: string; since: string };
@@ -257,7 +258,9 @@ export async function exportAccount(
       })
       .from(invites)
       .leftJoin(other, eq(other.id, invites.usedBy))
-      .where(eq(invites.inviterId, me.id))
+      // Seat invites are the maintainer's role, not the person's own
+      // invitations (SPEC §18.4): they stay out of the export.
+      .where(and(eq(invites.inviterId, me.id), ne(invites.note, SEAT_NOTE)))
       .orderBy(asc(invites.createdAt), asc(invites.id)),
   ]);
 

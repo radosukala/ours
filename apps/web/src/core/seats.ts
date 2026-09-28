@@ -185,35 +185,84 @@ async function heldSeat(db: Db, email: string, now: Date): Promise<string | null
  * invite is made, the address leaves the line, and the join link's token is
  * made, all in this transaction. The mail goes after it commits.
  */
-async function takeOneSeat(
-  tx: Db,
-  { email, maintainer, now }: { email: string; maintainer: string; now: Date },
-): Promise<string> {
+async function useSeat(tx: Db, now: Date): Promise<void> {
   const taken = await tx
     .update(seatRow)
     .set({ open: sql`${seatRow.open} - 1`, updatedAt: now })
     .where(and(eq(seatRow.id, SEATS_ID), gt(seatRow.open, 0)))
     .returning({ open: seatRow.open });
   if (taken.length === 0) throw new Error("seats: no seat was open.");
+}
+
+/**
+ * Give `email` the seat just used: a seat invite, the address out of the
+ * line, and the join link's token, in the caller's transaction. Returns
+ * the token and the invite, so a failed email can give the seat back.
+ */
+async function seatFor(
+  tx: Db,
+  { email, maintainer, now }: { email: string; maintainer: string; now: Date },
+): Promise<{ token: string; inviteId: string }> {
   const invite = await createSeatInvite(tx, maintainer, now);
   await tx.delete(waitlist).where(eq(waitlist.email, email));
-  return createEmailToken(tx, { email, purpose: "join", inviteId: invite.id, now });
+  const token = await createEmailToken(tx, { email, purpose: "join", inviteId: invite.id, now });
+  return { token, inviteId: invite.id };
+}
+
+/**
+ * A seat email that could not be sent gives its seat back (SPEC §18.4, as
+ * amended after the build): the seat reopens, the unused seat invite and
+ * its join links are withdrawn, and the address returns to the line at the
+ * place it held, or now if it held none. Nobody loses a seat to a failed
+ * email.
+ */
+async function giveSeatBack(
+  db: Db,
+  { email, inviteId, waitingSince, now }: { email: string; inviteId: string; waitingSince: Date; now: Date },
+): Promise<void> {
+  await withTx(db, async (tx) => {
+    await lockSeats(tx, now);
+    await tx
+      .update(seatRow)
+      .set({ open: sql`${seatRow.open} + 1`, updatedAt: now })
+      .where(eq(seatRow.id, SEATS_ID));
+    await tx
+      .update(invites)
+      .set({ revokedAt: now })
+      .where(and(eq(invites.id, inviteId), isNull(invites.usedAt)));
+    await tx.delete(emailTokens).where(eq(emailTokens.inviteId, inviteId));
+    await tx
+      .insert(waitlist)
+      .values({ email, createdAt: waitingSince })
+      .onConflictDoNothing();
+  });
+}
+
+/** When `email` joined the line, or null if it is not in it. */
+async function waitingSinceOf(tx: Db, email: string): Promise<Date | null> {
+  const [row] = await tx
+    .select({ createdAt: waitlist.createdAt })
+    .from(waitlist)
+    .where(eq(waitlist.email, email))
+    .limit(1);
+  return row?.createdAt ?? null;
 }
 
 /** The seat email, with the join link for `token`. */
 async function sendSeatEmail(
   db: Db,
   { email, token, base }: { email: string; token: string; base: string },
-): Promise<void> {
+): Promise<boolean> {
   const mail = seatEmail(`${base}/auth#${token}`);
   // A transport failure is recorded in mail_log (without the address).
-  await sendMail(db, {
+  const result = await sendMail(db, {
     to: email,
     subject: mail.subject,
     body: mail.body,
     kind: "join",
     accountId: null,
   });
+  return result.ok;
 }
 
 /* ---------------------------------------------------------- asking for one */
@@ -230,11 +279,16 @@ async function sendSeatEmail(
  * Otherwise the answer is the same for every address, and the rest is one
  * task, after the response when the caller passes `defer`:
  *
+ * - while a seat is open, every such request uses one, whoever sends it
+ *   (SPEC §18.4, as amended after the build). The public number of open
+ *   seats then moves the same way for a member, a repeat and a newcomer,
+ *   and reveals nothing about the address;
  * - an address that already has an account gets nothing (and leaves the
  *   line, if it was waiting there before it joined);
  * - an address that holds a seat already gets a new link to it;
- * - otherwise, with a seat open, it takes one: the seat email goes to it
- *   with a join link for a new seat invite;
+ * - otherwise, with a seat open, it gets the seat just used: the seat email
+ *   goes to it with a join link for a new seat invite. If that email cannot
+ *   be sent, the seat is given back and the address keeps its place;
  * - otherwise it goes in line; if it is there already, it keeps its place.
  */
 export async function requestSeat(
@@ -255,27 +309,38 @@ export async function requestSeat(
   await hit(db, `seat:email:${rateKeyHash(email)}`, { ...RATE.joinEmail, now });
 
   await nowOrDeferred(async () => {
-    const link = await withTx(db, async (tx): Promise<{ token: string } | { held: string } | null> => {
+    type Link =
+      | { token: string; inviteId: string; waitingSince: Date }
+      | { held: string }
+      | null;
+    const link = await withTx(db, async (tx): Promise<Link> => {
       const open = await lockSeats(tx, now);
+      const maintainer = await maintainerId(tx);
+      const seatOpen = open > 0 && maintainer !== null;
+      if (seatOpen) await useSeat(tx, now);
       if (await hasAccount(tx, email)) {
         await tx.delete(waitlist).where(eq(waitlist.email, email));
         return null;
       }
       const held = await heldSeat(tx, email, now);
       if (held) return { held };
-      const maintainer = await maintainerId(tx);
-      if (open > 0 && maintainer) {
-        return { token: await takeOneSeat(tx, { email, maintainer, now }) };
+      if (seatOpen && maintainer) {
+        const waitingSince = (await waitingSinceOf(tx, email)) ?? now;
+        return { ...(await seatFor(tx, { email, maintainer, now })), waitingSince };
       }
       await tx.insert(waitlist).values({ email, createdAt: now }).onConflictDoNothing();
       return null;
     });
     if (!link) return;
-    const token =
-      "token" in link
-        ? link.token
-        : await createEmailToken(db, { email, purpose: "join", inviteId: link.held, now });
-    await sendSeatEmail(db, { email, token, base });
+    if ("held" in link) {
+      const token = await createEmailToken(db, { email, purpose: "join", inviteId: link.held, now });
+      await sendSeatEmail(db, { email, token, base });
+      return;
+    }
+    const sent = await sendSeatEmail(db, { email, token: link.token, base });
+    if (!sent) {
+      await giveSeatBack(db, { email, inviteId: link.inviteId, waitingSince: link.waitingSince, now });
+    }
   }, input.defer);
 }
 
@@ -318,15 +383,16 @@ export async function openSeats(
   const links = await withTx(db, async (tx) => {
     let open = (await lockSeats(tx, now)) + count;
     const maintainer = await maintainerId(tx);
-    const made: { email: string; token: string }[] = [];
+    const made: { email: string; token: string; inviteId: string; waitingSince: Date }[] = [];
     while (open > 0 && maintainer) {
       const oldest = await tx
-        .select({ email: waitlist.email })
+        .select({ email: waitlist.email, createdAt: waitlist.createdAt })
         .from(waitlist)
         .orderBy(asc(waitlist.createdAt), asc(waitlist.email))
         .limit(Math.min(open, WAVE_BATCH));
       if (oldest.length === 0) break;
       const emails = oldest.map((row) => row.email);
+      const since = new Map(oldest.map((row) => [row.email, row.createdAt]));
       await tx.delete(waitlist).where(inArray(waitlist.email, emails));
       const members = await tx
         .select({ email: accounts.email })
@@ -342,7 +408,7 @@ export async function openSeats(
           inviteId: invite.id,
           now,
         });
-        made.push({ email, token });
+        made.push({ email, token, inviteId: invite.id, waitingSince: since.get(email) ?? now });
         open -= 1;
       }
     }
@@ -356,7 +422,15 @@ export async function openSeats(
   await nowOrDeferred(async () => {
     for (const link of links) {
       try {
-        await sendSeatEmail(db, { ...link, base });
+        const sent = await sendSeatEmail(db, { email: link.email, token: link.token, base });
+        if (!sent) {
+          await giveSeatBack(db, {
+            email: link.email,
+            inviteId: link.inviteId,
+            waitingSince: link.waitingSince,
+            now,
+          });
+        }
       } catch (error) {
         // One failure does not stop the others. Never the message: it can
         // carry an address.
