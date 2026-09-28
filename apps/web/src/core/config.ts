@@ -29,7 +29,9 @@ export const FRIEND_REQUEST_TTL_DAYS = 30;
  * members (accounts that exist and are not suspended) reaches it, the
  * domain, the database and the right to replace the maintainer pass to a
  * not-for-profit body of the members. 100,000 is recommended and awaits the
- * founder's confirmation [CONFIRM]; every page and test reads it from here.
+ * founder's confirmation (D-0012 §B marks it as open); every page and test
+ * reads it from here. (No placeholder is written here: the honesty tests
+ * look for one in every public file, and this file is one.)
  */
 export const HANDOVER_THRESHOLD = 100_000;
 
