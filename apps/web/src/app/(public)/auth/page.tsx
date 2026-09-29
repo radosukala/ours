@@ -6,7 +6,7 @@
  * The token travels in the fragment, which browsers never send to a
  * server, so a mail scanner that fetches the link uses nothing up. This
  * page reads it, takes it out of the address bar and history at once, and
- * hands it to one server action. It runs once, even when React mounts
+ * passes it to one server action. It runs once, even when React mounts
  * effects twice in development.
  *
  * A browser already signed in as another account is not switched (SPEC

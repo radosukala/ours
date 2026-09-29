@@ -1,16 +1,21 @@
 /**
- * The front page (SPEC §18.2 and §18.8, Builder A; M-0011 acceptance):
+ * The front page (SPEC §18.15, M-0013, D-0015; after §18.2 and §18.8 of
+ * M-0011):
  *
- * - the headline, with the threshold from its one constant;
- * - the count's three forms, and no count at all when it can't be read;
- * - "Joining opens soon." while joining is closed;
- * - the form and the seat line while it is open;
- * - the rest of the copy, word for word.
+ * - the headline and the lede, word for word, and the title;
+ * - the count's three forms, in the section on who runs our.one, and no
+ *   count at all when it can't be read;
+ * - "Joining opens soon." while joining is closed, with the way in for an
+ *   invite;
+ * - the form, the seat line only when no seat is open, and the unchanged
+ *   answer, while it is open;
+ * - the signed promise on the first screen;
+ * - the rest of the copy, word for word, with every source;
+ * - the two pictures, which say what they are.
  *
- * Denial paths first. Nothing here depends on how seats are built (Builder
- * B's part): the presentational FrontPage is rendered with each state as
- * props, and the route is rendered with the seats module and the Get in
- * action mocked. Every address is FICTIONAL.
+ * Denial paths first. The presentational FrontPage is rendered with each
+ * state as props, and the route is rendered with the seats module and the
+ * Get in action mocked. Every address is FICTIONAL.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -42,15 +47,21 @@ vi.mock("@/app/(public)/seat-actions", () => ({
 }));
 
 import FrontPageRoute, { metadata } from "@/app/(public)/page";
+import { CaughtUpMarker } from "@/components/Marker";
+import { FeedContrast } from "@/components/public/FeedContrast";
+import { FeedPreview } from "@/components/public/FeedPreview";
 import {
   countLine,
+  FRIENDS_SOURCE,
   FRONT_PAGE_TITLE,
   FrontPage,
   type FrontPageProps,
   seatLine,
 } from "@/components/public/FrontPage";
 import { CHECK_YOUR_EMAIL, GetInFormView } from "@/components/public/GetInForm";
-import { HANDOVER_THRESHOLD } from "@/core/config";
+import { OPEN_CODE_URL } from "@/components/RightColumn";
+import { scanText } from "@/core/claims";
+import { DEFAULT_INVITES, HANDOVER_THRESHOLD } from "@/core/config";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const THRESHOLD = HANDOVER_THRESHOLD.toLocaleString("en-US");
@@ -83,6 +94,16 @@ function section(html: string, id: string): string {
   return html.slice(start, html.indexOf("</section>", start));
 }
 
+/** The first screen: everything before the first section below it. */
+function firstScreen(html: string): string {
+  return html.slice(0, html.indexOf('<section class="', html.indexOf("</figure>", html.indexOf("What our.one looks like"))));
+}
+
+/** Every <a> in this HTML, as [text, href, the whole tag]. */
+function links(html: string): [string, string, string][] {
+  return [...html.matchAll(/(<a [^>]*href="([^"]+)"[^>]*>)(.*?)<\/a>/g)].map((m) => [textOf(m[3]!), m[2]!, m[1]!]);
+}
+
 beforeEach(() => {
   seats.memberCount.mockReset();
   seats.seatState.mockReset();
@@ -100,7 +121,7 @@ describe("the count", () => {
     seats.seatState.mockResolvedValue({ open: 3, waiting: 0 });
     const html = await renderRoute();
     const text = textOf(html);
-    expect(text).toContain(`Today it's mine. At ${THRESHOLD} members, I give it away.`);
+    expect(text).toContain("Just your people. Then you're done.");
     expect(text).not.toMatch(/people are in|person is in|Nobody is in yet|You'd be #/);
     expect(html).not.toMatch(/class="[^"]*count/);
     // The failure is logged by its name only: a message can carry a host.
@@ -142,6 +163,12 @@ describe("the count", () => {
     }
   });
 
+  it("is in the section on who runs our.one, not on the first screen (D-0015 §D)", () => {
+    const html = render({ count: 1284 });
+    expect(textOf(firstScreen(html))).not.toMatch(/people are in|You'd be #/);
+    expect(textOf(section(html, "front-runs"))).toContain("1,284 people are in. You'd be #1,285.");
+  });
+
   it("shows the count from memberCount only, never the waiting list", async () => {
     seats.memberCount.mockResolvedValue(1284);
     seats.seatState.mockResolvedValue({ open: 0, waiting: 777 });
@@ -151,41 +178,52 @@ describe("the count", () => {
     expect(text).not.toContain("2,061"); // members and the line added together
   });
 
-  it("has no progress bar", async () => {
+  it("has no progress bar, and the only percentage on the page is the court's 7%", async () => {
     seats.memberCount.mockResolvedValue(1284);
     seats.seatState.mockResolvedValue({ open: 3, waiting: 0 });
     for (const html of [await renderRoute(), render({ count: 0 }), render({ count: 99_999 })]) {
-      expect(html).not.toMatch(/<progress|<meter|role="progressbar"|%/);
+      expect(html).not.toMatch(/<progress|<meter|role="progressbar"/);
+      // The large "7%" and the sentence that carries it; nothing measures the threshold.
+      expect(textOf(html).match(/[\d.,]+\s?%/g)).toEqual(["7%", "7%"]);
     }
   });
 });
 
 describe("the headline and the title", () => {
-  it("is one h1 on two lines, with the threshold from its constant", () => {
+  it("is one h1 on two lines, word for word (D-0015 §A)", () => {
     const html = render();
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     const h1 = html.slice(html.indexOf("<h1"), html.indexOf("</h1>") + 5);
     expect(h1).toBe(
-      `<h1 class="headline ${h1.match(/class="headline ([^"]*)"/)![1]}"><span>Today it&#x27;s mine.</span> <span>At ${THRESHOLD} members, I give it away.</span></h1>`,
+      `<h1 class="headline ${h1.match(/class="headline ([^"]*)"/)![1]}"><span>Just your people.</span> <span>Then you&#x27;re done.</span></h1>`,
     );
     expect(THRESHOLD).toBe("100,000");
   });
 
-  it("the metadata title is 'our.one · Today it's mine. At 100,000 members, I give it away.'", () => {
-    const expected = `our.one · Today it's mine. At ${THRESHOLD} members, I give it away.`;
+  it("the metadata title is 'our.one · Just your people. Then you're done.'", () => {
+    const expected = "our.one · Just your people. Then you're done.";
     expect(FRONT_PAGE_TITLE).toBe(expected);
     expect(metadata.title).toEqual({ absolute: expected });
   });
 
-  it("the lede is SPEC §18.2's", () => {
-    expect(textOf(render())).toContain(
-      "our.one is a social network for your people: their posts, in order, with an end when you're caught up. No ads. No ranking.",
-    );
+  it("the lede is SPEC §18.15's, and comes before Get in", () => {
+    const text = textOf(render());
+    const lede =
+      "our.one shows you posts from the people you choose, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can put your phone down.";
+    expect(text).toContain(lede);
+    expect(text.indexOf(lede)).toBeLessThan(text.indexOf("Your email"));
+  });
+
+  it("the old headline and the questions that left the page are gone", () => {
+    const text = textOf(render());
+    for (const gone of ["Today it's mine", "I give it away", "Why not hand it over now?", `What happens at ${THRESHOLD}?`, "No ranking."]) {
+      expect(text, gone).not.toContain(gone);
+    }
   });
 });
 
 describe("Get in", () => {
-  it("reads 'Joining opens soon.' with no form while no data controller is named, and never asks for the seats", async () => {
+  it("reads 'Joining opens soon.' with no form while no data controller is named, never asks for the seats, and says how to use an invite", async () => {
     vi.stubEnv("DATA_CONTROLLER", "");
     vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
     seats.memberCount.mockResolvedValue(3);
@@ -196,12 +234,16 @@ describe("Get in", () => {
     expect(html).not.toContain("<form");
     expect(getIn).not.toContain("Your email");
     expect(getIn).not.toMatch(/seats? open/);
-    expect(getIn).not.toContain("We use your address only to send you the link");
+    expect(getIn).not.toContain("We'll email you the link");
+    expect(getIn).not.toContain("Free to join");
     expect(seats.seatState).not.toHaveBeenCalled();
     // The count is still shown, and so is the way in for people with an invite.
     expect(textOf(html)).toContain("3 people are in. You'd be #4.");
     expect(getIn).toContain("Have an invite? Open the link you were sent.");
     expect(section(html, "front-get-in")).toMatch(/<a [^>]*href="\/signin"[^>]*>Sign in<\/a>/);
+    // No last call to get in while nobody can.
+    expect(html).not.toContain('id="front-close"');
+    expect(textOf(html)).not.toContain("Bring your people.");
   });
 
   it("reads 'Joining opens soon.' while a controller is named in half (a name with no address)", async () => {
@@ -223,10 +265,11 @@ describe("Get in", () => {
     expect(seats.seatState).not.toHaveBeenCalled();
   });
 
-  it("shows the form, the seat line and the privacy note when joining is open", async () => {
+  it("shows the form, the invites and the privacy note when joining is open, with no seat count while seats are open", async () => {
     seats.memberCount.mockResolvedValue(3);
     seats.seatState.mockResolvedValue({ open: 12, waiting: 0 });
-    const html = section(await renderRoute(), "front-get-in");
+    const route = await renderRoute();
+    const html = section(route, "front-get-in");
     const text = textOf(html);
     expect(text).not.toContain("Joining opens soon.");
     expect(html).toMatch(/<form[^>]*>/);
@@ -237,25 +280,37 @@ describe("Get in", () => {
       expect(input[0], attribute).toContain(attribute);
     }
     expect(html).toMatch(/<button type="submit"[^>]*>Get in<\/button>/);
-    expect(text).toContain("12 seats open.");
+    expect(text).not.toMatch(/\d+ seats? open|No seats open/);
+    expect(text).toContain(`Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`);
+    expect(DEFAULT_INVITES).toBe(10);
     expect(text).toContain(
-      "We use your address only to send you the link. What we keep, and for how long, is in Privacy.",
+      "We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in Privacy.",
     );
+    // The old note said "only", and the weekly email is on by default (D-0015 §J).
+    expect(text).not.toContain("only to send you the link");
     expect(html).toMatch(/<a [^>]*href="\/privacy"[^>]*>Privacy<\/a>/);
-    expect(text).toContain("Have an invite? Open the link you were sent.");
-    // The form comes first, then the seat line, then the note.
-    expect(text.indexOf("Get in Your email")).toBeLessThan(text.indexOf("12 seats open."));
-    expect(text.indexOf("12 seats open.")).toBeLessThan(text.indexOf("We use your address"));
+    expect(text).not.toContain("Have an invite?");
+    // The form comes first, then the invites, then the note.
+    expect(text.indexOf("Get in Your email")).toBeLessThan(text.indexOf("Free to join."));
+    expect(text.indexOf("Free to join.")).toBeLessThan(text.indexOf("We'll email you the link."));
+    // And a last way in at the end of the page, to the same form.
+    const close = section(route, "front-close");
+    expect(textOf(close)).toBe("Bring your people. Get in");
+    expect(close).toMatch(/<a href="#front-get-in" class="btn btn--primary btn--large">Get in<\/a>/);
   });
 
-  it("the seat line: '{open} seats open.', '1 seat open.', and none", () => {
-    expect(seatLine(12)).toBe("12 seats open.");
-    expect(seatLine(1000)).toBe("1,000 seats open.");
-    expect(seatLine(1)).toBe("1 seat open.");
-    expect(seatLine(0)).toBe("No seats open right now. Leave your address and you'll get the next one.");
-    for (const open of [0, 1, 2, 1000]) {
-      expect(textOf(render({ seatsOpen: open }))).toContain(seatLine(open));
+  it("the seat line: shown only when no seat is open (D-0015 §D)", () => {
+    const none = "No seats open right now. Leave your address and you'll get the next one.";
+    expect(seatLine(0)).toBe(none);
+    expect(seatLine(-1)).toBe(none);
+    for (const open of [1, 2, 12, 1000]) {
+      expect(seatLine(open), String(open)).toBeNull();
+      expect(textOf(render({ seatsOpen: open })), String(open)).not.toMatch(/seats? open|No seats/);
     }
+    const text = textOf(render({ seatsOpen: 0 }));
+    expect(text).toContain(none);
+    expect(text.indexOf("Get in Your email")).toBeLessThan(text.indexOf(none));
+    expect(text.indexOf(none)).toBeLessThan(text.indexOf("Free to join."));
   });
 
   it("leaves the seat line out, and keeps the form, when the seats can't be read", async () => {
@@ -264,10 +319,10 @@ describe("Get in", () => {
     const html = section(await renderRoute(), "front-get-in");
     expect(html).toContain("<form");
     expect(textOf(html)).not.toMatch(/seats? open|No seats/);
-    expect(textOf(html)).toContain("We use your address only to send you the link");
+    expect(textOf(html)).toContain("We'll email you the link.");
   });
 
-  it("after any valid submission, everyone reads the same words; a refusal is shown at the field", () => {
+  it("after any valid submission, everyone reads the same words, unchanged (D-0015 §H); a refusal is shown at the field", () => {
     const view = (state: { ok: true } | { error: string } | null) =>
       renderToStaticMarkup(createElement(GetInFormView, { state, action: () => {}, pending: false }));
     expect(CHECK_YOUR_EMAIL).toBe(
@@ -276,6 +331,8 @@ describe("Get in", () => {
     const answered = view({ ok: true });
     expect(answered).toMatch(/<p class="notice notice--ok" role="status">Check your email\./);
     expect(textOf(answered)).toContain(CHECK_YOUR_EMAIL);
+    // The prototype's shorter answer is untrue for an account or a place in line: nothing is sent to either.
+    expect(textOf(answered)).not.toContain("We've sent you the next step");
     expect(answered).toContain("<form"); // the form stays, for another address
 
     for (const refusal of ["Joining opens soon.", "FICTIONAL: that isn't an email address."]) {
@@ -299,71 +356,142 @@ describe("Get in", () => {
   });
 });
 
-describe("the rest of the page, word for word (SPEC §18.2)", () => {
-  it("the promise, with the link to the contract and the signature", () => {
-    const html = section(render(), "front-promise");
-    const text = textOf(html);
-    expect(text).toBe(
-      [
-        "The promise",
-        `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
-        "Until then I run it as its maintainer, under a public contract. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice, and you can always leave with everything.",
-        "Today these promises are held by that contract, the terms you join under, not yet by law.",
-        "Read the contract",
-        "Rado, maintainer",
-      ].join(" "),
-    );
-    expect(html).toMatch(/<a [^>]*href="\/contract"[^>]*>Read the contract<\/a>/);
-  });
-
-  it("why a maintainer, not an owner: each sentence links to its source, and the last line is bold with no link", () => {
-    const html = section(render(), "front-why");
-    const story: [string, string][] = [
-      [
-        "In 2012, WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
-        "https://blog.whatsapp.com/why-we-don-t-sell-ads",
-      ],
-      ["In 2014, Facebook agreed to buy it for about $19 billion.", "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/"],
-      [
-        "In 2016, WhatsApp announced it would share users' phone numbers with Facebook.",
-        "https://www.eff.org/deeplinks/2016/08/what-facebook-and-whatsapps-data-sharing-plans-really-mean-user-privacy-0",
-      ],
-      [
-        "In 2018, one of its founders said: “I sold my users' privacy to a larger benefit.”",
-        "https://www.cnbc.com/2018/09/26/whatsapp-co-founder-explains-why-he-left-facebook.html",
-      ],
-      ["In 2025, ads came to WhatsApp.", "https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html"],
-    ];
-    const links = [...html.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].map((m) => [textOf(m[2]!), m[1]!]);
-    expect(links).toEqual(story);
-    for (const m of html.matchAll(/<a [^>]*>/g)) {
-      expect(m[0]).toContain('rel="noopener noreferrer"');
-      expect(m[0]).toContain('target="_blank"');
+describe("the promise, signed, on the first screen (D-0015 §C)", () => {
+  it("is a card after Get in: the promise in the maintainer's words, his name and role, and a link to how it works", () => {
+    for (const joining of [true, false]) {
+      const html = render({ joining });
+      const first = firstScreen(html);
+      const card = first.slice(first.indexOf("<figure"), first.indexOf("</figure>") + 9);
+      expect(textOf(card)).toBe(
+        `R I'll never sell our.one. When ${THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me. Rado, maintainer · How that works`,
+      );
+      expect(card).toMatch(/<blockquote[^>]*><p>I&#x27;ll never sell our\.one\./);
+      expect(card).toMatch(/<figcaption[^>]*>Rado, maintainer · <a href="#front-runs" class="link">How that works<\/a><\/figcaption>/);
+      // The initial stands for a face and is not read out.
+      expect(card).toMatch(/<span class="[^"]*" aria-hidden="true">R<\/span>/);
+      expect(first.indexOf('id="front-get-in"')).toBeLessThan(first.indexOf("<blockquote"));
     }
-    expect(textOf(html.slice(html.indexOf("<h2"), html.indexOf("</h2>")))).toBe("Why a maintainer, not an owner");
-    const last = html.slice(html.lastIndexOf("<p"));
-    expect(last).toMatch(/^<p[^>]*><strong>An owner can sell it, change it or shut it down\. A maintainer does the job, or is replaced\.<\/strong><\/p>$/);
   });
 
-  it("fair questions: each question a <dt>, each answer a <dd>", () => {
+  it("names the body the contract names, not the members as owners (D-0015 §J)", () => {
+    const text = textOf(render());
+    expect(text).not.toContain("I hand it to its members");
+    expect(text).toContain("I hand it to a not-for-profit body of its members");
+  });
+
+  it("the claims scan lists it by exact text, and its widened rule catches 'hand it to' anywhere else", () => {
+    const file = "src/components/public/FrontPage.tsx";
+    const sentence = `When ${THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`;
+    expect(scanText(sentence, file)).toEqual([]);
+    expect(scanText(sentence, "src/app/(public)/page.tsx").length).toBeGreaterThan(0);
+    for (const claim of [
+      "I hand it to the members.",
+      "At 100,000 members, he hands it to them.",
+      "Handing it to the community is the plan.",
+      `When ${THRESHOLD} people have joined, I hand it to its members, and they can replace me.`,
+    ]) {
+      expect(scanText(claim, file).length, claim).toBeGreaterThan(0);
+    }
+    expect(scanText(readFileSync(join(WEB_ROOT, file), "utf8"), file)).toEqual([]);
+  });
+});
+
+describe("the rest of the page, word for word (SPEC §18.15)", () => {
+  it("where did your friends go: the court's finding, linked to the court's opinion, and the illustration", () => {
+    const html = section(render(), "front-friends");
+    const text = textOf(html);
+    expect(textOf(html.slice(html.indexOf("<h2"), html.indexOf("</h2>")))).toBe("Where did your friends go?");
+    expect(html).toMatch(/<p class="[^"]*" aria-hidden="true">7%<\/p>/);
+    expect(text).toContain(
+      "In January 2025, content from friends got 7% of the time Americans spent on Instagram. Most of the rest went to short videos from strangers, recommended by AI.",
+    );
+    expect(text).toContain("Source: the court's opinion in FTC v. Meta, page 8, citing Meta's own figures.");
+    expect(text).toContain("On our.one, your feed is only the people you chose, and then it ends.");
+    expect(FRIENDS_SOURCE).toBe(
+      "https://storage.courtlistener.com/recap/gov.uscourts.dcd.224921/gov.uscourts.dcd.224921.705.0.pdf",
+    );
+    const [source] = links(html);
+    expect(source?.[0]).toBe("the court's opinion in FTC v. Meta");
+    expect(source?.[1]).toBe(FRIENDS_SOURCE);
+    expect(source?.[2]).toContain('rel="noopener noreferrer"');
+    expect(source?.[2]).toContain('target="_blank"');
+    expect(html).toContain("<figure");
+    // The two labels, each above its phone.
+    expect(text).toMatch(/A ranked feed Home Sponsored .* and it keeps going our\.one Home /);
+    expect(text).toContain("Illustration.");
+  });
+
+  it("how it works: three steps, in order", () => {
+    const html = section(render(), "front-how");
+    expect(textOf(html.slice(html.indexOf("<h2"), html.indexOf("</h2>")))).toBe("How it works");
+    const steps = [...html.matchAll(/<li>(.*?)<\/li>/g)].map((m) => textOf(m[1]!));
+    expect(steps).toEqual([
+      "1 Get in Your email, a name and a username. It's free, and you need to be 18 or older.",
+      `2 Bring your people You get ${DEFAULT_INVITES} invites. It stays quiet until the people you care about are here, so send them to the ones you'd actually want to hear from.`,
+      "3 Catch up, then close it Their posts, newest first. When there's nothing new, it says so.",
+    ]);
+    expect(html).toMatch(/<ol role="list"/);
+    expect(html.match(/<h3>/g)).toHaveLength(3);
+  });
+
+  it("keep your people, change who runs it: WhatsApp in three dated lines, each linked to its source, then the promise and what holds it", () => {
+    const html = section(render(), "front-runs");
+    const text = textOf(html);
+    expect(textOf(html.slice(html.indexOf("<h2"), html.indexOf("</h2>")))).toBe("Keep your people. Change who runs it.");
+    expect(text).toContain("WhatsApp, in three dates");
+    const story = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"));
+    const lines = [...story.matchAll(/<li>(.*?)<\/li>/g)].map((m) => textOf(m[1]!));
+    expect(lines).toEqual([
+      "2012 WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
+      "2014 Facebook agreed to buy it for about $19 billion.",
+      "2025 Ads came to WhatsApp.",
+    ]);
+    expect(links(story).map(([, href]) => href)).toEqual([
+      "https://blog.whatsapp.com/why-we-don-t-sell-ads",
+      "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/",
+      "https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html",
+    ]);
+    for (const [, , tag] of links(story)) {
+      expect(tag).toContain('rel="noopener noreferrer"');
+      expect(tag).toContain('target="_blank"');
+    }
+    expect(html).toMatch(
+      /<p class="[^"]*"><strong>An owner can sell it, change it or shut it down\. A maintainer does the job, or is replaced\.<\/strong><\/p>/,
+    );
+    for (const sentence of [
+      "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice, and you can always leave with everything.",
+      `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
+      "Today these promises are held by that contract, not yet by law.",
+      "12 people are in. You'd be #13.",
+      "Read the contract See every cost Read the code",
+    ]) {
+      expect(text, sentence).toContain(sentence);
+    }
+    const end = links(html).slice(-3);
+    expect(end.map(([label, href]) => [label, href])).toEqual([
+      ["Read the contract", "/contract"],
+      ["See every cost", "/costs"],
+      ["Read the code", OPEN_CODE_URL],
+    ]);
+    expect(end[2]![2]).toContain('rel="noopener noreferrer"');
+    expect(end[2]![2]).toContain('target="_blank"');
+  });
+
+  it("fair questions: each question a <dt>, each answer a <dd>, product questions first", () => {
     const html = section(render(), "front-questions");
     const pairs = [...html.matchAll(/<dt>([^<]*)<\/dt><dd>([^<]*)<\/dd>/g)].map((m) => [textOf(m[1]!), textOf(m[2]!)]);
     expect(pairs).toEqual([
+      ["Is it free?", "Yes. Today I pay the bills, and every cost is public."],
+      ["What if my friends aren't on it?", `At first they won't be. That's what your ${DEFAULT_INVITES} invites are for.`],
+      ["Can I post photos?", "Not yet. Posts are words for now."],
+      ["Is there an app?", "Not yet. our.one works in your phone's browser, and you can add it to your home screen."],
       [
         "Why should I believe you?",
         "Don't take my word for it. Read the contract: it is the terms you join under. The code is public, and so is every cost.",
       ],
       [
-        "Why not hand it over now?",
-        `A proper not-for-profit body costs money and time, and I've built things before that nobody used. If ${THRESHOLD} people want this, it deserves one, with their say.`,
-      ],
-      [
         `What if it never gets to ${THRESHOLD}?`,
         "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything.",
-      ],
-      [
-        `What happens at ${THRESHOLD}?`,
-        "Members vote to found a not-for-profit body under rules published before that day. It gets the domain, the data and the right to replace the maintainer.",
       ],
       [
         "What's a maintainer?",
@@ -372,19 +500,19 @@ describe("the rest of the page, word for word (SPEC §18.2)", () => {
     ]);
   });
 
-  it("the sections come in SPEC §18.2's order, with one h1 and an h2 each", () => {
-    const html = render();
-    const headings = [...html.matchAll(/<h([12])\b[^>]*>(.*?)<\/h\1>/g)].map((m) => `h${m[1]} ${textOf(m[2]!)}`);
-    expect(headings).toEqual([
-      `h1 Today it's mine. At ${THRESHOLD} members, I give it away.`,
+  it("the sections come in SPEC §18.15's order, with one h1 and an h2 each", () => {
+    const heading = (html: string) =>
+      [...html.matchAll(/<h([12])\b[^>]*>(.*?)<\/h\1>/g)].map((m) => `h${m[1]} ${textOf(m[2]!)}`);
+    const common = [
+      "h1 Just your people. Then you're done.",
       "h2 Get in",
-      "h2 The promise",
-      "h2 Why a maintainer, not an owner",
+      "h2 Where did your friends go?",
+      "h2 How it works",
+      "h2 Keep your people. Change who runs it.",
       "h2 Fair questions",
-    ]);
-    const text = textOf(html);
-    expect(text.indexOf("No ranking.")).toBeLessThan(text.indexOf("12 people are in."));
-    expect(text.indexOf("12 people are in.")).toBeLessThan(text.indexOf("Get in"));
+    ];
+    expect(heading(render())).toEqual([...common, "h2 Bring your people."]);
+    expect(heading(render({ joining: false }))).toEqual(common);
   });
 
   it("a signed-in visitor goes to /home", async () => {
@@ -443,14 +571,31 @@ describe("the copy survives Next's compiler", () => {
   });
 });
 
-describe("the first screen's picture of the product (SPEC §18.13)", () => {
-  it("shows a feed that ends, with fictional people, and says they are fictional", async () => {
-    const { FeedPreview } = await import("@/components/public/FeedPreview");
-    const { renderToStaticMarkup } = await import("react-dom/server");
-    const { createElement } = await import("react");
+describe("the pictures say what they are (SPEC §18.15)", () => {
+  it("the phone: a feed that ends at the app's own caught-up words, with fictional people, and says so", () => {
     const html = renderToStaticMarkup(createElement(FeedPreview));
-    expect(html).toContain("Fictional people, for illustration.");
-    expect(html).toContain("You&#x27;re caught up");
+    expect(html).toContain("An example feed. Fictional people.");
+    // The marker's words are the app's: CaughtUpMarker, for a last visit 2 days ago.
+    const now = new Date("2026-09-29T12:00:00Z");
+    const marker = textOf(
+      renderToStaticMarkup(
+        createElement(CaughtUpMarker, { since: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), now }),
+      ),
+    );
+    expect(marker).toBe("You're caught up You've seen everything from before your last visit, 2 days ago.");
+    expect(textOf(html)).toContain(marker);
+    expect(textOf(html)).not.toContain("since yesterday");
     expect(html).not.toMatch(/\bOURS\b/);
+  });
+
+  it("the illustration: a ranked feed beside ours, captioned as an illustration", () => {
+    const html = renderToStaticMarkup(createElement(FeedContrast));
+    const text = textOf(html);
+    expect(text.startsWith("A ranked feed")).toBe(true);
+    expect(text).toContain("and it keeps going");
+    expect(text).toContain("You're caught up");
+    expect(text.endsWith("Illustration.")).toBe(true);
+    expect(html).toMatch(/<figure [^>]*aria-label="Illustration: a ranked feed that keeps going, beside an our\.one feed that ends"/);
+    expect(html).not.toMatch(/\bOURS\b|Instagram/);
   });
 });

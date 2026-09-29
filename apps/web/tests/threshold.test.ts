@@ -39,12 +39,13 @@ function textOf(html: string): string {
 
 describe("one constant, every page", () => {
   it("the front page, /contract, the status line and the pages that show it follow the constant", () => {
-    expect(FRONT_PAGE_TITLE).toBe("our.one · Today it's mine. At 1,000,000 members, I give it away.");
+    // Since D-0015 the headline names no number (SPEC §18.15).
+    expect(FRONT_PAGE_TITLE).toBe("our.one · Just your people. Then you're done.");
     expect(STATUS_LINE).toBe("Maintained by its founder. Handed to its members at 1,000,000.");
     const front = textOf(renderToStaticMarkup(createElement(FrontPage, { count: 12, joining: true, seatsOpen: 2 })));
     const contract = textOf(renderToStaticMarkup(createElement(ContractPage)));
     for (const [page, text, times] of [
-      ["/", front, 6], // headline, promise, and four answers or questions
+      ["/", front, 4], // the signed card, the handover promise, one question and one answer
       ["/contract", contract, 4], // the maintainer's paragraph, promise 2, the h2, the closing
       ["/power", textOf(renderToStaticMarkup(createElement(PowerPage))), 1],
       ["/rules", textOf(renderToStaticMarkup(createElement(RulesPage))), 1],
@@ -54,7 +55,9 @@ describe("one constant, every page", () => {
       expect(text, page).not.toContain("100,000");
       expect(text.split("1,000,000").length - 1, page).toBe(times);
     }
-    expect(front).toContain("At 1,000,000 members, I give it away.");
+    expect(front).toContain(
+      "When 1,000,000 people have joined, I hand it to a not-for-profit body of its members, and they can replace me.",
+    );
     expect(countLine(999_999)).toBe("999,999 people are in. You'd be #1,000,000.");
     expect(contract).toContain("If it never gets to 1,000,000 Nothing is handed over.");
   });

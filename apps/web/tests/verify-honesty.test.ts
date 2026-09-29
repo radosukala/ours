@@ -139,9 +139,10 @@ describe("claims scan: coverage of the prohibited list", () => {
     const file = "src/components/public/FrontPage.tsx";
     const real = read(file);
     expect(scanText(real, file)).toEqual([]);
+    // Since M-0013 the promise sits under the h2 of SPEC §18.15 item 4.
     const injected = real.replace(
-      '<h2 id="front-promise">The promise</h2>',
-      '<h2 id="front-promise">The promise</h2><p>our.one is not for sale.</p>',
+      '<h2 id="front-runs">Keep your people. Change who runs it.</h2>',
+      '<h2 id="front-runs">Keep your people. Change who runs it.</h2><p>our.one is not for sale.</p>',
     );
     expect(injected).not.toBe(real);
     expect(scanText(injected, file).map((h) => h.match)).toEqual(["not for sale"]);
@@ -636,18 +637,20 @@ describe("the running version", () => {
 /* ====================================================================== */
 
 describe("the landing page and product words", () => {
-  it("closed: the front page's headline is D-0012 §D's, word for word, with the threshold from its constant; the lede is SPEC §18.2's", () => {
-    // D-0012 §D replaces D-0011 §B's working copy; SPEC §18.2 is the page.
-    const d12 = readRepo("decisions/D-0012.md").replace(/\s+/g, " ");
-    expect(d12).toContain(`*"Today it's mine. At [threshold] members, I give it away."*`);
-    const headline = `Today it's mine. At ${HANDOVER_THRESHOLD.toLocaleString("en-US")} members, I give it away.`;
+  it("closed: the front page's headline is D-0015 §A's, word for word; the lede is SPEC §18.15's", () => {
+    // D-0015 amends D-0012 §D (which replaced D-0011 §B's working copy);
+    // SPEC §18.15 is the page. The old headline is gone from it.
+    const d15 = readRepo("decisions/D-0015.md").replace(/\s+/g, " ");
+    expect(d15).toContain(`**"Just your people. Then you're done."**`);
+    const headline = "Just your people. Then you're done.";
     expect(FRONT_PAGE_TITLE).toBe(`our.one · ${headline}`);
     const html = renderToStaticMarkup(createElement(FrontPage, { count: null, joining: false, seatsOpen: null }));
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     expect(textOf(html.slice(html.indexOf("<h1"), html.indexOf("</h1>")))).toBe(headline);
+    expect(textOf(html)).not.toContain("I give it away");
     const spec = read("SPEC.md").replace(/\s+/g, " ");
     const lede =
-      "our.one is a social network for your people: their posts, in order, with an end when you're caught up. No ads. No ranking.";
+      "our.one shows you posts from the people you choose, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can put your phone down.";
     expect(spec).toContain(`**The lede:** "${lede}"`);
     expect(textOf(html)).toContain(lede);
   });

@@ -116,8 +116,11 @@ const SAMPLES: Record<string, string[]> = {
     "You will be its owners.",
   ],
   [`\\bit(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is) ours\\b`]: ["It's ours.", "it is ours"],
-  "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bgives? it away\\b": [
+  // "hand it to" since M-0013 (D-0015 §C): the rule could not see the signed promise's form.
+  "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bhand(?:s|ing)? it to\\b|\\bgives? it away\\b": [
     "I will hand it over next year.",
+    "I hand it to its members.",
+    "At 100,000 members he hands it to them.",
     "She gives it away.",
   ],
 };

@@ -12,6 +12,7 @@
  *
  * The five "Why" sources (SPEC §18.9) were read over the network, which a
  * test cannot do; the verdicts are in the verification report, not here.
+ * Since M-0013 the front page links four sources (SPEC §18.15).
  *
  * Everyone here is FICTIONAL, with an example.test address; client
  * addresses are keyed hashes of the documentation ranges (RFC 5737).
@@ -46,6 +47,7 @@ import PowerPage from "@/app/(public)/power/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
 import RulesPage from "@/app/(public)/rules/page";
 import { countLine, FrontPage } from "@/components/public/FrontPage";
+import { OPEN_CODE_URL } from "@/components/RightColumn";
 import { CHECK_YOUR_EMAIL } from "@/components/public/GetInForm";
 import { deleteAccount, openEmailLink } from "@/core/accounts";
 import { inviteOfferCookieValue, signValue } from "@/core/auth";
@@ -234,7 +236,9 @@ describe("what the join pages say about a seat (D-0012 §F, SPEC §18.12 item 2)
 describe("the contract is 'the terms you join under' (D-0012 §A; the front page and /contract)", () => {
   it("fixed (SPEC §18.12): the join form asks people to agree to the rules and the contract the front page calls 'the terms you join under'", () => {
     expect(front()).toContain("Read the contract: it is the terms you join under.");
-    expect(front()).toContain("Today these promises are held by that contract, the terms you join under, not yet by law.");
+    // Since M-0013 (SPEC §18.15 item 4) the sentence before says which contract, so this one is shorter.
+    expect(front()).toContain("I run it under a public contract, and that contract is the terms you join under.");
+    expect(front()).toContain("Today these promises are held by that contract, not yet by law.");
     expect(page(ContractPage)).toContain("these are my promises, written into the terms you join under.");
 
     const form = render(createElement(JoinForm));
@@ -555,14 +559,24 @@ describe("what the code holds, and the sources as linked", () => {
     expect(feed.items.map((item) => item.id)).toEqual([quiet.id, popular.id]);
   });
 
-  it("closed: each 'Why' sentence links to its SPEC §18.9 source, in order, and the 2012 line no longer claims '$0.99'", () => {
+  it("closed: each sourced line links to its SPEC §18.15 source, in order, and the 2012 line no longer claims '$0.99'", () => {
+    // Since M-0013 the sources are §18.15's: the court's 7% finding, then
+    // WhatsApp in three dated lines (2012, 2014, 2025; §18.9's for those years).
     const spec = readFileSync(`${WEB_ROOT}SPEC.md`, "utf8");
-    const table = spec.slice(spec.indexOf("### 18.9"), spec.indexOf("### 18.10"));
-    const sources = [...table.matchAll(/\| (20\d\d) \| (https:\/\/\S+) \|/g)].map((m) => m[2]);
-    expect(sources).toHaveLength(5);
+    const table = spec.slice(spec.indexOf("### 18.15"));
+    const sources = [...table.matchAll(/\| (7%|20\d\d) \| (https:\/\/\S+) \|/g)].map((m) => m[2]);
+    expect(sources).toHaveLength(4);
+    const older = spec.slice(spec.indexOf("### 18.9"), spec.indexOf("### 18.10"));
+    for (const year of ["2012", "2014", "2025"]) {
+      const listed = older.match(new RegExp(`\\| ${year} \\| (https:\\/\\/\\S+) \\|`))?.[1];
+      expect(sources, year).toContain(listed);
+    }
     const html = render(createElement(FrontPage, { count: 0, joining: false, seatsOpen: null }));
-    const why = html.slice(html.indexOf('id="front-why"'), html.indexOf('id="front-questions"'));
-    expect([...why.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1])).toEqual(sources);
-    expect(textOf(why)).not.toContain("$0.99");
+    const sourced = html.slice(html.indexOf('id="front-friends"'), html.indexOf('id="front-questions"'));
+    // Every outside link there is a source, except the open code, which is the evidence for "the code is public".
+    const links = [...sourced.matchAll(/<a href="(https:[^"]+)"/g)].map((m) => m[1]);
+    expect(links.filter((href) => href !== OPEN_CODE_URL)).toEqual(sources);
+    expect(links.filter((href) => href === OPEN_CODE_URL)).toHaveLength(1);
+    expect(textOf(sourced)).not.toContain("$0.99");
   });
 });

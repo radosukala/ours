@@ -1,9 +1,12 @@
 /**
- * The front page's picture of the product (SPEC §18.13): a phone showing a
- * feed as our.one draws it — the people you chose, newest first, and the
- * marker where you are caught up. Static, with fictional people, and the
- * caption says so. It uses the app's own tokens, so it follows the theme.
+ * The front page's picture of the product (SPEC §18.15 item 1.5, after
+ * §18.13): a phone showing a feed as our.one draws it — the people you
+ * chose, newest first — ending at the app's own caught-up marker, in its
+ * own words (`CaughtUpMarker`), above the app's tab bar on a phone. Static,
+ * with fictional people, and the caption says so. It uses the app's own
+ * tokens and icons, so it follows the theme.
  */
+import { Icon, type IconName } from "@/components/Icon";
 import styles from "./public.module.css";
 
 const POSTS: readonly { name: string; handle: string; when: string; text: string; hue: number }[] = [
@@ -29,6 +32,14 @@ const POSTS: readonly { name: string; handle: string; when: string; text: string
     hue: 262,
   },
 ];
+
+/** The tab bar's icons, in the app's order (TabBar.tsx): the first is current. */
+const TABS: readonly IconName[] = ["home", "people", "plus", "bell", "person"];
+
+/** The caught-up marker's words, as `CaughtUpMarker` writes them for a visit 2 days ago. */
+export const PREVIEW_MARKER = ["You're caught up", "You've seen everything from before your last visit, 2 days ago."] as const;
+
+export const PREVIEW_CAPTION = "An example feed. Fictional people.";
 
 export function FeedPreview() {
   return (
@@ -56,11 +67,24 @@ export function FeedPreview() {
           ))}
         </ol>
         <div className={styles.phoneEnd}>
-          <strong>You&apos;re caught up</strong>
-          <span>That&apos;s everything from your people since yesterday.</span>
+          <span className={styles.check}>
+            <Icon name="check" size={22} strokeWidth={2.5} />
+          </span>
+          <strong>{PREVIEW_MARKER[0]}</strong>
+          <span>{PREVIEW_MARKER[1]}</span>
+        </div>
+        <div className={styles.phoneTabs}>
+          {TABS.map((name, i) => (
+            <span
+              key={name}
+              className={name === "plus" ? `${styles.phoneTab} ${styles.phoneCompose}` : styles.phoneTab}
+            >
+              <Icon name={name} size={name === "plus" ? 20 : 24} strokeWidth={i === 0 ? 2.25 : 1.75} />
+            </span>
+          ))}
         </div>
       </div>
-      <figcaption className={styles.previewCaption}>Fictional people, for illustration.</figcaption>
+      <figcaption className={styles.previewCaption}>{PREVIEW_CAPTION}</figcaption>
     </figure>
   );
 }

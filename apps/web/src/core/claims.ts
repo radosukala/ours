@@ -145,7 +145,10 @@ export const PROHIBITED: readonly Prohibited[] = [
     reason: "D-0012: a members' body gives control, not ownership; \"it's ours\" was dropped.",
   },
   {
-    pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bgives? it away\b/i,
+    // "hand it to" since M-0013: the front page's signed promise hands
+    // our.one to a body of its members, and the rule could not see it
+    // (the cold read of 29 September 2026).
+    pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bhand(?:s|ing)? it to\b|\bgives? it away\b/i,
     reason:
       "M-0011: every sentence about the handover is listed by exact text in ALLOWLIST; any other is refused until it is reviewed and listed.",
   },
@@ -165,7 +168,7 @@ const T = HANDOVER_THRESHOLD.toLocaleString("en-US");
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
 const CONTRACT_PAGE = "src/app/(public)/contract/page.tsx";
 const HANDOVER_REASON =
-  "D-0012 §B and §D, M-0011: a sentence about the handover, reviewed and listed by exact text (source and rendered form).";
+  "D-0012 §B and §D, D-0015 §C, M-0011 and M-0013: a sentence about the handover, reviewed and listed by exact text (source and rendered form).";
 
 export type AllowEntry = {
   /** The file, relative to apps/web, with forward slashes. */
@@ -186,11 +189,11 @@ export const ALLOWLIST: readonly AllowEntry[] = [
   // through). Each is listed twice: as the source writes it, and as a
   // person reads it with the threshold filled in.
   ...[
-    "At ${THRESHOLD} members, I give it away.",
-    `At ${T} members, I give it away.`,
+    // The signed promise on the first screen (D-0015 §C, §J).
+    "When {THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.",
+    `When ${T} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`,
     "When {THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.",
     `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
-    "Why not hand it over now?",
     "Then nothing is handed over.",
   ].map((sentence) => ({ file: FRONT_FILE, sentence, reason: HANDOVER_REASON })),
   // The status line (D-0012 §D), in every page's footer: listed by exact

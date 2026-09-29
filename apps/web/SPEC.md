@@ -1837,3 +1837,167 @@ pages that said it would be public now say it is:
 - **The front page's first fair question** ends "The code is public, and so
   is every cost."
 - **`/power`'s code row** begins "Apache-2.0, and public". It stays STATED.
+
+### 18.15 The front page, product first (M-0013, 29 September 2026)
+
+**Authority:** [`M-0013`](../../mandates/M-0013.md), under
+[`D-0015`](../../decisions/D-0015.md), which amends D-0012 §D. Where this
+section changes §18.2, §18.8, §18.9 or §18.13, it governs. Copy is exact.
+[threshold] is `THRESHOLD`, [invites] is `DEFAULT_INVITES`, [maintainer] is
+`MAINTAINER` and [notice] is `NOTICE_DAYS`.
+
+The metadata title is `our.one · Just your people. Then you're done.`
+
+**1. The first screen.** Two columns from 900px: the words on the left,
+the phone on the right. One column on a phone, in this order:
+
+1. **The headline,** one `<h1>` on two lines:
+   - **Just your people.**
+   - **Then you're done.**
+2. **The lede:** "our.one shows you posts from the people you choose,
+   newest first. No ads and no suggested posts. When you've seen them all,
+   it tells you, and you can put your phone down."
+3. **Get in** (h2 "Get in", visually hidden, id `front-get-in`).
+   - **While `accountCreationOpen()` and `clientIpHeader()` are both
+     true:**
+     - the form, unchanged: the label "Your email", the button "Get in",
+       and the action `takeSeat`;
+     - the seat line, only when no seat is open: "No seats open right now.
+       Leave your address and you'll get the next one." With seats open, or
+       when the seats can't be read, there is no seat line;
+     - "Free to join. You get [invites] invites to bring your people.";
+     - the privacy note, small: "We'll email you the link. Once you've
+       joined, you also get a weekly email, which you can stop. What we
+       keep, and for how long, is in Privacy." with the link to `/privacy`;
+     - the answer after any valid submission, unchanged (D-0015 §H).
+   - **Otherwise:** "Joining opens soon." Then "Have an invite? Open the
+     link you were sent." and **Sign in** → `/signin`.
+4. **The promise, signed:** a card after Get in, with an initial where a
+   face would be.
+   - "I'll never sell our.one. When [threshold] people have joined, I hand
+     it to a not-for-profit body of its members, and they can replace me."
+   - "[maintainer], maintainer", and the link **How that works** →
+     `#front-runs`.
+5. **The phone** (`FeedPreview`):
+   - the three fictional posts of §18.13;
+   - the app's caught-up marker: "You're caught up" and "You've seen
+     everything from before your last visit, 2 days ago.";
+   - a tab bar like the app's on a phone, icons only;
+   - the caption "An example feed. Fictional people."
+
+**2. Where did your friends go?** (h2, id `front-friends`)
+
+- **"7%"** in large type, hidden from screen readers; the sentence carries
+  it.
+- "In January 2025, content from friends got 7% of the time Americans spent
+  on Instagram. Most of the rest went to short videos from strangers,
+  recommended by AI."
+- "Source: the court's opinion in FTC v. Meta, page 8, citing Meta's own
+  figures." The words "the court's opinion in FTC v. Meta" link to the
+  source listed below.
+- "On our.one, your feed is only the people you chose, and then it ends."
+- **The illustration** (`FeedContrast`), a figure captioned
+  "Illustration.":
+  - two small phones, labelled "A ranked feed" and "our.one";
+  - the first shows Sponsored, Suggested for you, one friend's post,
+    Suggested for you, Sponsored and Suggested for you, fading out over
+    "and it keeps going";
+  - the second shows three friends' posts and "You're caught up".
+
+**3. How it works** (h2, id `front-how`), an ordered list:
+
+1. **Get in.** "Your email, a name and a username. It's free, and you need
+   to be 18 or older."
+2. **Bring your people.** "You get [invites] invites. It stays quiet until
+   the people you care about are here, so send them to the ones you'd
+   actually want to hear from."
+3. **Catch up, then close it.** "Their posts, newest first. When there's
+   nothing new, it says so."
+
+**4. Keep your people. Change who runs it.** (h2, id `front-runs`)
+
+- **"WhatsApp, in three dates"**, then three lines, each the link to its
+  source (below):
+  - 2012: "WhatsApp wrote: “when advertising is involved you the user are
+    the product.” It charged its users instead."
+  - 2014: "Facebook agreed to buy it for about $19 billion."
+  - 2025: "Ads came to WhatsApp."
+- In bold, with no link: "An owner can sell it, change it or shut it down.
+  A maintainer does the job, or is replaced."
+- "our.one has a maintainer: me, [maintainer]. I run it under a public
+  contract, and that contract is the terms you join under. Two of its
+  promises can never be changed: no sale, and the handover. The rest can
+  change only with [notice] days' notice, and you can always leave with
+  everything."
+- "When [threshold] people have joined, I hand over our.one's domain, its
+  data and the right to replace whoever runs it to a not-for-profit body of
+  its members, founded by their vote."
+- "Today these promises are held by that contract, not yet by law."
+- **The count,** in §18.2 item 3's forms, with the live dot. It is left out
+  when it can't be read.
+- **The links:** **Read the contract** → `/contract`, **See every cost** →
+  `/costs`, and **Read the code** → the open code, in a new tab.
+
+**5. Fair questions** (h2, id `front-questions`). Each question is a `<dt>`
+and each answer a `<dd>`, in one column:
+
+| Question | Answer |
+|---|---|
+| "Is it free?" | "Yes. Today I pay the bills, and every cost is public." |
+| "What if my friends aren't on it?" | "At first they won't be. That's what your [invites] invites are for." |
+| "Can I post photos?" | "Not yet. Posts are words for now." |
+| "Is there an app?" | "Not yet. our.one works in your phone's browser, and you can add it to your home screen." |
+| "Why should I believe you?" | "Don't take my word for it. Read the contract: it is the terms you join under. The code is public, and so is every cost." |
+| "What if it never gets to [threshold]?" | "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything." |
+| "What's a maintainer?" | "The one who keeps it running. Today that's me, and today I also hold everything. After [threshold], a body of its members holds it, and can replace me." |
+
+**6. The close** (h2 "Bring your people.", id `front-close`), only while
+the form is shown: a link that looks like a button, **Get in** →
+`#front-get-in`.
+
+**Removed from §18.2:**
+
+- the sections "The promise" and "Why a maintainer, not an owner". Their
+  sentences move to item 4, and the story is cut to three lines;
+- the questions "Why not hand it over now?" and "What happens at
+  [threshold]?";
+- the count of open seats;
+- the count on the first screen;
+- "Have an invite?…" while joining is open.
+
+**The claims scan (§18.7):**
+
+- The handover rule also catches "hand it to" and "hands it to"
+  (`\bhand(?:s|ing)? it to\b`).
+- FrontPage.tsx's listed sentences are the card's second sentence, the
+  handover promise and "Then nothing is handed over.", each in source form
+  and as rendered. The old headline and "Why not hand it over now?" leave
+  the list.
+
+**Sources.** The front page links these, in this order:
+
+| Line | Source |
+|---|---|
+| 7% | https://storage.courtlistener.com/recap/gov.uscourts.dcd.224921/gov.uscourts.dcd.224921.705.0.pdf |
+| 2012 | https://blog.whatsapp.com/why-we-don-t-sell-ads |
+| 2014 | https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/ |
+| 2025 | https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html |
+
+The 7% source is the court's Memorandum Opinion in *FTC v. Meta Platforms*,
+No. 1:20-cv-03590 (D.D.C.), ECF No. 705, filed 2 December 2025, page 8. A
+human confirms that it says what the sentence cites before the page is
+published (D-0015 §E, `[CONFIRM]`).
+
+**Tests (§18.8).** `tests/front-page.test.ts` follows this section, denial
+paths first: the count unreadable, joining closed, the seats unreadable.
+The tests that pinned §18.2's copy follow it too: the threshold, honesty
+and claims tests, and the re-check's count of listed handover sentences
+(eight, not nine).
+
+**Width and type.**
+
+- The page keeps §18.13's width of 1,072px.
+- The headline is 36px on a phone, up to 60px.
+- Section headings are 28 to 38px, and body text is 17px.
+- The only colours are §9's tokens, plus the caught-up green the live dot
+  already uses.
