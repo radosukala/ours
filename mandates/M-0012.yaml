@@ -13,7 +13,7 @@ authority:
     role: founder-steward
   valid_from: 2026-09-28T00:00:00Z
   expires_at: 2027-06-30T00:00:00Z
-  prerequisite_decisions: [D-0011, D-0012, D-0013, D-0014]
+  prerequisite_decisions: [D-0011, D-0012, D-0013, D-0014, D-0015]
 
 institution:
   constitution_version: ours-constitution/0.1
@@ -39,7 +39,7 @@ human_outcome: >
   join until the founder opens seats or sends invites.
 
 adopted_constraints:
-  - The deployed commit is the one verified under M-0011, or a later one verified the same way; the release receipt names it.
+  - The deployed commit is the one verified under M-0011 or M-0013, or a later one verified the same way; the release receipt names it.
   - Every secret is entered by the founder in the provider's own dashboard; no agent enters, stores or prints one.
   - Exactly one real person's address is used by an agent's action, the founder's, for the founder's own administrator account.
   - Seats stay at zero until the founder opens them.
@@ -86,6 +86,7 @@ preconditions:
   - Resend with the our.one domain verified (its DNS records added by the founder)
   - "the founder's secrets in Vercel: DATABASE_URL, SESSION_SECRET (32+ random bytes), CRON_SECRET, RESEND_API_KEY, MAIL_FROM, MAIL_TRANSPORT=resend, DATA_CONTROLLER=Ctrl AI, Inc., DATA_CONTROLLER_EMAIL=privacy@ctrlai.com, DATA_CONTROLLER_REPRESENTATIVE=Rado Sukala, CLIENT_IP_HEADER=x-vercel-forwarded-for, APP_URL=https://our.one, OURS_VERSION"
   - ONE moved to oneburger.cz, and our.one pointed at Vercel
+  - a human confirms that the court's opinion says what the front page's 7% sentence cites (D-0015 §E; AGENTS.md §10)
 
 acceptance:
   tests:

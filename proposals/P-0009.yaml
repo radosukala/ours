@@ -1,0 +1,53 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0009
+title: The front door — the front page leads with the product
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0015
+
+human_source:
+  path: proposals/P-0009.md
+evidence:
+  - path: proposals/P-0009.evidence-conversation-2026-09-29.md
+
+proposed_by:
+  - id: claude
+    kind: agent
+    role: architect
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: founder
+    kind: human
+    role: founder-steward
+  - id: cold-read-critic
+    kind: agent
+    role: reviewer
+
+affected_groups:
+  - everyone who opens our.one's front page before joining
+  - the founder, whose promise moves from the headline to a signed card
+
+unresolved:
+  - a human confirms that the court's opinion says what the 7% sentence cites (AGENTS.md §10) [CONFIRM]
+  - the five-stranger test, recommended before release, not run
+  - the answer after Get in, the invite page, a day-one invite step, and photos, left for later decisions
+
+cost:
+  proposer_hours: 2
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-29
+    actor: { id: founder, kind: human }
+    position: not sure the present design and message will make a stranger join; simple was the aim, but it may not convert
+  - date: 2026-09-29
+    actor: { id: claude, kind: agent }
+    position: the page answers trust before want; lead with the product, keep every promise one scroll down and one signed card up; test on five strangers before release
+  - date: 2026-09-29
+    actor: { id: founder, kind: human }
+    position: yes to the prototype, a much better homepage; build it

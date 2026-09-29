@@ -1,0 +1,61 @@
+schema: ours.decision/v0.1
+decision_id: D-0015
+title: The front page leads with the product
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0015.md
+
+proposal: P-0009
+prerequisite_decisions: [D-0012]
+
+outcome: >
+  The front page leads with the product. Its headline is "Just your people.
+  Then you're done.", replacing D-0012 §D's; its lede names posts from the
+  people you choose, newest first, no ads and no suggested posts, and the
+  end. The founder's promise (no sale; the handover at the threshold) moves
+  to a signed card on the first screen, listed by exact text in the claims
+  scan, whose rule widens to catch "hand it to". The count keeps its form as
+  a rank and moves to the section on who runs our.one; the seat line shows
+  only when no seat is open. A section cites the court's finding that
+  Americans spent 7% of their Instagram time on content from friends (FTC v.
+  Meta, ECF No. 705, page 8), [CONFIRM] by a human before publication.
+  WhatsApp's story is cut to three dated lines. The answer after Get in is
+  unchanged. Authorizes M-0013 (BUILD) and amends the draft M-0012.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0013]
+
+prohibits:
+  - publishing the 7% sentence before a human confirms its source (AGENTS.md §10)
+  - any sentence about the handover not listed by exact text
+  - stating the handover as done
+  - an answer after Get in that is untrue for any address
+
+effective_from: 2026-09-29T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The agent recommended a five-stranger test before building;
+  the founder chose to build first, and the test stays open before release.
+  The founder's review of this exact wording is pending, and so is a human's
+  confirmation that the cited source says what the record cites.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

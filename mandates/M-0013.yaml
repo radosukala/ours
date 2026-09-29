@@ -1,0 +1,144 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0013
+title: The front page, product first — the headline, the signed promise, where your friends went, how it works, and who runs it
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0015
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-09-29T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0012, D-0015]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0013.md
+
+objective: >
+  Rebuild apps/web's signed-out front page in the order D-0015 adopts: what
+  our.one is and why a stranger would want it, then how it works, then who
+  runs it and what holds each promise, then the questions. The first screen
+  carries the headline, the lede, Get in and the founder's signed promise
+  beside a phone whose feed ends; the count moves, as a rank, to the section
+  on who runs it; the seat line shows only when no seat is open; a section
+  cites the court's 7% finding with its source; the claims scan's handover
+  rule widens to catch "hand it to" and lists the new sentence by exact
+  text. The answer after Get in, the invite page and every other page are
+  unchanged. Fictional data only; nothing runs anywhere but this machine.
+
+human_outcome: >
+  A stranger reads in the first screen what our.one is, why it is different
+  from the feeds they know, that it starts quiet until their people come,
+  and what the founder promises, and can ask for a seat there. Nothing on
+  the page claims the handover has happened, and every number on it has a
+  source.
+
+adopted_constraints:
+  - The threshold, the number of invites and the maintainer's name come from their constants (HANDOVER_THRESHOLD, DEFAULT_INVITES, MAINTAINER); no page writes them itself.
+  - Every sentence about the handover on the page is listed by exact text in the claims scan's ALLOWLIST, and the widened rule catches the new one anywhere else.
+  - The page states what holds each promise today, that before the threshold it is a promise, and what happens if the threshold is never reached (D-0012 §D, kept by D-0015 §G).
+  - The count is memberCount, shown as a rank with no progress bar, and left out when it can't be read; the page renders with no error and no number.
+  - The 7% sentence and every dated story line link to their sources; the 7% sentence is not published before a human confirms its source (D-0015 §E).
+  - Every picture of the product is labelled fictional or an illustration.
+  - No real person's data, no email to a real address, no provider account, no domain touched.
+
+hypotheses:
+  - A stranger shown the first screen for five seconds can say what our.one is and who it is for.
+  - Putting the promise in a signed card under Get in keeps what makes our.one different in the first screen without leading with it.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: REVERSIBLE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure]
+  privacy: [no-real-person-data-under-this-mandate]
+
+acceptance:
+  tests:
+    - The front page's h1 is "Just your people. Then you're done." and its metadata title "our.one · Just your people. Then you're done."; the lede, the signed promise, every section and every question are word for word SPEC §18.15's.
+    - The count reads as a rank in the section on who runs our.one, from memberCount only, never the waiting list; it is left out, with no error and no number, when it can't be read; there is no progress bar.
+    - While joining is closed the page reads "Joining opens soon." with no form, and says how to use an invite; while it is open the form is shown, the seat line appears only when no seat is open, and the answer after any valid submission is unchanged.
+    - The 7% sentence and the three dated story lines link to their sources, open in a new tab with rel="noopener noreferrer", and the 7% source is the court's opinion.
+    - The claims scan finds no prohibited claim on the page; the new handover sentence passes only on the front page and is caught anywhere else; "hand it to" is caught in any other sentence.
+    - The phone and the illustration say they are fictional or an illustration; no page says OURS as the product's name.
+    - Typecheck, lint, tests and a production build pass; the page serves over HTTP from the production build; pnpm ours check M-0013 --changed authorises the finished working tree.
+  evidence:
+    - build receipt recording files touched, dependencies added (none expected), and every failure
+    - an independent verification by an agent that did not build it, with a stopping rule declared before it starts
+    - screenshots of the front page at phone and desktop width, light and dark
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - any prerequisite does not hold
+    - a required fact is marked [CONFIRM] and the work would need to resolve it
+    - the work requires a path outside the allowed scope
+    - a feature would need real personal data, a provider account, or a deployment
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Revert the M-0013 commits. No schema, data or migration changes; nothing
+    runs anywhere but the builder's machine.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  release: M-0012, after its preconditions, including D-0015 §E's [CONFIRM]
+  deploy: not-authorized
+
+cost:
+  source: ESTIMATED
+  wall_minutes: null
