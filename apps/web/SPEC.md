@@ -2001,3 +2001,42 @@ and claims tests, and the re-check's count of listed handover sentences
 - Section headings are 28 to 38px, and body text is 17px.
 - The only colours are §9's tokens, plus the caught-up green the live dot
   already uses.
+
+**Decisions after the verification (29 September 2026).** Two verifiers
+that built nothing checked `24a683f` (honesty and the claims scan;
+rendering and accessibility). What they confirmed is fixed:
+
+- **The seat line** now reads "No seats open right now. Leave your address
+  to join the line. Seats go to whoever has waited longest." The old line
+  promised the next seat, and opening seats serves the longest-waiting
+  address first (HIGH).
+- **"What's a maintainer?"** now ends "After [threshold], I hand over the
+  domain, the data and the right to replace me to a not-for-profit body of
+  its members." It is in the contract's terms, and listed by exact text.
+- **While joining is closed,** the line is "Have an invite? It will work
+  when joining opens.", because an invite does not work then either.
+- **The 7% source** reads "pages 8 and 9". Page 9 says most time on
+  Instagram goes to Reels, which are "entirely unconnected".
+- **The phone is built from the app's parts:**
+  - the wordmark top bar;
+  - post rows in PostRow's classes with its four icons;
+  - `CaughtUpMarker` above a fourth, older post (Pavel, 3d);
+  - `EndMarker`;
+  - the tab bar in the text colour.
+
+  The illustration's our.one side ends on EndMarker's words.
+- **The claims scan's rules:**
+  - The handover rule is now `\bhand(?:s|ed|ing)? (?:it|our\.one) (?:over )?to\b`.
+  - The done-rule catches "the handover happened" and "the handover took
+    place".
+- **Design:**
+  - the card's byline and links, and the three links under the promise,
+    are in the text colour and underlined;
+  - the promise column is capped at 34em;
+  - on narrow screens the links sit one per line;
+  - on touch screens, tap targets are 44px.
+- **Accepted, and recorded in the verifiers' tests:**
+  - "It was Handed to its members at [threshold]." still passes the scan,
+    because the status line is allowlisted everywhere;
+  - the site's link blue (§9 `--accent`, 3.0:1 on white) still colours
+    Privacy.

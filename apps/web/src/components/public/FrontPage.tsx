@@ -67,12 +67,18 @@ export function countLine(n: number): string {
 /** Under the form, while joining is open (SPEC §18.15 item 1.3). */
 export const FREE_LINE = `Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`;
 
-/** The seat line (D-0015 §D): shown only when no seat is open. */
+/**
+ * The seat line (D-0015 §D): shown only when no seat is open. Opening seats
+ * invites the longest-waiting addresses first (SPEC §18.4), so it promises
+ * a place in line, not the next seat (the verification of M-0013).
+ */
 export function seatLine(open: number): string | null {
-  return open <= 0 ? "No seats open right now. Leave your address and you'll get the next one." : null;
+  return open <= 0
+    ? "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest."
+    : null;
 }
 
-/** The court's finding (D-0015 §E), and its source: ECF No. 705, page 8. */
+/** The court's finding (D-0015 §E), and its source: ECF No. 705, pages 8 and 9. */
 export const FRIENDS_SOURCE =
   "https://storage.courtlistener.com/recap/gov.uscourts.dcd.224921/gov.uscourts.dcd.224921.705.0.pdf";
 
@@ -139,7 +145,7 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
   },
   {
     question: "What's a maintainer?",
-    answer: `The one who keeps it running. Today that's me, and today I also hold everything. After ${THRESHOLD}, a body of its members holds it, and can replace me.`,
+    answer: `The one who keeps it running. Today that's me, and today I also hold everything. After ${THRESHOLD}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
   },
 ];
 
@@ -178,12 +184,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
             ) : (
               <>
                 <p className="notice">Joining opens soon.</p>
-                <p className={styles.haveInvite}>
-                  Have an invite? Open the link you were sent.{" "}
-                  <Link href="/signin" className="link">
-                    Sign in
-                  </Link>
-                </p>
+                <p className={styles.haveInvite}>Have an invite? It will work when joining opens.</p>
               </>
             )}
           </section>
@@ -200,7 +201,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
             </blockquote>
             <figcaption className={styles.pledgeBy}>
               {MAINTAINER}, maintainer ·{" "}
-              <a href="#front-runs" className="link">
+              <a href="#front-runs" className={styles.pledgeLink}>
                 How that works
               </a>
             </figcaption>
@@ -224,7 +225,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
               <a href={FRIENDS_SOURCE} rel="noopener noreferrer" target="_blank">
                 the court&apos;s opinion in FTC v. Meta
               </a>
-              {", page 8, citing Meta's own figures."}
+              {", pages 8 and 9, citing Meta's own figures."}
             </p>
             <p className={styles.body}>On our.one, your feed is only the people you chose, and then it ends.</p>
           </div>

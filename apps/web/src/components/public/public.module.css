@@ -123,8 +123,21 @@
 
 .pledgeBy {
   grid-area: by;
-  color: var(--muted);
+  color: var(--text);
   font-size: 14px;
+}
+
+/* In the text colour, underlined: the link blue is under 3:1 on the card. */
+.pledgeLink {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--outline-border);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.pledgeLink:hover {
+  text-decoration-color: currentColor;
 }
 
 /* The picture of the product: a phone with a feed that ends. */
@@ -146,112 +159,32 @@
   box-shadow: var(--shadow);
 }
 
+/* The app's top bar on a phone, on /home: the wordmark (PageHeader). The
+   post rows, the markers and the icons inside are the app's own classes
+   and components (FeedPreview.tsx). */
 .phoneBar {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 52px;
   padding: 0 18px;
   border-bottom: 1px solid var(--border);
 }
 
-.phoneTitle {
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.phoneFeed {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.phonePost {
-  display: flex;
-  gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.phoneAvatar {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.phoneBody {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.phoneMeta {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phoneMeta strong {
-  color: var(--text);
-}
-
-.phoneText {
-  font-size: 15px;
-  line-height: 1.35;
-}
-
-.phoneEnd {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  padding: 22px 22px 26px;
-  text-align: center;
-}
-
-.phoneEnd strong {
-  font-size: 16px;
-}
-
-.phoneEnd span:last-child {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-/* The caught-up tick, in the live dot's green. */
-.check {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 4px;
-  border-radius: 50%;
-  background: rgba(0, 186, 124, 0.14);
-  color: #00ba7c;
-}
-
+/* The app's tab bar: every tab in the text colour; the current one is
+   drawn with a heavier stroke (TabBar.tsx). */
 .phoneTabs {
   display: flex;
   align-items: center;
   justify-content: space-around;
   height: 56px;
   border-top: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--text);
 }
 
 .phoneTab {
   display: grid;
   place-items: center;
-}
-
-.phoneTab:first-child {
-  color: var(--text);
 }
 
 .phoneCompose {
@@ -466,18 +399,22 @@
   font-weight: 700;
 }
 
+/* The app's end marker, small: a thin rule on each side of its words. */
 .miniEnd {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  padding: 16px 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 18px;
+  color: var(--muted);
+  font-size: 11px;
   text-align: center;
-  font-size: 12px;
 }
 
-.miniEnd .check {
-  width: 28px;
-  height: 28px;
+.miniRule {
+  flex: 1;
+  min-width: 8px;
+  height: 1px;
+  background: var(--border);
 }
 
 /* How it works: a real sequence, so the numbers stay. */
@@ -530,6 +467,10 @@
   display: grid;
   gap: 18px;
   min-width: 0;
+}
+
+.runsPromise {
+  max-width: 34em;
 }
 
 .storyLabel {
@@ -615,13 +556,45 @@
   gap: 8px 20px;
 }
 
+/* One link to a line where the three can't share one. */
+@media (max-width: 460px) {
+  .links {
+    flex-direction: column;
+  }
+}
+
+/* In the text colour, underlined: the link blue is 3:1 on white. */
 .more {
-  color: var(--accent);
+  align-self: flex-start;
+  color: var(--text);
   font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--outline-border);
+  text-underline-offset: 3px;
 }
 
 .more:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+/* A 44px target on touch screens (SPEC §9). The three links grow into
+   their row; the card's link grows without moving its line, and nothing
+   else there can be tapped. */
+@media (pointer: coarse) {
+  .links {
+    gap: 0 20px;
+  }
+
+  .more {
+    display: inline-block;
+    padding-block: 12px;
+  }
+
+  .pledgeLink {
+    display: inline-block;
+    padding-block: 12px;
+    margin-block: -12px;
+  }
 }
 
 .questions {

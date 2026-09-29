@@ -2,9 +2,12 @@
  * The front page's illustration beside the court's 7% finding (SPEC §18.15
  * item 2): a ranked feed that keeps going, next to an our.one feed that
  * ends. It is a drawing, not a screenshot of any product, and its caption
- * says so. The people are the front page's fictional three.
+ * says so. The people are the front page's fictional three. The our.one
+ * side ends where the app's feed ends when it has nothing older, on the
+ * app's own end-marker words (`EndMarker`, SPEC §18.15's decisions after
+ * the verification).
  */
-import { Icon } from "@/components/Icon";
+import { FEED_WINDOW_DAYS } from "@/core/config";
 import styles from "./public.module.css";
 
 const FRIENDS: readonly { name: string; text: string; hue: number }[] = [
@@ -25,6 +28,9 @@ const RANKED: readonly ("Sponsored" | "Suggested for you" | "friend")[] = [
 
 export const CONTRAST_LABELS = ["A ranked feed", "our.one"] as const;
 export const CONTRAST_CAPTION = "Illustration.";
+
+/** EndMarker's words (Marker.tsx), where the app's feed runs out. */
+const END_WORDS = `That's everything from the last ${FEED_WINDOW_DAYS} days.`;
 
 function MiniPost({ name, text, hue }: { name: string; text: string; hue: number }) {
   return (
@@ -77,10 +83,9 @@ export function FeedContrast() {
               <MiniPost key={friend.name} {...friend} />
             ))}
             <div className={styles.miniEnd}>
-              <span className={styles.check}>
-                <Icon name="check" size={16} strokeWidth={2.75} />
-              </span>
-              <strong>You&apos;re caught up</strong>
+              <span className={styles.miniRule} />
+              <span>{END_WORDS}</span>
+              <span className={styles.miniRule} />
             </div>
           </div>
         </div>

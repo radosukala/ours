@@ -95,10 +95,12 @@ const SAMPLES: Record<string, string[]> = {
     "our.one is the first social network its founder gives away.",
     "the only network whose maintainer can be replaced",
   ],
-  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b|\\bhanded (?:over|to)\\b|\\bhandover (?:has|had) (?:happened|taken place|been)\\b|\\b(?:gave|given) (?:it )?away\\b|\\bin (?:its|the) members(?:'|’)? hands\\b": [
+  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b|\\bhanded (?:over|to)\\b|\\bhandover (?:has|had) (?:happened|taken place|been)\\b|\\bhandover (?:happened|took place)\\b|\\b(?:gave|given) (?:it )?away\\b|\\bin (?:its|the) members(?:'|’)? hands\\b": [
     "our.one has been handed over to its members.",
     "It was handed to them.",
     "The handover has happened.",
+    "The handover happened.",
+    "The handover took place last year.",
     "At 100,000 members, I gave it away.",
     "It is now in its members' hands.",
   ],
@@ -116,11 +118,15 @@ const SAMPLES: Record<string, string[]> = {
     "You will be its owners.",
   ],
   [`\\bit(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is) ours\\b`]: ["It's ours.", "it is ours"],
-  // "hand it to" since M-0013 (D-0015 §C): the rule could not see the signed promise's form.
-  "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bhand(?:s|ing)? it to\\b|\\bgives? it away\\b": [
+  // "hand it to" since M-0013 (D-0015 §C): the rule could not see the signed promise's form. The
+  // verification of M-0013 added the past tense and our.one by name.
+  "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bhand(?:s|ed|ing)? (?:it|our\\.one) (?:over )?to\\b|\\bgives? it away\\b": [
     "I will hand it over next year.",
     "I hand it to its members.",
     "At 100,000 members he hands it to them.",
+    "I handed it to a not-for-profit body of its members.",
+    "I hand our.one to its members.",
+    "I handed our.one over to its members.",
     "She gives it away.",
   ],
 };

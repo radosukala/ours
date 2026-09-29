@@ -47,9 +47,9 @@ vi.mock("@/app/(public)/seat-actions", () => ({
 }));
 
 import FrontPageRoute, { metadata } from "@/app/(public)/page";
-import { CaughtUpMarker } from "@/components/Marker";
+import { CaughtUpMarker, EndMarker } from "@/components/Marker";
 import { FeedContrast } from "@/components/public/FeedContrast";
-import { FeedPreview } from "@/components/public/FeedPreview";
+import { FeedPreview, PREVIEW_LAST_VISIT, PREVIEW_NOW } from "@/components/public/FeedPreview";
 import {
   countLine,
   FRIENDS_SOURCE,
@@ -123,7 +123,8 @@ describe("the count", () => {
     const text = textOf(html);
     expect(text).toContain("Just your people. Then you're done.");
     expect(text).not.toMatch(/people are in|person is in|Nobody is in yet|You'd be #/);
-    expect(html).not.toMatch(/class="[^"]*count/);
+    // The count's own class (the phone's post rows use the app's `action__count`).
+    expect(html).not.toMatch(/class="[^"]*\b_count_/);
     // The failure is logged by its name only: a message can carry a host.
     const logged = vi.mocked(console.error).mock.calls.flat().join(" ");
     expect(logged).toContain("the count could not be read");
@@ -183,8 +184,10 @@ describe("the count", () => {
     seats.seatState.mockResolvedValue({ open: 3, waiting: 0 });
     for (const html of [await renderRoute(), render({ count: 0 }), render({ count: 99_999 })]) {
       expect(html).not.toMatch(/<progress|<meter|role="progressbar"/);
-      // The large "7%" and the sentence that carries it; nothing measures the threshold.
+      // The large "7%" and the sentence that carries it; nothing measures the threshold,
+      // in the text or in the markup (a bar drawn with style="width:…%" would show here).
       expect(textOf(html).match(/[\d.,]+\s?%/g)).toEqual(["7%", "7%"]);
+      expect(html.split("%").length - 1).toBe(2);
     }
   });
 });
@@ -239,8 +242,9 @@ describe("Get in", () => {
     expect(seats.seatState).not.toHaveBeenCalled();
     // The count is still shown, and so is the way in for people with an invite.
     expect(textOf(html)).toContain("3 people are in. You'd be #4.");
-    expect(getIn).toContain("Have an invite? Open the link you were sent.");
-    expect(section(html, "front-get-in")).toMatch(/<a [^>]*href="\/signin"[^>]*>Sign in<\/a>/);
+    // An invite can't be used while joining is closed either (the verification of M-0013).
+    expect(getIn).toContain("Have an invite? It will work when joining opens.");
+    expect(getIn).not.toContain("Open the link you were sent");
     // No last call to get in while nobody can.
     expect(html).not.toContain('id="front-close"');
     expect(textOf(html)).not.toContain("Bring your people.");
@@ -299,8 +303,9 @@ describe("Get in", () => {
     expect(close).toMatch(/<a href="#front-get-in" class="btn btn--primary btn--large">Get in<\/a>/);
   });
 
-  it("the seat line: shown only when no seat is open (D-0015 §D)", () => {
-    const none = "No seats open right now. Leave your address and you'll get the next one.";
+  it("the seat line: shown only when no seat is open, and it promises a place in line, not the next seat (D-0015 §D; the verification of M-0013)", () => {
+    const none =
+      "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest.";
     expect(seatLine(0)).toBe(none);
     expect(seatLine(-1)).toBe(none);
     for (const open of [1, 2, 12, 1000]) {
@@ -366,7 +371,7 @@ describe("the promise, signed, on the first screen (D-0015 §C)", () => {
         `R I'll never sell our.one. When ${THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me. Rado, maintainer · How that works`,
       );
       expect(card).toMatch(/<blockquote[^>]*><p>I&#x27;ll never sell our\.one\./);
-      expect(card).toMatch(/<figcaption[^>]*>Rado, maintainer · <a href="#front-runs" class="link">How that works<\/a><\/figcaption>/);
+      expect(card).toMatch(/<figcaption[^>]*>Rado, maintainer · <a href="#front-runs" class="[^"]*">How that works<\/a><\/figcaption>/);
       // The initial stands for a face and is not read out.
       expect(card).toMatch(/<span class="[^"]*" aria-hidden="true">R<\/span>/);
       expect(first.indexOf('id="front-get-in"')).toBeLessThan(first.indexOf("<blockquote"));
@@ -405,7 +410,7 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     expect(text).toContain(
       "In January 2025, content from friends got 7% of the time Americans spent on Instagram. Most of the rest went to short videos from strangers, recommended by AI.",
     );
-    expect(text).toContain("Source: the court's opinion in FTC v. Meta, page 8, citing Meta's own figures.");
+    expect(text).toContain("Source: the court's opinion in FTC v. Meta, pages 8 and 9, citing Meta's own figures.");
     expect(text).toContain("On our.one, your feed is only the people you chose, and then it ends.");
     expect(FRIENDS_SOURCE).toBe(
       "https://storage.courtlistener.com/recap/gov.uscourts.dcd.224921/gov.uscourts.dcd.224921.705.0.pdf",
@@ -416,9 +421,18 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     expect(source?.[2]).toContain('rel="noopener noreferrer"');
     expect(source?.[2]).toContain('target="_blank"');
     expect(html).toContain("<figure");
-    // The two labels, each above its phone.
-    expect(text).toMatch(/A ranked feed Home Sponsored .* and it keeps going our\.one Home /);
-    expect(text).toContain("Illustration.");
+    // The whole section, word for word: nothing added.
+    expect(text).toBe(
+      [
+        "Where did your friends go? 7%",
+        "In January 2025, content from friends got 7% of the time Americans spent on Instagram. Most of the rest went to short videos from strangers, recommended by AI.",
+        "Source: the court's opinion in FTC v. Meta, pages 8 and 9, citing Meta's own figures.",
+        "On our.one, your feed is only the people you chose, and then it ends.",
+        "A ranked feed Home Sponsored Suggested for you M Mara Made it to the top before the rain. Suggested for you Sponsored Suggested for you and it keeps going",
+        "our.one Home M Mara Made it to the top before the rain. T Tomas Soup's on tonight. Door's open from 7. J Jana Finished the book you lent me. That's everything from the last 14 days.",
+        "Illustration.",
+      ].join(" "),
+    );
   });
 
   it("how it works: three steps, in order", () => {
@@ -467,6 +481,21 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     ]) {
       expect(text, sentence).toContain(sentence);
     }
+    // The whole section, word for word: nothing added.
+    expect(text).toBe(
+      [
+        "Keep your people. Change who runs it. WhatsApp, in three dates",
+        "2012 WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
+        "2014 Facebook agreed to buy it for about $19 billion.",
+        "2025 Ads came to WhatsApp.",
+        "An owner can sell it, change it or shut it down. A maintainer does the job, or is replaced.",
+        "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice, and you can always leave with everything.",
+        `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
+        "Today these promises are held by that contract, not yet by law.",
+        "12 people are in. You'd be #13.",
+        "Read the contract See every cost Read the code",
+      ].join(" "),
+    );
     const end = links(html).slice(-3);
     expect(end.map(([label, href]) => [label, href])).toEqual([
       ["Read the contract", "/contract"],
@@ -495,7 +524,7 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
       ],
       [
         "What's a maintainer?",
-        `The one who keeps it running. Today that's me, and today I also hold everything. After ${THRESHOLD}, a body of its members holds it, and can replace me.`,
+        `The one who keeps it running. Today that's me, and today I also hold everything. After ${THRESHOLD}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
       ],
     ]);
   });
@@ -572,19 +601,34 @@ describe("the copy survives Next's compiler", () => {
 });
 
 describe("the pictures say what they are (SPEC §18.15)", () => {
-  it("the phone: a feed that ends at the app's own caught-up words, with fictional people, and says so", () => {
+  it("the phone: /home as the app draws it on a phone, from the app's own parts, with fictional people, and says so (the verification of M-0013)", () => {
     const html = renderToStaticMarkup(createElement(FeedPreview));
     expect(html).toContain("An example feed. Fictional people.");
-    // The marker's words are the app's: CaughtUpMarker, for a last visit 2 days ago.
-    const now = new Date("2026-09-29T12:00:00Z");
-    const marker = textOf(
-      renderToStaticMarkup(
-        createElement(CaughtUpMarker, { since: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), now }),
-      ),
+    // The app's own markers, in FeedList's order: three posts from after the last visit (2 days
+    // before), the caught-up marker above the first post from before it, then the end of the 14 days.
+    expect(PREVIEW_LAST_VISIT.getTime()).toBe(PREVIEW_NOW.getTime() - 2 * 24 * 60 * 60 * 1000);
+    const caughtUp = renderToStaticMarkup(createElement(CaughtUpMarker, { since: PREVIEW_LAST_VISIT, now: PREVIEW_NOW }));
+    const end = renderToStaticMarkup(createElement(EndMarker));
+    expect(html).toContain(caughtUp);
+    expect(html).toContain(end);
+    expect(textOf(html)).toBe(
+      [
+        "our.one",
+        "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2 6",
+        "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4 3",
+        "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1 2",
+        "You're caught up You've seen everything from before your last visit, 2 days ago.",
+        "P Pavel @pavel · 3d Anyone up for a slow run on Saturday? I'll bring coffee. 3 5",
+        "That's everything from the last 14 days.",
+        "An example feed. Fictional people.",
+      ].join(" "),
     );
-    expect(marker).toBe("You're caught up You've seen everything from before your last visit, 2 days ago.");
-    expect(textOf(html)).toContain(marker);
-    expect(textOf(html)).not.toContain("since yesterday");
+    // The app's post rows, not a look-alike: its classes, and its four icons on each.
+    expect(html.match(/<article class="post">/g)).toHaveLength(4);
+    for (const part of ["post__audience", "post__menu", "action action--reply", "action action--like"]) {
+      expect(html.match(new RegExp(`class="${part}"`, "g")), part).toHaveLength(4);
+    }
+    expect(html).not.toMatch(/<a\b|<button\b|tabindex/);
     expect(html).not.toMatch(/\bOURS\b/);
   });
 
@@ -593,7 +637,8 @@ describe("the pictures say what they are (SPEC §18.15)", () => {
     const text = textOf(html);
     expect(text.startsWith("A ranked feed")).toBe(true);
     expect(text).toContain("and it keeps going");
-    expect(text).toContain("You're caught up");
+    // The our.one side ends where the app's feed ends, in EndMarker's words.
+    expect(text).toContain(`${textOf(renderToStaticMarkup(createElement(EndMarker)))} Illustration.`);
     expect(text.endsWith("Illustration.")).toBe(true);
     expect(html).toMatch(/<figure [^>]*aria-label="Illustration: a ranked feed that keeps going, beside an our\.one feed that ends"/);
     expect(html).not.toMatch(/\bOURS\b|Instagram/);

@@ -1,78 +1,126 @@
 /**
- * The front page's picture of the product (SPEC §18.15 item 1.5, after
- * §18.13): a phone showing a feed as our.one draws it — the people you
- * chose, newest first — ending at the app's own caught-up marker, in its
- * own words (`CaughtUpMarker`), above the app's tab bar on a phone. Static,
- * with fictional people, and the caption says so. It uses the app's own
- * tokens and icons, so it follows the theme.
+ * The front page's picture of the product (SPEC §18.15 item 1.5, and its
+ * decisions after the verification): a phone showing /home as the app
+ * draws it on a phone. It is built from the app's own parts, so it cannot
+ * drift from them:
+ *
+ * - the top bar with the our.one wordmark (PageHeader on /home);
+ * - post rows in the app's classes, with the app's Avatar and icons
+ *   (PostRow: audience, the ⋯ menu, reply and like);
+ * - the app's own markers, in FeedList's order: three posts from after the
+ *   last visit, `CaughtUpMarker` above the first post from before it, and
+ *   `EndMarker` where the 14 days run out;
+ * - the phone's tab bar, every tab in the text colour, the current one
+ *   drawn heavier (TabBar).
+ *
+ * Static, decorative (hidden from screen readers), with fictional people,
+ * and the caption says so. It is drawn at a fixed moment, so its words
+ * never change.
  */
+import { Avatar } from "@/components/Avatar";
 import { Icon, type IconName } from "@/components/Icon";
+import { CaughtUpMarker, EndMarker } from "@/components/Marker";
 import styles from "./public.module.css";
 
-const POSTS: readonly { name: string; handle: string; when: string; text: string; hue: number }[] = [
-  {
-    name: "Mara",
-    handle: "mara",
-    when: "2h",
-    text: "Made it to the top before the rain. Legs are gone. Worth it.",
-    hue: 12,
-  },
-  {
-    name: "Tomas",
-    handle: "tomas",
-    when: "5h",
-    text: "Soup's on tonight. Door's open from 7, bring whoever.",
-    hue: 152,
-  },
-  {
-    name: "Jana",
-    handle: "jana",
-    when: "1d",
-    text: "Finished the book you lent me. The last chapter. Wow.",
-    hue: 262,
-  },
+/** The moment the picture shows. */
+export const PREVIEW_NOW = new Date("2026-09-29T12:00:00Z");
+
+/** The reader's last visit: 2 days before, so the marker reads "2 days ago". */
+export const PREVIEW_LAST_VISIT = new Date(PREVIEW_NOW.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+type PreviewPost = {
+  name: string;
+  handle: string;
+  /** As RelativeTime writes it. */
+  when: string;
+  text: string;
+  replies: number;
+  likes: number;
+};
+
+/** Posted after the last visit, newest first. */
+const NEW_POSTS: readonly PreviewPost[] = [
+  { name: "Mara", handle: "mara", when: "2h", text: "Made it to the top before the rain. Legs are gone. Worth it.", replies: 2, likes: 6 },
+  { name: "Tomas", handle: "tomas", when: "5h", text: "Soup's on tonight. Door's open from 7, bring whoever.", replies: 4, likes: 3 },
+  { name: "Jana", handle: "jana", when: "1d", text: "Finished the book you lent me. The last chapter. Wow.", replies: 1, likes: 2 },
 ];
+
+/** Posted before the last visit: the caught-up marker sits above it. */
+const SEEN_POST: PreviewPost = {
+  name: "Pavel",
+  handle: "pavel",
+  when: "3d",
+  text: "Anyone up for a slow run on Saturday? I'll bring coffee.",
+  replies: 3,
+  likes: 5,
+};
 
 /** The tab bar's icons, in the app's order (TabBar.tsx): the first is current. */
 const TABS: readonly IconName[] = ["home", "people", "plus", "bell", "person"];
 
-/** The caught-up marker's words, as `CaughtUpMarker` writes them for a visit 2 days ago. */
-export const PREVIEW_MARKER = ["You're caught up", "You've seen everything from before your last visit, 2 days ago."] as const;
-
 export const PREVIEW_CAPTION = "An example feed. Fictional people.";
+
+/** One post row, in PostRow's classes, with nothing to click. */
+function Row({ post }: { post: PreviewPost }) {
+  return (
+    <article className="post">
+      <span className="post__avatar">
+        <Avatar name={post.name} handle={post.handle} size={40} />
+      </span>
+      <div className="post__main">
+        <div className="post__head">
+          <span className="post__name">{post.name}</span>
+          <span className="post__handle">@{post.handle}</span>
+          <span className="post__meta">· {post.when}</span>
+          <span className="post__audience">
+            <Icon name="lock" size={15} />
+          </span>
+          <span className="post__menu">
+            <span className="icon-btn">
+              <Icon name="dots" size={18} />
+            </span>
+          </span>
+        </div>
+        <div className="post__body">{post.text}</div>
+        <div className="post__actions">
+          <span className="action action--reply">
+            <span className="action__icon">
+              <Icon name="chat" size={18} />
+            </span>
+            <span className="action__count">{post.replies}</span>
+          </span>
+          <span className="action action--like">
+            <span className="action__icon">
+              <Icon name="heart" size={18} />
+            </span>
+            <span className="action__count">{post.likes}</span>
+          </span>
+          <span />
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function FeedPreview() {
   return (
     <figure className={styles.preview} aria-label="What our.one looks like">
       <div className={styles.phone} aria-hidden="true">
         <div className={styles.phoneBar}>
-          <span className={styles.phoneTitle}>Home</span>
+          <span className="wordmark">our.one</span>
         </div>
-        <ol role="list" className={styles.phoneFeed}>
-          {POSTS.map((post) => (
-            <li key={post.handle} className={styles.phonePost}>
-              <span
-                className={styles.phoneAvatar}
-                style={{ background: `hsl(${post.hue} var(--avatar-sat) var(--avatar-light))` }}
-              >
-                {post.name[0]}
-              </span>
-              <div className={styles.phoneBody}>
-                <p className={styles.phoneMeta}>
-                  <strong>{post.name}</strong> <span>@{post.handle}</span> <span>· {post.when}</span>
-                </p>
-                <p className={styles.phoneText}>{post.text}</p>
-              </div>
-            </li>
+        <div>
+          {NEW_POSTS.map((post) => (
+            <div key={post.handle}>
+              <Row post={post} />
+            </div>
           ))}
-        </ol>
-        <div className={styles.phoneEnd}>
-          <span className={styles.check}>
-            <Icon name="check" size={22} strokeWidth={2.5} />
-          </span>
-          <strong>{PREVIEW_MARKER[0]}</strong>
-          <span>{PREVIEW_MARKER[1]}</span>
+          <div>
+            <CaughtUpMarker since={PREVIEW_LAST_VISIT} now={PREVIEW_NOW} />
+            <Row post={SEEN_POST} />
+          </div>
         </div>
+        <EndMarker />
         <div className={styles.phoneTabs}>
           {TABS.map((name, i) => (
             <span

@@ -128,7 +128,7 @@ export const PROHIBITED: readonly Prohibited[] = [
   },
   {
     pattern:
-      /\b(?:has|have|had) been handed\b|\bwas handed\b|\bhanded (?:over|to)\b|\bhandover (?:has|had) (?:happened|taken place|been)\b|\b(?:gave|given) (?:it )?away\b|\bin (?:its|the) members(?:'|’)? hands\b/i,
+      /\b(?:has|have|had) been handed\b|\bwas handed\b|\bhanded (?:over|to)\b|\bhandover (?:has|had) (?:happened|taken place|been)\b|\bhandover (?:happened|took place)\b|\b(?:gave|given) (?:it )?away\b|\bin (?:its|the) members(?:'|’)? hands\b/i,
     reason: "D-0012: the handover has not happened; never write it as done. The status line is the one listed exception.",
   },
   {
@@ -147,8 +147,10 @@ export const PROHIBITED: readonly Prohibited[] = [
   {
     // "hand it to" since M-0013: the front page's signed promise hands
     // our.one to a body of its members, and the rule could not see it
-    // (the cold read of 29 September 2026).
-    pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bhand(?:s|ing)? it to\b|\bgives? it away\b/i,
+    // (the cold read of 29 September 2026). The verification of M-0013
+    // added the past tense and our.one by name: "handed it to", "hand
+    // our.one to", "handed our.one over to".
+    pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bhand(?:s|ed|ing)? (?:it|our\.one) (?:over )?to\b|\bgives? it away\b/i,
     reason:
       "M-0011: every sentence about the handover is listed by exact text in ALLOWLIST; any other is refused until it is reviewed and listed.",
   },
@@ -195,6 +197,9 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     "When {THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.",
     `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
     "Then nothing is handed over.",
+    // "What's a maintainer?", in the contract's terms (the verification of M-0013).
+    "After ${THRESHOLD}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.",
+    `After ${T}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
   ].map((sentence) => ({ file: FRONT_FILE, sentence, reason: HANDOVER_REASON })),
   // The status line (D-0012 §D), in every page's footer: listed by exact
   // text, and let through everywhere.

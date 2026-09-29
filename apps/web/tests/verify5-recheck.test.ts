@@ -613,13 +613,14 @@ describe("closed doors: a seat link opened by an account holder", () => {
 /* ========================================================= closed: the scan */
 
 describe("closed doors: the claims scan's handover list and new markup rules", () => {
-  it("closed: each of the eight listed handover sentences passes only in its own file, and the new markup rules read <wbr>, <br/>, &zwj;, &lrm;, &minus; and bidi isolates as a reader does", () => {
+  it("closed: each of the ten listed handover sentences passes only in its own file, and the new markup rules read <wbr>, <br/>, &zwj;, &lrm;, &minus; and bidi isolates as a reader does", () => {
     const elsewhere = "src/components/RightColumn.tsx";
-    // The status line is listed too, and let through everywhere (after the re-check); the eight are the rest.
+    // The status line is listed too, and let through everywhere (after the re-check); the ten are the rest.
     // Nine until M-0013: the old headline (twice) and "Why not hand it over now?" left the front page, and
-    // the signed promise (twice) came (SPEC §18.15).
+    // the signed promise (twice) came (SPEC §18.15); the answer to "What's a maintainer?" (twice) came
+    // after M-0013's verification.
     const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence) && !entry.everywhere);
-    expect(handover).toHaveLength(8);
+    expect(handover).toHaveLength(10);
     for (const entry of handover) {
       expect(scanText(entry.sentence, entry.file), entry.sentence).toEqual([]);
       expect(scanText(entry.sentence, elsewhere).length, entry.sentence).toBeGreaterThan(0);
