@@ -68,6 +68,13 @@ export function countLine(n: number): string {
 export const FREE_LINE = `Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`;
 
 /**
+ * While joining is closed (SPEC §18.15 item 3). It states a fact and
+ * promises nothing: an invite may have expired by the time joining opens
+ * (the re-check of M-0013).
+ */
+export const INVITE_CLOSED_LINE = "Have an invite? It can't be used until joining opens.";
+
+/**
  * The seat line (D-0015 §D): shown only when no seat is open. Opening seats
  * invites the longest-waiting addresses first (SPEC §18.4), so it promises
  * a place in line, not the next seat (the verification of M-0013).
@@ -184,7 +191,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
             ) : (
               <>
                 <p className="notice">Joining opens soon.</p>
-                <p className={styles.haveInvite}>Have an invite? It will work when joining opens.</p>
+                <p className={styles.haveInvite}>{INVITE_CLOSED_LINE}</p>
               </>
             )}
           </section>

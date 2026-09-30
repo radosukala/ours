@@ -6,7 +6,9 @@
  *
  * - the top bar with the our.one wordmark (PageHeader on /home);
  * - post rows in the app's classes, with the app's Avatar and icons
- *   (PostRow: audience, the ⋯ menu, reply and like);
+ *   (PostRow: audience, the ⋯ menu, reply and like), and only what the app
+ *   shows a reader: a reply count, and no like count on another person's
+ *   post (SPEC §7; the re-check of M-0013);
  * - the app's own markers, in FeedList's order: three posts from after the
  *   last visit, `CaughtUpMarker` above the first post from before it, and
  *   `EndMarker` where the 14 days run out;
@@ -20,39 +22,41 @@
 import { Avatar } from "@/components/Avatar";
 import { Icon, type IconName } from "@/components/Icon";
 import { CaughtUpMarker, EndMarker } from "@/components/Marker";
+import { relativeTime } from "@/components/RelativeTime";
 import styles from "./public.module.css";
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 
 /** The moment the picture shows. */
 export const PREVIEW_NOW = new Date("2026-09-29T12:00:00Z");
 
 /** The reader's last visit: 2 days before, so the marker reads "2 days ago". */
-export const PREVIEW_LAST_VISIT = new Date(PREVIEW_NOW.getTime() - 2 * 24 * 60 * 60 * 1000);
+export const PREVIEW_LAST_VISIT = new Date(PREVIEW_NOW.getTime() - 2 * DAY);
 
-type PreviewPost = {
+export type PreviewPost = {
   name: string;
   handle: string;
-  /** As RelativeTime writes it. */
-  when: string;
+  createdAt: Date;
   text: string;
+  /** Replies the reader could see; the app shows the count to everyone. */
   replies: number;
-  likes: number;
 };
 
 /** Posted after the last visit, newest first. */
-const NEW_POSTS: readonly PreviewPost[] = [
-  { name: "Mara", handle: "mara", when: "2h", text: "Made it to the top before the rain. Legs are gone. Worth it.", replies: 2, likes: 6 },
-  { name: "Tomas", handle: "tomas", when: "5h", text: "Soup's on tonight. Door's open from 7, bring whoever.", replies: 4, likes: 3 },
-  { name: "Jana", handle: "jana", when: "1d", text: "Finished the book you lent me. The last chapter. Wow.", replies: 1, likes: 2 },
+export const NEW_POSTS: readonly PreviewPost[] = [
+  { name: "Mara", handle: "mara", createdAt: new Date(PREVIEW_NOW.getTime() - 2 * HOUR), text: "Made it to the top before the rain. Legs are gone. Worth it.", replies: 2 },
+  { name: "Tomas", handle: "tomas", createdAt: new Date(PREVIEW_NOW.getTime() - 5 * HOUR), text: "Soup's on tonight. Door's open from 7, bring whoever.", replies: 4 },
+  { name: "Jana", handle: "jana", createdAt: new Date(PREVIEW_NOW.getTime() - DAY), text: "Finished the book you lent me. The last chapter. Wow.", replies: 1 },
 ];
 
 /** Posted before the last visit: the caught-up marker sits above it. */
-const SEEN_POST: PreviewPost = {
+export const SEEN_POST: PreviewPost = {
   name: "Pavel",
   handle: "pavel",
-  when: "3d",
+  createdAt: new Date(PREVIEW_NOW.getTime() - 3 * DAY),
   text: "Anyone up for a slow run on Saturday? I'll bring coffee.",
   replies: 3,
-  likes: 5,
 };
 
 /** The tab bar's icons, in the app's order (TabBar.tsx): the first is current. */
@@ -71,7 +75,7 @@ function Row({ post }: { post: PreviewPost }) {
         <div className="post__head">
           <span className="post__name">{post.name}</span>
           <span className="post__handle">@{post.handle}</span>
-          <span className="post__meta">· {post.when}</span>
+          <span className="post__meta">· {relativeTime(post.createdAt, PREVIEW_NOW)}</span>
           <span className="post__audience">
             <Icon name="lock" size={15} />
           </span>
@@ -93,7 +97,7 @@ function Row({ post }: { post: PreviewPost }) {
             <span className="action__icon">
               <Icon name="heart" size={18} />
             </span>
-            <span className="action__count">{post.likes}</span>
+            <span className="action__count"></span>
           </span>
           <span />
         </div>
@@ -109,18 +113,20 @@ export function FeedPreview() {
         <div className={styles.phoneBar}>
           <span className="wordmark">our.one</span>
         </div>
-        <div>
-          {NEW_POSTS.map((post) => (
-            <div key={post.handle}>
-              <Row post={post} />
-            </div>
-          ))}
+        <div className={styles.phoneFeed}>
           <div>
-            <CaughtUpMarker since={PREVIEW_LAST_VISIT} now={PREVIEW_NOW} />
-            <Row post={SEEN_POST} />
+            {NEW_POSTS.map((post) => (
+              <div key={post.handle}>
+                <Row post={post} />
+              </div>
+            ))}
+            <div>
+              <CaughtUpMarker since={PREVIEW_LAST_VISIT} now={PREVIEW_NOW} />
+              <Row post={SEEN_POST} />
+            </div>
           </div>
+          <EndMarker />
         </div>
-        <EndMarker />
         <div className={styles.phoneTabs}>
           {TABS.map((name, i) => (
             <span

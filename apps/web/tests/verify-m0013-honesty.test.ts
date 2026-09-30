@@ -123,16 +123,16 @@ function specText({ joining, count, seatsOpen }: FrontPageProps): string {
           `Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`,
           "We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in Privacy.",
         ]
-      : ["Joining opens soon.", "Have an invite? It will work when joining opens."]),
+      : ["Joining opens soon.", "Have an invite? It can't be used until joining opens."]),
     MAINTAINER[0],
     `I'll never sell our.one. When ${T} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`,
     `${MAINTAINER}, maintainer · How that works`,
     "our.one",
-    "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2 6",
-    "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4 3",
-    "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1 2",
+    "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2",
+    "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4",
+    "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1",
     "You're caught up You've seen everything from before your last visit, 2 days ago.",
-    "P Pavel @pavel · 3d Anyone up for a slow run on Saturday? I'll bring coffee. 3 5",
+    "P Pavel @pavel · 3d Anyone up for a slow run on Saturday? I'll bring coffee. 3",
     "That's everything from the last 14 days.",
     "An example feed. Fictional people.",
     "Where did your friends go?",
@@ -379,7 +379,7 @@ describe("joining closed (D-0015 §D: the invite line 'stays only while joining 
     for (const [name, env] of Object.entries(closedStates)) {
       vi.unstubAllEnvs();
       for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
-      expect(textOf(await renderRoute()), name).toContain("Joining opens soon. Have an invite? It will work when joining opens.");
+      expect(textOf(await renderRoute()), name).toContain("Joining opens soon. Have an invite? It can't be used until joining opens.");
       const invitePage = (await inviteForViewer(db(), { code, viewerId: null, now: t0 })).kind;
       let askToJoin = "OK";
       try {

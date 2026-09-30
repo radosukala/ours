@@ -95,12 +95,14 @@ const SAMPLES: Record<string, string[]> = {
     "our.one is the first social network its founder gives away.",
     "the only network whose maintainer can be replaced",
   ],
-  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b|\\bhanded (?:over|to)\\b|\\bhandover (?:has|had) (?:happened|taken place|been)\\b|\\bhandover (?:happened|took place)\\b|\\b(?:gave|given) (?:it )?away\\b|\\bin (?:its|the) members(?:'|’)? hands\\b": [
+  "\\b(?:has|have|had) been handed\\b|\\bwas handed\\b|\\bhanded (?:over|to)\\b|\\bhandover (?:has|had) (?:happened|taken place|been)\\b|\\bhandover (?:happened|took place)\\b|\\bhandover (?:is|was) (?:done|complete|completed|finished)\\b|\\b(?:gave|given) (?:it )?away\\b|\\bin (?:its|the) members(?:'|’)? hands\\b": [
     "our.one has been handed over to its members.",
     "It was handed to them.",
     "The handover has happened.",
     "The handover happened.",
     "The handover took place last year.",
+    "The handover is done.",
+    "The handover was completed.",
     "At 100,000 members, I gave it away.",
     "It is now in its members' hands.",
   ],

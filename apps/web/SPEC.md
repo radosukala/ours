@@ -1870,8 +1870,9 @@ the phone on the right. One column on a phone, in this order:
        joined, you also get a weekly email, which you can stop. What we
        keep, and for how long, is in Privacy." with the link to `/privacy`;
      - the answer after any valid submission, unchanged (D-0015 §H).
-   - **Otherwise:** "Joining opens soon." Then "Have an invite? Open the
-     link you were sent." and **Sign in** → `/signin`.
+   - **Otherwise:** "Joining opens soon." Then "Have an invite? It can't
+     be used until joining opens." (after the verification and the
+     re-check; the header's Sign in stays, and the line has no link).
 4. **The promise, signed:** a card after Get in, with an initial where a
    face would be.
    - "I'll never sell our.one. When [threshold] people have joined, I hand
@@ -2013,8 +2014,9 @@ rendering and accessibility). What they confirmed is fixed:
 - **"What's a maintainer?"** now ends "After [threshold], I hand over the
   domain, the data and the right to replace me to a not-for-profit body of
   its members." It is in the contract's terms, and listed by exact text.
-- **While joining is closed,** the line is "Have an invite? It will work
-  when joining opens.", because an invite does not work then either.
+- **While joining is closed,** the line no longer tells anyone to open
+  the link they were sent, because an invite does not work then either.
+  (Its words were settled after the re-check, below.)
 - **The 7% source** reads "pages 8 and 9". Page 9 says most time on
   Instagram goes to Reels, which are "entirely unconnected".
 - **The phone is built from the app's parts:**
@@ -2040,3 +2042,30 @@ rendering and accessibility). What they confirmed is fixed:
     because the status line is allowlisted everywhere;
   - the site's link blue (§9 `--accent`, 3.0:1 on white) still colours
     Privacy.
+
+**Decisions after the re-check (30 September 2026).** A third agent that
+built nothing re-checked the fixes (`413b0da`) and how the verifiers'
+tests were adapted. Five fixes held; two were partial, and what it found is
+fixed:
+
+- **No like count on the phone.** Its four posts are other people's, and
+  the app shows a like count only to a post's author (§7). The phone's
+  rows now end at the reply count, and its whole feed reads, word for
+  word, as `FeedList` draws it for the same posts and last visit; the test
+  compares the two whole texts, which the earlier fix had loosened to
+  snippets in order.
+- **The line while joining is closed** now states a fact and promises
+  nothing: "Have an invite? It can't be used until joining opens." An
+  invite expires after `INVITE_TTL_DAYS`, so "it will work when joining
+  opens" was a promise the code does not keep. The Sign in link that stood
+  in that line under M-0011 is gone: the header has one, and item 3 now
+  says so.
+- **The done-rule** also catches "the handover is done", "is complete",
+  "was completed" and "is finished".
+- **Recorded, not changed:** the end marker's words wrap "days." alone at
+  the phone's width, by the app's own rule (`.marker__body` at 70%).
+- **A process gap:** the verifiers' test files were adapted before being
+  committed as written, so the re-checker had to reconstruct the originals
+  from the agents' transcripts. Next time, commit a verification file
+  before touching it.
+

@@ -243,7 +243,8 @@ describe("Get in", () => {
     // The count is still shown, and so is the way in for people with an invite.
     expect(textOf(html)).toContain("3 people are in. You'd be #4.");
     // An invite can't be used while joining is closed either (the verification of M-0013).
-    expect(getIn).toContain("Have an invite? It will work when joining opens.");
+    expect(getIn).toContain("Have an invite? It can't be used until joining opens.");
+    expect(getIn).not.toContain("will work");
     expect(getIn).not.toContain("Open the link you were sent");
     // No last call to get in while nobody can.
     expect(html).not.toContain('id="front-close"');
@@ -614,15 +615,17 @@ describe("the pictures say what they are (SPEC §18.15)", () => {
     expect(textOf(html)).toBe(
       [
         "our.one",
-        "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2 6",
-        "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4 3",
-        "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1 2",
+        "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2",
+        "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4",
+        "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1",
         "You're caught up You've seen everything from before your last visit, 2 days ago.",
-        "P Pavel @pavel · 3d Anyone up for a slow run on Saturday? I'll bring coffee. 3 5",
+        "P Pavel @pavel · 3d Anyone up for a slow run on Saturday? I'll bring coffee. 3",
         "That's everything from the last 14 days.",
         "An example feed. Fictional people.",
       ].join(" "),
     );
+    // No like count on another person's post (SPEC §7): the like's count span is empty on all four.
+    expect(html.match(/<span class="action action--like"><span class="action__icon">[\s\S]*?<\/span><span class="action__count"><\/span>/g)).toHaveLength(4);
     // The app's post rows, not a look-alike: its classes, and its four icons on each.
     expect(html.match(/<article class="post">/g)).toHaveLength(4);
     for (const part of ["post__audience", "post__menu", "action action--reply", "action action--like"]) {

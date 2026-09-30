@@ -297,24 +297,31 @@ describe("the phone looks like the app (SPEC §18.15 item 1.5: 'the app's caught
     const order = ["Wow.", PREVIEW_MARKER[0], PREVIEW_MARKER[1], "The sea was cold.", "That's everything from the last 14 days."];
     expect(order.map((s) => withOlder.indexOf(s)).every((at, i, all) => at >= 0 && (i === 0 || at > all[i - 1]!))).toBe(true);
 
-    // The phone now carries such a post (Pavel, 3 days old). Its feed, in order, is what the app's
-    // FeedList draws for the same four posts and the same last visit.
-    const seen = post("pavel", "Pavel", "Anyone up for a slow run on Saturday? I'll bring coffee.", new Date(now - 3 * DAY));
-    const app = textOf(appFeed([...phoneFeed(now), seen], lastVisit));
-    const phone = text(PHONE_SCREEN);
-    const sequence = [
-      "Worth it.",
-      "bring whoever.",
-      "Wow.",
-      PREVIEW_MARKER[0],
-      PREVIEW_MARKER[1],
-      "I'll bring coffee.",
-      "That's everything from the last 14 days.",
-    ];
-    for (const [where, feed] of [["the app", app], ["the phone", phone]] as const) {
-      const at = sequence.map((s) => feed.indexOf(s));
-      expect(at.every((i, k) => i >= 0 && (k === 0 || i > at[k - 1]!)), `${where}: ${JSON.stringify(at)}`).toBe(true);
-    }
+    // The phone now carries such a post (Pavel, 3 days old). Its whole feed, word for word, is
+    // what the app's FeedList draws for the same four posts, the same reply counts and the same
+    // last visit — with no like count, since none of the four is the reader's own (SPEC §7).
+    // Read without the icons' titles and the ⋯ menus' lists, which the app keeps in the markup
+    // and a reader does not see until a tap (the re-check of M-0013 restored this whole-text
+    // form, which the fix had loosened to seven snippets in order).
+    const replies = [2, 4, 1, 3];
+    const items = [...phoneFeed(now), post("pavel", "Pavel", "Anyone up for a slow run on Saturday? I'll bring coffee.", new Date(now - 3 * DAY))].map(
+      (p, i) => ({ ...p, replyCount: replies[i]! }),
+    );
+    const readable = (el: El): string => {
+      const parts: string[] = [];
+      const walk = (n: El | string) => {
+        if (typeof n === "string") return void parts.push(n);
+        if (n.tag === "svg" || (n.attrs.class ?? "").split(" ").includes("menu__list")) return;
+        n.children.forEach(walk);
+      };
+      walk(el);
+      return parts.join(" ").replace(/\s+/g, " ").replace(/ ([.,:;?!])/g, "$1").trim();
+    };
+    const app = readable(parse(appFeed(items, lastVisit)));
+    const phoneFeedEl = findAll(PHONE_SCREEN, (e) => moduleClass(e) === "phoneFeed")[0]!;
+    expect(readable(phoneFeedEl)).toBe(app);
+    expect(app).toContain(`${PREVIEW_MARKER[0]} ${PREVIEW_MARKER[1]}`);
+    expect(app.endsWith("That's everything from the last 14 days.")).toBe(true);
   });
 
   it("fixed (SPEC §18.15, after the verification; was DEFECT (LOW)): the phone's top bar shows the our.one wordmark, as the app's /home does on a phone (SPEC §9 '<700px: a sticky top bar … (on /home: the wordmark)'; PageHeader.tsx; globals.css)", () => {
@@ -438,7 +445,7 @@ describe("every state renders (FrontPage's props, as the route passes them)", ()
           expect(all.includes(FREE_LINE), label).toBe(joining);
           expect(html.includes("<form"), label).toBe(joining);
           expect(all.includes("Joining opens soon."), label).toBe(!joining);
-          expect(all.includes("Have an invite? It will work when joining opens."), label).toBe(!joining);
+          expect(all.includes("Have an invite? It can't be used until joining opens."), label).toBe(!joining);
           expect(html.includes('id="front-close"'), label).toBe(joining);
 
           const counts = all.match(/Nobody is in yet\.|\d[\d,]* (?:person is|people are) in\./g) ?? [];

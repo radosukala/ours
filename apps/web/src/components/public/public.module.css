@@ -171,6 +171,12 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* The feed between the bar and the tabs: what FeedList draws, in its
+   order (the tests compare the two). */
+.phoneFeed {
+  display: block;
+}
+
 /* The app's tab bar: every tab in the text colour; the current one is
    drawn with a heavier stroke (TabBar.tsx). */
 .phoneTabs {

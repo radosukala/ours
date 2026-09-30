@@ -128,7 +128,7 @@ export const PROHIBITED: readonly Prohibited[] = [
   },
   {
     pattern:
-      /\b(?:has|have|had) been handed\b|\bwas handed\b|\bhanded (?:over|to)\b|\bhandover (?:has|had) (?:happened|taken place|been)\b|\bhandover (?:happened|took place)\b|\b(?:gave|given) (?:it )?away\b|\bin (?:its|the) members(?:'|’)? hands\b/i,
+      /\b(?:has|have|had) been handed\b|\bwas handed\b|\bhanded (?:over|to)\b|\bhandover (?:has|had) (?:happened|taken place|been)\b|\bhandover (?:happened|took place)\b|\bhandover (?:is|was) (?:done|complete|completed|finished)\b|\b(?:gave|given) (?:it )?away\b|\bin (?:its|the) members(?:'|’)? hands\b/i,
     reason: "D-0012: the handover has not happened; never write it as done. The status line is the one listed exception.",
   },
   {
