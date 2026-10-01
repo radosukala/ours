@@ -58,6 +58,15 @@
  * What only a browser can measure is in the titles, as the verifiers wrote
  * theirs. Everyone here is FICTIONAL, with an example.test address; client
  * addresses are keyed hashes of the documentation ranges (RFC 5737).
+ *
+ * After the re-check (the architect, D-0016 §O and SPEC §18.16 "Decisions
+ * after the re-check"; this file was committed as written first, in
+ * 8b9c3f3): all seven findings were LOW, so under M-0014's stopping rule
+ * they are recorded, not iterated. Five were also fixed and renamed "fixed
+ * (…)" (the tap target's check now counts the min-height the fix adds); two
+ * are "accepted (…)", their assertions turned to say what holds today and
+ * that §O records it. `sectionN()` reads from §N to the prohibitions, so it
+ * now holds §O as well.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -641,7 +650,7 @@ describe("the button's words on the paths of seats.ts, the route rendered each t
     expect(CHECK_YOUR_EMAIL).toContain("If a seat was open, your link is there.");
   });
 
-  it("DEFECT (LOW): the address at the front of the line reads 'Join the waiting list' and is sent a join link. With a seat open and only that address waiting, the line goes first for it too (seats.ts, requestSeat: `seatOpen && !seat` gives it the seat): Pia, whose seat email failed so the seat came back, asks again; Ben, first in line when a removal reopened a seat, asks. The fix's rule (join.ts, `joinLabel(open, waiting)`) is right for every newcomer but wrong here, where dcff190's ('Join our.one' while a seat is open) was right. M-0014's constraint: 'The button's words match what the form will do with the address'; D-0016 §N accepts only 'An address that already holds a seat.'", async () => {
+  it("accepted (D-0016 §O, after the re-check; was DEFECT (LOW)): the address at the front of the line reads 'Join the waiting list' and is sent a join link — the button's words are chosen for a newcomer, who would wait, and the page cannot know the address before it is typed. With a seat open and only that address waiting, the line goes first for it too (seats.ts, requestSeat: `seatOpen && !seat` gives it the seat): Pia, whose seat email failed so the seat came back, asks again; Ben, first in line when a removal reopened a seat, asks. The fix's rule (join.ts, `joinLabel(open, waiting)`) is right for every newcomer but wrong here, where dcff190's ('Join our.one' while a seat is open) was right. M-0014's constraint: 'The button's words match what the form will do with the address'; D-0016 §N accepts only 'An address that already holds a seat.'", async () => {
     const t0 = at("2026-10-01T09:00:00Z");
     const pia = "pia_rc14@example.test";
     const ben = "ben_rc14@example.test";
@@ -671,14 +680,16 @@ describe("the button's words on the paths of seats.ts, the route rendered each t
 
     // On dcff190 the label read only the seats open: "Join our.one" here, which matched what happens.
     expect(promisedBy(joinLabel(1))).toBe("a join link");
-    expect(sectionN()).not.toMatch(/front of the line|first in line|oldest address waiting/);
+    // Accepted: the address that waited longest reads the newcomer's words and gets a join link.
     expect(
       { pia: { button: piaPage.button, got: piaGot }, ben: { button: benPage.button, got: benGot } },
       "the button's words against what the form did with the address that waited longest",
     ).toEqual({
-      pia: { button: piaPage.button, got: promisedBy(piaPage.button) },
-      ben: { button: benPage.button, got: promisedBy(benPage.button) },
+      pia: { button: "Join the waiting list", got: "a join link" },
+      ben: { button: "Join the waiting list", got: "a join link" },
     });
+    expect(sectionN()).toContain("The address at the front of the line.");
+    expect(sectionN()).toContain("the page cannot know the address before it is typed.");
   });
 
   it("closed (for a person, the first of D-0016 §N's five readings): with the database unreachable the route still renders — no count line, the button and the close 'Join our.one', no seat line — and logs both reads by name only; a seat may then be open or not, and the unchanged answer covers either", async () => {
@@ -759,7 +770,7 @@ describe("what a suspended account can do (D-0016 §N item 5)", () => {
     );
   });
 
-  it(`DEFECT (LOW): the answer to '${NEVER_QUESTION}' still says '…and you can still download your profile, posts, replies and connections, and delete it all.' with no exception: untrue for a suspended account, whose export and deletion are refused. The finding named 'the front page's two sentences' (D-0016 §G and §H); D-0016 §N's table changes only §G's, and the adapted test passes because its check reads the whole page (/suspended|write to us/ matches the one added sentence)`, async () => {
+  it(`accepted (D-0016 §O, after the re-check; was DEFECT (LOW)): the answer to '${NEVER_QUESTION}' still says '…and you can still download your profile, posts, replies and connections, and delete it all.' with no exception — the same page states the exception once, under what holds the promise today: untrue for a suspended account, whose export and deletion are refused. The finding named 'the front page's two sentences' (D-0016 §G and §H); D-0016 §N's table changes only §G's, and the adapted test passes because its check reads the whole page (/suspended|write to us/ matches the one added sentence)`, async () => {
     const front = parse(render({ joining: true, count: null, seatsOpen: null }));
     const question = findAll(front, (e) => e.tag === "dt" && text(e) === NEVER_QUESTION)[0]!;
     const holder = question.parent!;
@@ -772,11 +783,14 @@ describe("what a suspended account can do (D-0016 §N item 5)", () => {
     const remove = await refusal(() => deleteAccount(db(), sam.id, "sam_rc14"));
     // The adapted check, as the fixed test runs it: the whole page.
     expect(/suspended|write to us/i.test(textOf(render({ joining: true, count: null, seatsOpen: null })))).toBe(true);
-    expect(sectionN()).not.toContain("What if it never gets to [threshold]?");
-    expect(
-      (download === "OK" && remove === "OK") || /suspended|write to us/i.test(answer),
-      `a suspended account: download ${download}, delete ${remove}; the answer says "${answer}" and names no exception`,
-    ).toBe(true);
+    // Accepted: the answer itself names no exception, the account's own export and deletion are refused,
+    // and D-0016 §O records it.
+    expect({ download, remove, answerNamesIt: /suspended|write to us/i.test(answer) }).toEqual({
+      download: "NOT_FOUND: That isn't available.",
+      remove: "NOT_FOUND: That isn't available.",
+      answerNamesIt: false,
+    });
+    expect(sectionN()).toContain('The answer to "What if it never gets to [threshold]?" names no exception for a suspended account.');
   });
 });
 
@@ -836,7 +850,9 @@ describe("the invite page's 'Free to join.' (D-0016 §N item 6)", () => {
 /* ====================================================================== */
 
 /** The rule 6bbf256 added: the handover told as done in other verbs. */
-const DONE_RULE = PROHIBITED.find((rule) => rule.pattern.source.includes("maintained by"))!;
+// Found by a part both versions of the rule hold: the fix after the re-check wrote "maintained by"
+// as "(?:maintained|run) by".
+const DONE_RULE = PROHIBITED.find((rule) => rule.pattern.source.includes("handover is over"))!;
 
 describe("the claims scan's new rule (D-0016 §N item 7; CHECKED, not ENFORCED)", () => {
   beforeEach(async () => {
@@ -920,7 +936,7 @@ describe("the claims scan's new rule (D-0016 §N item 7; CHECKED, not ENFORCED)"
     expect(byTheNewRule).toEqual([]);
   });
 
-  it("DEFECT (LOW): close neighbours of the forms the rule names pass on every page: the status line's own recipient with 'the' ('went to', 'have gone to', 'transferred to' or 'passed to' the not-for-profit body of its members) — the rule's optional words cover 'a not-for-profit body of', 'a body of' and 'the body of', not this; 'Maintained by' that body, the status line's first sentence told as done with its own recipient; 'its members hold' without 'now'; 'the members' body now holds'; 'the members' body has formed'; the handover promise's own words told as done ('A not-for-profit body of its members was founded by their vote.'); and 'Run by its members.'. No page says these today; the scan is CHECKED, not ENFORCED", () => {
+  it("fixed (D-0016 §O, after the re-check; was DEFECT (LOW)): close neighbours of the forms the rule names passed on every page: the status line's own recipient with 'the' ('went to', 'have gone to', 'transferred to' or 'passed to' the not-for-profit body of its members) — the rule's optional words cover 'a not-for-profit body of', 'a body of' and 'the body of', not this; 'Maintained by' that body, the status line's first sentence told as done with its own recipient; 'its members hold' without 'now'; 'the members' body now holds'; 'the members' body has formed'; the handover promise's own words told as done ('A not-for-profit body of its members was founded by their vote.'); and 'Run by its members.'. No page says these today; the scan is CHECKED, not ENFORCED", () => {
     const neighbours = [
       "Its domain, its data and the right to replace the maintainer went to the not-for-profit body of its members.",
       "Its domain, its data and the right to replace the maintainer have gone to the not-for-profit body of its members.",
@@ -1013,7 +1029,7 @@ describe("the records' exact text, against the pages and the sources they cite (
     );
   });
 
-  it("DEFECT (LOW) (item 8): two more sentences about the handover on /contract are listed neither in D-0016 nor in the claims scan's list — only in SPEC §18.3 — the class of the eight §N lists: promise 2's own lock, 'This promise can never be changed.' (§N lists promise 8's 'Promises 1 and 2 can't be changed at all.'), and the handover's trigger, 'The count is the number on the front page: accounts that exist and are not suspended.' (§N's open question turns on it). The verifier's heuristic for 'about the handover' did not match them, so the list built from it missed them", () => {
+  it("fixed (D-0016 §O, after the re-check; was DEFECT (LOW)) (item 8): two more sentences about the handover on /contract were listed neither in D-0016 nor in the claims scan's list — only in SPEC §18.3 — the class of the eight §N lists: promise 2's own lock, 'This promise can never be changed.' (§N lists promise 8's 'Promises 1 and 2 can't be changed at all.'), and the handover's trigger, 'The count is the number on the front page: accounts that exist and are not suspended.' (§N's open question turns on it). The verifier's heuristic for 'about the handover' did not match them, so the list built from it missed them", () => {
     const html = rendered(ContractPage);
     const promise2 = findAll(parse(html), (e) => e.tag === "li" && text(e).includes("I hand over the domain"))[0]!;
     const two = ["This promise can never be changed.", "The count is the number on the front page: accounts that exist and are not suspended."];
@@ -1067,17 +1083,21 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
     });
   });
 
-  it("DEFECT (LOW) (item 9, the tap target): D-0016 §N and SPEC §18.16 say the link is '44px tall on touch screens'; it is 41.55px — the card's rule makes it an inline-block with 12px above and below a 13px line of 1.35 (17.55px) — measured in Chrome 154 with touch emulation at 320, 390 and 768px, both themes: 168.97 × 41.55px. The adapted render test passes on a heuristic that counts any 12px padding as 44px; the card's own 'How that works', at 14px, is 42.89px, older than this build", async () => {
+  it("fixed (D-0016 §O, after the re-check; was DEFECT (LOW)) (item 9, the tap target): D-0016 §N and SPEC §18.16 say the link is '44px tall on touch screens'; it was 41.55px — the card's rule makes it an inline-block with 12px above and below a 13px line of 1.35 (17.55px) — measured in Chrome 154 with touch emulation at 320, 390 and 768px, both themes: 168.97 × 41.55px. The adapted render test passes on a heuristic that counts any 12px padding as 44px; the card's own 'How that works', at 14px, is 42.89px, older than this build", async () => {
     const link = promiseLink(await inviteTree());
     expect(readRecord("decisions/D-0016.md")).toContain("the card's link: the text colour, underlined, 44px tall on touch screens");
     const coarse = RULES.filter((r) => r.media !== null && /pointer:\s*coarse/.test(r.media) && r.selectors.includes(".pledgeLink"));
     expect(coarse).toHaveLength(1);
     const touch = declarations(coarse[0]!.body);
-    expect(touch).toEqual({ display: "inline-block", "padding-block": "12px", "margin-block": "-12px" });
+    // The fix adds a min-height; box-sizing is border-box (globals.css), so it is the whole height.
+    expect(touch).toEqual({ display: "inline-block", "padding-block": "12px", "margin-block": "-12px", "min-height": "44px" });
+    expect(GLOBALS).toMatch(/\*,\s*\*::before,\s*\*::after\s*\{\s*box-sizing: border-box;/);
     const fontSize = parseFloat(inherited(link, "font-size") ?? BODY["font-size"]!);
     const lineHeight = parseFloat(inherited(link, "line-height") ?? BODY["line-height"]!);
     expect([fontSize, lineHeight]).toEqual([13, 1.35]);
-    const height = Math.round((fontSize * lineHeight + 2 * parseFloat(touch["padding-block"]!)) * 100) / 100;
+    const padded = Math.round((fontSize * lineHeight + 2 * parseFloat(touch["padding-block"]!)) * 100) / 100;
+    expect(padded).toBe(41.55);
+    const height = Math.max(padded, parseFloat(touch["min-height"]!));
     expect(height, `${fontSize}px × ${lineHeight} + 2 × ${touch["padding-block"]} on a coarse pointer`).toBeGreaterThanOrEqual(44);
   });
 
@@ -1114,7 +1134,7 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
     });
   });
 
-  it("DEFECT (LOW) (item 10): on /costs and /rules the status line is a plain muted paragraph that no text-wrap rule reaches, though SPEC §18.16 puts 'text-wrap: pretty' on 'the status line' and D-0016 §N says lone last words are avoided where the browser can: Chrome 154 leaves 'members.' alone on its last line on both pages at 408–432px (4 lines) and 598–622px (3 lines), measured every 2px from 320 to 1480px; never on /, /power, /privacy or the not-found page", () => {
+  it("fixed (D-0016 §O, after the re-check; was DEFECT (LOW)) (item 10): on /costs and /rules the status line is a plain muted paragraph that no text-wrap rule reached, though SPEC §18.16 puts 'text-wrap: pretty' on 'the status line' and D-0016 §N says lone last words are avoided where the browser can: Chrome 154 leaves 'members.' alone on its last line on both pages at 408–432px (4 lines) and 598–622px (3 lines), measured every 2px from 320 to 1480px; never on /, /power, /privacy or the not-found page", () => {
     const places: [string, string][] = [
       ["the footer", rendered(SiteFooter)],
       ["the in-app footer", rendered(InAppSiteFooter)],
@@ -1209,7 +1229,8 @@ describe("how the verifiers' tests were adapted (git diff d56f8fc..6bbf256 and d
     }
     // Pointed at the fixed words.
     expect(render).toContain('expect(moduleClass(link)).toBe("pledgeLink");');
-    expect(render).toContain('expect(touchTarget(link)).toBe(".pledgeLink { padding: 12px }");');
+    // After the re-check (D-0016 §O) the touch rule's min-height is what the helper reports.
+    expect(render).toContain('expect(touchTarget(link)).toBe(".pledgeLink { min-height: 44px }");');
     expect(honesty).toContain("const label = buttonOf(page); expect(label).toBe(WAITING_LIST_LABEL);");
     expect(honesty).toContain("which holds every one its rules catch (D-0016 §N).");
     expect(honesty).toContain(`delete it all. ${SUSPENDED_SENTENCE}",`);
@@ -1240,7 +1261,7 @@ describe("how the verifiers' tests were adapted (git diff d56f8fc..6bbf256 and d
     expect(read("verify-m0013-honesty.test.ts")).toContain(`delete it all. ${SUSPENDED_SENTENCE}\``);
   });
 
-  it("DEFECT (LOW): contract.test.ts's handoverTold, which guards 'no page says the handover has happened' over the rendered pages and which 6bbf256's message says 'learns the same forms', misses one the scan rule catches and claims.test samples for it: 'The members’ body was formed last year.' — the rule's '(is|was) (now)? (formed|founded)' alternative was not copied (the claims scan, run over the same pages, still catches it)", () => {
+  it("fixed (D-0016 §O, after the re-check; was DEFECT (LOW)): contract.test.ts's handoverTold, which guards 'no page says the handover has happened' over the rendered pages and which 6bbf256's message says 'learns the same forms', misses one the scan rule catches and claims.test samples for it: 'The members’ body was formed last year.' — the rule's '(is|was) (now)? (formed|founded)' alternative was not copied (the claims scan, run over the same pages, still catches it)", () => {
     const source = readFileSync(join(WEB_ROOT, "tests/contract.test.ts"), "utf8");
     const body = source.slice(source.indexOf("function handoverTold("), source.indexOf('describe("no page says the handover has happened'));
     const patterns = [...body.matchAll(/matchAll\(\s*\/((?:[^/\\\n]|\\.)+)\/([a-z]*)/g)].map((m) => new RegExp(m[1]!, m[2]!.replace("g", "")));

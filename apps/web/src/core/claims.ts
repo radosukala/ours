@@ -138,9 +138,12 @@ export const PROHIBITED: readonly Prohibited[] = [
     // body, as a promise (D-0016 §J); "went to", "has gone to", "passed
     // to", "given to" and "transferred to" its members say it happened,
     // and so do "maintained by its members", "the members' body has been
-    // formed", "its members now hold" and "the handover is over".
+    // formed", "its members now hold" and "the handover is over". The
+    // re-check added close neighbours: the same verbs to "the not-for-profit
+    // body of" its members, "run by", "the members' body holds", "has
+    // formed", "…body of its members was founded", and "its members hold".
     pattern:
-      /\b(?:went|gone|passed|given|transferred) to (?:a not-for-profit body of |a body of |the body of )?(?:its |the |our )?members\b|\bmaintained by (?:its |the |our )?members\b|\bmembers(?:'|’)? body (?:has|had) been (?:formed|founded)\b|\bmembers(?:'|’)? body (?:is|was) (?:now )?(?:formed|founded)\b|\b(?:its|the|our) members now hold\b|\bhandover is over\b/i,
+      /\b(?:went|gone|passed|given|transferred) to (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\b|\b(?:maintained|run) by (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\b|\bmembers(?:'|’)? body (?:has|had) (?:been )?(?:formed|founded)\b|\bmembers(?:'|’)? body (?:is|was) (?:now )?(?:formed|founded)\b|\bmembers(?:'|’)? body (?:now )?holds?\b|\bbody of (?:its|the|our) members (?:was|were|has been|is) (?:now )?(?:formed|founded)\b|\b(?:its|the|our) members (?:now )?hold\b|\bhandover is over\b/i,
     reason:
       "D-0016 §J: the status line promises these things go to the members' body; told as done, in any verb, the handover has not happened.",
   },

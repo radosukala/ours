@@ -658,10 +658,13 @@
     padding-block: 12px;
   }
 
+  /* 44px at any font size (border-box): 12px above and below a 13px line
+     is 41.55px (the re-check of M-0014). */
   .pledgeLink {
     display: inline-block;
     padding-block: 12px;
     margin-block: -12px;
+    min-height: 44px;
   }
 }
 

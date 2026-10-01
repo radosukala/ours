@@ -50,7 +50,9 @@
  * after the verification"; this file was committed as written first, in
  * d56f8fc): the invite page's link now has the card's link style
  * (`.pledgeLink`), so both DEFECTs were fixed and renamed "fixed (…)"; the
- * one assertion that named the old class points at the new one. The
+ * one assertion that named the old class points at the new one (and,
+ * after the re-check, D-0016 §O, the link's touch rule reads its 44px
+ * min-height, which the helper reports before the padding). The
  * browser-only findings are in the verification report: lone last words
  * (fixed where the browser supports `text-wrap`), "not-for-profit" at its
  * hyphen (fixed in the card, accepted in the status line), and the
@@ -791,13 +793,14 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     // The reading is sound: it finds the front page's own touch rules for its text links.
     const front = parse(renderFront());
     const byText = (words: string) => findAll(front, (e) => e.tag === "a" && text(e) === words)[0]!;
-    expect(touchTarget(byText("How that works"))).toBe(".pledgeLink { padding: 12px }");
+    // Since the re-check (D-0016 §O) the card's link class carries min-height: 44px, which the helper reports first.
+    expect(touchTarget(byText("How that works"))).toBe(".pledgeLink { min-height: 44px }");
     expect(touchTarget(byText("Read the contract"))).toBe(".more { padding: 12px }");
 
     const link = promiseLink(await invitePage())[0]!;
     // The card's link style since D-0016 §N (it was the shared .link on dcff190).
     expect(moduleClass(link)).toBe("pledgeLink");
     expect(touchTarget(link), "a (pointer: coarse) rule that gives the link 44px").not.toBeNull();
-    expect(touchTarget(link)).toBe(".pledgeLink { padding: 12px }");
+    expect(touchTarget(link)).toBe(".pledgeLink { min-height: 44px }");
   });
 });

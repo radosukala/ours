@@ -212,6 +212,9 @@ hr {
 
 .muted {
   color: var(--muted);
+  /* No lone last word where the browser can avoid one: the status line on
+     /costs and /rules is a muted paragraph (the re-check of M-0014). */
+  text-wrap: pretty;
 }
 
 .small {

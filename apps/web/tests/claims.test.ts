@@ -108,7 +108,7 @@ const SAMPLES: Record<string, string[]> = {
   ],
   // The handover told as done in other verbs (the verification of M-0014): the status line
   // says "go to", as a promise (D-0016 §J).
-  "\\b(?:went|gone|passed|given|transferred) to (?:a not-for-profit body of |a body of |the body of )?(?:its |the |our )?members\\b|\\bmaintained by (?:its |the |our )?members\\b|\\bmembers(?:'|’)? body (?:has|had) been (?:formed|founded)\\b|\\bmembers(?:'|’)? body (?:is|was) (?:now )?(?:formed|founded)\\b|\\b(?:its|the|our) members now hold\\b|\\bhandover is over\\b": [
+  "\\b(?:went|gone|passed|given|transferred) to (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\\b|\\b(?:maintained|run) by (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\\b|\\bmembers(?:'|’)? body (?:has|had) (?:been )?(?:formed|founded)\\b|\\bmembers(?:'|’)? body (?:is|was) (?:now )?(?:formed|founded)\\b|\\bmembers(?:'|’)? body (?:now )?holds?\\b|\\bbody of (?:its|the|our) members (?:was|were|has been|is) (?:now )?(?:formed|founded)\\b|\\b(?:its|the|our) members (?:now )?hold\\b|\\bhandover is over\\b": [
     "Its domain went to a not-for-profit body of its members.",
     "The data has gone to its members.",
     "Passed to its members at 100,000.",
@@ -119,6 +119,14 @@ const SAMPLES: Record<string, string[]> = {
     "The members’ body was formed last year.",
     "Its members now hold the domain.",
     "The handover is over.",
+    // Close neighbours, from the re-check of M-0014.
+    "Its domain went to the not-for-profit body of its members.",
+    "Maintained by a not-for-profit body of its members.",
+    "Run by its members.",
+    "Its members hold the domain.",
+    "The members' body now holds the keys.",
+    "The members' body has formed.",
+    "A not-for-profit body of its members was founded by their vote.",
   ],
   "\\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\\b": [
     "our.one now belongs to its members.",

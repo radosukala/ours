@@ -2245,3 +2245,33 @@ confirmed is fixed, or recorded in D-0016 §N:
   - the trigger's words. "When [threshold] people have joined" is not the
     contract's count; "are in" is proposed;
   - five readings left to a person (D-0016 §N).
+
+**Decisions after the re-check (1 October 2026).** A third agent that built
+and fixed nothing re-checked `6bbf256`: each fix where it can fail, and how
+the verifiers' tests were adapted. Its file was committed as written
+(`8b9c3f3`). All seven findings are LOW, so under M-0014's stopping rule
+they are recorded (D-0016 §O). The small ones were also fixed:
+
+- **Touch targets.** `.pledgeLink` is at least 44px tall on touch screens
+  (`min-height: 44px`, border-box). It was 41.55px on the invite page and
+  42.89px on the card.
+- **Wrapping.** Every `.muted` paragraph has `text-wrap: pretty`, which
+  reaches the status line on `/costs` and `/rules`.
+- **The claims scan's rule** also reads the same verbs to "the
+  not-for-profit body of" its members; "run by" or "maintained by" that
+  body or its members; "the members' body holds" or "has formed"; "…a body
+  of its members was founded"; and "its members hold".
+- **contract.test's `handoverTold`** carries the same forms.
+- **Listed:** two more `/contract` sentences are listed by exact text in
+  D-0016 §O: "This promise can never be changed." and "The count is the
+  number on the front page: accounts that exist and are not suspended."
+- **Accepted:**
+  - the address at the front of the line reads "Join the waiting list" and
+    is sent a join link;
+  - the never-reached answer names no exception for a suspended account.
+    The page states it once.
+- **For the founder:**
+  - M-0014's acceptance wording for the button, which §N refines;
+  - "you can leave with everything" on `/contract`;
+  - "we will do it for you", which is done by hand;
+  - the invite form in production without the header.

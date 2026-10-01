@@ -193,7 +193,7 @@ function handoverTold(text: string): string[] {
   }
   // The status line's verb, "go to", told as done, and its neighbours (the verification of M-0014).
   for (const m of text.matchAll(
-    /[^.?!\n]*\b(?:(?:went|gone|passed|given|transferred) to (?:a not-for-profit body of |a body of |the body of )?(?:its |the |our )?members|maintained by (?:its |the |our )?members|members(?:'|’)? body (?:has|had) been (?:formed|founded)|(?:its|the|our) members now hold|handover is over)\b[^.?!\n]*/gi,
+    /[^.?!\n]*\b(?:(?:went|gone|passed|given|transferred) to (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members|(?:maintained|run) by (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members|members(?:'|’)? body (?:has|had) (?:been )?(?:formed|founded)|members(?:'|’)? body (?:is|was) (?:now )?(?:formed|founded)|members(?:'|’)? body (?:now )?holds?|body of (?:its|the|our) members (?:was|were|has been|is) (?:now )?(?:formed|founded)|(?:its|the|our) members (?:now )?hold|handover is over)\b[^.?!\n]*/gi,
   )) {
     told.push(m[0].trim());
   }
@@ -226,6 +226,10 @@ describe("no page says the handover has happened (D-0012)", () => {
       "The members' body has been formed.",
       "Its members now hold the domain.",
       "The handover is over.",
+      // The scan rule's forms the re-check of M-0014 found missing here, and its close neighbours.
+      "The members’ body was formed last year.",
+      "Run by its members.",
+      "A not-for-profit body of its members was founded by their vote.",
     ]) {
       expect(handoverTold(claim), claim).not.toEqual([]);
     }
