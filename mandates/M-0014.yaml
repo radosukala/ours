@@ -1,0 +1,152 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0014
+title: The reason, and the invitation — the front page's second pass, the invite page's words, and the status line
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0016
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-01T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0012, D-0015, D-0016]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0014.md
+
+objective: >
+  Build D-0016 in apps/web. On the front page: the lede that says what
+  our.one is; "Join our.one", or "Join the waiting list" when no seat is
+  open, with the shorter seat line and step 1 titled "Join"; the signed
+  card naming the domain, the data and the right to replace the maintainer,
+  and who holds them until then; on a phone, the picture before the card;
+  the reason opening the section on who runs our.one; WhatsApp's 2025 line
+  as Meta announced it, linked to the announcement; what the export holds
+  and who holds what today; two answers; and the close, "Who would you like
+  to hear from?". On the invite page, the front page's lede, "Free to
+  join." and a link to the promise. The status line of D-0016 §J wherever
+  the old one stood. The claims scan's list follows: the card's new
+  sentence in, the old card sentence and the status line out, and no
+  sentence let through on every page. The headline, the answer after
+  joining, what an invite does, the 7% section and the data are unchanged.
+  Fictional data only; nothing runs anywhere but this machine.
+
+human_outcome: >
+  A stranger learns from the first screen what our.one is and can join, or
+  join the waiting list, in words that say which; on a phone they see the
+  product before the promise. Further down they read why it exists, what
+  the founder holds today and what the contract hands over, and they end on
+  whom they would invite. Someone opening an invite link reads the same
+  description. No footer reads as though the handover has happened.
+
+adopted_constraints:
+  - The threshold, the number of invites, the notice period and the maintainer's name come from their constants (HANDOVER_THRESHOLD, DEFAULT_INVITES, NOTICE_DAYS, MAINTAINER); no page writes them itself.
+  - Every sentence about the handover is listed by exact text, in D-0016 or in the claims scan's ALLOWLIST; the scan lets none through on every page.
+  - The page states what holds each promise today, that before the threshold it is a promise, and what happens if the threshold is never reached (D-0012 §D, kept by D-0015 §G).
+  - The button's words match what the form will do with the address; the answer after a valid submission is unchanged and true for every address (D-0015 §H).
+  - Every dated line links to its source; the 7% sentence is not published before a human confirms its source (D-0015 §E).
+  - Accepting an invite stays a friend request and nothing more; the invite page's forms and answers are unchanged.
+  - Every picture of the product stays labelled fictional or an illustration.
+  - No real person's data, no email to a real address, no provider account, no domain touched.
+
+hypotheses:
+  - A stranger who reads "A social network for…" first can say what our.one is without the picture.
+  - Ending on "Who would you like to hear from?" leads more joiners to send an invite than "Bring your people." did.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: REVERSIBLE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure]
+  privacy: [no-real-person-data-under-this-mandate]
+
+acceptance:
+  tests:
+    - The front page's h1 and metadata title are unchanged; the lede, the card, the reason, the story, the promise paragraphs, every question and the close are word for word D-0016's and SPEC §18.16's.
+    - The button and the close say "Join our.one" when a seat is open or the seats can't be read, and "Join the waiting list" when none is open; the seat line shows only then; while joining is closed there is no form and no close.
+    - Below 900px the page reads, in order, the headline, the lede, joining, the picture and the card; from 900px the card stays under joining, beside the picture.
+    - The 2025 line links to Meta's announcement; every dated line and the 7% sentence open their sources in a new tab with rel="noopener noreferrer".
+    - The status line is D-0016 §J's, in every footer and on /power, /costs and /rules; it is not caught by the claims scan, and "Handed to its members" is caught on every page.
+    - The invite page shows the front page's lede to a signed-out visitor, and "Free to join." with the link to /#front-runs while they can join; its heading, forms and answers are unchanged.
+    - The claims scan finds no prohibited claim; the card's sentence passes only on the front page and is caught anywhere else.
+    - Typecheck, lint, tests and a production build pass; the page serves over HTTP from the production build; pnpm ours check M-0014 --changed authorises the finished working tree.
+  evidence:
+    - build receipt recording files touched, dependencies added (none expected), and every failure
+    - an independent verification by agents that did not build it, to the stopping rule M-0014.md declares, with their test files committed as written
+    - screenshots of the front page at phone and desktop width, light and dark
+
+limits:
+  dependency_policy: justify-new
+  stop_conditions:
+    - any prerequisite does not hold
+    - a required fact is marked [CONFIRM] and the work would need to resolve it
+    - the work requires a path outside the allowed scope
+    - a feature would need real personal data, a provider account, or a deployment
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: >
+    Revert the M-0014 commits. No schema, data or migration changes; nothing
+    runs anywhere but the builder's machine.
+  irreversible_residue: none
+
+human_approvals:
+  ambiguity: founder
+  adoption: founder
+  release: M-0012, after its preconditions, including D-0015 §E's [CONFIRM]
+  deploy: not-authorized
+
+cost:
+  source: ESTIMATED
+  wall_minutes: null

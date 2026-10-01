@@ -1,0 +1,72 @@
+schema: ours.decision/v0.1
+decision_id: D-0016
+title: The reason, and the invitation
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0016.md
+
+proposal: P-0010
+prerequisite_decisions: [D-0012, D-0015]
+
+outcome: >
+  The front page says what our.one is ("A social network for your friends
+  and the people you choose to follow."), and says why it exists, in the
+  founder's voice: "The people make the network." Its button is "Join
+  our.one", or "Join the waiting list" when no seat is open. On a phone the
+  picture of the feed comes before the signed card, and the card names what
+  the contract hands over (the domain, the data and the right to replace
+  the maintainer) and who holds them until then. Four lines now say exactly
+  what their sources say: WhatsApp announced ads in Status, in its Updates
+  tab; what the export holds, in place of "leave with everything"; who
+  holds what today, in place of "not yet by law". The page ends on "Who
+  would you like to hear from?". The invite page carries the front page's
+  lede, says joining is free and links to the promise. The status line,
+  wherever control is described, becomes "Maintained by its founder.
+  Promised: when [threshold] people have joined, its domain, its data and
+  the right to replace the maintainer go to a not-for-profit body of its
+  members.", replacing D-0012 §D's "Handed to its members at [threshold].",
+  which the claims scan let through on every page. The headline stays. The
+  review's headline goes into the five-stranger test, and its mission line
+  in place of the card and its builders' block are not adopted. Authorizes
+  M-0014 (BUILD) and amends the draft M-0012.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0014]
+
+prohibits:
+  - publishing D-0015 §E's 7% sentence before a human confirms its source (AGENTS.md §10)
+  - any sentence about the handover not listed by exact text, in this decision or in the claims scan's list
+  - stating the handover as done
+  - an answer after joining that is untrue for any address
+
+effective_from: 2026-10-01T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The agent recommended against three of the review's
+  proposals (its headline, a mission line in place of the signed card, and
+  a builders' block); the founder adopted the prototype that left them out.
+  The review's author is not named and has not answered. The status line's
+  words are the agent's reading of "fix the footer too", open to the
+  founder's correction. The five-stranger test is still open before
+  release, and so is a human's confirmation of the 7% source.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

@@ -1,0 +1,59 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0010
+title: The reason, and the invitation — the front page, a second pass
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0016
+
+human_source:
+  path: proposals/P-0010.md
+evidence:
+  - path: proposals/P-0010.evidence-conversation-2026-10-01.md
+
+proposed_by:
+  - id: claude
+    kind: agent
+    role: architect
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: founder
+    kind: human
+    role: founder-steward
+  - id: front-page-reviewer
+    kind: unknown
+    role: reviewer
+    note: the review's author, human or model, is not named in the record; the founder shared the review
+
+affected_groups:
+  - everyone who opens our.one's front page, or an invite link, before joining
+  - everyone who reads the status line in a footer, on /power, /costs or /rules
+  - the founder, whose signed promise now names the three things it hands over
+
+unresolved:
+  - a human confirms that the court's opinion says what the 7% sentence cites (D-0015 §E) [CONFIRM]
+  - the five-stranger test, now with three headlines, not run
+  - a way for builders to help, which needs its own decision (foundation/SHARED-TOOL.md §9)
+  - the owner and maintainer line the cold-read critic questioned (D-0015 §J), still for the founder's review
+
+cost:
+  proposer_hours: 2
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-09-30
+    actor: { id: front-page-reviewer, kind: unknown }
+    position: keep the product, but connect the everyday benefit to the reason our.one exists; say what it is; Join, not Get in; picture before promise on a phone; correct four lines; end on a personal invitation; consider a new headline and a builders' block
+  - date: 2026-10-01
+    actor: { id: founder, kind: human }
+    position: here are ideas for improvement
+  - date: 2026-10-01
+    actor: { id: claude, kind: agent }
+    position: take most of it, checked against the code and the sources; keep the headline and test the review's; keep the signed card and make it exact; hold back the builders' block; offer to fix the footer's status line in the same decision
+  - date: 2026-10-01
+    actor: { id: founder, kind: human }
+    position: yes, build it, and fix the footer too
