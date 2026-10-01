@@ -26,6 +26,12 @@
  * verification"): each DEFECT was fixed and renamed "fixed (…)", its
  * assertion kept or pointed at the fixed words, or recorded as "accepted:"
  * with the reason. `specText` follows the fixed copy.
+ *
+ * Under M-0014 (D-0016, SPEC §18.16) the architect pointed `specText` and
+ * the tests that quote the page at the new words, in the new order (the
+ * picture before the card). Each test keeps what it proved. The accepted
+ * gap, "It was Handed to its members", is fixed: the status line no longer
+ * needs a listing, and nothing is let through on every page.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -49,6 +55,7 @@ import RulesPage from "@/app/(public)/rules/page";
 import manifest from "@/app/manifest";
 import { FRIENDS_SOURCE, FrontPage, type FrontPageProps } from "@/components/public/FrontPage";
 import { MAINTAINER, NOTICE_DAYS } from "@/components/public/handover";
+import { STATUS_LINE } from "@/components/RightColumn";
 import { ALLOWLIST, scanText } from "@/core/claims";
 import { DEFAULT_INVITES, HANDOVER_THRESHOLD } from "@/core/config";
 import { isCoreError } from "@/core/errors";
@@ -105,28 +112,26 @@ const COUNT_LINES: Record<string, string> = {
 };
 
 /**
- * SPEC §18.15's copy for one state, in its order, as a reader sees it. The
- * phone's posts are FeedPreview's (§18.15 names them, §18.13 does not write
- * them); the rest is the specification's, word for word.
+ * SPEC §18.15's copy, as §18.16 amends it, for one state, in its order, as
+ * a reader sees it. The phone's posts are FeedPreview's (§18.15 names them,
+ * §18.13 does not write them); the rest is the specification's, word for
+ * word.
  */
 function specText({ joining, count, seatsOpen }: FrontPageProps): string {
+  const noSeat = seatsOpen !== null && seatsOpen <= 0;
+  const label = noSeat ? "Join the waiting list" : "Join our.one";
   return [
     "Just your people. Then you're done.",
-    "our.one shows you posts from the people you choose, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can put your phone down.",
-    "Get in",
+    "A social network for your friends and the people you choose to follow. Their posts, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can get on with your day.",
+    "Join our.one",
     ...(joining
       ? [
-          "Your email Get in",
-          ...(seatsOpen !== null && seatsOpen <= 0
-            ? ["No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest."]
-            : []),
+          `Your email ${label}`,
+          ...(noSeat ? ["No seats are open right now. Seats go to whoever has waited longest."] : []),
           `Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`,
           "We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in Privacy.",
         ]
       : ["Joining opens soon.", "Have an invite? It can't be used until joining opens."]),
-    MAINTAINER[0],
-    `I'll never sell our.one. When ${T} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`,
-    `${MAINTAINER}, maintainer · How that works`,
     "our.one",
     "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2",
     "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4",
@@ -135,6 +140,9 @@ function specText({ joining, count, seatsOpen }: FrontPageProps): string {
     "P Pavel @pavel · 3d Anyone up for a slow run on Saturday? I'll bring coffee. 3",
     "That's everything from the last 14 days.",
     "An example feed. Fictional people.",
+    MAINTAINER[0],
+    `I'll never sell our.one. When ${T} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members. Until then, I hold all three.`,
+    `${MAINTAINER}, maintainer · How that works`,
     "Where did your friends go?",
     "7%",
     "In January 2025, content from friends got 7% of the time Americans spent on Instagram. Most of the rest went to short videos from strangers, recommended by AI.",
@@ -144,29 +152,31 @@ function specText({ joining, count, seatsOpen }: FrontPageProps): string {
     "our.one Home M Mara Made it to the top before the rain. T Tomas Soup's on tonight. Door's open from 7. J Jana Finished the book you lent me. That's everything from the last 14 days.",
     "Illustration.",
     "How it works",
-    "1 Get in Your email, a name and a username. It's free, and you need to be 18 or older.",
+    "1 Join Your email, a name and a username. It's free, and you need to be 18 or older.",
     `2 Bring your people You get ${DEFAULT_INVITES} invites. It stays quiet until the people you care about are here, so send them to the ones you'd actually want to hear from.`,
     "3 Catch up, then close it Their posts, newest first. When there's nothing new, it says so.",
     "Keep your people. Change who runs it.",
+    "The people make the network.",
+    "You bring the friendships, the conversations and the reasons to come back, so you should have a say in what it becomes. A simple feed is where our.one starts. The bigger purpose is a network whose people choose who looks after it.",
     "WhatsApp, in three dates",
     "2012 WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
     "2014 Facebook agreed to buy it for about $19 billion.",
-    "2025 Ads came to WhatsApp.",
+    "2025 WhatsApp announced ads in Status, in its Updates tab.",
     "An owner can sell it, change it or shut it down. A maintainer does the job, or is replaced.",
-    `our.one has a maintainer: me, ${MAINTAINER}. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with ${NOTICE_DAYS} days' notice, and you can always leave with everything.`,
+    `our.one has a maintainer: me, ${MAINTAINER}. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with ${NOTICE_DAYS} days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.`,
     `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
-    "Today these promises are held by that contract, not yet by law.",
+    "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
     ...(count === null ? [] : [COUNT_LINES[String(count)]!]),
     "Read the contract See every cost Read the code",
     "Fair questions",
     "Is it free? Yes. Today I pay the bills, and every cost is public.",
-    `What if my friends aren't on it? At first they won't be. That's what your ${DEFAULT_INVITES} invites are for.`,
+    "What if my friends aren't on it? At first they won't be. Start with someone you already want to hear from: invite them, post something, and give them a reason to reply. You can keep your other apps while you try it together.",
     "Can I post photos? Not yet. Posts are words for now.",
     "Is there an app? Not yet. our.one works in your phone's browser, and you can add it to your home screen.",
     "Why should I believe you? Don't take my word for it. Read the contract: it is the terms you join under. The code is public, and so is every cost.",
-    `What if it never gets to ${T}? Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything.`,
+    `What if it never gets to ${T}? Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can still download your profile, posts, replies and connections, and delete it all.`,
     `What's a maintainer? The one who keeps it running. Today that's me, and today I also hold everything. After ${T}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
-    ...(joining ? ["Bring your people. Get in"] : []),
+    ...(joining ? [`Who would you like to hear from? Join, then send them an invite. ${label}`] : []),
   ].join(" ");
 }
 
@@ -179,8 +189,8 @@ afterEach(() => {
 /* Every sentence, in every state                                         */
 /* ====================================================================== */
 
-describe("every sentence the front page renders, in every state (SPEC §18.15)", () => {
-  it("closed: in each of the six states the whole visible text is SPEC §18.15's copy, in its order, and nothing else (the old 'promise' test pinned its section with toBe; the new tests use toContain)", () => {
+describe("every sentence the front page renders, in every state (SPEC §18.15, as §18.16 amends it)", () => {
+  it("closed: in each of the six states the whole visible text is SPEC §18.15's copy, as §18.16 amends it, in its order, and nothing else (the old 'promise' test pinned its section with toBe; the new tests use toContain)", () => {
     for (const state of STATES) {
       expect(textOf(render(state)), JSON.stringify(state)).toBe(specText(state));
     }
@@ -206,7 +216,7 @@ describe("the seat line (D-0015 §D), by the product's own paths", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  it("fixed (SPEC §18.15, after the verification; was DEFECT (HIGH)): the seat line no longer promises the next seat — it says the address joins the line and seats go to whoever has waited longest, which is what opening a seat does (seats.ts; SPEC §18.4)", async () => {
+  it("fixed (SPEC §18.15, after the verification; was DEFECT (HIGH)): the seat line no longer promises the next seat — with the button 'Join the waiting list' (D-0016 §B) it says seats go to whoever has waited longest, which is what opening a seat does (seats.ts; SPEC §18.4)", async () => {
     const t0 = at("2026-09-29T10:00:00Z");
     const rado = await makeAccount({
       handle: "rado_m13",
@@ -218,12 +228,12 @@ describe("the seat line (D-0015 §D), by the product's own paths", () => {
     // Ida asked three days ago, with no seat open: she waits in line.
     await requestSeat(db(), { email: "ida_m13@example.test", ipHash: rateKeyHash("192.0.2.1"), now: plus.days(t0, -3) });
 
-    // Zoe opens the front page. No seat is open, and it tells her she joins the line.
+    // Zoe opens the front page. No seat is open, and it tells her she joins the waiting list.
     const front = textOf(await renderRoute());
-    expect(front).toContain(
-      "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest.",
-    );
+    expect(front).toContain("Your email Join the waiting list");
+    expect(front).toContain("No seats are open right now. Seats go to whoever has waited longest.");
     expect(front).not.toContain("you'll get the next one");
+    expect(front).not.toMatch(/next (?:seat|one)/);
     await requestSeat(db(), { email: "zoe_m13@example.test", ipHash: rateKeyHash("192.0.2.2"), now: t0 });
 
     // The next seat opens.
@@ -278,7 +288,7 @@ describe("the handover sentences (D-0015: 'Any sentence about the handover that 
       [
         "Then nothing is handed over.",
         `After ${T}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
-        `When ${T} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`,
+        `When ${T} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.`,
         `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
       ].sort(),
     );
@@ -347,10 +357,12 @@ describe("the claims scan's widened rule (M-0013: '\"hand it to\" is caught in a
     expect(told.filter((claim) => scanText(claim, ANOTHER_PAGE).length === 0)).toEqual([]);
   });
 
-  it("accepted (SPEC §18.15, after the verification): 'It was Handed to its members at 100,000.' still passes: the status line is listed by exact text and let through everywhere (the re-check of M-0011), so a sentence built around it loses the word the done-rule needs. The scan is CHECKED, not ENFORCED, and a person reads what it lets through; making the allowlist match whole sentences only is left to a later change to the scan", () => {
-    expect(scanText(`It was Handed to its members at ${T}.`, ANOTHER_PAGE)).toEqual([]);
-    // The status line itself, and the same words standing alone, pass by design.
-    expect(scanText(`Maintained by its founder. Handed to its members at ${T}.`, ANOTHER_PAGE)).toEqual([]);
+  it("fixed (D-0016 §J and §K, under M-0014; was accepted after the verification of M-0013): 'It was Handed to its members at 100,000.' is caught: the status line says 'Promised: … go to', needs no listing, and nothing is let through on every page", () => {
+    expect(scanText(`It was Handed to its members at ${T}.`, ANOTHER_PAGE).length).toBeGreaterThan(0);
+    // The old status line is caught too, on any page; the new one passes with nothing listed for it.
+    expect(scanText(`Maintained by its founder. Handed to its members at ${T}.`, ANOTHER_PAGE).length).toBeGreaterThan(0);
+    expect(scanText(STATUS_LINE, ANOTHER_PAGE)).toEqual([]);
+    expect(ALLOWLIST.filter((entry) => /Handed to its members|Maintained by its founder/.test(entry.sentence))).toEqual([]);
     // Anything else about it, in other words, is caught.
     expect(scanText(`It was handed over to its members at ${T}.`, ANOTHER_PAGE).length).toBeGreaterThan(0);
   });

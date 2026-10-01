@@ -29,6 +29,10 @@
  * re-check"): the three DEFECTs were fixed and renamed "fixed (…)"; where a
  * fix changed the words, the assertion points at the fixed words and at
  * what the code does.
+ *
+ * Under M-0014 (D-0016 §B, SPEC §18.16) the seat line is shorter, because
+ * the button now says "Join the waiting list"; SEAT_LINE follows it, and
+ * the old line joins the sentences that must appear nowhere.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -83,7 +87,7 @@ const DAY = 24 * HOUR;
 /** A public page in the scan's reach with no ALLOWLIST entry. */
 const ANOTHER_PAGE = "src/app/(public)/signin/page.tsx";
 
-const SEAT_LINE = "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest.";
+const SEAT_LINE = "No seats are open right now. Seats go to whoever has waited longest.";
 const INVITE_LINE = "Have an invite? It can't be used until joining opens.";
 const MAINTAINER_ANSWER = `After ${T}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`;
 const SOURCE_LINE = "Source: the court's opinion in FTC v. Meta, pages 8 and 9, citing Meta's own figures.";
@@ -163,6 +167,7 @@ describe("the fixed words, in every state (SPEC §18.15, decisions after the ver
       expect(text.split(SEAT_LINE).length - 1, label).toBeLessThanOrEqual(1);
       for (const old of [
         "you'll get the next one",
+        "Leave your address to join the line.",
         "Open the link you were sent",
         `After ${T}, a body of its members holds it`,
         ", page 8, citing",

@@ -10,7 +10,12 @@
  *   "This is your own invite" with its note;
  * - signed out, no data controller named: "our.one isn't open for new
  *   accounts yet." and no form;
- * - signed out: an email field.
+ * - signed out: an email field, then "Free to join." and a link to the
+ *   promise on the front page.
+ *
+ * A signed-out visitor reads the front page's lede, word for word, as
+ * what our.one is (D-0016 §I). Accepting an invite stays a friend request
+ * and nothing more.
  *
  * The code is in the address, so the page is never indexed, and the
  * referrer policy (next.config.ts) keeps it from leaking to other sites.
@@ -21,6 +26,7 @@ import { getDb } from "@/core/db";
 import { INVITE_UNUSABLE, inviteForViewer } from "@/core/invites";
 import { Avatar } from "@/components/Avatar";
 import { LinkButton } from "@/components/Button";
+import { LEDE } from "@/components/public/lede";
 import { getViewer } from "@/web/viewer";
 import { AddFriendForm, JoinRequestForm } from "./InviteForms";
 
@@ -29,8 +35,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const PITCH =
-  "A home for friends and people you choose to follow. Their posts, in order, with an end when you're caught up.";
+/** What our.one is: the front page's lede (D-0016 §I). */
+const PITCH = LEDE;
 
 function Inviter({ displayName, handle }: { displayName: string; handle: string }) {
   return <Avatar name={displayName} handle={handle} size={80} />;
@@ -127,6 +133,12 @@ export default async function InvitePage({
         <>
           <p className="lede">{PITCH}</p>
           <JoinRequestForm code={code} />
+          <p className="muted small">
+            Free to join.{" "}
+            <Link href="/#front-runs" className="link">
+              The promise behind our.one
+            </Link>
+          </p>
           <p className="muted small">
             Already on our.one? <Link href="/signin" className="link">Sign in</Link>, then
             open this link again.

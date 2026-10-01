@@ -203,7 +203,9 @@ describe("the names outside the pages", () => {
     expect(maintainer.evidence?.map((e) => e.path)).toEqual(["decisions/D-0013.md"]);
     const text = textOf(html(createElement(PowerPage)));
     expect(text).toContain("The maintainer recorded Ctrl AI, Inc., the founder's company, is the maintainer and the data controller.");
-    expect(text).toContain("Maintained by its founder. Handed to its members at 100,000.");
+    expect(text).toContain(
+      "Maintained by its founder. Promised: when 100,000 people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.",
+    );
   });
 
   it("OURS stays where no person reads it: the cookie names and the log prefix", () => {

@@ -29,6 +29,12 @@
  * pointed at the fixed page; one part of a contrast finding, older than
  * this build, is "accepted:" with the reason. The closed tests follow the
  * fixed page.
+ *
+ * Under M-0014 (D-0016, SPEC §18.16) the closed tests follow the page as
+ * amended: the joining heading and step 1 read "Join our.one" and "Join",
+ * the close asks "Who would you like to hear from?", the seat line is
+ * shorter, and the picture comes before the card in the markup, so the
+ * phone is the first decoration a screen reader skips.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -412,19 +418,18 @@ describe("the signed card's small text in both themes (SPEC §9 tokens)", () => 
 describe("every state renders (FrontPage's props, as the route passes them)", () => {
   const COMMON = [
     "h1 Just your people. Then you're done.",
-    "h2 Get in",
+    "h2 Join our.one",
     "h2 Where did your friends go?",
     "h2 How it works",
-    "h3 Get in",
+    "h3 Join",
     "h3 Bring your people",
     "h3 Catch up, then close it",
     "h2 Keep your people. Change who runs it.",
     "h2 Fair questions",
   ];
-  const SEAT_LINE =
-    "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest.";
+  const SEAT_LINE = "No seats are open right now. Seats go to whoever has waited longest.";
 
-  it("closed: joining open and closed × the count null, 0, 1 and 1,284 × the seats null, 0 and 5 — one h1, headings in order, the Get in heading hidden only visually, the seat line only while joining with no seat open, the count only when read and only under 'Keep your people', the close only while joining, and no stray value", () => {
+  it("closed: joining open and closed × the count null, 0, 1 and 1,284 × the seats null, 0 and 5 — one h1, headings in order, the joining heading hidden only visually, the seat line only while joining with no seat open, the count only when read and only under 'Keep your people', the close only while joining, and no stray value", () => {
     for (const joining of [true, false]) {
       for (const count of [null, 0, 1, 1284]) {
         for (const seatsOpen of [null, 0, 5]) {
@@ -437,7 +442,7 @@ describe("every state renders (FrontPage's props, as the route passes them)", ()
           const all = textOf(html);
 
           const headings = findAll(tree, (e) => /^h[1-6]$/.test(e.tag)).map((h) => `${h.tag} ${text(h)}`);
-          expect(headings, label).toEqual(joining ? [...COMMON, "h2 Bring your people."] : COMMON);
+          expect(headings, label).toEqual(joining ? [...COMMON, "h2 Who would you like to hear from?"] : COMMON);
           const getIn = findAll(tree, (e) => e.attrs.id === "front-get-in")[0]!;
           expect([getIn.tag, getIn.attrs.class], label).toEqual(["h2", "visually-hidden"]);
 
@@ -477,8 +482,8 @@ describe("what a screen reader and a keyboard get", () => {
         roots.map((e) => `${e.tag}.${moduleClass(e).split(" ")[0]} ${text(e).slice(0, 24)}`),
         `joining: ${joining}`,
       ).toEqual([
-        "span.pledgeFace R",
         "div.phone our.one M Mara @mara · 2",
+        "span.pledgeFace R",
         "p.stat 7%",
         "div.mini Home Sponsored Suggested",
         "div.mini Home M Mara Made it to t",
@@ -517,7 +522,7 @@ describe("what a screen reader and a keyboard get", () => {
       }
     }
     const inPage = anchors.filter((a) => a.attrs.href?.startsWith("#")).map((a) => `${text(a)} → ${a.attrs.href}`);
-    expect(inPage).toEqual(["How that works → #front-runs", "Get in → #front-get-in"]);
+    expect(inPage).toEqual(["How that works → #front-runs", "Join our.one → #front-get-in"]);
   });
 
   it("closed: the focus ring is the global 2px --accent outline, nothing on the front page removes it, and it meets 3:1 against the page in both themes", () => {

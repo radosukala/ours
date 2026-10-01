@@ -2069,3 +2069,137 @@ fixed:
   from the agents' transcripts. Next time, commit a verification file
   before touching it.
 
+
+### 18.16 The reason, and the invitation (M-0014, 1 October 2026)
+
+**Authority:** [`M-0014`](../../mandates/M-0014.md), under
+[`D-0016`](../../decisions/D-0016.md), which amends D-0015 and D-0012 §D's
+status line. Where this section changes §18.1, §18.2 or §18.15, it governs.
+Copy is exact. [threshold], [invites], [maintainer] and [notice] are as in
+§18.15. What this section does not name stays as §18.15 has it.
+
+**1. The first screen.**
+
+1. **The headline and the title** are unchanged.
+2. **The lede:** "A social network for your friends and the people you
+   choose to follow. Their posts, newest first. No ads and no suggested
+   posts. When you've seen them all, it tells you, and you can get on with
+   your day." It is `LEDE`, in `src/components/public/lede.ts`, which the
+   invite page shows too (item 7). Only the front page's route imports
+   FrontPage.tsx, which holds listed handover sentences.
+3. **Joining** (h2 "Join our.one", visually hidden, id `front-get-in`).
+   - **The button** (`joinLabel`, in `src/components/public/join.ts`):
+     - "Join our.one" when a seat is open, or when the seats can't be read;
+     - "Join the waiting list" when no seat is open.
+   - **The seat line,** only when no seat is open: "No seats are open right
+     now. Seats go to whoever has waited longest."
+   - **Unchanged:** the free line, the privacy note, the answer after a
+     valid submission (D-0015 §H), and the two lines while joining is
+     closed.
+4. **The picture** (`FeedPreview`), unchanged.
+5. **The promise, signed:**
+   - "I'll never sell our.one. When [threshold] people have joined, I hand
+     over its domain, its data and the right to replace me to a
+     not-for-profit body of its members. Until then, I hold all three."
+   - "[maintainer], maintainer", and the link **How that works** →
+     `#front-runs`, as before.
+
+**The order.** One column below 900px, in the order above: the headline and
+the lede, joining, the picture, then the card. From 900px, two columns: the
+headline and lede, joining and the card on the left, in that order; the
+picture on the right, beside all three, with the left column centred
+against it.
+
+**2. Where did your friends go?** Unchanged; the 7% sentence still waits
+for D-0015 §E's `[CONFIRM]`.
+
+**3. How it works.** Step 1 is titled **Join**. Its text, and steps 2 and
+3, are unchanged.
+
+**4. Keep your people. Change who runs it.** (h2, id `front-runs`)
+
+- **First, why it exists:**
+  - in large bold type, "The people make the network.";
+  - then "You bring the friendships, the conversations and the reasons to
+    come back, so you should have a say in what it becomes. A simple feed
+    is where our.one starts. The bigger purpose is a network whose people
+    choose who looks after it."
+- **The story's 2025 line:** "WhatsApp announced ads in Status, in its
+  Updates tab.", linked to Meta's announcement (the sources table below).
+  The 2012 and 2014 lines and the bold line under them are unchanged.
+- **The paragraph about the maintainer** ends "…The rest can change only
+  with [notice] days' notice. In Settings, you can download your profile,
+  posts, replies and connections, and delete it all."
+- **The handover promise** is unchanged.
+- **The present state:** "Today I hold the domain, the data and the keys.
+  The members' body has not been formed, and the handover has not
+  happened." It replaces "Today these promises are held by that contract,
+  not yet by law."
+- **The count and the three links** are unchanged.
+
+**5. Fair questions.** Two answers change:
+
+| Question | Answer |
+|---|---|
+| "What if my friends aren't on it?" | "At first they won't be. Start with someone you already want to hear from: invite them, post something, and give them a reason to reply. You can keep your other apps while you try it together." |
+| "What if it never gets to [threshold]?" | "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can still download your profile, posts, replies and connections, and delete it all." |
+
+**6. The close** (h2 "Who would you like to hear from?", id `front-close`),
+only while the form is shown:
+
+- "Join, then send them an invite.";
+- a link that looks like a button, with the form's label, → `#front-get-in`.
+
+**7. The invite page** (`/i/[code]`, SPEC §8):
+
+- **The pitch,** for a signed-out visitor while joining is closed and while
+  it is open, is item 1.2's lede, word for word.
+- **While they can join,** under the form: "Free to join." and the link
+  **The promise behind our.one** → `/#front-runs`.
+- **Nothing else changes:** the heading naming the inviter, adding a
+  friend, the forms and their answers, and "Already on our.one? Sign in,
+  then open this link again."
+
+**8. The status line** (`STATUS_LINE`): "Maintained by its founder.
+Promised: when [threshold] people have joined, its domain, its data and the
+right to replace the maintainer go to a not-for-profit body of its members."
+
+- It replaces §18.1's "Maintained by its founder. Handed to its members at
+  [threshold]."
+- It stands where that one stood:
+  - every footer, on the public pages and in the app's right column;
+  - the lede of `/power`;
+  - `/costs` and `/rules`.
+
+**The claims scan (§18.7):**
+
+- **The card's handover sentence** is listed in source form and as
+  rendered: "When [threshold] people have joined, I hand over its domain,
+  its data and the right to replace me to a not-for-profit body of its
+  members." The old card sentence leaves the list.
+- **The status line** contains nothing the rules catch, so it leaves the
+  list. With it goes the `everywhere` field, which let a sentence through
+  on every page. "Handed to its members" is now caught wherever it is
+  written.
+- **The other listed sentences are unchanged.** None of the new sentences
+  above is caught by a rule, except the card's.
+
+**Sources.** The 2025 line's source changes:
+
+| Line | Source |
+|---|---|
+| 2025 | https://about.fb.com/news/2025/06/helping-you-find-more-channels-businesses-on-whatsapp/ (Meta, 16 June 2025) |
+
+The others are §18.15's.
+
+**Tests (§18.8).** `tests/front-page.test.ts` follows this section, with
+these as well:
+
+- the button's two labels;
+- the order of the first screen in the markup;
+- the status line;
+- the invite page's pitch and link.
+
+The tests that pinned §18.15's copy or the old status line follow this
+section too. Where a verification's test pinned a sentence that changed, it
+keeps what it proved and checks the new sentence.

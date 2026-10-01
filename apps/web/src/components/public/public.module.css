@@ -7,33 +7,35 @@
 
 /* ------------------------------------------------------------ front page */
 
-/* SPEC §18.15: the first screen, then four sections, each set off by a
-   rule. Every colour is a token from SPEC §9, plus the caught-up green the
-   live dot already used. */
+/* SPEC §18.15 and §18.16: the first screen, then four sections, each set
+   off by a rule. Every colour is a token from SPEC §9, plus the caught-up
+   green the live dot already used. */
 .front {
   display: grid;
   gap: 0;
 }
 
-/* The first screen: the words and one action, beside a picture of the
-   product. One column on a phone; two from 900px. */
+/* The first screen: the words and one action, a picture of the product,
+   and the promise. One column on a phone, in that order, so a visitor
+   sees the product before the promise (D-0016 §D). From 900px the picture
+   stands on the right, beside the other three. */
 .fold {
   display: grid;
-  gap: 44px;
+  gap: 24px;
   align-items: center;
   padding: 8px 0 64px;
 }
 
-.heroColumn {
-  display: grid;
-  gap: 24px;
-  min-width: 0;
-  max-width: 600px;
+/* On a phone, more room around the picture than between the words. */
+.fold > .preview {
+  margin: 20px 0;
 }
 
 .hero {
   display: grid;
   gap: 18px;
+  min-width: 0;
+  max-width: 600px;
 }
 
 /* One h1 on two lines, sized so each line fits its column. */
@@ -53,10 +55,36 @@
 }
 
 @media (min-width: 900px) {
+  /* The empty first and last rows take the picture's extra height, so the
+     words stay centred beside it. */
   .fold {
     grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 64px;
+    grid-template-rows: 1fr auto auto auto 1fr;
+    grid-template-areas:
+      ".      preview"
+      "hero   preview"
+      "getIn  preview"
+      "pledge preview"
+      ".      preview";
+    gap: 24px 64px;
     padding: 40px 0 80px;
+  }
+
+  .hero {
+    grid-area: hero;
+  }
+
+  .getIn {
+    grid-area: getIn;
+  }
+
+  .pledge {
+    grid-area: pledge;
+  }
+
+  .fold > .preview {
+    grid-area: preview;
+    margin: 0;
   }
 
   .frontHeadline {
@@ -71,6 +99,8 @@
 .getIn {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  max-width: 600px;
 }
 
 .seats {
@@ -89,6 +119,8 @@
 /* The promise, signed: the one card on the page. */
 .pledge {
   display: grid;
+  min-width: 0;
+  max-width: 600px;
   grid-template-columns: 44px minmax(0, 1fr);
   grid-template-areas:
     "face words"
@@ -462,6 +494,26 @@
 }
 
 /* Keep your people. Change who runs it. */
+/* Why our.one exists (D-0016 §E): the section's first words, before the
+   story and the promise. */
+.reason {
+  display: grid;
+  gap: 10px;
+  max-width: 40em;
+}
+
+.reasonLead {
+  font-size: clamp(22px, 3.4vw, 28px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.reasonText {
+  font-size: 19px;
+  line-height: 1.5;
+}
+
 .runs {
   display: grid;
   gap: 36px;
@@ -633,6 +685,12 @@
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.035em;
+}
+
+/* Close under its question. */
+.closeLine {
+  margin-top: -8px;
+  font-size: 19px;
 }
 
 /* --------------------------------------------------------------- contract */

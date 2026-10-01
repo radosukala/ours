@@ -238,7 +238,11 @@ describe("the contract is 'the terms you join under' (D-0012 §A; the front page
     expect(front()).toContain("Read the contract: it is the terms you join under.");
     // Since M-0013 (SPEC §18.15 item 4) the sentence before says which contract, so this one is shorter.
     expect(front()).toContain("I run it under a public contract, and that contract is the terms you join under.");
-    expect(front()).toContain("Today these promises are held by that contract, not yet by law.");
+    // Since D-0016 §G the present state is said in plain words, and the contract stays "the terms you join under" above.
+    expect(front()).toContain(
+      "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
+    );
+    expect(front()).not.toContain("not yet by law");
     expect(page(ContractPage)).toContain("these are my promises, written into the terms you join under.");
 
     const form = render(createElement(JoinForm));
@@ -559,18 +563,29 @@ describe("what the code holds, and the sources as linked", () => {
     expect(feed.items.map((item) => item.id)).toEqual([quiet.id, popular.id]);
   });
 
-  it("closed: each sourced line links to its SPEC §18.15 source, in order, and the 2012 line no longer claims '$0.99'", () => {
+  it("closed: each sourced line links to its SPEC §18.15 source, as §18.16 amends it, in order, and the 2012 line no longer claims '$0.99'", () => {
     // Since M-0013 the sources are §18.15's: the court's 7% finding, then
-    // WhatsApp in three dated lines (2012, 2014, 2025; §18.9's for those years).
+    // WhatsApp in three dated lines (2012, 2014, 2025; §18.9's for the first
+    // two). Since M-0014 the 2025 line links Meta's own announcement, which
+    // §18.16's table lists (D-0016 §F).
     const spec = readFileSync(`${WEB_ROOT}SPEC.md`, "utf8");
-    const table = spec.slice(spec.indexOf("### 18.15"));
-    const sources = [...table.matchAll(/\| (7%|20\d\d) \| (https:\/\/\S+) \|/g)].map((m) => m[2]);
+    const table = spec.slice(spec.indexOf("### 18.15"), spec.indexOf("### 18.16"));
+    const listed15 = [...table.matchAll(/\| (7%|20\d\d) \| (https:\/\/\S+) \|/g)].map((m) => [m[1]!, m[2]!] as const);
+    expect(listed15.map(([line]) => line)).toEqual(["7%", "2012", "2014", "2025"]);
+    const amended = spec.slice(spec.indexOf("### 18.16"));
+    const listed16 = [...amended.matchAll(/\| (7%|20\d\d) \| (https:\/\/\S+)/g)].map((m) => [m[1]!, m[2]!] as const);
+    expect(listed16).toEqual([
+      ["2025", "https://about.fb.com/news/2025/06/helping-you-find-more-channels-businesses-on-whatsapp/"],
+    ]);
+    const sources = listed15.map(([line, url]) => listed16.find(([l]) => l === line)?.[1] ?? url);
     expect(sources).toHaveLength(4);
     const older = spec.slice(spec.indexOf("### 18.9"), spec.indexOf("### 18.10"));
-    for (const year of ["2012", "2014", "2025"]) {
+    for (const year of ["2012", "2014"]) {
       const listed = older.match(new RegExp(`\\| ${year} \\| (https:\\/\\/\\S+) \\|`))?.[1];
       expect(sources, year).toContain(listed);
     }
+    // The 2025 line no longer links the news report §18.9 and §18.15 listed.
+    expect(sources).not.toContain("https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html");
     const html = render(createElement(FrontPage, { count: 0, joining: false, seatsOpen: null }));
     const sourced = html.slice(html.indexOf('id="front-friends"'), html.indexOf('id="front-questions"'));
     // Every outside link there is a source, except the open code, which is the evidence for "the code is public".

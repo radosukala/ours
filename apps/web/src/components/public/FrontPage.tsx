@@ -1,24 +1,28 @@
 /**
- * The front page (SPEC §18.15, M-0013, D-0015, which amends D-0012 §D). The
- * copy is the specification's, word for word, in the order a stranger
- * needs it: what our.one is and why they would want it, how it works, who
- * runs it and what holds each promise, then the questions.
+ * The front page (SPEC §18.15, as §18.16 amends it; M-0013 and M-0014;
+ * D-0015, as D-0016 amends it). The copy is the specification's, word for
+ * word, in the order a stranger needs it: what our.one is and why they
+ * would want it, how it works, why it exists and who runs it, what holds
+ * each promise, then the questions and whom they would bring.
  *
- * - The first screen: the headline, the lede, Get in, the maintainer's
- *   promise as a signed card, and a picture of a feed that ends.
+ * - The first screen: the headline, the lede, joining, a picture of a
+ *   feed that ends, and the maintainer's promise as a signed card. On a
+ *   phone they come in that order, so the product comes before the
+ *   promise; from 900px the picture stands beside the rest (D-0016 §D).
  * - Where did your friends go?: the court's 7% finding, linked to its
  *   source, and an illustration.
  * - How it works, in three steps.
- * - Keep your people. Change who runs it.: WhatsApp in three dated lines,
- *   the maintainer, the handover promise, what holds it today, and the
- *   count, shown as a rank (no progress bar).
- * - Fair questions, and a last way to get in.
+ * - Keep your people. Change who runs it.: why our.one exists, WhatsApp in
+ *   three dated lines, the maintainer, the handover promise, what holds it
+ *   today, and the count, shown as a rank (no progress bar).
+ * - Fair questions, and a last way to join: who would you like to hear
+ *   from?
  *
  * Every sentence about the handover is in this file, listed by exact text
- * in the claims scan's ALLOWLIST (src/core/claims.ts). The handover is
- * written as a promise with its conditions, never as something that has
- * happened, and the page says what happens if the threshold is never
- * reached.
+ * in D-0016, and in the claims scan's ALLOWLIST where its rules catch it
+ * (src/core/claims.ts). The handover is written as a promise with its
+ * conditions, never as something that has happened, and the page says
+ * what happens if the threshold is never reached.
  *
  * Presentational: src/app/(public)/page.tsx reads the count and the seats
  * on the server and passes them in, so every state can be rendered without
@@ -32,13 +36,15 @@ import { FeedContrast } from "./FeedContrast";
 import { FeedPreview } from "./FeedPreview";
 import { GetInForm } from "./GetInForm";
 import { formatCount, MAINTAINER, NOTICE_DAYS, THRESHOLD } from "./handover";
+import { JOIN_LABEL, joinLabel } from "./join";
+import { LEDE } from "./lede";
 import styles from "./public.module.css";
 
 export type FrontPageProps = {
   /** The public count (`memberCount`), or null when it could not be read. */
   count: number | null;
   /**
-   * Whether the Get in form is shown: a data controller is named and the
+   * Whether the join form is shown: a data controller is named and the
    * client-address header is decided (`accountCreationOpen()` and
    * `clientIpHeader()`, the same gates as joining).
    */
@@ -47,15 +53,17 @@ export type FrontPageProps = {
   seatsOpen: number | null;
 };
 
-/** The headline, one line each (D-0015 §A). */
+/** The headline, one line each (D-0015 §A; D-0016 keeps it). */
 export const HEADLINE = ["Just your people.", "Then you're done."] as const;
 
 /** The metadata title (SPEC §18.15). */
 export const FRONT_PAGE_TITLE = `our.one · ${HEADLINE[0]} ${HEADLINE[1]}`;
 
-/** The lede (D-0015 §B). */
-export const LEDE =
-  "our.one shows you posts from the people you choose, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can put your phone down.";
+/**
+ * The lede (D-0016 §A): what our.one is, then how it reads. It lives in
+ * lede.ts because the invite page shows it too, word for word (D-0016 §I).
+ */
+export { LEDE };
 
 /** The count, shown as the rank the next person would have. */
 export function countLine(n: number): string {
@@ -75,21 +83,24 @@ export const FREE_LINE = `Free to join. You get ${DEFAULT_INVITES} invites to br
 export const INVITE_CLOSED_LINE = "Have an invite? It can't be used until joining opens.";
 
 /**
- * The seat line (D-0015 §D): shown only when no seat is open. Opening seats
- * invites the longest-waiting addresses first (SPEC §18.4), so it promises
- * a place in line, not the next seat (the verification of M-0013).
+ * The seat line (D-0016 §B): shown only when no seat is open, above the
+ * button "Join the waiting list". Opening seats invites the
+ * longest-waiting addresses first (SPEC §18.4), so it promises a place in
+ * line, not the next seat (the verification of M-0013).
  */
 export function seatLine(open: number): string | null {
-  return open <= 0
-    ? "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest."
-    : null;
+  return open <= 0 ? "No seats are open right now. Seats go to whoever has waited longest." : null;
 }
 
 /** The court's finding (D-0015 §E), and its source: ECF No. 705, pages 8 and 9. */
 export const FRIENDS_SOURCE =
   "https://storage.courtlistener.com/recap/gov.uscourts.dcd.224921/gov.uscourts.dcd.224921.705.0.pdf";
 
-/** WhatsApp in three dated lines, each linked to its source (SPEC §18.15). */
+/**
+ * WhatsApp in three dated lines, each linked to its source (SPEC §18.15).
+ * The 2025 line is what Meta announced, linked to its own announcement:
+ * ads in Status, in the Updates tab, away from personal chats (D-0016 §F).
+ */
 const STORY: readonly { year: string; text: string; source: string }[] = [
   {
     year: "2012",
@@ -103,14 +114,14 @@ const STORY: readonly { year: string; text: string; source: string }[] = [
   },
   {
     year: "2025",
-    text: "Ads came to WhatsApp.",
-    source: "https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html",
+    text: "WhatsApp announced ads in Status, in its Updates tab.",
+    source: "https://about.fb.com/news/2025/06/helping-you-find-more-channels-businesses-on-whatsapp/",
   },
 ];
 
 const STEPS: readonly { title: string; text: string }[] = [
   {
-    title: "Get in",
+    title: "Join",
     text: "Your email, a name and a username. It's free, and you need to be 18 or older.",
   },
   {
@@ -123,6 +134,11 @@ const STEPS: readonly { title: string; text: string }[] = [
   },
 ];
 
+/** Why our.one exists (D-0016 §E), in the maintainer's voice: the section's first words. */
+export const REASON_LEAD = "The people make the network.";
+export const REASON =
+  "You bring the friendships, the conversations and the reasons to come back, so you should have a say in what it becomes. A simple feed is where our.one starts. The bigger purpose is a network whose people choose who looks after it.";
+
 const QUESTIONS: readonly { question: string; answer: string }[] = [
   {
     question: "Is it free?",
@@ -130,7 +146,8 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
   },
   {
     question: "What if my friends aren't on it?",
-    answer: `At first they won't be. That's what your ${DEFAULT_INVITES} invites are for.`,
+    answer:
+      "At first they won't be. Start with someone you already want to hear from: invite them, post something, and give them a reason to reply. You can keep your other apps while you try it together.",
   },
   {
     question: "Can I post photos?",
@@ -148,7 +165,7 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
   {
     question: `What if it never gets to ${THRESHOLD}?`,
     answer:
-      "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything.",
+      "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can still download your profile, posts, replies and connections, and delete it all.",
   },
   {
     question: "What's a maintainer?",
@@ -156,65 +173,71 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
   },
 ];
 
+/** The close (D-0016 §B), only while the form is shown. */
+export const CLOSE_HEADING = "Who would you like to hear from?";
+export const CLOSE_LINE = "Join, then send them an invite.";
+
 export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
   const seats = seatsOpen === null ? null : seatLine(seatsOpen);
+  const label = joining ? joinLabel(seatsOpen) : JOIN_LABEL;
   return (
     <article className={`${styles.front} front-wide`}>
-      {/* The first screen (SPEC §18.15 item 1): what it is, one action and
-          the promise, beside a picture of the product. */}
+      {/* The first screen (SPEC §18.16 item 1): what it is, one action, a
+          picture of the product, and the promise. In this order on a
+          phone; from 900px the picture stands on the right, beside the
+          other three. */}
       <div className={styles.fold}>
-        <div className={styles.heroColumn}>
-          <header className={styles.hero}>
-            <h1 className={`headline ${styles.frontHeadline}`}>
-              <span>{HEADLINE[0]}</span> <span>{HEADLINE[1]}</span>
-            </h1>
-            <p className={`lede ${styles.frontLede}`}>{LEDE}</p>
-          </header>
+        <header className={styles.hero}>
+          <h1 className={`headline ${styles.frontHeadline}`}>
+            <span>{HEADLINE[0]}</span> <span>{HEADLINE[1]}</span>
+          </h1>
+          <p className={`lede ${styles.frontLede}`}>{LEDE}</p>
+        </header>
 
-          <section className={styles.getIn} aria-labelledby="front-get-in">
-            <h2 id="front-get-in" className="visually-hidden">
-              Get in
-            </h2>
-            {joining ? (
-              <>
-                <GetInForm />
-                {seats ? <p className={styles.seats}>{seats}</p> : null}
-                <p className={styles.free}>{FREE_LINE}</p>
-                <p className="muted small">
-                  {"We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in "}
-                  <Link href="/privacy" className="link">
-                    Privacy
-                  </Link>
-                  .
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="notice">Joining opens soon.</p>
-                <p className={styles.haveInvite}>{INVITE_CLOSED_LINE}</p>
-              </>
-            )}
-          </section>
-
-          <figure className={styles.pledge}>
-            <span className={styles.pledgeFace} aria-hidden="true">
-              {MAINTAINER[0]}
-            </span>
-            <blockquote className={styles.pledgeWords}>
-              <p>
-                I&apos;ll never sell our.one. When {THRESHOLD}{" "}
-                people have joined, I hand it to a not-for-profit body of its members, and they can replace me.
+        <section className={styles.getIn} aria-labelledby="front-get-in">
+          <h2 id="front-get-in" className="visually-hidden">
+            {JOIN_LABEL}
+          </h2>
+          {joining ? (
+            <>
+              <GetInForm label={label} />
+              {seats ? <p className={styles.seats}>{seats}</p> : null}
+              <p className={styles.free}>{FREE_LINE}</p>
+              <p className="muted small">
+                {"We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in "}
+                <Link href="/privacy" className="link">
+                  Privacy
+                </Link>
+                .
               </p>
-            </blockquote>
-            <figcaption className={styles.pledgeBy}>
-              {MAINTAINER}, maintainer ·{" "}
-              <a href="#front-runs" className={styles.pledgeLink}>
-                How that works
-              </a>
-            </figcaption>
-          </figure>
-        </div>
+            </>
+          ) : (
+            <>
+              <p className="notice">Joining opens soon.</p>
+              <p className={styles.haveInvite}>{INVITE_CLOSED_LINE}</p>
+            </>
+          )}
+        </section>
+
         <FeedPreview />
+
+        <figure className={styles.pledge}>
+          <span className={styles.pledgeFace} aria-hidden="true">
+            {MAINTAINER[0]}
+          </span>
+          <blockquote className={styles.pledgeWords}>
+            <p>
+              I&apos;ll never sell our.one. When {THRESHOLD}{" "}
+              people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members. Until then, I hold all three.
+            </p>
+          </blockquote>
+          <figcaption className={styles.pledgeBy}>
+            {MAINTAINER}, maintainer ·{" "}
+            <a href="#front-runs" className={styles.pledgeLink}>
+              How that works
+            </a>
+          </figcaption>
+        </figure>
       </div>
 
       <section className={styles.frontSection} aria-labelledby="front-friends">
@@ -257,6 +280,10 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
 
       <section className={styles.frontSection} aria-labelledby="front-runs">
         <h2 id="front-runs">Keep your people. Change who runs it.</h2>
+        <div className={styles.reason}>
+          <p className={styles.reasonLead}>{REASON_LEAD}</p>
+          <p className={styles.reasonText}>{REASON}</p>
+        </div>
         <div className={styles.runs}>
           <div className={styles.runsStory}>
             <p className={styles.storyLabel}>WhatsApp, in three dates</p>
@@ -280,7 +307,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
           <div className={styles.runsPromise}>
             <p>
               our.one has a maintainer: me, {MAINTAINER}. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with {NOTICE_DAYS}{" "}
-              days&apos; notice, and you can always leave with everything.
+              days&apos; notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.
             </p>
             <p>
               When {THRESHOLD}{" "}
@@ -288,7 +315,9 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
               the right to replace whoever runs it to a not-for-profit body of its
               members, founded by their vote.
             </p>
-            <p>Today these promises are held by that contract, not yet by law.</p>
+            <p>
+              Today I hold the domain, the data and the keys. The members&apos; body has not been formed, and the handover has not happened.
+            </p>
             {count !== null ? <p className={styles.count}>{countLine(count)}</p> : null}
             <p className={styles.links}>
               <Link href="/contract" className={styles.more}>
@@ -319,9 +348,10 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
 
       {joining ? (
         <section className={styles.close} aria-labelledby="front-close">
-          <h2 id="front-close">Bring your people.</h2>
+          <h2 id="front-close">{CLOSE_HEADING}</h2>
+          <p className={styles.closeLine}>{CLOSE_LINE}</p>
           <a href="#front-get-in" className="btn btn--primary btn--large">
-            Get in
+            {label}
           </a>
         </section>
       ) : null}

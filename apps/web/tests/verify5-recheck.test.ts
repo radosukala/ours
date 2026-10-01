@@ -25,6 +25,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SiteFooter, STATUS_LINE } from "@/components/RightColumn";
 import { openEmailLink } from "@/core/accounts";
 import { ALLOWLIST, scanText } from "@/core/claims";
+import { HANDOVER_THRESHOLD } from "@/core/config";
 import type { Db } from "@/core/db";
 import {
   completeJoin,
@@ -420,16 +421,19 @@ describe("the claims scan's new rules (SPEC §18.12 items 24 and 25)", () => {
     const footer = textOf(renderToStaticMarkup(createElement(SiteFooter)));
     const aboutTheHandover = /\bhand(?:s|ed|ing)?\b|\bhandover\b|\bg(?:ive|ives|iving|iven|ave) it away\b/i;
     const sentences = footer.split(/(?<=[.?!])\s+/).filter((s) => aboutTheHandover.test(s));
-    expect(STATUS_LINE).toContain(sentences[0]!);
-    // The scan passes the file that holds it...
+    // Since D-0016 §J the status line says "Promised: … go to", with no word
+    // the rules catch, so the footer has no sentence for ALLOWLIST to list...
+    expect(footer).toContain(STATUS_LINE);
+    expect(sentences).toEqual([]);
+    // ...the scan passes the file that holds it with nothing listed for it...
     const source = readFileSync(join(WEB_ROOT, FOOTER_FILE), "utf8");
     expect(scanText(source, FOOTER_FILE)).toEqual([]);
-    // ...though it is not listed.
-    const listed = new Set(ALLOWLIST.map((entry) => entry.sentence));
-    expect(
-      sentences.filter((sentence) => !listed.has(sentence)),
-      "a sentence about the handover, in every public page's footer, that ALLOWLIST does not list",
-    ).toEqual([]);
+    expect(ALLOWLIST.filter((entry) => entry.file === FOOTER_FILE)).toEqual([]);
+    // ...and the sentence about the handover it is, is listed by exact text in the decision.
+    const d16 = readFileSync(join(WEB_ROOT, "../../decisions/D-0016.md"), "utf8").replace(/\s+/g, " ");
+    expect(d16).toContain(
+      `*"${STATUS_LINE.replace(HANDOVER_THRESHOLD.toLocaleString("en-US"), "[threshold]")}"*`,
+    );
   });
 
   it("fixed (SPEC §18.12, after the re-check): markup and characters a reader does not see still split a claim past the new rules: a <br> with an attribute, a JSX fragment, and U+034F, which renders as nothing (LOW)", () => {
@@ -615,11 +619,11 @@ describe("closed doors: a seat link opened by an account holder", () => {
 describe("closed doors: the claims scan's handover list and new markup rules", () => {
   it("closed: each of the ten listed handover sentences passes only in its own file, and the new markup rules read <wbr>, <br/>, &zwj;, &lrm;, &minus; and bidi isolates as a reader does", () => {
     const elsewhere = "src/components/RightColumn.tsx";
-    // The status line is listed too, and let through everywhere (after the re-check); the ten are the rest.
     // Nine until M-0013: the old headline (twice) and "Why not hand it over now?" left the front page, and
     // the signed promise (twice) came (SPEC §18.15); the answer to "What's a maintainer?" (twice) came
-    // after M-0013's verification.
-    const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence) && !entry.everywhere);
+    // after M-0013's verification. Since D-0016 §K the status line is not listed at all, nothing is let
+    // through everywhere, and the signed promise (twice) is in its new words.
+    const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence));
     expect(handover).toHaveLength(10);
     for (const entry of handover) {
       expect(scanText(entry.sentence, entry.file), entry.sentence).toEqual([]);

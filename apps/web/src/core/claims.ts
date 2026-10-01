@@ -129,7 +129,8 @@ export const PROHIBITED: readonly Prohibited[] = [
   {
     pattern:
       /\b(?:has|have|had) been handed\b|\bwas handed\b|\bhanded (?:over|to)\b|\bhandover (?:has|had) (?:happened|taken place|been)\b|\bhandover (?:happened|took place)\b|\bhandover (?:is|was) (?:done|complete|completed|finished)\b|\b(?:gave|given) (?:it )?away\b|\bin (?:its|the) members(?:'|’)? hands\b/i,
-    reason: "D-0012: the handover has not happened; never write it as done. The status line is the one listed exception.",
+    reason:
+      "D-0012: the handover has not happened; never write it as done. Only a listed denial, such as \"Then nothing is handed over.\", passes, on its own page; since D-0016 §K no sentence passes on every page.",
   },
   {
     pattern: /\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\b/i,
@@ -145,11 +146,12 @@ export const PROHIBITED: readonly Prohibited[] = [
     reason: "D-0012: a members' body gives control, not ownership; \"it's ours\" was dropped.",
   },
   {
-    // "hand it to" since M-0013: the front page's signed promise hands
+    // "hand it to" since M-0013: the front page's signed promise handed
     // our.one to a body of its members, and the rule could not see it
     // (the cold read of 29 September 2026). The verification of M-0013
     // added the past tense and our.one by name: "handed it to", "hand
-    // our.one to", "handed our.one over to".
+    // our.one to", "handed our.one over to". Since D-0016 §C the card
+    // hands over three named things, which the first form catches.
     pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bhand(?:s|ed|ing)? (?:it|our\.one) (?:over )?to\b|\bgives? it away\b/i,
     reason:
       "M-0011: every sentence about the handover is listed by exact text in ALLOWLIST; any other is refused until it is reviewed and listed.",
@@ -170,17 +172,15 @@ const T = HANDOVER_THRESHOLD.toLocaleString("en-US");
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
 const CONTRACT_PAGE = "src/app/(public)/contract/page.tsx";
 const HANDOVER_REASON =
-  "D-0012 §B and §D, D-0015 §C, M-0011 and M-0013: a sentence about the handover, reviewed and listed by exact text (source and rendered form).";
+  "D-0012 §B and §D, D-0015 §C, D-0016 §C and §K, M-0011, M-0013 and M-0014: a sentence about the handover, reviewed and listed by exact text (source and rendered form).";
 
 export type AllowEntry = {
-  /** The file, relative to apps/web, with forward slashes. */
-  file: string;
   /**
-   * Let the sentence through in every file and page, not only its own: for
-   * the status line alone, which the footer of every page carries (the
-   * re-check). Its file is still the one that holds it.
+   * The file, relative to apps/web, with forward slashes. The sentence is
+   * let through there and nowhere else: since D-0016 §K no sentence passes
+   * on every page (the status line no longer needs to).
    */
-  everywhere?: true;
+  file: string;
   /** One exact sentence in that file. Only this sentence is let through. */
   sentence: string;
   reason: string;
@@ -191,9 +191,10 @@ export const ALLOWLIST: readonly AllowEntry[] = [
   // through). Each is listed twice: as the source writes it, and as a
   // person reads it with the threshold filled in.
   ...[
-    // The signed promise on the first screen (D-0015 §C, §J).
-    "When {THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.",
-    `When ${T} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`,
+    // The signed promise on the first screen (D-0016 §C): the three things
+    // the contract hands over, and to whom.
+    "When {THRESHOLD} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.",
+    `When ${T} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.`,
     "When {THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.",
     `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
     "Then nothing is handed over.",
@@ -201,14 +202,6 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     "After ${THRESHOLD}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.",
     `After ${T}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
   ].map((sentence) => ({ file: FRONT_FILE, sentence, reason: HANDOVER_REASON })),
-  // The status line (D-0012 §D), in every page's footer: listed by exact
-  // text, and let through everywhere.
-  ...[`Handed to its members at \${THRESHOLD}.`, `Handed to its members at ${T}.`].map((sentence) => ({
-    file: "src/components/RightColumn.tsx",
-    sentence,
-    reason: "D-0012 §D: the status line, about the handover at the threshold; in every page's footer.",
-    everywhere: true as const,
-  })),
   ...[
     "At ${THRESHOLD} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.",
     `At ${T} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.`,
@@ -500,7 +493,7 @@ export function normalizeForScan(raw: string, options: NormalizeOptions = {}): N
 function applyAllowlist(text: string, file: string | null): string {
   let out = text;
   for (const entry of ALLOWLIST) {
-    if (entry.file !== file && !entry.everywhere) continue;
+    if (entry.file !== file) continue;
     const sentence = normalizeForScan(entry.sentence).text;
     out = out.split(sentence).join(" ".repeat(sentence.length));
   }

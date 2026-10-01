@@ -191,10 +191,10 @@ function handoverTold(text: string): string[] {
   for (const m of text.matchAll(/[^.?!\n]*\b(?:gave (?:it )?away|(?:is|are) now (?:held|run|owned)|now belongs)\b[^.?!\n]*/gi)) {
     told.push(m[0].trim());
   }
-  // "handed" only in the status line's promise and in "nothing is handed over".
+  // "handed" only in "nothing is handed over". Since D-0016 §J the status
+  // line says "Promised: … go to", so it has no exception here.
   for (const m of text.matchAll(/[^.?!\n]*\bhanded\b[^.?!\n]*[.?!]?/gi)) {
     const sentence = m[0].trim();
-    if (sentence === `Handed to its members at ${THRESHOLD}.`) continue;
     if (/^(?:Then nothing|Nothing) is handed over\.$/.test(sentence)) continue;
     told.push(sentence);
   }
@@ -211,11 +211,14 @@ describe("no page says the handover has happened (D-0012)", () => {
       "The data has been transferred.",
       "Handed to its members.",
       "It was handed over.",
+      // The old status line (D-0012 §D), which D-0016 §J replaced: it read as done.
+      `Maintained by its founder. Handed to its members at ${THRESHOLD}.`,
     ]) {
       expect(handoverTold(claim), claim).not.toEqual([]);
     }
     for (const promise of [
-      `Maintained by its founder. Handed to its members at ${THRESHOLD}.`,
+      STATUS_LINE,
+      "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
       "Nothing is handed over.",
       "Then nothing is handed over.",
       `When ${THRESHOLD} people have joined, I hand over our.one's domain.`,
@@ -243,8 +246,10 @@ describe("no page says the handover has happened (D-0012)", () => {
       expect(text.length, page).toBeGreaterThan(0);
       expect(handoverTold(text), page).toEqual([]);
     }
-    // The status line states the handover with its condition, wherever it is shown.
-    expect(STATUS_LINE).toBe(`Maintained by its founder. Handed to its members at ${THRESHOLD}.`);
+    // The status line states the handover as a promise, with its condition, wherever it is shown (D-0016 §J).
+    expect(STATUS_LINE).toBe(
+      `Maintained by its founder. Promised: when ${THRESHOLD} people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`,
+    );
   });
 
   it("the front page and /contract state the handover with its conditions, and what happens if the threshold is never reached", () => {
@@ -253,7 +258,11 @@ describe("no page says the handover has happened (D-0012)", () => {
       `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
     );
     expect(front).toContain(
-      `What if it never gets to ${THRESHOLD}? Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything.`,
+      `What if it never gets to ${THRESHOLD}? Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can still download your profile, posts, replies and connections, and delete it all.`,
+    );
+    // What holds it today, in plain words (D-0016 §G).
+    expect(front).toContain(
+      "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
     );
     const text = textOf(contract());
     expect(text).toContain(`At ${THRESHOLD} members, I hand over the domain, the data and the right to replace the maintainer`);

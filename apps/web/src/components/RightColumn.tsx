@@ -12,10 +12,13 @@ export const OPEN_CODE_URL =
   "https://github.com/radosukala/ours/tree/main/apps/web";
 
 /**
- * The status line (D-0012 §D, SPEC §18.1), wherever control is described.
- * The number is the handover threshold's one constant.
+ * The status line (D-0016 §J, which replaces D-0012 §D's; SPEC §18.16),
+ * wherever control is described: every footer, /power, /costs and /rules.
+ * It names the three things the contract promises and who receives them,
+ * and says it is a promise; nothing in it reads as done, so the claims
+ * scan has nothing to let through. The number is the handover threshold's one constant.
  */
-export const STATUS_LINE = `Maintained by its founder. Handed to its members at ${THRESHOLD}.`;
+export const STATUS_LINE = `Maintained by its founder. Promised: when ${THRESHOLD} people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`;
 
 export function SiteFooter({ className }: { className?: string }) {
   return (

@@ -614,14 +614,18 @@ describe("the running version", () => {
     expect(frozen, "public pages whose footer version is fixed when the app is built").toEqual([]);
   });
 
-  it("closed: the status line is D-0012 §D's, with the threshold from its constant, on /power, /rules and /costs, and in every public footer", () => {
-    // D-0012 §D replaces D-0011 §B's status line (SPEC §18.1).
-    const d12 = readRepo("decisions/D-0012.md").replace(/\s+/g, " ");
-    expect(d12).toContain('*"Maintained by its founder. Handed to its members at [threshold]."*');
-    expect(STATUS_LINE).toBe(
-      `Maintained by its founder. Handed to its members at ${HANDOVER_THRESHOLD.toLocaleString("en-US")}.`,
+  it("closed: the status line is D-0016 §J's, with the threshold from its constant, on /power, /rules and /costs, and in every public footer", () => {
+    // D-0016 §J replaces D-0012 §D's status line, which replaced D-0011 §B's (SPEC §18.16).
+    const d16 = readRepo("decisions/D-0016.md").replace(/\s+/g, " ");
+    expect(d16).toContain(
+      '*"Maintained by its founder. Promised: when [threshold] people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members."*',
     );
-    expect(STATUS_LINE).toBe("Maintained by its founder. Handed to its members at 100,000.");
+    expect(STATUS_LINE).toBe(
+      `Maintained by its founder. Promised: when ${HANDOVER_THRESHOLD.toLocaleString("en-US")} people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`,
+    );
+    expect(STATUS_LINE).toBe(
+      "Maintained by its founder. Promised: when 100,000 people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.",
+    );
     for (const f of ["src/app/(public)/power/page.tsx", "src/app/(public)/rules/page.tsx", "src/app/(public)/costs/page.tsx"]) {
       expect(read(f), f).toContain("{STATUS_LINE}");
     }
@@ -637,9 +641,10 @@ describe("the running version", () => {
 /* ====================================================================== */
 
 describe("the landing page and product words", () => {
-  it("closed: the front page's headline is D-0015 §A's, word for word; the lede is SPEC §18.15's", () => {
+  it("closed: the front page's headline is D-0015 §A's, word for word, which D-0016 keeps; the lede is D-0016 §A's and SPEC §18.16's", () => {
     // D-0015 amends D-0012 §D (which replaced D-0011 §B's working copy);
-    // SPEC §18.15 is the page. The old headline is gone from it.
+    // D-0016 amends D-0015 and keeps its headline. SPEC §18.15, as §18.16
+    // amends it, is the page. The old headline is gone from it.
     const d15 = readRepo("decisions/D-0015.md").replace(/\s+/g, " ");
     expect(d15).toContain(`**"Just your people. Then you're done."**`);
     const headline = "Just your people. Then you're done.";
@@ -650,8 +655,11 @@ describe("the landing page and product words", () => {
     expect(textOf(html)).not.toContain("I give it away");
     const spec = read("SPEC.md").replace(/\s+/g, " ");
     const lede =
-      "our.one shows you posts from the people you choose, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can put your phone down.";
+      "A social network for your friends and the people you choose to follow. Their posts, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can get on with your day.";
     expect(spec).toContain(`**The lede:** "${lede}"`);
+    const d16 = readRepo("decisions/D-0016.md").replace(/\s+/g, " ");
+    expect(d16).toContain(`*"${lede}"*`);
+    expect(d16).toContain(`"Just your people. Then you're done." stays, with its title.`);
     expect(textOf(html)).toContain(lede);
   });
 

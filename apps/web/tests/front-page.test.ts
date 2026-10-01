@@ -1,16 +1,18 @@
 /**
- * The front page (SPEC §18.15, M-0013, D-0015; after §18.2 and §18.8 of
- * M-0011):
+ * The front page (SPEC §18.15 as §18.16 amends it; M-0013 and M-0014;
+ * D-0015 as D-0016 amends it; after §18.2 and §18.8 of M-0011):
  *
  * - the headline and the lede, word for word, and the title;
  * - the count's three forms, in the section on who runs our.one, and no
  *   count at all when it can't be read;
  * - "Joining opens soon." while joining is closed, with the way in for an
  *   invite;
- * - the form, the seat line only when no seat is open, and the unchanged
- *   answer, while it is open;
- * - the signed promise on the first screen;
+ * - the form, whose button says "Join our.one" or "Join the waiting list",
+ *   the seat line only when no seat is open, and the unchanged answer,
+ *   while it is open;
+ * - the signed promise on the first screen, after the picture on a phone;
  * - the rest of the copy, word for word, with every source;
+ * - the status line;
  * - the two pictures, which say what they are.
  *
  * Denial paths first. The presentational FrontPage is rendered with each
@@ -51,15 +53,21 @@ import { CaughtUpMarker, EndMarker } from "@/components/Marker";
 import { FeedContrast } from "@/components/public/FeedContrast";
 import { FeedPreview, PREVIEW_LAST_VISIT, PREVIEW_NOW } from "@/components/public/FeedPreview";
 import {
+  CLOSE_HEADING,
+  CLOSE_LINE,
   countLine,
   FRIENDS_SOURCE,
   FRONT_PAGE_TITLE,
   FrontPage,
   type FrontPageProps,
+  LEDE,
+  REASON,
+  REASON_LEAD,
   seatLine,
 } from "@/components/public/FrontPage";
 import { CHECK_YOUR_EMAIL, GetInFormView } from "@/components/public/GetInForm";
-import { OPEN_CODE_URL } from "@/components/RightColumn";
+import { JOIN_LABEL, joinLabel, WAITING_LIST_LABEL } from "@/components/public/join";
+import { OPEN_CODE_URL, SiteFooter, STATUS_LINE } from "@/components/RightColumn";
 import { scanText } from "@/core/claims";
 import { DEFAULT_INVITES, HANDOVER_THRESHOLD } from "@/core/config";
 
@@ -139,7 +147,9 @@ describe("the count", () => {
     expect(text).not.toMatch(/people are in|You'd be #/);
     expect(text).not.toMatch(/seats? open/);
     expect(seats.memberCount).not.toHaveBeenCalled();
-    expect(text).toContain("Get in");
+    // The seats can't be read either, so a seat may be open: "Join our.one".
+    expect(text).toContain("Join our.one");
+    expect(text).not.toContain(WAITING_LIST_LABEL);
   });
 
   it("is left out when the count is not a count", async () => {
@@ -209,10 +219,11 @@ describe("the headline and the title", () => {
     expect(metadata.title).toEqual({ absolute: expected });
   });
 
-  it("the lede is SPEC §18.15's, and comes before Get in", () => {
+  it("the lede is SPEC §18.16's: what our.one is, first, and it comes before the form (D-0016 §A)", () => {
     const text = textOf(render());
     const lede =
-      "our.one shows you posts from the people you choose, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can put your phone down.";
+      "A social network for your friends and the people you choose to follow. Their posts, newest first. No ads and no suggested posts. When you've seen them all, it tells you, and you can get on with your day.";
+    expect(LEDE).toBe(lede);
     expect(text).toContain(lede);
     expect(text.indexOf(lede)).toBeLessThan(text.indexOf("Your email"));
   });
@@ -223,9 +234,32 @@ describe("the headline and the title", () => {
       expect(text, gone).not.toContain(gone);
     }
   });
+
+  it("the lines D-0016 replaced are gone, in every state", () => {
+    for (const props of [{}, { joining: false }, { seatsOpen: 0 }, { seatsOpen: null, count: null }]) {
+      const text = textOf(render(props));
+      for (const gone of [
+        "our.one shows you posts",
+        "put your phone down",
+        "Get in",
+        "Bring your people.",
+        "No seats open right now.",
+        "Leave your address",
+        "I hand it to",
+        "and they can replace me",
+        "Ads came to WhatsApp.",
+        "leave with everything",
+        "not yet by law",
+        `That's what your ${DEFAULT_INVITES} invites are for.`,
+        "Handed to its members",
+      ]) {
+        expect(text, `${JSON.stringify(props)}: ${gone}`).not.toContain(gone);
+      }
+    }
+  });
 });
 
-describe("Get in", () => {
+describe("Joining", () => {
   it("reads 'Joining opens soon.' with no form while no data controller is named, never asks for the seats, and says how to use an invite", async () => {
     vi.stubEnv("DATA_CONTROLLER", "");
     vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
@@ -246,9 +280,12 @@ describe("Get in", () => {
     expect(getIn).toContain("Have an invite? It can't be used until joining opens.");
     expect(getIn).not.toContain("will work");
     expect(getIn).not.toContain("Open the link you were sent");
-    // No last call to get in while nobody can.
+    // No last call to join while nobody can.
     expect(html).not.toContain('id="front-close"');
-    expect(textOf(html)).not.toContain("Bring your people.");
+    expect(textOf(html)).not.toContain(CLOSE_HEADING);
+    // No join button or link anywhere: the hidden heading names the part of the page, nothing more.
+    expect(html).not.toMatch(/class="btn btn--primary/);
+    expect(textOf(html)).not.toContain(WAITING_LIST_LABEL);
   });
 
   it("reads 'Joining opens soon.' while a controller is named in half (a name with no address)", async () => {
@@ -284,7 +321,7 @@ describe("Get in", () => {
     for (const attribute of ['id="field-email"', 'name="email"', 'type="email"', 'autoComplete="email"', "required"]) {
       expect(input[0], attribute).toContain(attribute);
     }
-    expect(html).toMatch(/<button type="submit"[^>]*>Get in<\/button>/);
+    expect(html).toMatch(/<button type="submit"[^>]*>Join our\.one<\/button>/);
     expect(text).not.toMatch(/\d+ seats? open|No seats open/);
     expect(text).toContain(`Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`);
     expect(DEFAULT_INVITES).toBe(10);
@@ -296,26 +333,61 @@ describe("Get in", () => {
     expect(html).toMatch(/<a [^>]*href="\/privacy"[^>]*>Privacy<\/a>/);
     expect(text).not.toContain("Have an invite?");
     // The form comes first, then the invites, then the note.
-    expect(text.indexOf("Get in Your email")).toBeLessThan(text.indexOf("Free to join."));
+    expect(text.indexOf("Join our.one Your email")).toBe(0);
+    expect(text.indexOf("Your email")).toBeLessThan(text.indexOf("Free to join."));
     expect(text.indexOf("Free to join.")).toBeLessThan(text.indexOf("We'll email you the link."));
-    // And a last way in at the end of the page, to the same form.
+    // And a last way in at the end of the page, to the same form, asking whom they would bring.
     const close = section(route, "front-close");
-    expect(textOf(close)).toBe("Bring your people. Get in");
-    expect(close).toMatch(/<a href="#front-get-in" class="btn btn--primary btn--large">Get in<\/a>/);
+    expect(textOf(close)).toBe("Who would you like to hear from? Join, then send them an invite. Join our.one");
+    expect(close).toMatch(/<a href="#front-get-in" class="btn btn--primary btn--large">Join our\.one<\/a>/);
+    expect([CLOSE_HEADING, CLOSE_LINE]).toEqual(["Who would you like to hear from?", "Join, then send them an invite."]);
   });
 
-  it("the seat line: shown only when no seat is open, and it promises a place in line, not the next seat (D-0015 §D; the verification of M-0013)", () => {
-    const none =
-      "No seats open right now. Leave your address to join the line. Seats go to whoever has waited longest.";
+  it("the button says what the form will do: 'Join our.one' with a seat open or the seats unread, 'Join the waiting list' with none (D-0016 §B)", async () => {
+    expect([JOIN_LABEL, WAITING_LIST_LABEL]).toEqual(["Join our.one", "Join the waiting list"]);
+    expect(joinLabel(null)).toBe(JOIN_LABEL);
+    for (const open of [1, 2, 12, 1000]) expect(joinLabel(open), String(open)).toBe(JOIN_LABEL);
+    for (const open of [0, -1]) expect(joinLabel(open), String(open)).toBe(WAITING_LIST_LABEL);
+    // Through the route, as the database answers.
+    const cases: [() => void, string][] = [
+      [() => seats.seatState.mockResolvedValue({ open: 12, waiting: 0 }), JOIN_LABEL],
+      [() => seats.seatState.mockResolvedValue({ open: 0, waiting: 4 }), WAITING_LIST_LABEL],
+      [() => seats.seatState.mockRejectedValue(new Error("FICTIONAL: the database is down")), JOIN_LABEL],
+    ];
+    for (const [arrange, label] of cases) {
+      seats.memberCount.mockResolvedValue(3);
+      arrange();
+      const route = await renderRoute();
+      const button = section(route, "front-get-in").match(/<button type="submit"[^>]*>([^<]*)<\/button>/)?.[1];
+      expect(button, label).toBe(label);
+      // The close's link says the same.
+      expect(section(route, "front-close"), label).toContain(`class="btn btn--primary btn--large">${label}</a>`);
+      // The hidden heading names the part of the page, whatever the button says.
+      expect(section(route, "front-get-in")).toMatch(/<h2 id="front-get-in" class="visually-hidden">Join our\.one<\/h2>/);
+    }
+    // The form on its own, with no label given, says "Join our.one".
+    const view = renderToStaticMarkup(createElement(GetInFormView, { state: null, action: () => {}, pending: false }));
+    expect(view).toMatch(/<button type="submit"[^>]*>Join our\.one<\/button>/);
+    const waiting = renderToStaticMarkup(
+      createElement(GetInFormView, { state: null, action: () => {}, pending: false, label: WAITING_LIST_LABEL }),
+    );
+    expect(waiting).toMatch(/<button type="submit"[^>]*>Join the waiting list<\/button>/);
+  });
+
+  it("the seat line: shown only when no seat is open, and it promises a place in line, not the next seat (D-0016 §B; the verification of M-0013)", () => {
+    const none = "No seats are open right now. Seats go to whoever has waited longest.";
     expect(seatLine(0)).toBe(none);
     expect(seatLine(-1)).toBe(none);
     for (const open of [1, 2, 12, 1000]) {
       expect(seatLine(open), String(open)).toBeNull();
-      expect(textOf(render({ seatsOpen: open })), String(open)).not.toMatch(/seats? open|No seats/);
+      expect(textOf(render({ seatsOpen: open })), String(open)).not.toMatch(/seats? (?:are )?open|No seats|waiting list/);
     }
     const text = textOf(render({ seatsOpen: 0 }));
     expect(text).toContain(none);
-    expect(text.indexOf("Get in Your email")).toBeLessThan(text.indexOf(none));
+    expect(text).not.toMatch(/next (?:seat|one)/);
+    // The form and its button, then the line, then the invites.
+    expect(text.indexOf("Your email Join the waiting list")).toBeGreaterThan(0);
+    expect(text.indexOf("Join the waiting list")).toBeLessThan(text.indexOf(none));
     expect(text.indexOf(none)).toBeLessThan(text.indexOf("Free to join."));
   });
 
@@ -324,7 +396,7 @@ describe("Get in", () => {
     seats.seatState.mockRejectedValue(new Error("FICTIONAL: the database is down"));
     const html = section(await renderRoute(), "front-get-in");
     expect(html).toContain("<form");
-    expect(textOf(html)).not.toMatch(/seats? open|No seats/);
+    expect(textOf(html)).not.toMatch(/seats? (?:are )?open|No seats|waiting list/);
     expect(textOf(html)).toContain("We'll email you the link.");
   });
 
@@ -362,43 +434,76 @@ describe("Get in", () => {
   });
 });
 
-describe("the promise, signed, on the first screen (D-0015 §C)", () => {
-  it("is a card after Get in: the promise in the maintainer's words, his name and role, and a link to how it works", () => {
+/** The signed card: the figure that holds the blockquote. */
+function card(first: string): string {
+  const start = first.lastIndexOf("<figure", first.indexOf("<blockquote"));
+  return first.slice(start, first.indexOf("</figure>", start) + 9);
+}
+
+describe("the promise, signed, on the first screen (D-0016 §C)", () => {
+  it("is a card after joining and after the picture: the promise in the maintainer's words, his name and role, and a link to how it works", () => {
     for (const joining of [true, false]) {
       const html = render({ joining });
       const first = firstScreen(html);
-      const card = first.slice(first.indexOf("<figure"), first.indexOf("</figure>") + 9);
-      expect(textOf(card)).toBe(
-        `R I'll never sell our.one. When ${THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me. Rado, maintainer · How that works`,
+      const signed = card(first);
+      expect(textOf(signed)).toBe(
+        `R I'll never sell our.one. When ${THRESHOLD} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members. Until then, I hold all three. Rado, maintainer · How that works`,
       );
-      expect(card).toMatch(/<blockquote[^>]*><p>I&#x27;ll never sell our\.one\./);
-      expect(card).toMatch(/<figcaption[^>]*>Rado, maintainer · <a href="#front-runs" class="[^"]*">How that works<\/a><\/figcaption>/);
+      expect(signed).toMatch(/<blockquote[^>]*><p>I&#x27;ll never sell our\.one\./);
+      expect(signed).toMatch(/<figcaption[^>]*>Rado, maintainer · <a href="#front-runs" class="[^"]*">How that works<\/a><\/figcaption>/);
       // The initial stands for a face and is not read out.
-      expect(card).toMatch(/<span class="[^"]*" aria-hidden="true">R<\/span>/);
-      expect(first.indexOf('id="front-get-in"')).toBeLessThan(first.indexOf("<blockquote"));
+      expect(signed).toMatch(/<span class="[^"]*" aria-hidden="true">R<\/span>/);
+      // On a phone the first screen reads in markup order: the words, joining, the picture, the card (D-0016 §D).
+      const order = [
+        first.indexOf("<h1"),
+        first.indexOf('id="front-get-in"'),
+        first.indexOf('aria-label="What our.one looks like"'),
+        first.indexOf("<blockquote"),
+      ];
+      expect(order.every((at) => at >= 0), JSON.stringify(order)).toBe(true);
+      expect([...order].sort((a, b) => a - b)).toEqual(order);
     }
   });
 
-  it("names the body the contract names, not the members as owners (D-0015 §J)", () => {
+  it("names the three things the contract hands over, the body it names, and who holds them until then (D-0016 §C)", () => {
     const text = textOf(render());
-    expect(text).not.toContain("I hand it to its members");
-    expect(text).toContain("I hand it to a not-for-profit body of its members");
+    expect(text).not.toContain("I hand it to");
+    expect(text).toContain("I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.");
+    expect(text).toContain("Until then, I hold all three.");
   });
 
-  it("the claims scan lists it by exact text, and its widened rule catches 'hand it to' anywhere else", () => {
+  it("the claims scan lists it by exact text, and its rule catches the same words, or 'hand it to', anywhere else", () => {
     const file = "src/components/public/FrontPage.tsx";
-    const sentence = `When ${THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`;
+    const sentence = `When ${THRESHOLD} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.`;
     expect(scanText(sentence, file)).toEqual([]);
     expect(scanText(sentence, "src/app/(public)/page.tsx").length).toBeGreaterThan(0);
     for (const claim of [
       "I hand it to the members.",
       "At 100,000 members, he hands it to them.",
       "Handing it to the community is the plan.",
-      `When ${THRESHOLD} people have joined, I hand it to its members, and they can replace me.`,
+      `When ${THRESHOLD} people have joined, I hand it to a not-for-profit body of its members, and they can replace me.`,
+      `When ${THRESHOLD} people have joined, I hand over its domain to its members.`,
     ]) {
       expect(scanText(claim, file).length, claim).toBeGreaterThan(0);
     }
     expect(scanText(readFileSync(join(WEB_ROOT, file), "utf8"), file)).toEqual([]);
+  });
+
+  it("from 900px the card stays under joining, beside the picture: the stylesheet's grid areas (D-0016 §D)", () => {
+    const css = readFileSync(join(WEB_ROOT, "src/components/public/public.module.css"), "utf8");
+    const wide = css.slice(css.indexOf("@media (min-width: 900px)"));
+    const areas = wide.slice(wide.indexOf("grid-template-areas:"), wide.indexOf(";", wide.indexOf("grid-template-areas:")));
+    expect(areas.match(/"[^"]*"/g)?.map((row) => row.replace(/\s+/g, " "))).toEqual([
+      '". preview"',
+      '"hero preview"',
+      '"getIn preview"',
+      '"pledge preview"',
+      '". preview"',
+    ]);
+    for (const [cls, area] of [["hero", "hero"], ["getIn", "getIn"], ["pledge", "pledge"]]) {
+      expect(wide, cls).toMatch(new RegExp(`\\.${cls} \\{\\s*grid-area: ${area};`));
+    }
+    expect(wide).toMatch(/\.fold > \.preview \{\s*grid-area: preview;/);
   });
 });
 
@@ -441,7 +546,7 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     expect(textOf(html.slice(html.indexOf("<h2"), html.indexOf("</h2>")))).toBe("How it works");
     const steps = [...html.matchAll(/<li>(.*?)<\/li>/g)].map((m) => textOf(m[1]!));
     expect(steps).toEqual([
-      "1 Get in Your email, a name and a username. It's free, and you need to be 18 or older.",
+      "1 Join Your email, a name and a username. It's free, and you need to be 18 or older.",
       `2 Bring your people You get ${DEFAULT_INVITES} invites. It stays quiet until the people you care about are here, so send them to the ones you'd actually want to hear from.`,
       "3 Catch up, then close it Their posts, newest first. When there's nothing new, it says so.",
     ]);
@@ -449,22 +554,30 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     expect(html.match(/<h3>/g)).toHaveLength(3);
   });
 
-  it("keep your people, change who runs it: WhatsApp in three dated lines, each linked to its source, then the promise and what holds it", () => {
+  it("keep your people, change who runs it: why it exists, WhatsApp in three dated lines, each linked to its source, then the promise and what holds it", () => {
     const html = section(render(), "front-runs");
     const text = textOf(html);
     expect(textOf(html.slice(html.indexOf("<h2"), html.indexOf("</h2>")))).toBe("Keep your people. Change who runs it.");
+    // Why it exists comes first, in the maintainer's voice (D-0016 §E).
+    expect(REASON_LEAD).toBe("The people make the network.");
+    expect(REASON).toBe(
+      "You bring the friendships, the conversations and the reasons to come back, so you should have a say in what it becomes. A simple feed is where our.one starts. The bigger purpose is a network whose people choose who looks after it.",
+    );
+    expect(text.indexOf(REASON_LEAD)).toBeLessThan(text.indexOf("WhatsApp, in three dates"));
+    expect(html).toMatch(/<p class="[^"]*">The people make the network\.<\/p>/);
     expect(text).toContain("WhatsApp, in three dates");
     const story = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"));
     const lines = [...story.matchAll(/<li>(.*?)<\/li>/g)].map((m) => textOf(m[1]!));
     expect(lines).toEqual([
       "2012 WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
       "2014 Facebook agreed to buy it for about $19 billion.",
-      "2025 Ads came to WhatsApp.",
+      "2025 WhatsApp announced ads in Status, in its Updates tab.",
     ]);
+    // The 2025 line is what Meta announced, linked to its own announcement (D-0016 §F).
     expect(links(story).map(([, href]) => href)).toEqual([
       "https://blog.whatsapp.com/why-we-don-t-sell-ads",
       "https://about.fb.com/news/2014/02/facebook-to-acquire-whatsapp/",
-      "https://www.cnbc.com/2025/06/16/meta-whatsapp-ads.html",
+      "https://about.fb.com/news/2025/06/helping-you-find-more-channels-businesses-on-whatsapp/",
     ]);
     for (const [, , tag] of links(story)) {
       expect(tag).toContain('rel="noopener noreferrer"');
@@ -474,9 +587,9 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
       /<p class="[^"]*"><strong>An owner can sell it, change it or shut it down\. A maintainer does the job, or is replaced\.<\/strong><\/p>/,
     );
     for (const sentence of [
-      "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice, and you can always leave with everything.",
+      "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.",
       `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
-      "Today these promises are held by that contract, not yet by law.",
+      "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
       "12 people are in. You'd be #13.",
       "Read the contract See every cost Read the code",
     ]) {
@@ -485,14 +598,17 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     // The whole section, word for word: nothing added.
     expect(text).toBe(
       [
-        "Keep your people. Change who runs it. WhatsApp, in three dates",
+        "Keep your people. Change who runs it.",
+        "The people make the network.",
+        "You bring the friendships, the conversations and the reasons to come back, so you should have a say in what it becomes. A simple feed is where our.one starts. The bigger purpose is a network whose people choose who looks after it.",
+        "WhatsApp, in three dates",
         "2012 WhatsApp wrote: “when advertising is involved you the user are the product.” It charged its users instead.",
         "2014 Facebook agreed to buy it for about $19 billion.",
-        "2025 Ads came to WhatsApp.",
+        "2025 WhatsApp announced ads in Status, in its Updates tab.",
         "An owner can sell it, change it or shut it down. A maintainer does the job, or is replaced.",
-        "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice, and you can always leave with everything.",
+        "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.",
         `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
-        "Today these promises are held by that contract, not yet by law.",
+        "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
         "12 people are in. You'd be #13.",
         "Read the contract See every cost Read the code",
       ].join(" "),
@@ -512,7 +628,10 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     const pairs = [...html.matchAll(/<dt>([^<]*)<\/dt><dd>([^<]*)<\/dd>/g)].map((m) => [textOf(m[1]!), textOf(m[2]!)]);
     expect(pairs).toEqual([
       ["Is it free?", "Yes. Today I pay the bills, and every cost is public."],
-      ["What if my friends aren't on it?", `At first they won't be. That's what your ${DEFAULT_INVITES} invites are for.`],
+      [
+        "What if my friends aren't on it?",
+        "At first they won't be. Start with someone you already want to hear from: invite them, post something, and give them a reason to reply. You can keep your other apps while you try it together.",
+      ],
       ["Can I post photos?", "Not yet. Posts are words for now."],
       ["Is there an app?", "Not yet. our.one works in your phone's browser, and you can add it to your home screen."],
       [
@@ -521,7 +640,7 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
       ],
       [
         `What if it never gets to ${THRESHOLD}?`,
-        "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can leave with everything.",
+        "Then nothing is handed over. The promise not to sell still holds, the code stays open, and you can still download your profile, posts, replies and connections, and delete it all.",
       ],
       [
         "What's a maintainer?",
@@ -530,18 +649,19 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     ]);
   });
 
-  it("the sections come in SPEC §18.15's order, with one h1 and an h2 each", () => {
+  it("the sections come in SPEC §18.16's order, with one h1 and an h2 each", () => {
     const heading = (html: string) =>
       [...html.matchAll(/<h([12])\b[^>]*>(.*?)<\/h\1>/g)].map((m) => `h${m[1]} ${textOf(m[2]!)}`);
     const common = [
       "h1 Just your people. Then you're done.",
-      "h2 Get in",
+      "h2 Join our.one",
       "h2 Where did your friends go?",
       "h2 How it works",
       "h2 Keep your people. Change who runs it.",
       "h2 Fair questions",
     ];
-    expect(heading(render())).toEqual([...common, "h2 Bring your people."]);
+    expect(heading(render())).toEqual([...common, "h2 Who would you like to hear from?"]);
+    expect(heading(render({ seatsOpen: 0 }))).toEqual([...common, "h2 Who would you like to hear from?"]);
     expect(heading(render({ joining: false }))).toEqual(common);
   });
 
@@ -578,6 +698,23 @@ function spacesNextDrops(file: string, text: string): string[] {
   visit(source);
   return found;
 }
+
+describe("the status line (D-0016 §J)", () => {
+  it("says who maintains it today, and what is promised at the threshold, to whom", () => {
+    expect(STATUS_LINE).toBe(
+      `Maintained by its founder. Promised: when ${THRESHOLD} people have joined, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`,
+    );
+    expect(textOf(renderToStaticMarkup(createElement(SiteFooter)))).toContain(STATUS_LINE);
+  });
+
+  it("needs no listing in the claims scan, and the old line is caught on every page", () => {
+    for (const file of [null, "src/components/RightColumn.tsx", "src/app/(public)/power/page.tsx", "src/components/public/FrontPage.tsx"]) {
+      expect(scanText(STATUS_LINE, file), String(file)).toEqual([]);
+      expect(scanText(`Maintained by its founder. Handed to its members at ${THRESHOLD}.`, file).length, String(file)).toBeGreaterThan(0);
+      expect(scanText(`It was Handed to its members at ${THRESHOLD}.`, file).length, String(file)).toBeGreaterThan(0);
+    }
+  });
+});
 
 describe("the copy survives Next's compiler", () => {
   it("finds the pattern that loses a space", () => {

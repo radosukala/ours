@@ -228,12 +228,6 @@ describe("denials pass only where the scan says why", () => {
 
   it("an allowlisted sentence passes in its file, and is caught anywhere else", () => {
     for (const entry of ALLOWLIST) {
-      if (entry.everywhere) {
-        // The status line: let through in every file, by exact text only.
-        expect(scanText(entry.sentence)).toEqual([]);
-        expect(scanText(entry.sentence.replace("Handed to", "Handed over to")).length).toBeGreaterThan(0);
-        continue;
-      }
       // Out of context it is a hit: the allowlist is what lets it through.
       expect(scanText(entry.sentence).length).toBeGreaterThan(0);
       expect(scanText(entry.sentence, "src/app/(public)/page.tsx").length).toBeGreaterThan(0);
@@ -594,10 +588,10 @@ describe("what people are shown: every public page, the footers and every mail, 
   it("shows each allowlisted sentence only on its own page: 'No algorithm…' on /rules, promise 1 on /contract", async () => {
     const rendered = await pages();
     const home: Record<string, string> = { [RULES_FILE]: "/rules", [CONTRACT_FILE]: "/contract", [FRONT_FILE]: "/" };
-    expect([...new Set(ALLOWLIST.filter((e) => !e.everywhere).map((e) => e.file))].sort()).toEqual(
-      Object.keys(home).sort(),
-    );
-    for (const entry of ALLOWLIST.filter((e) => !e.everywhere)) {
+    // Since D-0016 §K every entry belongs to one file: none is let through on every page.
+    expect(ALLOWLIST.every((e) => Object.keys(e).sort().join() === "file,reason,sentence")).toBe(true);
+    expect([...new Set(ALLOWLIST.map((e) => e.file))].sort()).toEqual(Object.keys(home).sort());
+    for (const entry of ALLOWLIST) {
       // A source-form entry (with {THRESHOLD} or ${THRESHOLD}) is never shown as such.
       const sourceForm = /\{THRESHOLD\}|\$\{THRESHOLD\}/.test(entry.sentence);
       for (const [page, html] of rendered) {
