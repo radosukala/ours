@@ -349,9 +349,16 @@ describe("Joining", () => {
     for (const open of [1, 2, 12, 1000]) expect(joinLabel(open), String(open)).toBe(JOIN_LABEL);
     for (const open of [0, -1]) expect(joinLabel(open), String(open)).toBe(WAITING_LIST_LABEL);
     // Through the route, as the database answers.
+    // With a seat open and an address already waiting, a new address goes in line behind it:
+    // the line goes first (seats.ts; the verification of M-0014, D-0016 §N).
+    expect(joinLabel(5, 2)).toBe(WAITING_LIST_LABEL);
+    expect(joinLabel(5, 0)).toBe(JOIN_LABEL);
+    expect(joinLabel(5, null)).toBe(JOIN_LABEL);
+    expect(joinLabel(null, 3)).toBe(JOIN_LABEL);
     const cases: [() => void, string][] = [
       [() => seats.seatState.mockResolvedValue({ open: 12, waiting: 0 }), JOIN_LABEL],
       [() => seats.seatState.mockResolvedValue({ open: 0, waiting: 4 }), WAITING_LIST_LABEL],
+      [() => seats.seatState.mockResolvedValue({ open: 1, waiting: 1 }), WAITING_LIST_LABEL],
       [() => seats.seatState.mockRejectedValue(new Error("FICTIONAL: the database is down")), JOIN_LABEL],
     ];
     for (const [arrange, label] of cases) {
@@ -441,7 +448,7 @@ function card(first: string): string {
 }
 
 describe("the promise, signed, on the first screen (D-0016 §C)", () => {
-  it("is a card after joining and after the picture: the promise in the maintainer's words, his name and role, and a link to how it works", () => {
+  it("is a card after joining and after the picture: the promise in the maintainer's words, the maintainer's name and role, and a link to how it works", () => {
     for (const joining of [true, false]) {
       const html = render({ joining });
       const first = firstScreen(html);
@@ -470,6 +477,8 @@ describe("the promise, signed, on the first screen (D-0016 §C)", () => {
     expect(text).not.toContain("I hand it to");
     expect(text).toContain("I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.");
     expect(text).toContain("Until then, I hold all three.");
+    // "not-for-profit" stays on one line in the card (the verification of M-0014).
+    expect(render()).toMatch(/<span class="[^"]*nowrap[^"]*">not-for-profit<\/span> body of its members\. Until then/);
   });
 
   it("the claims scan lists it by exact text, and its rule catches the same words, or 'hand it to', anywhere else", () => {
@@ -587,7 +596,7 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
       /<p class="[^"]*"><strong>An owner can sell it, change it or shut it down\. A maintainer does the job, or is replaced\.<\/strong><\/p>/,
     );
     for (const sentence of [
-      "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.",
+      "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all. If your account is suspended, write to us and we will do it for you.",
       `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
       "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
       "12 people are in. You'd be #13.",
@@ -606,7 +615,7 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
         "2014 Facebook agreed to buy it for about $19 billion.",
         "2025 WhatsApp announced ads in Status, in its Updates tab.",
         "An owner can sell it, change it or shut it down. A maintainer does the job, or is replaced.",
-        "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.",
+        "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all. If your account is suspended, write to us and we will do it for you.",
         `When ${THRESHOLD} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
         "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
         "12 people are in. You'd be #13.",

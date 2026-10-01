@@ -133,6 +133,18 @@ export const PROHIBITED: readonly Prohibited[] = [
       "D-0012: the handover has not happened; never write it as done. Only a listed denial, such as \"Then nothing is handed over.\", passes, on its own page; since D-0016 §K no sentence passes on every page.",
   },
   {
+    // The handover told as done in other verbs (the verification of
+    // M-0014). The status line says these things "go to" the members'
+    // body, as a promise (D-0016 §J); "went to", "has gone to", "passed
+    // to", "given to" and "transferred to" its members say it happened,
+    // and so do "maintained by its members", "the members' body has been
+    // formed", "its members now hold" and "the handover is over".
+    pattern:
+      /\b(?:went|gone|passed|given|transferred) to (?:a not-for-profit body of |a body of |the body of )?(?:its |the |our )?members\b|\bmaintained by (?:its |the |our )?members\b|\bmembers(?:'|’)? body (?:has|had) been (?:formed|founded)\b|\bmembers(?:'|’)? body (?:is|was) (?:now )?(?:formed|founded)\b|\b(?:its|the|our) members now hold\b|\bhandover is over\b/i,
+    reason:
+      "D-0016 §J: the status line promises these things go to the members' body; told as done, in any verb, the handover has not happened.",
+  },
+  {
     pattern: /\bbelongs? to (?:its |our |the )?(?:members|users|people|community|everyone)\b/i,
     reason: "D-0012: no claim of ownership, in the present or as done.",
   },

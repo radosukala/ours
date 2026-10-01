@@ -191,6 +191,12 @@ function handoverTold(text: string): string[] {
   for (const m of text.matchAll(/[^.?!\n]*\b(?:gave (?:it )?away|(?:is|are) now (?:held|run|owned)|now belongs)\b[^.?!\n]*/gi)) {
     told.push(m[0].trim());
   }
+  // The status line's verb, "go to", told as done, and its neighbours (the verification of M-0014).
+  for (const m of text.matchAll(
+    /[^.?!\n]*\b(?:(?:went|gone|passed|given|transferred) to (?:a not-for-profit body of |a body of |the body of )?(?:its |the |our )?members|maintained by (?:its |the |our )?members|members(?:'|’)? body (?:has|had) been (?:formed|founded)|(?:its|the|our) members now hold|handover is over)\b[^.?!\n]*/gi,
+  )) {
+    told.push(m[0].trim());
+  }
   // "handed" only in "nothing is handed over". Since D-0016 §J the status
   // line says "Promised: … go to", so it has no exception here.
   for (const m of text.matchAll(/[^.?!\n]*\bhanded\b[^.?!\n]*[.?!]?/gi)) {
@@ -213,6 +219,13 @@ describe("no page says the handover has happened (D-0012)", () => {
       "It was handed over.",
       // The old status line (D-0012 §D), which D-0016 §J replaced: it read as done.
       `Maintained by its founder. Handed to its members at ${THRESHOLD}.`,
+      // The new line's verb, done, and its neighbours (the verification of M-0014).
+      "Its domain went to a not-for-profit body of its members.",
+      `Passed to its members at ${THRESHOLD}.`,
+      "Maintained by its members.",
+      "The members' body has been formed.",
+      "Its members now hold the domain.",
+      "The handover is over.",
     ]) {
       expect(handoverTold(claim), claim).not.toEqual([]);
     }

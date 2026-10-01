@@ -45,6 +45,16 @@
  * - "closed: …" is a check that was tried and held. It passes.
  *
  * Everyone here is FICTIONAL, with an example.test address.
+ *
+ * After the round (the architect, D-0016 §N and SPEC §18.16 "Decisions
+ * after the verification"; this file was committed as written first, in
+ * d56f8fc): the invite page's link now has the card's link style
+ * (`.pledgeLink`), so both DEFECTs were fixed and renamed "fixed (…)"; the
+ * one assertion that named the old class points at the new one. The
+ * browser-only findings are in the verification report: lone last words
+ * (fixed where the browser supports `text-wrap`), "not-for-profit" at its
+ * hyphen (fixed in the card, accepted in the status line), and the
+ * not-found page's footer (fixed).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -754,7 +764,7 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     expect(ratios).toEqual([6.12, 4.58]);
   });
 
-  it("DEFECT (MEDIUM): the invite page's new link 'The promise behind our.one' should meet 4.5:1 against the page, and be told from the muted words beside it by more than colour (an underline, or 3:1 against them) — it is the shared link blue, --accent, with no underline: 3.00:1 on white at 13px, and 2.04:1 (light) and 1.53:1 (dark) against 'Free to join.' (WCAG 1.4.3 and 1.4.1; measured the same in Chrome). The front page's own links are drawn in the text colour and underlined for this reason (.more, .pledgeLink); the prior round accepted this blue only for 'Privacy', older than its build, and this link is new in this one", async () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (MEDIUM)): the invite page's new link 'The promise behind our.one' should meet 4.5:1 against the page, and be told from the muted words beside it by more than colour (an underline, or 3:1 against them) — it is the shared link blue, --accent, with no underline: 3.00:1 on white at 13px, and 2.04:1 (light) and 1.53:1 (dark) against 'Free to join.' (WCAG 1.4.3 and 1.4.1; measured the same in Chrome). The front page's own links are drawn in the text colour and underlined for this reason (.more, .pledgeLink); the prior round accepted this blue only for 'Privacy', older than its build, and this link is new in this one", async () => {
     // The reading is sound: it finds the front page's links in the text colour and underlined,
     // and the accepted 'Privacy' in the link blue at 3.00:1.
     const front = parse(renderFront());
@@ -777,7 +787,7 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     }
   });
 
-  it("DEFECT (LOW): on a touch screen the invite page's new link should be a 44px target (SPEC §9, '44px minimum touch targets on mobile'; the front page gives its own text links one under @media (pointer: coarse)) — it is 13px text on a 17.55px line with no rule for a coarse pointer (measured in Chrome at 390px with touch emulation: 169×15px)", async () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): on a touch screen the invite page's new link should be a 44px target (SPEC §9, '44px minimum touch targets on mobile'; the front page gives its own text links one under @media (pointer: coarse)) — it is 13px text on a 17.55px line with no rule for a coarse pointer (measured in Chrome at 390px with touch emulation: 169×15px)", async () => {
     // The reading is sound: it finds the front page's own touch rules for its text links.
     const front = parse(renderFront());
     const byText = (words: string) => findAll(front, (e) => e.tag === "a" && text(e) === words)[0]!;
@@ -785,7 +795,9 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     expect(touchTarget(byText("Read the contract"))).toBe(".more { padding: 12px }");
 
     const link = promiseLink(await invitePage())[0]!;
-    expect(moduleClass(link)).toBe("link");
+    // The card's link style since D-0016 §N (it was the shared .link on dcff190).
+    expect(moduleClass(link)).toBe("pledgeLink");
     expect(touchTarget(link), "a (pointer: coarse) rule that gives the link 44px").not.toBeNull();
+    expect(touchTarget(link)).toBe(".pledgeLink { padding: 12px }");
   });
 });

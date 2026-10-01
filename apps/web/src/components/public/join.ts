@@ -8,17 +8,24 @@
  * client component) both read the same words.
  */
 
-/** A seat is open, or the seats can't be read. */
+/** A seat is open and nobody waits, or the seats can't be read. */
 export const JOIN_LABEL = "Join our.one";
 
-/** No seat is open: the address will wait in line. */
+/** No seat is open, or others wait: the address will wait in line. */
 export const WAITING_LIST_LABEL = "Join the waiting list";
 
 /**
- * The label for the seats open now. When they can't be read (null), a seat
- * may be open, so the button says "Join our.one"; the answer after joining
- * is true either way (D-0015 §H).
+ * The label for the seats now. "Join our.one" only when a seat is open and
+ * nobody waits for one: with an address already waiting, a new address
+ * goes in line behind it, because the line goes first (seats.ts,
+ * requestSeat; the verification of M-0014). A seat is open while others
+ * wait after a seat email fails, or after an address leaves the line.
+ *
+ * When the seats can't be read (null), a seat may be open, so the button
+ * says "Join our.one"; the answer after joining is true either way (D-0015
+ * §H).
  */
-export function joinLabel(seatsOpen: number | null): string {
-  return seatsOpen !== null && seatsOpen <= 0 ? WAITING_LIST_LABEL : JOIN_LABEL;
+export function joinLabel(seatsOpen: number | null, waiting: number | null = null): string {
+  if (seatsOpen === null) return JOIN_LABEL;
+  return seatsOpen <= 0 || (waiting ?? 0) > 0 ? WAITING_LIST_LABEL : JOIN_LABEL;
 }

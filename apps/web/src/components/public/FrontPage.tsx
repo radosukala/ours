@@ -19,10 +19,10 @@
  *   from?
  *
  * Every sentence about the handover is in this file, listed by exact text
- * in D-0016, and in the claims scan's ALLOWLIST where its rules catch it
- * (src/core/claims.ts). The handover is written as a promise with its
- * conditions, never as something that has happened, and the page says
- * what happens if the threshold is never reached.
+ * in D-0016 or in the claims scan's ALLOWLIST (src/core/claims.ts), which
+ * holds every one its rules catch (D-0016 §N). The handover is written as
+ * a promise with its conditions, never as something that has happened,
+ * and the page says what happens if the threshold is never reached.
  *
  * Presentational: src/app/(public)/page.tsx reads the count and the seats
  * on the server and passes them in, so every state can be rendered without
@@ -51,6 +51,12 @@ export type FrontPageProps = {
   joining: boolean;
   /** Seats open now, or null when that could not be read (or joining is off). */
   seatsOpen: number | null;
+  /**
+   * Addresses waiting in line, or null when that could not be read (or
+   * joining is off). With one waiting, a new address waits too, whatever
+   * is open (`joinLabel`).
+   */
+  seatsWaiting?: number | null;
 };
 
 /** The headline, one line each (D-0015 §A; D-0016 keeps it). */
@@ -83,10 +89,10 @@ export const FREE_LINE = `Free to join. You get ${DEFAULT_INVITES} invites to br
 export const INVITE_CLOSED_LINE = "Have an invite? It can't be used until joining opens.";
 
 /**
- * The seat line (D-0016 §B): shown only when no seat is open, above the
- * button "Join the waiting list". Opening seats invites the
- * longest-waiting addresses first (SPEC §18.4), so it promises a place in
- * line, not the next seat (the verification of M-0013).
+ * The seat line (D-0016 §B): shown only when no seat is open, under the
+ * form, whose button then says "Join the waiting list". Opening seats
+ * invites the longest-waiting addresses first (SPEC §18.4), so it promises
+ * a place in line, not the next seat (the verification of M-0013).
  */
 export function seatLine(open: number): string | null {
   return open <= 0 ? "No seats are open right now. Seats go to whoever has waited longest." : null;
@@ -177,9 +183,9 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
 export const CLOSE_HEADING = "Who would you like to hear from?";
 export const CLOSE_LINE = "Join, then send them an invite.";
 
-export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
+export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: FrontPageProps) {
   const seats = seatsOpen === null ? null : seatLine(seatsOpen);
-  const label = joining ? joinLabel(seatsOpen) : JOIN_LABEL;
+  const label = joining ? joinLabel(seatsOpen, seatsWaiting) : JOIN_LABEL;
   return (
     <article className={`${styles.front} front-wide`}>
       {/* The first screen (SPEC §18.16 item 1): what it is, one action, a
@@ -228,7 +234,8 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
           <blockquote className={styles.pledgeWords}>
             <p>
               I&apos;ll never sell our.one. When {THRESHOLD}{" "}
-              people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members. Until then, I hold all three.
+              people have joined, I hand over its domain, its data and the right to replace me to a{" "}
+              <span className={styles.nowrap}>not-for-profit</span> body of its members. Until then, I hold all three.
             </p>
           </blockquote>
           <figcaption className={styles.pledgeBy}>
@@ -307,7 +314,7 @@ export function FrontPage({ count, joining, seatsOpen }: FrontPageProps) {
           <div className={styles.runsPromise}>
             <p>
               our.one has a maintainer: me, {MAINTAINER}. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with {NOTICE_DAYS}{" "}
-              days&apos; notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.
+              days&apos; notice. In Settings, you can download your profile, posts, replies and connections, and delete it all. If your account is suspended, write to us and we will do it for you.
             </p>
             <p>
               When {THRESHOLD}{" "}

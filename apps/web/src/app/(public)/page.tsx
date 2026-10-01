@@ -9,7 +9,9 @@
  *   suspended, never the waiting list (D-0012 §B);
  * - whether the Get in form is shown: only while `accountCreationOpen()`
  *   and `clientIpHeader()` are both true, the gates joining has;
- * - the seats open, from `seatState`, only when the form is shown.
+ * - the seats open and the addresses waiting, from `seatState`, only when
+ *   the form is shown: the button's words follow both (D-0016 §B, as the
+ *   verification of M-0014 corrected it).
  *
  * If the count or the seats cannot be read (the database is down, or not
  * there yet), that line is left out. The page still renders, with no error
@@ -64,16 +66,35 @@ async function readNumber(what: string, read: () => Promise<number>): Promise<nu
   }
 }
 
+/** The seats open and the addresses waiting, each null when it can't be read. */
+async function readSeats(): Promise<{ open: number | null; waiting: number | null }> {
+  try {
+    const state = await seatState(getDb());
+    return { open: asCount(state.open), waiting: asCount(state.waiting) };
+  } catch (error) {
+    console.error(
+      "[ours] front page: the seats could not be read:",
+      error instanceof Error ? error.name : "unknown error",
+    );
+    return { open: null, waiting: null };
+  }
+}
+
 export default async function FrontPageRoute() {
   if (await signedIn()) redirect("/home");
 
   const joining = accountCreationOpen() && clientIpHeader() !== null;
-  const [count, seatsOpen] = await Promise.all([
+  const [count, seats] = await Promise.all([
     readNumber("the count", () => memberCount(getDb())),
-    joining
-      ? readNumber("the seats", async () => (await seatState(getDb())).open)
-      : Promise.resolve(null),
+    joining ? readSeats() : Promise.resolve(null),
   ]);
 
-  return <FrontPage count={count} joining={joining} seatsOpen={seatsOpen} />;
+  return (
+    <FrontPage
+      count={count}
+      joining={joining}
+      seatsOpen={seats?.open ?? null}
+      seatsWaiting={seats?.waiting ?? null}
+    />
+  );
 }

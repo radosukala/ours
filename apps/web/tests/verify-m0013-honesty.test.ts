@@ -163,7 +163,7 @@ function specText({ joining, count, seatsOpen }: FrontPageProps): string {
     "2014 Facebook agreed to buy it for about $19 billion.",
     "2025 WhatsApp announced ads in Status, in its Updates tab.",
     "An owner can sell it, change it or shut it down. A maintainer does the job, or is replaced.",
-    `our.one has a maintainer: me, ${MAINTAINER}. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with ${NOTICE_DAYS} days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.`,
+    `our.one has a maintainer: me, ${MAINTAINER}. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with ${NOTICE_DAYS} days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all. If your account is suspended, write to us and we will do it for you.`,
     `When ${T} people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.`,
     "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
     ...(count === null ? [] : [COUNT_LINES[String(count)]!]),

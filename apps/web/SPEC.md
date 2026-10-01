@@ -2203,3 +2203,45 @@ these as well:
 The tests that pinned §18.15's copy or the old status line follow this
 section too. Where a verification's test pinned a sentence that changed, it
 keeps what it proved and checks the new sentence.
+
+**Decisions after the verification (1 October 2026).** Two verifiers that
+built nothing checked `dcff190`: honesty and the claims scan; rendering and
+accessibility. Neither found anything HIGH. Their test files were committed
+as written before anything was changed (`d56f8fc`, `dcd57d0`). What they
+confirmed is fixed, or recorded in D-0016 §N:
+
+- **The button** says "Join our.one" only when a seat is open and no
+  address waits (`joinLabel(seatsOpen, seatsWaiting)`); with an address
+  waiting, a new one goes in line behind it, because the line goes first
+  (§18.4). The route passes `seatState`'s `waiting` as well as `open`. With
+  a seat open and others waiting there is no seat line: a seat is open.
+- **What holds the promise today** ends "…In Settings, you can download
+  your profile, posts, replies and connections, and delete it all. If your
+  account is suspended, write to us and we will do it for you." The second
+  sentence is the contract's promise 4: a suspended account can't reach
+  Settings.
+- **The invite page's new line** shows only while joining is open as the
+  front page counts it (`clientIpHeader()` set as well). Its link has the
+  card's link style (`.pledgeLink`: the text colour, underlined, 44px on
+  touch screens), not the link blue, which is 3.0:1 on white.
+- **The claims scan** refuses the handover told as done in other verbs:
+  "went to", "has gone to", "passed to", "given to" or "transferred to" its
+  members, "maintained by its members", "the members' body has been
+  formed", "its members now hold" and "the handover is over". The status
+  line's "go to" is a promise and passes.
+- **Eight sentences about the handover** that only D-0015 or this
+  specification listed are listed by exact text in D-0016 §N, unchanged.
+  FrontPage.tsx's header says where each is listed.
+- **Polish.** `text-wrap: pretty` on the lede, the card, the seat line, the
+  reason, the close's line, every `.lede` and the status line, and
+  `balance` on the close's heading and the reason's first line.
+  "not-for-profit" is one unbreakable span in the card. The not-found
+  page's footer is at most 40em wide.
+- **Accepted:**
+  - a seat holder sent back by its expired link reads "Join the waiting
+    list" and is sent a new link to its seat;
+  - the status line's "not-for-profit" can break at its hyphen.
+- **For the founder:**
+  - the trigger's words. "When [threshold] people have joined" is not the
+    contract's count; "are in" is proposed;
+  - five readings left to a person (D-0016 §N).

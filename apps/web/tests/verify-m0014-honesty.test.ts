@@ -35,6 +35,14 @@
  *
  * Everyone here is FICTIONAL, with an example.test address; client
  * addresses are keyed hashes of the documentation ranges (RFC 5737).
+ *
+ * After the round (the architect, D-0016 §N and SPEC §18.16 "Decisions
+ * after the verification"; this file was committed as written first, in
+ * dcd57d0): each DEFECT was fixed and renamed "fixed (…)", its assertion
+ * kept, or pointed at the fixed words where the fix changed them; or
+ * recorded as "accepted (…)", or "open (…)" while it waits for the
+ * founder, its assertion turned to say what holds today and where it is
+ * recorded. The closed tests that quote the page follow the fixed words.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -284,7 +292,7 @@ function expectedText({ joining, count, seatsOpen }: FrontPageProps): string {
     "2014 Facebook agreed to buy it for about $19 billion.",
     "2025 WhatsApp announced ads in Status, in its Updates tab.",
     "An owner can sell it, change it or shut it down. A maintainer does the job, or is replaced.",
-    "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all.",
+    "our.one has a maintainer: me, Rado. I run it under a public contract, and that contract is the terms you join under. Two of its promises can never be changed: no sale, and the handover. The rest can change only with 60 days' notice. In Settings, you can download your profile, posts, replies and connections, and delete it all. If your account is suspended, write to us and we will do it for you.",
     "When 100,000 people have joined, I hand over our.one's domain, its data and the right to replace whoever runs it to a not-for-profit body of its members, founded by their vote.",
     "Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.",
     ...(count === null ? [] : [COUNT_LINES[String(count)]!]),
@@ -412,7 +420,7 @@ describe("the button's two labels and the seat line (D-0016 §B), against what t
     expect(await line()).toEqual(["ben_m14@example.test"]);
   });
 
-  it("DEFECT (LOW): 'Join our.one' is shown while a seat is open and an older address waits — and the newcomer who presses it is put in line, because the line goes first (seats.ts, requestSeat). The route reads only `seatState().open`, not `waiting`; the state arises by the product's own paths (a seat email that failed gives its seat back, and a removal at its owner's request reopens one)", async () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): 'Join our.one' was shown while a seat is open and an older address waits — and the newcomer who presses it is put in line, because the line goes first (seats.ts, requestSeat). The route reads only `seatState().open`, not `waiting`; the state arises by the product's own paths (a seat email that failed gives its seat back, and a removal at its owner's request reopens one)", async () => {
     const t0 = at("2026-10-01T09:00:00Z");
     const rado = await maintainer();
     // Pia waits. A seat opens; its email to her fails, so the seat comes back and she keeps her place.
@@ -422,10 +430,11 @@ describe("the button's two labels and the seat line (D-0016 §B), against what t
     vi.unstubAllEnvs();
     expect(await seatState(db())).toEqual({ open: 1, waiting: 1 });
 
-    // Stan opens the front page: a seat is open, so it says "Join our.one", and no seat line.
+    // Stan opens the front page: a seat is open, but Pia waits, so it says "Join the waiting list"
+    // (it said "Join our.one" on dcff190), and no seat line: a seat is open.
     const page = await renderRoute();
     const label = buttonOf(page);
-    expect(label).toBe(JOIN_LABEL);
+    expect(label).toBe(WAITING_LIST_LABEL);
     expect(textOf(page)).not.toContain("No seats are open right now.");
     await requestSeat(db(), { email: "stan_m14@example.test", ipHash: ip(12), now: plus.minutes(t0, 1) });
 
@@ -440,7 +449,7 @@ describe("the button's two labels and the seat line (D-0016 §B), against what t
     ).toBe(promisedBy(label));
   });
 
-  it("DEFECT (LOW): an address that holds a seat — which the seat email sends back to the front page when its 15-minute link expires — reads 'No seats are open right now' and 'Join the waiting list', and pressing it sends a new link to its seat, not a place in line. M-0014's acceptance: 'The button's words match what the form will do with the address' (the re-check of M-0013 judged the old seat line held on this path; the words are now the button's)", async () => {
+  it("accepted (D-0016 §N, after the verification; was DEFECT (LOW)): an address that holds a seat — which the seat email sends back to the front page when its 15-minute link expires — reads 'No seats are open right now' and 'Join the waiting list', and pressing it sends a new link to its seat, not a place in line: better than the words say, and the answer after it says 'If a seat was open, your link is there'; words for holders would be a new decision. M-0014's acceptance: 'The button's words match what the form will do with the address' (the re-check of M-0013 judged the old seat line held on this path; the words are now the button's)", async () => {
     const t0 = at("2026-10-01T09:00:00Z");
     const rado = await maintainer();
     await openSeats(db(), rado.id, 1, { now: t0 });
@@ -454,7 +463,11 @@ describe("the button's two labels and the seat line (D-0016 §B), against what t
     expect(label).toBe(WAITING_LIST_LABEL);
     expect(textOf(page)).toContain("No seats are open right now. Seats go to whoever has waited longest.");
     await requestSeat(db(), { email: "lea_m14@example.test", ipHash: ip(21), now: plus.hours(t0, 1) });
-    expect(await outcomeFor("lea_m14@example.test", 1), `the button said "${label}"`).toBe(promisedBy(label));
+    // Accepted: the holder gets a new link to the seat it holds, not the place in line the button names.
+    expect(await outcomeFor("lea_m14@example.test", 1), `the button said "${label}"`).toBe("a join link");
+    expect(promisedBy(label)).toBe("a place in line");
+    expect(CHECK_YOUR_EMAIL).toContain("If a seat was open, your link is there.");
+    expect(readRecord("decisions/D-0016.md")).toContain("An address that already holds a seat.");
   });
 
   it("closed (for a person to judge, D-0016 §B's choice): with the seats unread the button says 'Join our.one' and no seat line shows; with no seat in fact open the form puts the address in line, and the unchanged answer covers both outcomes ('If a seat was open, your link is there. If not, you're in line')", async () => {
@@ -498,7 +511,7 @@ describe("the signed card (D-0016 §C), against /contract, D-0012 and D-0013", (
     expect(contract).toContain(`Today that is me, ${MAINTAINER}, through my company, Ctrl AI, Inc.`);
   });
 
-  it("DEFECT (LOW): 'Until then, I hold all three.' — D-0016 §C gives /contract as its source ('says the maintainer holds them until then'), but /contract says the maintainer holds 'the domain, the data and the keys', not the right to replace the maintainer; the same page then says it a second way ('Today I hold the domain, the data and the keys.'). True under founder bootstrap, but not what its cited source says", () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): 'Until then, I hold all three.' — D-0016 §C gave /contract as its source, but /contract says the maintainer holds 'the domain, the data and the keys', not the right to replace the maintainer; D-0016 §N now gives the founder's bootstrap authority (AGENTS.md §2, FOUNDING-AUTHORITY.md) as the source for that third thing", () => {
     const d16 = readRecord("decisions/D-0016.md");
     expect(d16).toContain("The contract hands over three things (promise 2, /contract), and says the maintainer holds them until then.");
     const contract = textOf(rendered(ContractPage));
@@ -507,11 +520,13 @@ describe("the signed card (D-0016 §C), against /contract, D-0012 and D-0013", (
     const front = textOf(render({ joining: true, count: null, seatsOpen: null }));
     expect(front).toContain("Until then, I hold all three.");
     expect(front).toContain("Today I hold the domain, the data and the keys.");
-    expect({
-      "the domain": held.includes("the domain"),
-      "the data": held.includes("the data"),
-      "the right to replace the maintainer": held.includes("right to replace"),
-    }).toEqual({ "the domain": true, "the data": true, "the right to replace the maintainer": true });
+    // /contract still names the domain, the data and the keys; the record now cites the source for the third thing.
+    expect(held.includes("right to replace")).toBe(false);
+    expect(d16).toContain(
+      "For the right to replace the maintainer, the source is the founder's bootstrap authority (AGENTS.md §2, authority/FOUNDING-AUTHORITY.md): nobody else holds it today.",
+    );
+    const agents = readFileSync(join(REPO_ROOT, "AGENTS.md"), "utf8");
+    expect(agents).toMatch(/AUTHORITY\s+FOUNDER BOOTSTRAP/);
   });
 });
 
@@ -524,7 +539,7 @@ describe("when the handover comes, as the card and the status line say it", () =
     await reset();
   });
 
-  it("DEFECT (MEDIUM): the status line (new, on every page), the card and the front page's handover promise say 'when 100,000 people have joined'; /contract and D-0012 §B make the trigger the public count — 'accounts that exist and are not suspended', so 'the goalposts can't move' — which people who joined and then deleted their account or were suspended no longer count toward. With churn, 'have joined' reaches the number before the count does: the promise reads earlier than the contract keeps it (the front page's own count says 'people are in', not 'have joined')", async () => {
+  it("open (for the founder, D-0016 §N; was DEFECT (MEDIUM)): the status line (new, on every page), the card and the front page's handover promise say 'when 100,000 people have joined'; /contract and D-0012 §B make the trigger the public count — 'accounts that exist and are not suspended', so 'the goalposts can't move' — which people who joined and then deleted their account or were suspended no longer count toward. With churn, 'have joined' reaches the number before the count does: the promise reads earlier than the contract keeps it (the front page's own count says 'people are in', not 'have joined')", async () => {
     const contract = textOf(rendered(ContractPage));
     expect(contract).toContain(`At ${T} members, I hand over`);
     expect(contract).toContain("The count is the number on the front page: accounts that exist and are not suspended.");
@@ -544,11 +559,15 @@ describe("when the handover comes, as the card and the status line say it", () =
     const theCount = await memberCount(db());
     expect(theCount).toBe(1);
 
-    // What each sentence counts toward the threshold.
+    // What each sentence counts toward the threshold: still apart, until the founder chooses the words.
     expect(
       { statusLine: peopleWhoHaveJoined, card: peopleWhoHaveJoined, handoverPromise: peopleWhoHaveJoined, contract: theCount },
       "the status line, the card and the handover promise count people who have joined; the contract counts accounts that exist and are not suspended",
-    ).toEqual({ statusLine: theCount, card: theCount, handoverPromise: theCount, contract: theCount });
+    ).toEqual({ statusLine: 3, card: 3, handoverPromise: 3, contract: 1 });
+    // Recorded as the founder's decision, with the words proposed: the count's own.
+    const d16 = readRecord("decisions/D-0016.md");
+    expect(d16).toContain("The trigger's words.");
+    expect(d16).toContain('The agent proposes "when [threshold] people are in", the words of the count on the same page.');
   });
 });
 
@@ -675,7 +694,7 @@ describe("'In Settings, you can download your profile, posts, replies and connec
     expect(front).toContain(NEVER_ANSWER);
   });
 
-  it("DEFECT (LOW): untrue for a suspended account: it cannot reach Settings (no session for it; requireViewer redirects to /signin), and the export and the deletion both refuse it (NOT_FOUND). Promise 4 on /contract carries the exception — 'If your account is suspended, write to us and we will do it for you.' — and the front page's two sentences drop it", async () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): untrue for a suspended account: it cannot reach Settings (no session for it; requireViewer redirects to /signin), and the export and the deletion both refuse it (NOT_FOUND). Promise 4 on /contract carries the exception — 'If your account is suspended, write to us and we will do it for you.' — and the front page's two sentences drop it", async () => {
     const sam = await makeAccount({ handle: "sam_m14", email: "sam_m14@example.test", suspended: true });
     const refusal = async (attempt: () => Promise<unknown>) => {
       try {
@@ -838,7 +857,8 @@ describe("the invite page, signed out (D-0016 §I)", () => {
     const html = await invitePageFor(code);
     const open = textOf(html);
     expect(open).toContain(`${heading} ${LEDE} Your email We'll email you a link to join. Send me a link Free to join. The promise behind our.one Already on our.one? Sign in, then open this link again.`);
-    expect(html).toMatch(/<a class="link" href="\/#front-runs">The promise behind our\.one<\/a>|<a href="\/#front-runs" class="link">The promise behind our\.one<\/a>/);
+    // The card's link style since D-0016 §N (it was the shared .link on dcff190).
+    expect(html).toMatch(/<a class="[^"]*pledgeLink[^"]*" href="\/#front-runs">The promise behind our\.one<\/a>|<a href="\/#front-runs" class="[^"]*pledgeLink[^"]*">The promise behind our\.one<\/a>/);
     expect(render({ joining: true, count: null, seatsOpen: null })).toContain('<h2 id="front-runs">Keep your people. Change who runs it.</h2>');
     for (const form of [renderToStaticMarkup(createElement(JoinRequestForm, { code })), rendered(JoinForm)]) {
       expect(textOf(form)).not.toMatch(/\b(?:pay|payment|price|card|subscription|fee)\b|€|\$/i);
@@ -846,7 +866,7 @@ describe("the invite page, signed out (D-0016 §I)", () => {
     expect(textOf(render({ joining: true, count: null, seatsOpen: null }))).toContain("Is it free? Yes.");
   });
 
-  it("DEFECT (LOW): in production with a data controller named but no client-address header (CLIENT_IP_HEADER), the invite page still says 'Free to join.' with the promise link, under a form that refuses ('This server can't send join links yet…'), while the front page says 'Joining opens soon.'. D-0016 §I and SPEC §18.16 item 7 say 'While the visitor can join'; the code shows it whenever `inviteForViewer` says can_join, which reads only the controller", async () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): in production with a data controller named but no client-address header (CLIENT_IP_HEADER), the invite page still says 'Free to join.' with the promise link, under a form that refuses ('This server can't send join links yet…'), while the front page says 'Joining opens soon.'. D-0016 §I and SPEC §18.16 item 7 say 'While the visitor can join'; the code shows it whenever `inviteForViewer` says can_join, which reads only the controller", async () => {
     const anna = await makeAccount({ handle: "anna_m14", displayName: "Anna FICTIONAL", email: "anna_m14@example.test" });
     const { code } = await createInvite(db(), anna.id, {});
     vi.stubEnv("NODE_ENV", "production");
@@ -939,7 +959,7 @@ describe("the claims scan (D-0016 §K)", () => {
     expect(scanText(card, FRONT)).toEqual([]);
   });
 
-  it("DEFECT (LOW): D-0016 §K catches 'Handed to its members' again, but the status line's own verb has no rule: its done forms, the same line with another verb, and 'Maintained by its members.' all pass on every page. The scan is CHECKED, not ENFORCED; no page says these today, and contract.test.ts's handoverTold, which guards 'no page says the handover has happened', has no pattern for them either", () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): D-0016 §K catches 'Handed to its members' again, but the status line's own verb had no rule: its done forms, the same line with another verb, and 'Maintained by its members.' all pass on every page. The scan is CHECKED, not ENFORCED; no page says these today, and contract.test.ts's handoverTold, which guards 'no page says the handover has happened', has no pattern for them either", () => {
     // What D-0016 §K closed, for contrast.
     for (const caught of [`Handed to its members at ${T}.`, "It was handed to its members.", "The handover has happened."]) {
       expect(scanText(caught, ANOTHER_PAGE).length, caught).toBeGreaterThan(0);
@@ -965,12 +985,15 @@ describe("the claims scan (D-0016 §K)", () => {
     ).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): D-0016 prohibits 'Any sentence about the handover that is not listed by exact text, here or in the claims scan's list', and M-0014 repeats it; three on the front page are listed in neither — 'A maintainer does the job, or is replaced.' (in D-0015 §F and the SPEC), 'Two of its promises can never be changed: no sale, and the handover.' and 'Today that's me, and today I also hold everything.' (in the SPEC only). FrontPage.tsx's header, rewritten by this build, says every one is 'listed by exact text in D-0016'", () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (MEDIUM)): D-0016 prohibits 'Any sentence about the handover that is not listed by exact text, here or in the claims scan's list', and M-0014 repeats it; three on the front page were listed in neither — 'A maintainer does the job, or is replaced.' (in D-0015 §F and the SPEC), 'Two of its promises can never be changed: no sale, and the handover.' and 'Today that's me, and today I also hold everything.' (in the SPEC only). FrontPage.tsx's header, rewritten by this build, says every one is 'listed by exact text in D-0016'", () => {
     const d16 = readRecord("decisions/D-0016.md");
     const d15 = readRecord("decisions/D-0015.md");
     const spec = readRecord("apps/web/SPEC.md");
     const source = readFileSync(join(WEB_ROOT, FRONT), "utf8").replace(/\s*\*\s*/g, " ");
-    expect(source).toContain("Every sentence about the handover is in this file, listed by exact text in D-0016, and in the claims scan's ALLOWLIST where its rules catch it");
+    // The header now says where each is listed (it said "in D-0016" for all of them on dcff190).
+    expect(source).toContain(
+      "Every sentence about the handover is in this file, listed by exact text in D-0016 or in the claims scan's ALLOWLIST (src/core/claims.ts), which holds every one its rules catch (D-0016 §N).",
+    );
     const seen = new Set<string>();
     for (const state of [STATES[0]!, STATES[5]!, STATES[13]!, STATES[22]!]) {
       for (const sentence of sentencesOf(render(state))) if (aboutTheHandover(sentence)) seen.add(sentence);
@@ -983,7 +1006,7 @@ describe("the claims scan (D-0016 §K)", () => {
     ).toEqual([]);
   });
 
-  it("DEFECT (LOW): the same on /contract, which M-0014 did not change: five sentences about the handover are listed neither in D-0016 nor in the scan's list (they are the SPEC's, §18.3 as later amended) — the maintainer's holding until the threshold, promise 8's lock on promise 2, the never-reached heading and its answer, and the closing paragraph", () => {
+  it("fixed (D-0016 §N, after the verification; was DEFECT (LOW)): the same on /contract, which M-0014 did not change: five sentences about the handover are listed neither in D-0016 nor in the scan's list (they are the SPEC's, §18.3 as later amended) — the maintainer's holding until the threshold, promise 8's lock on promise 2, the never-reached heading and its answer, and the closing paragraph", () => {
     const d16 = readRecord("decisions/D-0016.md");
     const seen = sentencesOf(rendered(ContractPage)).filter(aboutTheHandover);
     const unlisted = seen.filter((sentence) => !listed(sentence, d16));
@@ -1037,6 +1060,8 @@ describe("the records against the page, word for word (D-0016; SPEC §18.16)", (
       [REASON, open],
       ["WhatsApp announced ads in Status, in its Updates tab.", open],
       [`The rest can change only with ${NOTICE_DAYS} days' notice. ${SETTINGS_SENTENCE}`, open],
+      // Added by D-0016 §N after the verification.
+      ["If your account is suspended, write to us and we will do it for you.", open],
       ["Today I hold the domain, the data and the keys. The members' body has not been formed, and the handover has not happened.", open],
       [
         "At first they won't be. Start with someone you already want to hear from: invite them, post something, and give them a reason to reply. You can keep your other apps while you try it together.",
@@ -1080,7 +1105,13 @@ describe("the tests the build changed (git diff bfd587b..dcff190 -- apps/web/tes
     );
     const contract = read("contract.test.ts");
     expect(contract).not.toContain("if (sentence === `Handed to its members at ${THRESHOLD}.`) continue;");
-    expect(contract).toContain("`Maintained by its founder. Handed to its members at ${THRESHOLD}.`, ]) { expect(handoverTold(claim), claim).not.toEqual([]);");
+    // The old line is in the list handoverTold must catch. (On dcff190 it was the list's last item; the
+    // fixes after the verification added the done-forms after it, so the check reads the whole list.)
+    const mustCatch = contract.slice(
+      contract.indexOf('it("the check catches the handover told as done"'),
+      contract.indexOf("]) { expect(handoverTold(claim), claim).not.toEqual([]);"),
+    );
+    expect(mustCatch).toContain("`Maintained by its founder. Handed to its members at ${THRESHOLD}.`,");
     expect(read("claims.test.ts")).not.toMatch(/\beverywhere\b/);
     expect(read("verify5-recheck.test.ts")).not.toMatch(/\.everywhere\b/);
     expect(read("verify4-honesty.test.ts")).toContain("expect(links.filter((href) => href !== OPEN_CODE_URL)).toEqual(sources);");

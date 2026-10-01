@@ -790,6 +790,12 @@ hr {
   text-decoration: underline;
 }
 
+/* The status line is long (D-0016 §J): no lone last word where the
+   browser can avoid one. */
+.site-footer__status {
+  text-wrap: pretty;
+}
+
 /* Bottom tab bar (phones) */
 
 .tabbar {
@@ -1558,6 +1564,7 @@ hr {
   font-size: 17px;
   line-height: 1.45;
   color: var(--text);
+  text-wrap: pretty;
 }
 
 .prose {
@@ -1611,6 +1618,12 @@ hr {
 .plain-page__title {
   font-size: 23px;
   font-weight: 800;
+}
+
+/* The footer under a centred column stays about as wide as it: the status
+   line would otherwise run as one line across a wide window. */
+.plain-page footer {
+  max-width: 40em;
 }
 
 /* ---------------------------------------------------------------- motion */
