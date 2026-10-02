@@ -1,0 +1,47 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0012
+title: The build kit — instructions, rules and a check for coding agents, and the two ways to build
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0019
+
+human_source:
+  path: proposals/P-0012.md
+evidence:
+  - path: proposals/P-0012.evidence-conversation-2026-10-02.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - builders, and the coding agents they build with, who would follow the rules and run the check
+  - the people who would use what they build, whose data the rules are about
+  - the founder, as the feed's maintainer, whose project carries the same manifest and passes the same check
+
+unresolved:
+  - the founder's approval of rules version 0, above all the three that go further than the agreement's words (no session recording, no data hubs, a data boundary in code)
+  - the founder's approval of the wording of /build and build.md
+  - whether coding agents on a protected service must work under OURS mandates checked by the kernel
+  - whether projects that pass the check are listed (D-0017 §K.7)
+  - publishing the tool as a package, which needs the founder's account
+  - the first builder who isn't the founder (D-0017 §K.1)
+
+cost:
+  proposer_hours: 2
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-02
+    actor: { id: founder, kind: human }
+    position: yes, we can deploy it, but push harder; nobody will build for our.one without AI, so give coding agents clear instructions, rules that are enforced and tools; make the choice between building alone and building on our.one obvious, so it feels like a system that is running
+  - date: 2026-10-02
+    actor: { id: claude, kind: agent }
+    position: yes; the agreement has to reach the agent as instructions, a rules block in the project and a check it runs itself; enforcement comes in layers, each with its honest class; passing makes a project ready to propose and nothing more; the feed passes the same check; no registry or marketplace

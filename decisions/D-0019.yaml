@@ -1,0 +1,69 @@
+schema: ours.decision/v0.1
+decision_id: D-0019
+title: The build kit — instructions, rules and a check for coding agents
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0019.md
+
+proposal: P-0012
+prerequisite_decisions: [D-0017, D-0018]
+
+outcome: >
+  Builders build with coding agents, so our.one gives the agent
+  instructions, rules, enforcement and tools, and shows the two ways to
+  build side by side. The build kit, in kit/ and served from the deployed
+  commit: build.md, the instructions an agent follows; our-one.mjs, one
+  file with no dependencies and no network access (init, check, rules),
+  whose SHA-256 build.md carries; our.one.json, each project's manifest
+  (what it is, who maintains it, its source and licence, its costs, and
+  what it does with personal data), with a schema; and the rules block in
+  the project's AGENTS.md. Rules version 0 put the common agreement's terms
+  into checks, each with its class; three go further than its words (a
+  data boundary in code, no session recording, no data hubs) and wait for
+  the founder's approval. Enforcement comes in layers: the rules block
+  (DECLARED), a Claude Code stop hook and a CI workflow (CHECKED), and
+  our.one's own run of the check on a proposed commit, read by a person
+  (INTERPRETED). Passing makes a project ready to propose, nothing more: no
+  listing, approval or protection, and no registry or marketplace. The
+  feed carries the same manifest and passes the same check. /build shows
+  the two ways, the one line for a coding agent, the rules and the tools;
+  the footer's "Build with us" goes there. Authorizes M-0016 (BUILD) and
+  amends the draft M-0012.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0016]
+
+prohibits:
+  - describing a passing check as approval, listing, certification or protection
+  - describing any safeguard as built before it is
+  - a tool that makes network requests, writes outside the files init names, or prints a secret it finds
+  - changing the rules without a new rules version and a decision
+  - collecting proposals by any route but email
+
+effective_from: 2026-10-02T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording and of rules
+  version 0 is pending; §B reads "tools" as the kit; §H does not read "yes
+  we can deploy it" as M-0012's go.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
