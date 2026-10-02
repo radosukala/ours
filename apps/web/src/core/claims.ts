@@ -179,13 +179,19 @@ export const PROHIBITED: readonly Prohibited[] = [
   // slipped in ('"owned" by its users', "owned by all its users", 'will be
   // "owned"'), and in other compounds ("people-owned").
   {
+    // The re-check of M-0015 added a word or two between ("Its users now
+    // own it.", "Its users, together, own it.").
     pattern:
-      /\b(?:users|people) own\b|\bwho use (?:it|them|the service|this service) own\b|\b(?:users|people|members) are (?:its |the |our )?(?:co-)?owners\b/i,
-    reason: "D-0012 and D-0017 §B: \"owned\" is defined on /agreement and claimed of nothing; none of its rights is in force.",
+      /\b(?:users|people|members),?\s+(?:[\w’']+,?\s+){0,2}own(?:s)?\b|\bwho use (?:[\w.’']+\s+){1,2}own\b|\b(?:users|people|members) are (?:[\w’']+\s+){0,2}(?:co-)?owners\b/i,
+    reason:
+      "D-0012 and D-0017 §B: \"owned\" is defined on /agreement and claimed of nothing; none of its collective rights is in force.",
   },
   {
+    // The re-check of M-0015: up to three words may stand between "owned
+    // by" and its owners ("owned by its own users", "owned by the feed's
+    // users", "owned by our.one's users").
     pattern: new RegExp(
-      `\\bowned${QUOTE}\\s+by\\s+(?:all\\s+(?:of\\s+)?|those\\s+who\\s+use|everyone\\s+who\\s+uses?)|\\bowned${QUOTE}\\s+by\\s+(?:(?:its|our|the)\\s+)?${QUOTE}(?:users|people|members|community|everyone)${QUOTE}|\\bowned${QUOTE}\\s+by\\s+(?:(?:its|our|the)\\s+)?${QUOTE}(?:users|people|members)\\b|\\bwill\\s+(?:\\w+\\s+)?(?:be\\s+)?${QUOTE}own(?:ed)?\\b|\\bpeople[- ]owned\\b`,
+      `\\bowned${QUOTE}\\s+by\\s+(?:all\\s+(?:of\\s+)?|those\\s+who\\s+use|everyone\\s+who\\s+uses?)|\\bowned${QUOTE}\\s+by\\s+(?:[\\w.’']+\\s+){0,3}${QUOTE}(?:users|people|members|community|everyone)\\b|\\bwill\\s+(?:\\w+\\s+)?(?:be\\s+)?${QUOTE}own(?:ed)?\\b|\\bpeople[- ]owned\\b`,
       "i",
     ),
     reason: "D-0012 and D-0017 §B: \"owned\" is defined on /agreement, in its listed words only, and claimed of nothing.",
@@ -194,14 +200,14 @@ export const PROHIBITED: readonly Prohibited[] = [
     // The handover told as done in two more verbs, and the holder as
     // having received what it only will (the verification of M-0015).
     pattern:
-      /\b(?:moved|went|passed|transferred|handed) to the holder\b|\b(?:moved|now belongs?) to (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\b/i,
+      /\b(?:moved|went|gone|passed|given|transferred|handed|belongs?|belonged) to the holder\b|\b(?:moved|now belongs?) to (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\b/i,
     reason: "D-0012 and D-0017 §E: nothing has gone to the holder or to the members' body; no holder exists.",
   },
   {
     // D-0017 prohibits promising builders income: "can earn a living"
     // stays conditional on people choosing and paying for the service.
     pattern: new RegExp(
-      `\\byou(?:${APOS}ll| will) (?:be paid|earn)\\b|\\bwill earn (?:a|your) living\\b|\\bguaranteed (?:income|pay)\\b`,
+      `\\byou(?:${APOS}ll| will) (?:be paid|get paid|earn)\\b|\\bwill earn (?:a|your) living\\b|\\bguaranteed (?:an? )?(?:income|pay|living)\\b|\\byou(?:${APOS}re| are) guaranteed\\b`,
       "i",
     ),
     reason: "D-0017: no promise of income to builders; pay depends on people choosing and paying for a service.",
@@ -282,12 +288,21 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     "Owned by its users means: its users, together, decide its essential rules, approve its budget, and can change who runs it while the service keeps going.",
     "We call a service owned by its users only when all of that holds.",
     "Neither a service nor any part of it will be sold, and nobody will invest in it for a return.",
+    // The contract's never-reached case, in its own verb (the re-check of M-0015).
+    "If that count is never reached, nothing is handed over.",
   ].map((sentence) => ({
     file: "src/app/(public)/agreement/page.tsx",
     sentence,
     reason:
-      "D-0017 §B and D-0018 §E: the definition of \"owned\", the sentence that applies it, and the agreement's denial of investment, on /agreement only and in these exact words.",
+      "D-0017 §B and D-0018 §E: the definition of \"owned\", the sentence that applies it, the agreement's denial of investment, and the contract's never-reached case (D-0012 §B), on /agreement only and in these exact words.",
   })),
+  {
+    // /projects states the contract's never-reached case in the contract's verb.
+    file: "src/app/(public)/projects/page.tsx",
+    sentence:
+      "If that count is never reached, nothing is handed over, and the promise not to sell still holds.",
+    reason: HANDOVER_REASON,
+  },
 ];
 
 export type Hit = {

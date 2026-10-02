@@ -3,7 +3,9 @@
  * a project with a page that says who runs it, what it costs and what its
  * users control. The feed is the first, under the same common agreement as
  * every one after it, with its exception stated (D-0017 §D): it runs before
- * its data safeguards exist, run by the founder until the holder exists.
+ * its data safeguards exist, held by the founder as the contract says.
+ * Whether it moves to the holder before the contract's count is open
+ * (D-0017 §K.4), and the page says so (the re-check of M-0015).
  *
  * The feed's description is the front page's lede, imported (D-0016 §A),
  * so the two can't drift apart. The promise at the threshold uses the
@@ -50,19 +52,20 @@ export default function ProjectsPage() {
           <dd>
             {`At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a `}
             <span className={styles.nowrap}>not-for-profit</span>
-            {" body of its members. If that count is never reached, none of it goes to that body, and the promise not to sell still holds."}
+            {" body of its members. If that count is never reached, nothing is handed over, and the promise not to sell still holds."}
           </dd>
           <dt>Its users&apos; rights today</dt>
           <dd>
-            Held by the contract: taking your data and leaving while your
-            account is active, and seeing its costs and rules. Promised:
-            nobody sells it. Not yet: deciding its rules, approving its budget,
-            changing who runs it.
+            Held by the contract: taking your data and leaving (in Settings, or
+            on request if your account is suspended), and seeing its costs and
+            rules. Promised: nobody sells it. Not yet: deciding its rules,
+            approving its budget, changing who runs it.
           </dd>
           <dt>Its exception</dt>
           <dd>
             It is the one service that runs before its data safeguards exist.
-            The founder holds it until the holder exists.
+            The founder holds it, as the contract says. Whether it moves to the
+            holder before the contract&apos;s count is reached is still open.
           </dd>
         </dl>
         <p className={styles.links}>

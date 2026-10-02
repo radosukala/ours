@@ -2317,18 +2317,23 @@ five-stranger test (D-0017 §H).
      hand."*
    - **Part 8:** the feed, the first project. Its promise reads *"at
      {THRESHOLD} people, as it counts them, … go to a not-for-profit body of
-     its members"*. It never says "have joined", which D-0016 §N keeps open
-     for the founder.
-   - **Last:** *"This agreement is a draft, developed in public; every change
-     is a commit in the our.one records. The terms you join the feed under
-     are the contract."*
+     its members"*, followed by *"If that count is never reached, nothing is
+     handed over."* (listed by exact text). It never says "have joined",
+     which D-0016 §N keeps open for the founder.
+   - **The founder holds the feed "as the contract says".** Whether it moves
+     to the holder before the contract's count is reached is said to be
+     still open (D-0017 §K.4).
+   - **Last:** *"This agreement is a draft, developed in public, and anyone
+     can read its words in the agreement's source. The terms you join the
+     feed under are the contract."*
 2. **`/projects`:** the feed, the first project.
    - The front page's lede, imported (`lede.ts`).
    - Run by `MAINTAINER`, the founder. Paid: "None, by choice".
    - Costs, linked. Held today: domain, data and keys.
-   - Promised: the status line's form, with "as the contract counts them".
-   - Under the common agreement: in force, promised, not yet.
-   - Its exception.
+   - Promised: the status line's form, with "as the contract counts them",
+     and the never-reached case, listed by exact text.
+   - Its users' rights today: held by the contract, promised, and not yet.
+   - Its exception, with the holder question stated as open.
    - "The next one", linking to `/maintainers`.
 3. **`/maintainers`**, "Build the next one":
    - what the job is;
@@ -2355,15 +2360,17 @@ five-stranger test (D-0017 §H).
    our.one itself.
 7. **The claims scan:** three sentences pass on `/agreement` only, in their
    exact words (D-0018 §E): the definition, the sentence that applies it,
-   and the agreement's denial of investment. Everywhere else, and in any
-   other form, they are caught.
+   and the agreement's denial of investment. Everywhere else, and in the
+   other forms the tests try, they are caught. The contract's never-reached
+   sentence is listed once on `/agreement` and once on `/projects`.
 8. **Tests:** `tests/framework-pages.test.ts` for every line above, the
    denial paths first. The claims tests render the three pages, and run
    with the address set as well.
 
 **After the verification (2 October 2026).** Two verifiers, one for honesty
-and one for rendering, proved 29 defects: 4 HIGH or MEDIUM, 25 LOW. Every
-one is fixed. Their tests were committed as written before any fix.
+and one for rendering, proved 29 defects: 11 HIGH or MEDIUM, 18 LOW (2 HIGH
+and 9 MEDIUM). One was found by both. Every one is fixed. Their tests were committed as written
+before any fix.
 
 - **Honesty.**
   - Pay is never "directly" from users. A protected service's funds go to

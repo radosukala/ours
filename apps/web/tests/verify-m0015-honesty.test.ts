@@ -401,8 +401,9 @@ describe("defects (each FAILS on 185bb67)", () => {
   // right 5 links "the public records of every decision" to the decisions.
   it("fixed: (LOW) the agreement's records are linked: its own source, and the public records of every decision (AGENTS.md §10)", () => {
     const markup = render(AgreementPage);
-    // The link's own words name what it opens (the rendering verification's link-name finding).
-    expect(textOf(markup)).toContain("every change is a commit to the agreement's source, which anyone can read");
+    // The link's own words name what it opens (the rendering verification's link-name finding);
+    // the sentence no longer says every change is a commit (the re-check's defect 8).
+    expect(textOf(markup)).toContain("anyone can read its words in the agreement's source");
     expect(markup).toContain(
       'href="https://github.com/radosukala/ours/blob/main/apps/web/src/app/(public)/agreement/page.tsx"',
     );
@@ -486,10 +487,12 @@ describe("closed (each passes on 185bb67)", () => {
   });
 
   it("closed: the three sentences of D-0018 §E pass only in agreement/page.tsx and only as written; other files, cases, punctuation or a missing full stop are caught; a wrapped or JSX-split copy there renders the same words", () => {
+    // Changed after the re-check's fix: the file also lists the contract's never-reached sentence.
     expect(ALLOWLIST.filter((e) => e.file === AGREEMENT_FILE).map((e) => e.sentence)).toEqual([
       DEFINITION,
       APPLIES,
       NO_SALE,
+      "If that count is never reached, nothing is handed over.",
     ]);
     for (const sentence of [DEFINITION, APPLIES, NO_SALE]) {
       expect(scanText(sentence, AGREEMENT_FILE), sentence).toEqual([]);
@@ -525,7 +528,11 @@ describe("closed (each passes on 185bb67)", () => {
 
   it("closed: the three pages tell the handover only in the status line's form, 'go to', and never with 'have joined' (the footer's status line still says it; D-0016 §N leaves those words to the founder)", () => {
     for (const [page, component] of THE_THREE) {
-      const text = textOf(render(component));
+      // Changed after the re-check's fix: the contract's never-reached sentence is the one
+      // handover verb allowed, listed by exact text; nothing else tells the handover.
+      const text = textOf(render(component))
+        .replace("If that count is never reached, nothing is handed over, and the promise not to sell still holds.", "")
+        .replace("If that count is never reached, nothing is handed over.", "");
       expect(text, page).not.toContain("have joined");
       expect(text, page).not.toMatch(/\bhand(?:s|ed|ing)? (?:it )?over\b|\bhanded\b|\btransferr|\bpasse[sd] to\b/i);
     }
@@ -577,7 +584,7 @@ describe("closed (each passes on 185bb67)", () => {
       vi.stubEnv("PROPOSALS_EMAIL", address);
       const rendered: [string, string, string | null][] = [
         ["/agreement", render(AgreementPage), AGREEMENT_FILE],
-        ["/projects", render(ProjectsPage), null],
+        ["/projects", render(ProjectsPage), PROJECTS_FILE], // a listed sentence since the re-check
         ["/maintainers", render(MaintainersPage), null],
         ["/contract", render(ContractPage), CONTRACT_FILE],
         ["/privacy", render(PrivacyPage), null],

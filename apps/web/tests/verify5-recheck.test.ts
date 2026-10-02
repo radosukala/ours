@@ -624,7 +624,9 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
     // after M-0013's verification. Since D-0016 §K the status line is not listed at all, nothing is let
     // through everywhere, and the signed promise (twice) is in its new words.
     const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence));
-    expect(handover).toHaveLength(10);
+    // Changed under M-0015 (its re-check): the contract's never-reached sentence is also
+    // listed once on /agreement and once on /projects, each in its own file.
+    expect(handover).toHaveLength(12);
     for (const entry of handover) {
       expect(scanText(entry.sentence, entry.file), entry.sentence).toEqual([]);
       expect(scanText(entry.sentence, elsewhere).length, entry.sentence).toBeGreaterThan(0);

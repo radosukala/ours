@@ -62,7 +62,7 @@ const USER_RIGHTS: readonly Clause[] = [
   {
     title: "Take your own data and leave.",
     text: "Download it, and delete it all, whenever you want.",
-    today: "In force on the feed while your account is active: your profile, posts, replies and connections, in Settings. If your account is suspended, write to the data controller and it is done for you. Held by the contract, the code and the law (GDPR).",
+    today: "In force on the feed: your profile, posts, replies and connections, in Settings while your account is active, or on request if it is suspended. Held by the contract, the code and the law (GDPR).",
   },
   {
     title: "See the costs and the rules.",
@@ -280,8 +280,8 @@ export default function AgreementPage() {
           Whoever runs a service must never be able to take your data for
           their own use, or to sell it. Your data and your connections will be
           kept together by the holder, a body that holds them for the users, so
-          that no service failing or leaving takes them with it. Until the
-          holder exists, the founder keeps the feed&apos;s.
+          that no service failing or leaving takes them with it. Today the
+          founder keeps the feed&apos;s, as the contract says.
         </p>
         <p>Seven safeguards are meant to hold that line. None of them is built yet:</p>
         <ul className={styles.items} role="list">
@@ -300,7 +300,9 @@ export default function AgreementPage() {
         <p>
           Until all seven exist for a service, it gets nothing of yours from
           our.one: no data, no connections, no sign-in. The feed is the one
-          exception: the founder holds it until the holder exists.
+          exception: the founder holds it, as the contract says. Whether it
+          moves to the holder before the contract&apos;s count is reached is
+          still open.
         </p>
         <p>
           Even then, a service could misuse what it is allowed to show you or
@@ -328,7 +330,7 @@ export default function AgreementPage() {
         </dl>
         <Today>
           There are no protected services yet besides the feed, which the
-          founder holds until the holder exists.
+          founder holds, as the contract says.
         </Today>
       </section>
 
@@ -396,8 +398,7 @@ export default function AgreementPage() {
             {" body of its members."}
           </li>
           <li>
-            If that count is never reached, none of it goes to that body. The
-            promise not to sell still holds.
+            {"If that count is never reached, nothing is handed over. The promise not to sell still holds."}
           </li>
         </ul>
         <p className={styles.links}>
@@ -411,13 +412,12 @@ export default function AgreementPage() {
       </section>
 
       <p>
-        This agreement is a draft, developed in public: every change is a
-        commit to{" "}
+        This agreement is a draft, developed in public, and anyone can read
+        its words in{" "}
         <a href={repositoryUrl(AGREEMENT_SOURCE)} rel="noopener noreferrer" target="_blank">
           the agreement&apos;s source
         </a>
-        , which anyone can read. The terms you join the feed under are the
-        contract.
+        . The terms you join the feed under are the contract.
       </p>
     </article>
   );

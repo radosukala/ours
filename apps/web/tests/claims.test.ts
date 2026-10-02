@@ -64,16 +64,43 @@ function sourceOf(piece: string): string {
 /** One sample per pattern, keyed by the pattern's source. */
 const SAMPLES: Record<string, string[]> = {
   // The verification of M-0015 (honesty 8 and 15).
-  [sourceOf("who use (?:it|them")]: ["Its users own it.", "The people who use it own it.", "The users are its owners."],
+  [sourceOf("who use")]: [
+    "Its users own it.",
+    "The people who use it own it.",
+    "The users are its owners.",
+    // The re-check of M-0015.
+    "Its users now own it.",
+    "Its users, together, own it.",
+    "The people who use the feed own it.",
+    "The users are its true owners.",
+  ],
   [sourceOf("those\\s+who\\s+use")]: [
     "our.one is owned by those who use it.",
     "The feed is people-owned.",
     "The feed is “owned” by its users.",
     'The feed will be "owned" by its users.',
     "The feed is owned by all its users.",
+    // The re-check of M-0015.
+    "The feed is owned by its own users.",
+    "The feed is owned by the feed's users.",
+    "The feed is owned by our.one's users.",
   ],
-  [sourceOf("to the holder")]: ["The domain moved to the holder.", "Its data now belongs to a not-for-profit body of its members."],
-  [sourceOf("guaranteed (?:income")]: ["You'll be paid.", "You will earn a living from it.", "Guaranteed income for maintainers."],
+  [sourceOf("to the holder")]: [
+    "The domain moved to the holder.",
+    "Its data now belongs to a not-for-profit body of its members.",
+    // The re-check of M-0015.
+    "The data have gone to the holder.",
+    "The domain was given to the holder.",
+    "The funds now belong to the holder.",
+  ],
+  [sourceOf("guaranteed")]: [
+    "You'll be paid.",
+    "You will earn a living from it.",
+    "Guaranteed income for maintainers.",
+    // The re-check of M-0015.
+    "You'll get paid.",
+    "You're guaranteed an income.",
+  ],
   "\\bmember-owned\\b": ["OURS is member-owned.", "A MEMBER-OWNED network"],
   "\\bowned by (?:our |the )?members\\b": ["It is owned by our members.", "owned by members", "Owned by the members"],
   "\\bmembers own\\b": ["The members own it."],
@@ -572,8 +599,10 @@ const RULES_FILE = "src/components/public/floorRules.ts";
 const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
 /** The front page's copy: its listed handover sentences are shown only on / (M-0011, SPEC §18.12). */
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
-/** The /agreement copy (M-0015; D-0018 §E: three sentences let through there only). */
+/** The /agreement copy (M-0015; D-0018 §E: three sentences let through there only, and the never-reached case). */
 const AGREEMENT_FILE = "src/app/(public)/agreement/page.tsx";
+/** The /projects copy (the re-check of M-0015: one listed sentence, the never-reached case). */
+const PROJECTS_FILE = "src/app/(public)/projects/page.tsx";
 
 describe("what people are shown: every public page, the footers and every mail, rendered (final verification, honesty-1)", () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -586,7 +615,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
       ["/agreement", renderToStaticMarkup(createElement(AgreementPage)), AGREEMENT_FILE],
-      ["/projects", renderToStaticMarkup(createElement(ProjectsPage)), null],
+      ["/projects", renderToStaticMarkup(createElement(ProjectsPage)), PROJECTS_FILE],
       ["/maintainers", renderToStaticMarkup(createElement(MaintainersPage)), null],
       ["/privacy", renderToStaticMarkup(createElement(PrivacyPage)), null],
       ["/power", renderToStaticMarkup(createElement(PowerPage)), null],
@@ -644,6 +673,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       [CONTRACT_FILE]: "/contract",
       [FRONT_FILE]: "/",
       [AGREEMENT_FILE]: "/agreement",
+      [PROJECTS_FILE]: "/projects",
     };
     // Since D-0016 §K every entry belongs to one file: none is let through on every page.
     expect(ALLOWLIST.every((e) => Object.keys(e).sort().join() === "file,reason,sentence")).toBe(true);

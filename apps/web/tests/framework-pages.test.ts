@@ -108,7 +108,7 @@ describe("/agreement: being developed, and honest about it", () => {
     const text = textOf(section);
     expect(text).toContain("Seven safeguards are meant to hold that line. None of them is built yet:");
     expect(text).toContain(
-      "Until all seven exist for a service, it gets nothing of yours from our.one: no data, no connections, no sign-in. The feed is the one exception: the founder holds it until the holder exists.",
+      "Until all seven exist for a service, it gets nothing of yours from our.one: no data, no connections, no sign-in. The feed is the one exception: the founder holds it, as the contract says. Whether it moves to the holder before the contract's count is reached is still open.",
     );
     expect(text).toContain("a service could misuse what it is allowed to show you or send. That can be recorded and challenged; it can't be prevented.");
   });
@@ -121,7 +121,9 @@ describe("/agreement: being developed, and honest about it", () => {
     );
     expect(text).not.toContain("have joined");
     expect(text).toContain(`Run by ${MAINTAINER}, the founder, through Ctrl AI, Inc., the founder's company. Unpaid, by choice.`);
-    expect(text).toContain("If that count is never reached, none of it goes to that body. The promise not to sell still holds.");
+    expect(text).toContain("If that count is never reached, nothing is handed over. The promise not to sell still holds.");
+    expect(text).toContain("anyone can read its words in the agreement's source.");
+    expect(text).not.toMatch(/holds it until the holder exists|keeps the feed's until/);
     for (const href of ["/maintainers", "/projects", "/contract"]) expect(markup).toContain(`href="${href}"`);
   });
 });
@@ -137,13 +139,13 @@ describe("/projects: the feed as the first project", () => {
     expect(markup).toContain('href="/costs"');
     expect(ddAfter(markup, "Held today")).toEqual(["The founder holds its domain, its data and its keys."]);
     expect(ddAfter(markup, "Promised")).toEqual([
-      `At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members. If that count is never reached, none of it goes to that body, and the promise not to sell still holds.`,
+      `At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members. If that count is never reached, nothing is handed over, and the promise not to sell still holds.`,
     ]);
     expect(ddAfter(markup, "Its users&#x27; rights today")[0]).toBe(
-      "Held by the contract: taking your data and leaving while your account is active, and seeing its costs and rules. Promised: nobody sells it. Not yet: deciding its rules, approving its budget, changing who runs it.",
+      "Held by the contract: taking your data and leaving (in Settings, or on request if your account is suspended), and seeing its costs and rules. Promised: nobody sells it. Not yet: deciding its rules, approving its budget, changing who runs it.",
     );
     expect(ddAfter(markup, "Its exception")[0]).toBe(
-      "It is the one service that runs before its data safeguards exist. The founder holds it until the holder exists.",
+      "It is the one service that runs before its data safeguards exist. The founder holds it, as the contract says. Whether it moves to the holder before the contract's count is reached is still open.",
     );
     expect(text).toContain("Every service on our.one will be a project with a page like this one");
     for (const href of ["/maintainers", "/agreement", "/contract"]) expect(markup).toContain(`href="${href}"`);

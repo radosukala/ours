@@ -396,7 +396,7 @@ async function textsSwcShortens(file: string): Promise<string[]> {
 /* ============================================================= defects */
 
 describe("defects (each FAILS on 328f3c0)", () => {
-  it("DEFECT: (MEDIUM) /agreement and /projects end the founder's holding of the feed when the holder exists ('the founder holds it until the holder exists', 'Until the holder exists, the founder keeps the feed's'), while /contract holds the domain, the data and the keys 'Until 100,000 members' and, if that is never reached, says 'Nothing is handed over'; D-0017 §K.4 and D-0018's 'Still open' leave moving the feed to the holder before 100,000 undecided ('That would amend D-0012 §B and contract promise 2'). The holder is set up at the first funded service (D-0017 §E), which can come first. The words are D-0018 §A's, so this is the founder's reading to make: each such sentence should say it is still open, or bound the holding as the contract does. The never-reached sentence the honesty round added ('none of it goes to that body') is narrower than D-0012 §B's 'nothing is handed over', and leaves room for the same reading", () => {
+  it("fixed: (MEDIUM) /agreement and /projects end the founder's holding of the feed when the holder exists ('the founder holds it until the holder exists', 'Until the holder exists, the founder keeps the feed's'), while /contract holds the domain, the data and the keys 'Until 100,000 members' and, if that is never reached, says 'Nothing is handed over'; D-0017 §K.4 and D-0018's 'Still open' leave moving the feed to the holder before 100,000 undecided ('That would amend D-0012 §B and contract promise 2'). The holder is set up at the first funded service (D-0017 §E), which can come first. The words are D-0018 §A's, so this is the founder's reading to make: each such sentence should say it is still open, or bound the holding as the contract does. The never-reached sentence the honesty round added ('none of it goes to that body') is narrower than D-0012 §B's 'nothing is handed over', and leaves room for the same reading", () => {
     // The records: the holder's sentence, the open question, and the contract's bound.
     expect(record("decisions/D-0018.md")).toContain("the founder holds it until the holder exists.");
     expect(record("decisions/D-0018.md")).toContain("moving identity and connections before 100,000;");
@@ -428,8 +428,9 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect(problems).toEqual([]);
   });
 
-  it("DEFECT: (MEDIUM) the claims scan's fix for ownership catches the verifier's nine examples and misses their one-word variants: 'owned by its own users', 'owned by the feed's users', 'owned by our.one's users', 'Its users now own it.', 'Its users, together, own it.' (the definition's own phrasing), 'The people who use the feed own it.', 'The users are its true owners.'; and D-0018 §E's sentences in another form pass anywhere, /agreement included ('We call the feed owned by its own users.', 'Owned by its own users means: …'). SPEC §18.17 item 7 says that 'Everywhere else, and in any other form, they are caught'; honesty 8 was the same class ('a word … inserted'), rated MEDIUM", () => {
-    expect(record("apps/web/SPEC.md")).toContain("Everywhere else, and in any other form, they are caught.");
+  it("fixed: (MEDIUM) the claims scan's fix for ownership catches the verifier's nine examples and misses their one-word variants: 'owned by its own users', 'owned by the feed's users', 'owned by our.one's users', 'Its users now own it.', 'Its users, together, own it.' (the definition's own phrasing), 'The people who use the feed own it.', 'The users are its true owners.'; and D-0018 §E's sentences in another form pass anywhere, /agreement included ('We call the feed owned by its own users.', 'Owned by its own users means: …'). SPEC §18.17 item 7 says that 'Everywhere else, and in any other form, they are caught'; honesty 8 was the same class ('a word … inserted'), rated MEDIUM", () => {
+    // Changed after the fix: SPEC no longer claims "any other form" (a pattern can't), only the forms the tests try.
+    expect(record("apps/web/SPEC.md")).toContain("Everywhere else, and in the other forms the tests try, they are caught.");
     expect(record("apps/web/SPEC.md")).toContain("The claims scan now catches ownership in the active voice and in quotes");
     // The verifier's forms are caught: the fix holds for what was shown.
     for (const claim of [
@@ -461,7 +462,7 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect(missed).toEqual([]);
   });
 
-  it("DEFECT: (LOW) the new handover and income rules miss trivial variants of the forms they were written for: 'have gone to the holder', 'were given to the holder' and 'now belong to the holder' (the members' rule lists 'gone' and 'given', and 'now belongs to' its members; the holder's rule lists neither), and 'You'll get paid.', 'You will get paid.' and 'You're guaranteed an income.' beside the caught 'You'll be paid.' and 'guaranteed income'", () => {
+  it("fixed: (LOW) the new handover and income rules miss trivial variants of the forms they were written for: 'have gone to the holder', 'were given to the holder' and 'now belong to the holder' (the members' rule lists 'gone' and 'given', and 'now belongs to' its members; the holder's rule lists neither), and 'You'll get paid.', 'You will get paid.' and 'You're guaranteed an income.' beside the caught 'You'll be paid.' and 'guaranteed income'", () => {
     for (const caught of [
       "Its name, its data and its funds went to the holder.",
       "Its domain has gone to its members.",
@@ -483,7 +484,7 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect(missed).toEqual([]);
   });
 
-  it("DEFECT: (LOW) a new rule's reason misstates D-0017 §B: the active-voice ownership rule says 'none of its rights is in force', where D-0017 §B says 'None of the collective rights is in force on our.one yet' and /agreement shows two rights in force on the feed (taking your data and leaving; seeing the costs and rules). The reason is printed with every hit a person reads", () => {
+  it("fixed: (LOW) a new rule's reason misstates D-0017 §B: the active-voice ownership rule says 'none of its rights is in force', where D-0017 §B says 'None of the collective rights is in force on our.one yet' and /agreement shows two rights in force on the feed (taking your data and leaving; seeing the costs and rules). The reason is printed with every hit a person reads", () => {
     expect(record("decisions/D-0017.md")).toContain("None of the collective rights is in force on our.one yet.");
     // On 328f3c0: "Take your own data and leave" and "See the costs and the rules".
     expect(userRights().filter((i) => /Today: In force on the feed/.test(i)).length).toBeGreaterThan(0);
@@ -491,19 +492,20 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect(misstated).toEqual([]);
   });
 
-  it("DEFECT: (LOW) /projects says the contract holds 'taking your data and leaving while your account is active', and says nothing of a suspended account; the contract's promise 4 holds it for a suspended account too ('If your account is suspended, write to us and we will do it for you.'), and /agreement's right 4, fixed for honesty 4, says so. The fix turned an overclaim on one page into an underclaim on the other", () => {
+  it("fixed: (LOW) /projects says the contract holds 'taking your data and leaving while your account is active', and says nothing of a suspended account; the contract's promise 4 holds it for a suspended account too ('If your account is suspended, write to us and we will do it for you.'), and /agreement's right 4, fixed for honesty 4, says so. The fix turned an overclaim on one page into an underclaim on the other", () => {
     expect(textOf(render(ContractPage))).toContain(
       "You can leave with everything: download your profile, posts, replies and connections, and delete it all, whenever you want. For anything else we hold about you, write to us. If your account is suspended, write to us and we will do it for you.",
     );
     const right4 = userRights().find((i) => i.startsWith("Take your own data and leave"));
-    expect(right4).toMatch(/If your account is suspended/);
+    // Changed after the fix of defect 7: right 4 now says "on request if it is suspended", naming no controller.
+    expect(right4).toMatch(/suspended/);
     // On 328f3c0: "Held by the contract: taking your data and leaving while your account is active, and seeing its costs and rules. …"
     const row = ddAfter(render(ProjectsPage), "Its users&#x27; rights today")[0] ?? "";
     // The defect: held "while your account is active", and the suspended case the contract holds is gone.
     expect(/while your account is active/.test(row) && !/suspended/.test(row), row).toBe(false);
   });
 
-  it("DEFECT: (LOW) with no data controller configured, /agreement tells a suspended person to 'write to the data controller and it is done for you' while its own first safeguard says 'no data controller is named yet' (both fixes' words; served so by next start on 3318); /privacy, in the same state, says 'write to the controller (not yet named)'", () => {
+  it("fixed: (LOW) with no data controller configured, /agreement tells a suspended person to 'write to the data controller and it is done for you' while its own first safeguard says 'no data controller is named yet' (both fixes' words; served so by next start on 3318); /privacy, in the same state, says 'write to the controller (not yet named)'", () => {
     configure(CONFIGS["PROPOSALS_EMAIL without a controller"]!);
     expect(textOf(render(PrivacyPage))).toContain(
       "If your account is suspended, you can't sign in to do either: write to the controller (not yet named) to get a copy or have it deleted.",
@@ -517,7 +519,7 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect(sendsToUnnamed && /no data controller is named yet/.test(page), right4).toBe(false);
   });
 
-  it("DEFECT: (LOW) /agreement says 'every change is a commit to the agreement's source' (the honesty fix's rewording of 'a commit in the our.one records'), but its words also change with no commit to that file: the law's 'Today' and Part 7's 'Today' follow this server's configuration (both since the fixes), and the threshold and the maintainer's name come from config.ts and handover.ts", () => {
+  it("fixed: (LOW) /agreement says 'every change is a commit to the agreement's source' (the honesty fix's rewording of 'a commit in the our.one records'), but its words also change with no commit to that file: the law's 'Today' and Part 7's 'Today' follow this server's configuration (both since the fixes), and the threshold and the maintainer's name come from config.ts and handover.ts", () => {
     const claim = "every change is a commit to the agreement's source";
     configure(CONFIGS["a controller and PROPOSALS_EMAIL"]!);
     const configured = sentences(textOf(render(AgreementPage)));
@@ -531,7 +533,7 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect(configured.join(" ").includes(claim) && changed.length > 0, changed.join(" | ")).toBe(false);
   });
 
-  it("DEFECT: (MEDIUM) SPEC §18.17's note 'After the verification' says the two verifiers 'proved 29 defects: 4 HIGH or MEDIUM, 25 LOW'; their files hold 2 HIGH, 9 MEDIUM and 18 LOW (11 HIGH or MEDIUM). The record a build receipt is written from understates the verification's findings (AGENTS.md §6, §10)", () => {
+  it("fixed: (MEDIUM) SPEC §18.17's note 'After the verification' says the two verifiers 'proved 29 defects: 4 HIGH or MEDIUM, 25 LOW'; their files hold 2 HIGH, 9 MEDIUM and 18 LOW (11 HIGH or MEDIUM). The record a build receipt is written from understates the verification's findings (AGENTS.md §6, §10)", () => {
     const note = /proved (\d+) defects: (\d+) HIGH or MEDIUM, (\d+) LOW/.exec(record("apps/web/SPEC.md"));
     expect(note).not.toBeNull();
     const honesty = read("tests/verify-m0015-honesty.test.ts");
@@ -546,7 +548,7 @@ describe("defects (each FAILS on 328f3c0)", () => {
     expect([Number(note![2]), Number(note![3])]).toEqual([high + medium, low]);
   });
 
-  it("DEFECT: (LOW) SPEC §18.17 item 1 still quotes, as the agreement's last sentence, words the page no longer renders ('…every change is a commit in the our.one records…'), and item 2 still describes an 'Under the common agreement' row that the honesty fix renamed 'Its users' rights today'; the note after the verification mentions neither change, and M-0015's first acceptance line holds the pages to §18.17's copy", () => {
+  it("fixed: (LOW) SPEC §18.17 item 1 still quotes, as the agreement's last sentence, words the page no longer renders ('…every change is a commit in the our.one records…'), and item 2 still describes an 'Under the common agreement' row that the honesty fix renamed 'Its users' rights today'; the note after the verification mentions neither change, and M-0015's first acceptance line holds the pages to §18.17's copy", () => {
     expect(record("mandates/M-0015.yaml")).toContain("render SPEC §18.17's copy word for word");
     const spec = record("apps/web/SPEC.md");
     const section = spec.slice(spec.indexOf("18.17 The framework pages"), spec.indexOf("After the verification (2 October 2026)"));
@@ -571,7 +573,8 @@ describe("closed: the 29 fixes, where the verifiers' own assertions no longer re
     const rendering = read("tests/verify-m0015-rendering.test.ts");
     expect([(honesty.match(/it\("DEFECT/g) ?? []).length, (rendering.match(/it\("DEFECT/g) ?? []).length]).toEqual([0, 0]);
     expect([(honesty.match(/it\("fixed: /g) ?? []).length, (rendering.match(/it\("fixed \(/g) ?? []).length]).toEqual([17, 12]);
-    expect((honesty.match(/\/\/ (?:Changed|Fixed) after/g) ?? []).length).toBe(4);
+    // Changed after the re-check's fixes: two more of the honesty file's checks follow the new wording.
+    expect((honesty.match(/\/\/ (?:Changed|Fixed) after/g) ?? []).length).toBe(6);
     expect((rendering.match(/\/\/ Changed after/g) ?? []).length).toBe(3);
   });
 
@@ -788,7 +791,8 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
       configure(config);
       for (const [page, component, file] of [
         ["/agreement", AgreementPage, AGREEMENT_FILE],
-        ["/projects", ProjectsPage, null],
+        // Changed after the re-check's fix: /projects now carries one listed sentence (the never-reached case).
+        ["/projects", ProjectsPage, PROJECTS_FILE],
         ["/maintainers", MaintainersPage, null],
         ["/privacy", PrivacyPage, null],
         ["/contract", ContractPage, "src/app/(public)/contract/page.tsx"],
@@ -895,8 +899,10 @@ describe("closed: M-0015's acceptance lines against the shipped code", () => {
 
   it("closed: line 8 — the claims scan finds nothing in the repository, and D-0018 §E's three sentences, exactly as written, pass only in the agreement's file (their other forms: the DEFECT above)", () => {
     expect(scanRepoPublicText(WEB).hits).toEqual([]);
+    // Changed after the fix of defect 1: the agreement's file also lists the contract's never-reached sentence.
     const listed = ALLOWLIST.filter((e) => e.file === AGREEMENT_FILE).map((e) => e.sentence);
-    expect(listed).toHaveLength(3);
+    expect(listed).toHaveLength(4);
+    expect(listed[3]).toBe("If that count is never reached, nothing is handed over.");
     for (const sentence of listed) {
       expect(scanText(sentence, AGREEMENT_FILE)).toEqual([]);
       for (const other of [PROJECTS_FILE, MAINTAINERS_FILE, "src/components/public/FrontPage.tsx", null]) {
