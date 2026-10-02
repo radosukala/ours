@@ -1,0 +1,147 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0017
+title: The front door — the message, two entrances, the feed as the first project on its own page, the drafts, and an idea before any code
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0020
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-02T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0015, D-0016, D-0017, D-0018, D-0019, D-0020]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0017.md
+
+objective: >
+  Build D-0020 §A to §F. In apps/web: the front door at /, with the message
+  "The software we live in should be ours.", two entrances on the first
+  screen, the feed as the first project beside labelled possibilities, an
+  illustration of changing who maintains a service (labelled as something
+  our.one can't do today), what "ours" means as the common agreement
+  proposes it, the builders' invitation with conditional pay, what is
+  built, a draft or not built, and ways to take part; the feed's page at
+  /feed, with the front page's words, form, seats and promises unchanged;
+  the public header and footer and the identity on every public page, with
+  the signed-in app unchanged; /projects, /build and /maintainers as D-0020
+  §B says, and /privacy's sentence on the drafts; the drafts of a need or an
+  idea, in the browser only, copied or opened in the visitor's own email
+  app when PROPOSALS_EMAIL is set. In kit/: build.md's idea step and the
+  new line for a coding agent, with the README. Fictional data only;
+  nothing runs anywhere but this machine.
+
+human_outcome: >
+  A stranger who opens our.one sees what it is trying to do, what exists
+  today and what doesn't, and finds their part: the feed, a need, or an
+  idea. A builder can put an idea in front of people before building it,
+  and their coding agent starts there too.
+
+adopted_constraints:
+  - The feed's verified words, its join form and its gates move to /feed unchanged; signed-in visitors go to /home from / and /feed.
+  - Nothing on any page says user control, the holder or a safeguard exists; the agreement's rights are shown as proposed.
+  - Possibilities are labelled, with no project announced; the illustration says our.one can't do it today.
+  - Every status is true on the deployed site and off it.
+  - A draft never leaves the browser by itself, and nothing stores or counts one; email is the only route.
+  - No pay, audience or income is promised.
+  - The rules, the tool and the schema are unchanged.
+  - Nothing loads from anywhere but the site itself.
+  - No real person's data, no email to a real address, no provider account, no domain touched, no package published.
+
+hypotheses:
+  - A stranger who reads the front door can say what our.one is trying to do, what is available today, and what they could do next.
+  - A builder can tell an early idea from a checked project, and a coding agent given only the new line drafts the idea before it builds.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - kit/build.md
+      - kit/README.md
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - kit/our-one.mjs
+      - kit/our.one.schema.json
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: REVERSIBLE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, nothing-loaded-from-elsewhere]
+  privacy: [no-real-person-data-under-this-mandate, drafts-stay-in-the-browser]
+
+acceptance:
+  tests:
+    - / renders the front door's copy as SPEC §18.19 gives it; its statuses read true whether or not the site is deployed; every possibility and the illustration carry their labels.
+    - /feed renders the front page's former words, form, seats, picture, promise and questions unchanged, under the same gates; signed-in visitors are sent to /home from / and from /feed.
+    - Every public page has the header (with Sign in) and the footer (its links, the running version and the status line).
+    - A draft is composed, copied, and offered to the visitor's email app only when PROPOSALS_EMAIL is set; nothing is sent or stored; without JavaScript the buttons lead to /maintainers.
+    - /build leads with the invitation and the idea, then the line for a coding agent, the rules, the check's limits and the tools; /projects shows the feed and the labelled possibilities; /privacy says what the drafts do.
+    - build.md drafts the idea in PITCH.md before any code and asks the person whether to find out first; the feed still passes the check.
+    - The claims scan reads every new page and component and finds no prohibited claim.
+    - Keyboard use, the tabs and the dialog, phone widths from 320px with nothing scrolling sideways, light and dark, and no request to another origin.
+    - Typecheck, lint, tests and a production build pass; the pages serve over HTTP; pnpm ours check M-0017 --changed authorises the finished working tree.
+  evidence:
+    - a build receipt in receipts/builds/ naming the commits, every check and its result, and what was not checked
+    - an independent verification in receipts/conformance/, with the verifiers' tests committed as written before any is adapted, and the agent trial's report and project
+    - screenshots of the front door and /feed, desktop and phone, light and dark
+
+limits:
+  stop_conditions:
+    - a page would have to say that user control, the holder or a safeguard exists
+    - a route for needs or ideas other than email would be needed, or a draft would have to be stored
+    - the feed's verified words would have to change
+    - the rules, the tool or the schema would have to change
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0017 commits; no data, schema or provider is touched
+  irreversible_residue: none
+
+human_approvals:
+  adoption: the founder's "I think that his view, design and message is much much better ... have a look and help me then fully rework user experience to this one" (D-0020)
+  deploy: not authorized by this mandate (M-0012)

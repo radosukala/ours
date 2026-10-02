@@ -1,0 +1,70 @@
+schema: ours.decision/v0.1
+decision_id: D-0020
+title: The front door — "The software we live in should be ours.", two entrances, the feed as the first project, and an idea before any code
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0020.md
+
+proposal: P-0013
+prerequisite_decisions: [D-0015, D-0016, D-0017, D-0018, D-0019]
+
+outcome: >
+  The front page becomes the network's front door, under the message "The
+  software we live in should be ours.", with two entrances on the first
+  screen (people who want something better, people who can build it), the
+  feed as the first project and other kinds of service shown only as
+  labelled possibilities, an illustration of changing who maintains a
+  service while its people, relationships and rules stay (labelled as
+  something our.one can't do today), what "ours" means as the common
+  agreement proposes it, the builders' invitation with conditional pay, what
+  is built, a draft or not built, and ways to take part. The public pages
+  take an identity of their own in the device's own fonts; the signed-in
+  app keeps its look. The feed's verified words, join form and promises
+  move unchanged to /feed. Builders start with an idea before any code, and
+  anyone can name a need; both still come by email and are read by hand,
+  and a draft written on the site stays in the browser until the visitor
+  copies it or sends it themselves. build.md starts with the idea, and the
+  line for a coding agent changes, tried by a fresh agent before release.
+  The founder chose the message on judgment; D-0018 §C's hold is lifted,
+  and the revised message test runs before the public launch. Authorizes
+  M-0017 (BUILD) and amends the draft M-0012.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0017]
+
+prohibits:
+  - saying that user control, the holder or any safeguard exists before it does
+  - presenting a possibility as a project, or the illustration as something our.one can do
+  - taking needs or ideas by any route but email, or storing a draft
+  - changing the feed's verified words (its headline, its lede, its promises) under M-0017
+  - promising builders an audience or an income
+
+effective_from: 2026-10-02T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending. §B
+  reads the founder's words as a new front door, not new words for the
+  feed; §C reads them as lifting D-0018 §C's hold, not as dropping the
+  message test, which runs before the public launch; §D reads the review's
+  advice as retiring the "On your own" column D-0019 set beside our.one's.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

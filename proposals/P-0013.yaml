@@ -1,0 +1,48 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0013
+title: The front door — "The software we live in should be ours.", two entrances, the feed as the first project, and an idea before any code
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0020
+
+human_source:
+  path: proposals/P-0013.md
+evidence:
+  - path: proposals/P-0013.evidence-conversation-2026-10-02.md
+  - path: proposals/P-0013.evidence-review-2026-10-02.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - visitors to our.one, who would meet the wider proposition first and the feed one step after
+  - people who want a better service, who could name a need without an account
+  - builders and their coding agents, who would draft an idea before building
+  - the founder, as the feed's maintainer and the one who reads every need and idea
+
+unresolved:
+  - the founder's review of the exact wording of the new pages and of build.md
+  - running the revised message test before the public launch, and what changes if strangers misunderstand
+  - the identity, adopted for the public pages and untested with strangers
+  - the hosting lines on /privacy and /power, which say nothing is deployed and must stay true after the deploy
+  - /agreement part 7 lists fewer parts of a proposal than D-0017 §G (the agreement's wording is the founder's review)
+
+cost:
+  proposer_hours: 1
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-02
+    actor: { id: founder, kind: human }
+    position: another agent's review and design study are much better than what we have; have a look, then fully rework the user experience to it
+  - date: 2026-10-02
+    actor: { id: claude, kind: agent }
+    position: yes, with four corrections before it can be the real site — joining the feed and signing in stay one step away; sentences that break the claims scan or turn false at the deploy are rewritten; the agreement's rights carry their state, proposed; the agent line keeps our.one's own address and gets its own trial. The front page's hold (D-0018 §C) is lifted by the founder's choice; the revised message test runs before the public launch, not before the build

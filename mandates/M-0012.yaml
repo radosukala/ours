@@ -13,7 +13,7 @@ authority:
     role: founder-steward
   valid_from: 2026-09-28T00:00:00Z
   expires_at: 2027-06-30T00:00:00Z
-  prerequisite_decisions: [D-0011, D-0012, D-0013, D-0014, D-0015, D-0016, D-0017, D-0018, D-0019]
+  prerequisite_decisions: [D-0011, D-0012, D-0013, D-0014, D-0015, D-0016, D-0017, D-0018, D-0019, D-0020]
 
 institution:
   constitution_version: ours-constitution/0.1
@@ -39,7 +39,7 @@ human_outcome: >
   join until the founder opens seats or sends invites.
 
 adopted_constraints:
-  - The deployed commit is the one verified under M-0011, M-0013, M-0014, M-0015 or M-0016, or a later one verified the same way; the release receipt names it.
+  - The deployed commit is the one verified under M-0011, M-0013, M-0014, M-0015, M-0016 or M-0017, or a later one verified the same way; the release receipt names it.
   - Every secret is entered by the founder in the provider's own dashboard; no agent enters, stores or prints one.
   - Exactly one real person's address is used by an agent's action, the founder's, for the founder's own administrator account.
   - Seats stay at zero until the founder opens them.
@@ -86,16 +86,17 @@ preconditions:
   - Resend with the our.one domain verified (its DNS records added by the founder)
   - "the founder's secrets in Vercel: DATABASE_URL, SESSION_SECRET (32+ random bytes), CRON_SECRET, RESEND_API_KEY, MAIL_FROM, MAIL_TRANSPORT=resend, DATA_CONTROLLER=Ctrl AI, Inc., DATA_CONTROLLER_EMAIL=privacy@ctrlai.com, DATA_CONTROLLER_REPRESENTATIVE=Rado Sukala, CLIENT_IP_HEADER=x-vercel-forwarded-for, APP_URL=https://our.one, OURS_VERSION"
   - ONE moved to oneburger.cz, and our.one pointed at Vercel
-  - a human confirms that the court's opinion says what the front page's 7% sentence cites (D-0015 §E; AGENTS.md §10)
+  - a human confirms that the court's opinion says what the 7% sentence on the feed's page, /feed, cites (D-0015 §E; D-0020 §B; AGENTS.md §10)
   - the founder approves the exact wording of the common agreement at /agreement (D-0018 §B)
   - PROPOSALS_EMAIL set in Vercel to the address the founder chooses for proposals and needs (D-0018 §D)
-  - the founder approves rules version 0 and the exact wording of /build and build.md (D-0019 §I)
+  - the founder approves rules version 0 and the exact wording of /build and build.md (D-0019 §I), and of the front door, /feed, /projects and /maintainers, with the new line for a coding agent (D-0020 §G)
   - the Vercel project keeps files outside the root directory available to the build, because /build.md and /kit/ are read from kit/ at build time (D-0019 §I)
+  - the hosting lines on /privacy and /power, and the control record behind /power, say what is true once the build runs, by a BUILD change before the deploy (D-0020 §G)
 
 acceptance:
   tests:
     - The deployed commit equals the named verified commit.
-    - GET / returns 200 with the headline, the live count and "Joining opens soon." until seats are opened; /contract, /rules, /privacy, /costs and /power return 200; /privacy and /power name Ctrl AI, Inc. and privacy@ctrlai.com; /privacy also names its representative in the EU, reached at the same address; neither says anything more about Ctrl AI.
+    - GET / returns 200 with the front door's headline; GET /feed returns 200 with the feed's headline, the live count and "Joining opens soon." until seats are opened; /contract, /rules, /privacy, /costs and /power return 200; /privacy and /power name Ctrl AI, Inc. and privacy@ctrlai.com; /privacy also names its representative in the EU, reached at the same address; neither says anything more about Ctrl AI.
     - GET /api/health reports the database reachable.
     - The founder receives the sign-in link by email and signs in as the one administrator.
     - A request for a seat while none is open puts the address in line and sends nothing.
