@@ -793,6 +793,13 @@ hr {
   text-decoration: underline;
 }
 
+/* A link's words stay together, so the footer wraps only between links;
+   each separator holds on to the link before it (the verification of
+   M-0015). */
+.site-footer__links a {
+  white-space: nowrap;
+}
+
 /* The status line is long (D-0016 §J): no lone last word where the
    browser can avoid one. */
 .site-footer__status {

@@ -658,6 +658,10 @@
     padding-block: 12px;
   }
 
+  .pairLink {
+    padding-block: 12px;
+  }
+
   /* 44px at any font size (border-box): 12px above and below a 13px line
      is 41.55px (the re-check of M-0014). */
   .pledgeLink {
@@ -754,12 +758,32 @@
   line-height: 1.25;
 }
 
+/* In the text colour, underlined: the link blue is 3:1 on white, and a link
+   inside a sentence needs more than colour to be seen (the verification of
+   M-0015, WCAG 1.4.1 and 1.4.3), as M-0014 did for the card and the story. */
 .page a {
-  color: var(--accent);
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--outline-border);
+  text-underline-offset: 3px;
 }
 
 .page a:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+/* The definition on /agreement: set off by a rule, not by the browser's
+   40px on each side. */
+.page blockquote {
+  margin: 0;
+  padding-left: 16px;
+  border-left: 3px solid var(--outline-border);
+}
+
+/* A link in a row of two (/agreement, /projects): a 44px target on a touch
+   screen, where the row's gap goes (SPEC §9). */
+.pairLink {
+  display: inline-block;
 }
 
 .items {

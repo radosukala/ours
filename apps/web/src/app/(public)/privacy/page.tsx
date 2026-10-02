@@ -271,8 +271,8 @@ export default function PrivacyPage() {
             Your posts, replies, likes, connections and sessions go with it.
           </li>
           <li>
-            <strong>If your account is suspended,</strong> you can&apos;t
-            sign in to do either: write to the controller
+            <strong>If your account is suspended,</strong>
+            {" you can't sign in to do either: write to the controller"}
             {named ? (
               <>
                 {" "}

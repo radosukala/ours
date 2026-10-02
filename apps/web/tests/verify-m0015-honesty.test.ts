@@ -401,7 +401,8 @@ describe("defects (each FAILS on 185bb67)", () => {
   // right 5 links "the public records of every decision" to the decisions.
   it("fixed: (LOW) the agreement's records are linked: its own source, and the public records of every decision (AGENTS.md §10)", () => {
     const markup = render(AgreementPage);
-    expect(textOf(markup)).toContain("every change is a commit to its source, which anyone can read");
+    // The link's own words name what it opens (the rendering verification's link-name finding).
+    expect(textOf(markup)).toContain("every change is a commit to the agreement's source, which anyone can read");
     expect(markup).toContain(
       'href="https://github.com/radosukala/ours/blob/main/apps/web/src/app/(public)/agreement/page.tsx"',
     );

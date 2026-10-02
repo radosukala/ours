@@ -119,13 +119,18 @@ export function proposalsEmail(): string | null {
   if (!controller()) return null;
   const email = env("PROPOSALS_EMAIL");
   if (!email || UNCONFIRMED.test(email)) return null;
-  try {
-    normEmail(email);
-  } catch {
-    return null;
-  }
-  return email;
+  return PLAIN_ADDRESS.test(email) ? email : null;
 }
+
+/**
+ * An address that goes into a mailto link as it is: letters, digits and
+ * "_+-" in dot-separated words, then a host name. Narrower than RFC 5322 on
+ * purpose: "?", "&", "#", "%", quotes and brackets would change or cut the
+ * link, so a value holding them switches proposals off (the verification of
+ * M-0015).
+ */
+const PLAIN_ADDRESS =
+  /^[A-Za-z0-9_+-]+(?:\.[A-Za-z0-9_+-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
 
 /** New accounts can be created only while a controller is named (SPEC §8). */
 export function accountCreationOpen(): boolean {

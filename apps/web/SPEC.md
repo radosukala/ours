@@ -2360,3 +2360,43 @@ five-stranger test (D-0017 §H).
 8. **Tests:** `tests/framework-pages.test.ts` for every line above, the
    denial paths first. The claims tests render the three pages, and run
    with the address set as well.
+
+**After the verification (2 October 2026).** Two verifiers, one for honesty
+and one for rendering, proved 29 defects: 4 HIGH or MEDIUM, 25 LOW. Every
+one is fixed. Their tests were committed as written before any fix.
+
+- **Honesty.**
+  - Pay is never "directly" from users. A protected service's funds go to
+    the holder.
+  - `/projects` speaks in the future tense.
+  - The data line is "meant to" hold, with none of it built.
+  - The export notes the suspended case.
+  - Misuse covers "show or send".
+  - The founder *holds* the feed until the holder exists.
+  - Proposals stay off without a data controller.
+  - Every part of `/agreement` has a "Today".
+  - `/agreement` reads the controller from the configuration.
+  - "Run by" names Ctrl AI, Inc., as `/contract` does.
+  - The never-reached case is stated.
+  - The unadopted review policy is dropped.
+  - The records and the page's own source are linked.
+  - The claims scan now catches ownership in the active voice and in
+    quotes, "moved to" and "went to the holder", and promises of income.
+- **Rendering.**
+  - `.page a` takes the text colour, underlined, on every public page: the
+    link blue is 3:1 on white.
+  - The notice comes first on `/agreement`.
+  - The definition's blockquote has a rule, not the browser's margins.
+  - Paired links are 44px targets on touch screens (`.pairLink`).
+  - Footer links never break inside their names, and each separator holds
+    on to the link before it (`" · "`).
+  - "not-for-profit" stays whole.
+  - The safeguards list keeps `role="list"`.
+  - The link names are "The feed's project page" and "the agreement's
+    source".
+  - Part 7's "Today" follows `PROPOSALS_EMAIL`.
+  - `PROPOSALS_EMAIL` must be a plain address (letters, digits, `_+-`, dots,
+    and a host name). Anything that would change or cut a mailto link
+    switches proposals off.
+  - `/privacy`'s suspended-account sentence no longer loses its space in
+    Next's production compiler.

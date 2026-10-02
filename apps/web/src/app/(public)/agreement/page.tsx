@@ -22,7 +22,7 @@ import Link from "next/link";
 import { MAINTAINER, THRESHOLD } from "@/components/public/handover";
 import styles from "@/components/public/public.module.css";
 import { repositoryUrl } from "@/components/public/repository";
-import { controller } from "@/core/config";
+import { controller, proposalsEmail } from "@/core/config";
 
 /** Rendered per request: the data controller comes from the configuration, as on /privacy and /power. */
 export const dynamic = "force-dynamic";
@@ -156,17 +156,36 @@ function Today({ children }: { children: React.ReactNode }) {
   return <p className={styles.heldBy}>Today: {children}</p>;
 }
 
+/** The word the front page's card also keeps whole: it must not break at its hyphens. */
+const WHOLE = "not-for-profit";
+
+/** `text`, with every "not-for-profit" kept on one line (the verification of M-0015). */
+function keepWhole(text: string): React.ReactNode {
+  const parts = text.split(WHOLE);
+  if (parts.length === 1) return text;
+  return parts.flatMap((part, i) =>
+    i === 0
+      ? [part]
+      : [
+          <span key={i} className={styles.nowrap}>
+            {WHOLE}
+          </span>,
+          part,
+        ],
+  );
+}
+
 /** A right's "Today" line, with the records linked where it names them. */
 function RightToday({ today }: { today: string }) {
   const at = today.indexOf(RECORDS_LINK_TEXT);
-  if (at === -1) return <Today>{today}</Today>;
+  if (at === -1) return <Today>{keepWhole(today)}</Today>;
   return (
     <Today>
-      {today.slice(0, at)}
+      {keepWhole(today.slice(0, at))}
       <a href={repositoryUrl("decisions", true)} rel="noopener noreferrer" target="_blank">
         {RECORDS_LINK_TEXT}
       </a>
-      {today.slice(at + RECORDS_LINK_TEXT.length)}
+      {keepWhole(today.slice(at + RECORDS_LINK_TEXT.length))}
     </Today>
   );
 }
@@ -183,13 +202,13 @@ export default function AgreementPage() {
   return (
     <article className={styles.page}>
       <h1 className="headline">The common agreement</h1>
-      <p className="lede">
-        The terms every service on our.one will run under: between the people
-        who use a service and the people who build and run it.
-      </p>
       <p className="notice">
         Being developed. None of the collective rights below is in force yet,
         and each part says what holds it today.
+      </p>
+      <p className="lede">
+        The terms every service on our.one will run under: between the people
+        who use a service and the people who build and run it.
       </p>
 
       <section aria-labelledby="agreement-meaning">
@@ -265,7 +284,7 @@ export default function AgreementPage() {
           holder exists, the founder keeps the feed&apos;s.
         </p>
         <p>Seven safeguards are meant to hold that line. None of them is built yet:</p>
-        <ul className={styles.items}>
+        <ul className={styles.items} role="list">
           {SAFEGUARDS.map((s) => (
             <li key={s.name} className={styles.item}>
               <h3 className={styles.itemTitle}>{s.name}</h3>
@@ -356,7 +375,9 @@ export default function AgreementPage() {
           </li>
         </ol>
         <p className={styles.heldBy}>
-          Today: proposals are read by hand.{" "}
+          {proposalsEmail()
+            ? "Today: proposals are read by hand. "
+            : "Today: proposals open at launch. "}
           <Link href="/maintainers">Build the next one</Link>
         </p>
       </section>
@@ -370,7 +391,9 @@ export default function AgreementPage() {
           </li>
           <li>Today the founder holds its domain, its data and its keys.</li>
           <li>
-            {`The contract promises: at ${THRESHOLD} people, as it counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`}
+            {`The contract promises: at ${THRESHOLD} people, as it counts them, its domain, its data and the right to replace the maintainer go to a `}
+            <span className={styles.nowrap}>not-for-profit</span>
+            {" body of its members."}
           </li>
           <li>
             If that count is never reached, none of it goes to that body. The
@@ -378,8 +401,12 @@ export default function AgreementPage() {
           </li>
         </ul>
         <p className={styles.links}>
-          <Link href="/projects">Its project page</Link>
-          <Link href="/contract">The contract</Link>
+          <Link href="/projects" className={styles.pairLink}>
+            The feed&apos;s project page
+          </Link>
+          <Link href="/contract" className={styles.pairLink}>
+            The contract
+          </Link>
         </p>
       </section>
 
@@ -387,7 +414,7 @@ export default function AgreementPage() {
         This agreement is a draft, developed in public: every change is a
         commit to{" "}
         <a href={repositoryUrl(AGREEMENT_SOURCE)} rel="noopener noreferrer" target="_blank">
-          its source
+          the agreement&apos;s source
         </a>
         , which anyone can read. The terms you join the feed under are the
         contract.

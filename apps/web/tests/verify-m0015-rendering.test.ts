@@ -497,14 +497,18 @@ describe("PROPOSALS_EMAIL, as each request reads it (D-0018 §D; SPEC §18.17 it
   });
 
   it("closed: whatever the value holds, nothing gets into the markup: an angle bracket is shown as text and makes no element, a quote stays inside the href, and each link has only its href (next start with '<b>proposals@example.test': &lt;b&gt; in the text, no <b>)", () => {
+    // Changed after the fix of the address finding: such values are not
+    // addresses, so they now switch proposals off, and nothing of them
+    // reaches the markup at all.
     vi.stubEnv("PROPOSALS_EMAIL", "<b>proposals@example.test");
     const angled = render(MaintainersPage);
-    expect(angled).toContain("&lt;b&gt;proposals@example.test");
+    expect(angled).not.toContain("proposals@example.test");
     expect(findAll(parse(angled), (e) => e.tag === "b")).toEqual([]);
+    expect(mailtos(parse(angled))).toEqual([]);
     vi.stubEnv("PROPOSALS_EMAIL", 'pro"posals@example.test');
     const quoted = render(MaintainersPage);
-    expect(quoted).toContain('href="mailto:pro&quot;posals@example.test?subject=A%20proposal%20for%20our.one"');
-    for (const a of mailtos(parse(quoted))) expect(Object.keys(a.attrs)).toEqual(["href"]);
+    expect(quoted).not.toContain("posals@example.test");
+    expect(mailtos(parse(quoted))).toEqual([]);
   });
 
   it("closed: the pages that read the setting render per request, so no build-time or cached copy can show another state: /maintainers and /privacy, and the public layout around /agreement and /projects, are force-dynamic, and those two pages set nothing that overrides it (next build at 185bb67 lists /agreement, /projects, /maintainers and /privacy as ƒ, dynamic; each response carries Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate and no x-nextjs-cache header)", () => {
@@ -517,7 +521,7 @@ describe("PROPOSALS_EMAIL, as each request reads it (D-0018 §D; SPEC §18.17 it
     }
   });
 
-  it("DEFECT (LOW): PROPOSALS_EMAIL should become a link only if it is an email address, and then go to exactly that address with the subject as its one header — but proposalsEmail() takes anything without a space or a second @ (normEmail's /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/), and mailto() puts it into the link unencoded. 'proposals@example.test?bcc=other%40example.test&body=FICTIONAL' is shown as the address and gives both links a Bcc and a body and no subject; '<b>proposals@example.test' and 'pro\"posals@example.test' are not addresses and are linked; and a '#', which an address may hold, cuts each link to 'mailto:proposals' (all four served so by next start from 185bb67's build; /privacy's link too). The value is the founder's to set, so this bites only on a mistake, which M-0015 says should switch the feature off", () => {
+  it("fixed (LOW): PROPOSALS_EMAIL should become a link only if it is an email address, and then go to exactly that address with the subject as its one header — but proposalsEmail() takes anything without a space or a second @ (normEmail's /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/), and mailto() puts it into the link unencoded. 'proposals@example.test?bcc=other%40example.test&body=FICTIONAL' is shown as the address and gives both links a Bcc and a body and no subject; '<b>proposals@example.test' and 'pro\"posals@example.test' are not addresses and are linked; and a '#', which an address may hold, cuts each link to 'mailto:proposals' (all four served so by next start from 185bb67's build; /privacy's link too). The value is the founder's to set, so this bites only on a mistake, which M-0015 says should switch the feature off", () => {
     /** An address in RFC 5322's dot-atom form, with a host name for its domain. */
     const ADDRESS =
       /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
@@ -594,7 +598,7 @@ describe("the copy as next build ships it (JSX whitespace)", () => {
     check("/privacy", findAll(privacy, (e) => e.tag === "p" && text(e).startsWith("If you email a proposal"))[0]!);
   });
 
-  it("DEFECT (LOW): /privacy should read 'If your account is suspended, you can't sign in to do either' in production as it does here — but next build ships 'If your account is suspended,you can't sign in…' (in the HTML next start serves from 185bb67's build, with the address set and unset, and on screen in Chrome; the only difference between the five pages' production HTML and this renderer's). Next's compiler drops the space after the bold words because the text after them runs over two lines and holds &apos;; vitest compiles JSX with its own transform, which keeps it, so no test in the suite can see it. The line is from a4c997f (M-0010); /privacy is a page M-0015 changed, and the same construct anywhere in it would go the same way", async () => {
+  it("fixed (LOW): /privacy should read 'If your account is suspended, you can't sign in to do either' in production as it does here — but next build ships 'If your account is suspended,you can't sign in…' (in the HTML next start serves from 185bb67's build, with the address set and unset, and on screen in Chrome; the only difference between the five pages' production HTML and this renderer's). Next's compiler drops the space after the bold words because the text after them runs over two lines and holds &apos;; vitest compiles JSX with its own transform, which keeps it, so no test in the suite can see it. The line is from a4c997f (M-0010); /privacy is a page M-0015 changed, and the same construct anywhere in it would go the same way", async () => {
     // What this renderer, and so every test, shows:
     expect(textOf(render(PrivacyPage))).toContain("If your account is suspended, you can't sign in to do either");
     // What next build emits for the same lines:
@@ -619,7 +623,8 @@ describe("headings, landmarks, lists and the blockquote", () => {
         "h2 1. What the people who use a service get",
         "h2 2. What the people who build and run a service get",
         "h2 3. What they give up",
-        "h2 4. Your data: the line nobody running a service crosses",
+        // Changed after the honesty fix: the line is one a service "should be able to" not cross; none of it is built.
+        "h2 4. Your data: a line nobody running a service should be able to cross",
         "h3 The law",
         "h3 The agreement",
         "h3 No keys",
@@ -701,7 +706,7 @@ describe("headings, landmarks, lists and the blockquote", () => {
     expect(titles).toEqual(["The common agreement · our.one", "Projects · our.one", "Build the next one · our.one"]);
   });
 
-  it("DEFECT (LOW): the list of the seven safeguards should keep its list semantics — it is a ul whose stylesheet takes the bullets away (.items { list-style: none }) without role=\"list\", and WebKit then gives VoiceOver no list at all, where 'list, 7 items' would say how many there are (WebKit's known behaviour; not measured here). The site's own pattern for an unstyled list is role=\"list\" (globals.css: ul[role=\"list\"]; SettingsLinks, /settings/blocked)", () => {
+  it("fixed (LOW): the list of the seven safeguards should keep its list semantics — it is a ul whose stylesheet takes the bullets away (.items { list-style: none }) without role=\"list\", and WebKit then gives VoiceOver no list at all, where 'list, 7 items' would say how many there are (WebKit's known behaviour; not measured here). The site's own pattern for an unstyled list is role=\"list\" (globals.css: ul[role=\"list\"]; SettingsLinks, /settings/blocked)", () => {
     const data = sectionOf(parse(render(AgreementPage)), "agreement-data");
     const list = findAll(data, (e) => e.tag === "ul" && elements(e).length === 7)[0]!;
     expect(findAll(list, (e) => e.tag === "h3").map((h) => text(h))).toEqual(["The law", "The agreement", "No keys", "Reach", "Leave", "The record", "Custody"]);
@@ -709,7 +714,7 @@ describe("headings, landmarks, lists and the blockquote", () => {
     expect([bulletsGone, list.attrs.role ?? null]).not.toEqual([true, null]);
   });
 
-  it("DEFECT (LOW): the definition's blockquote should be styled as the page's, like the front page's (.pledgeWords { margin: 0 }) — no rule reaches it, so the browser's 40px on each side apply: in Chrome at 320px it is 208px of the 288px column, a ten-line bold block indented on both sides with no rule or mark to say why (measured on next start, 185bb67)", () => {
+  it("fixed (LOW): the definition's blockquote should be styled as the page's, like the front page's (.pledgeWords { margin: 0 }) — no rule reaches it, so the browser's 40px on each side apply: in Chrome at 320px it is 208px of the 288px column, a ten-line bold block indented on both sides with no rule or mark to say why (measured on next start, 185bb67)", () => {
     const quote = findAll(article(parse(render(AgreementPage))), (e) => e.tag === "blockquote")[0]!;
     const margin = ["margin", "margin-inline", "margin-left", "margin-inline-start"].map((p) => declared(quote, p)).find(Boolean);
     expect(margin, "a margin for the blockquote, from any rule").toBeDefined();
@@ -747,7 +752,10 @@ describe("the links on the new pages", () => {
         const href = a.attrs.href ?? "";
         if (href.startsWith("mailto:")) continue;
         if (/^https?:/.test(href)) {
-          expect([href, a.attrs.target, a.attrs.rel]).toEqual([OPEN_CODE_URL, "_blank", "noopener noreferrer"]);
+          // Changed after the honesty fix: /agreement also links its own source and the
+          // decisions, both in the public repository, opened the way Open code is.
+          const inRepository = href === OPEN_CODE_URL || href.startsWith("https://github.com/radosukala/ours/");
+          expect([href, inRepository, a.attrs.target, a.attrs.rel]).toEqual([href, true, "_blank", "noopener noreferrer"]);
           continue;
         }
         expect(a.attrs.target, href).toBeUndefined();
@@ -758,7 +766,7 @@ describe("the links on the new pages", () => {
     for (const href of hrefs) expect([href, known.some((r) => r.test(href))]).toEqual([href, true]);
   });
 
-  it("DEFECT (MEDIUM): the new pages' links should meet 4.5:1 against the page, and those inside a sentence should be told from it by more than colour (an underline, or 3:1 against the words) — they are the shared link blue, --accent #1d9bf0, with no underline: 3.00:1 on white in light (WCAG 1.4.3), and inside sentences 2.46:1 against the text in dark and 2.04:1 against the muted 'Today:' line in light (1.4.1); measured the same in Chrome on next start. That is every link in the three pages' bodies — the two invitations to email among them — /contract's new 'common agreement' and /privacy's new address. M-0014's rendering round found the same blue on the invite page's new link (MEDIUM) and gave it the text colour, underlined", () => {
+  it("fixed (MEDIUM): the new pages' links should meet 4.5:1 against the page, and those inside a sentence should be told from it by more than colour (an underline, or 3:1 against the words) — they are the shared link blue, --accent #1d9bf0, with no underline: 3.00:1 on white in light (WCAG 1.4.3), and inside sentences 2.46:1 against the text in dark and 2.04:1 against the muted 'Today:' line in light (1.4.1); measured the same in Chrome on next start. That is every link in the three pages' bodies — the two invitations to email among them — /contract's new 'common agreement' and /privacy's new address. M-0014's rendering round found the same blue on the invite page's new link (MEDIUM) and gave it the text colour, underlined", () => {
     vi.stubEnv("PROPOSALS_EMAIL", "proposals@example.test");
     // The reading is sound: it finds the muted 'Today:' line's colour, and white and black behind the page.
     const muted = elements(parse('<article class="page"><p class="heldBy">Today: words</p></article>'))[0]!;
@@ -791,7 +799,7 @@ describe("the links on the new pages", () => {
     expect(problems).toEqual([]);
   });
 
-  it("DEFECT (LOW): on a touch screen the paired links ('Its project page' and 'The contract' on /agreement; 'The contract' and 'The common agreement' on /projects) should be 44px targets (SPEC §9) — they reuse the front page's .links row, whose (pointer: coarse) rule takes the gap away (gap: 0 20px) because the front page's own links (.more) grow to 44px there; these have no such rule, so each is 22.5px tall and they touch (Chrome, 375×812 with touch: 343×22.5px each, the first's bottom the second's top), under WCAG 2.5.8's 24px too", () => {
+  it("fixed (LOW): on a touch screen the paired links ('Its project page' and 'The contract' on /agreement; 'The contract' and 'The common agreement' on /projects) should be 44px targets (SPEC §9) — they reuse the front page's .links row, whose (pointer: coarse) rule takes the gap away (gap: 0 20px) because the front page's own links (.more) grow to 44px there; these have no such rule, so each is 22.5px tall and they touch (Chrome, 375×812 with touch: 343×22.5px each, the first's bottom the second's top), under WCAG 2.5.8's 24px too", () => {
     // The reading is sound: it finds the front page's link rule.
     expect(touchTarget(anchors(parse('<a class="more" href="/">x</a>'))[0]!)).toBe(".more { padding: 12px }");
     const problems: string[] = [];
@@ -806,7 +814,7 @@ describe("the links on the new pages", () => {
     expect(problems).toEqual([]);
   });
 
-  it("DEFECT (LOW): a link's name should say where it goes when it is read out of its paragraph, as a screen reader's list of links reads it — /agreement's 'Its project page' (the feed's) leans on the heading above it", () => {
+  it("fixed (LOW): a link's name should say where it goes when it is read out of its paragraph, as a screen reader's list of links reads it — /agreement's 'Its project page' (the feed's) leans on the heading above it", () => {
     vi.stubEnv("PROPOSALS_EMAIL", "proposals@example.test");
     const names = [AgreementPage, ProjectsPage, MaintainersPage].flatMap((c) => anchors(article(parse(render(c)))).map((a) => text(a)));
     expect(names.length).toBeGreaterThan(10);
@@ -836,7 +844,7 @@ describe("the footer's nine links (SPEC §18.17 item 4)", () => {
     }
   });
 
-  it("DEFECT (LOW): the footer should wrap between its links, never inside one or before a separator — nothing keeps a link's words together and each separator starts with a breakable space, so with nine links (six before M-0015) names split across lines: 'Open code' at 375px, the most common phone width; 'Who controls what' from 492 to 552px; 'Build with us' and 'Who controls what' both in the app's right column at 1000–1099px (258px); and at 392px a line starts with '·' (Chrome, 13px, every 20px or less from 240 to 600px of the footer's box, laid out in the server's stylesheets; with the six links before M-0015 only 'Who controls what' split, at 320px and in the right column)", () => {
+  it("fixed (LOW): the footer should wrap between its links, never inside one or before a separator — nothing keeps a link's words together and each separator starts with a breakable space, so with nine links (six before M-0015) names split across lines: 'Open code' at 375px, the most common phone width; 'Who controls what' from 492 to 552px; 'Build with us' and 'Who controls what' both in the app's right column at 1000–1099px (258px); and at 392px a line starts with '·' (Chrome, 13px, every 20px or less from 240 to 600px of the footer's box, laid out in the server's stylesheets; with the six links before M-0015 only 'Who controls what' split, at 320px and in the right column)", () => {
     const nav = findAll(parse(render(SiteFooter)), (e) => e.tag === "nav")[0]!;
     const problems: string[] = [];
     for (const a of anchors(nav)) {
@@ -866,7 +874,7 @@ describe("layout at phone and desktop widths", () => {
     }
   });
 
-  it("DEFECT (LOW): 'not-for-profit' should not break at its hyphens, as the front page's card keeps it whole (.nowrap) — on /agreement (twice) and /projects it is plain text, and in Chrome at 320px both pages break it at a hyphen, 'a not-' / 'for-profit body' on /agreement and 'a not-for-' / 'profit body' on /projects (next start, 185bb67; M-0014 fixed this in the card and accepted it only in the status line)", () => {
+  it("fixed (LOW): 'not-for-profit' should not break at its hyphens, as the front page's card keeps it whole (.nowrap) — on /agreement (twice) and /projects it is plain text, and in Chrome at 320px both pages break it at a hyphen, 'a not-' / 'for-profit body' on /agreement and 'a not-for-' / 'profit body' on /projects (next start, 185bb67; M-0014 fixed this in the card and accepted it only in the status line)", () => {
     expect(declarations(BASE.find((r) => r.selectors.includes(".nowrap"))!.body)["white-space"]).toBe("nowrap");
     const problems: string[] = [];
     for (const [page, component] of [
@@ -889,7 +897,7 @@ describe("layout at phone and desktop widths", () => {
 /* =========================================== 7. SPEC §18.17 and M-0015 */
 
 describe("the shipped pages against SPEC §18.17 and M-0015's acceptance lines", () => {
-  it("DEFECT (MEDIUM): every part of /agreement should say what holds it today — D-0018 §B ('Each part says what holds it today'), M-0015's acceptance ('every part has a \"Today:\" line') and the page's own notice ('each part says what holds it today') — but Part 3, 'What they give up', and Part 6, 'Money', have no Today line at all, so the notice says something about the page that isn't so. tests/framework-pages.test.ts checks the Today lines of Part 1's rights and Part 4's safeguards only", () => {
+  it("fixed (MEDIUM): every part of /agreement should say what holds it today — D-0018 §B ('Each part says what holds it today'), M-0015's acceptance ('every part has a \"Today:\" line') and the page's own notice ('each part says what holds it today') — but Part 3, 'What they give up', and Part 6, 'Money', have no Today line at all, so the notice says something about the page that isn't so. tests/framework-pages.test.ts checks the Today lines of Part 1's rights and Part 4's safeguards only", () => {
     const root = article(parse(render(AgreementPage)));
     const parts = findAll(root, (e) => e.tag === "section")
       .map((s) => [text(elements(s)[0]!), text(s)] as const)
@@ -898,7 +906,7 @@ describe("the shipped pages against SPEC §18.17 and M-0015's acceptance lines",
     expect(parts.filter(([, words]) => !/\bToday\b/.test(words)).map(([heading]) => heading)).toEqual([]);
   });
 
-  it("DEFECT (LOW): the agreement should open with its status — SPEC §18.17 item 1, 'First comes the notice', and M-0015's acceptance, 'the lede says the agreement is being developed and that none of its collective rights is in force' — but the first paragraph under the h1 is a lede that says neither ('The terms every service on our.one will run under…'), and the notice comes second. tests/framework-pages.test.ts only checks that the notice comes before the definition, which it would still do anywhere in the first section", () => {
+  it("fixed (LOW): the agreement should open with its status — SPEC §18.17 item 1, 'First comes the notice', and M-0015's acceptance, 'the lede says the agreement is being developed and that none of its collective rights is in force' — but the first paragraph under the h1 is a lede that says neither ('The terms every service on our.one will run under…'), and the notice comes second. tests/framework-pages.test.ts only checks that the notice comes before the definition, which it would still do anywhere in the first section", () => {
     const kids = elements(article(parse(render(AgreementPage))));
     expect(kids[0]!.tag).toBe("h1");
     const first = kids[1]!;
@@ -906,7 +914,7 @@ describe("the shipped pages against SPEC §18.17 and M-0015's acceptance lines",
     expect([name, /being developed/i.test(text(first))]).toEqual([name, true]);
   });
 
-  it("DEFECT (LOW): /agreement's 'Today:' line for how a service starts should follow PROPOSALS_EMAIL, as D-0018 §D has the pages do — with the setting empty /maintainers says 'Proposals open at launch.' while /agreement still says 'Today: proposals are read by hand.', two pages in two states (both served so by next start with the setting unset)", () => {
+  it("fixed (LOW): /agreement's 'Today:' line for how a service starts should follow PROPOSALS_EMAIL, as D-0018 §D has the pages do — with the setting empty /maintainers says 'Proposals open at launch.' while /agreement still says 'Today: proposals are read by hand.', two pages in two states (both served so by next start with the setting unset)", () => {
     vi.stubEnv("PROPOSALS_EMAIL", "");
     expect(textOf(render(MaintainersPage))).toContain("Proposals open at launch.");
     expect(textOf(render(AgreementPage))).not.toMatch(/Today: proposals are read by hand/);

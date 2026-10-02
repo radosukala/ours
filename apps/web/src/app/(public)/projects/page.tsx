@@ -48,9 +48,9 @@ export default function ProjectsPage() {
           <dd>The founder holds its domain, its data and its keys.</dd>
           <dt>Promised</dt>
           <dd>
-            {`At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`}{" "}
-            If that count is never reached, none of it goes to that body, and
-            the promise not to sell still holds.
+            {`At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a `}
+            <span className={styles.nowrap}>not-for-profit</span>
+            {" body of its members. If that count is never reached, none of it goes to that body, and the promise not to sell still holds."}
           </dd>
           <dt>Its users&apos; rights today</dt>
           <dd>
@@ -66,8 +66,12 @@ export default function ProjectsPage() {
           </dd>
         </dl>
         <p className={styles.links}>
-          <Link href="/contract">The contract</Link>
-          <Link href="/agreement">The common agreement</Link>
+          <Link href="/contract" className={styles.pairLink}>
+            The contract
+          </Link>
+          <Link href="/agreement" className={styles.pairLink}>
+            The common agreement
+          </Link>
         </p>
       </section>
 

@@ -25,23 +25,23 @@ export function SiteFooter({ className }: { className?: string }) {
     <div className={`site-footer${className ? ` ${className}` : ""}`}>
       <nav className="site-footer__links" aria-label="About our.one">
         <Link href="/contract">Contract</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/agreement">Agreement</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/projects">Projects</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/maintainers">Build with us</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <a href={OPEN_CODE_URL} rel="noopener noreferrer" target="_blank">
           Open code
         </a>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/costs">Costs</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/power">Who controls what</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/rules">Rules</Link>
-        <span aria-hidden="true"> · </span>
+        <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/privacy">Privacy</Link>
       </nav>
       <p className="site-footer__version">Version: {runningVersion()}</p>
