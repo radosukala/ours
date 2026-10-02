@@ -29,7 +29,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -351,6 +351,32 @@ function isPlainFile(path) {
   }
 }
 
+function isLink(path) {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * May init write `rel`? Only inside the project, and never through a link:
+ * neither the file nor any folder on its way may lead outside the project.
+ */
+function writable(root, rel) {
+  const real = realpathSync(root);
+  let dir = dirname(join(root, rel));
+  while (!existsSync(dir) && dir !== dirname(dir)) dir = dirname(dir);
+  let realDir;
+  try {
+    realDir = realpathSync(dir);
+  } catch {
+    return false;
+  }
+  if (realDir !== real && !realDir.startsWith(real + sep)) return false;
+  return !isLink(join(root, rel));
+}
+
 function readText(root, rel, skipped) {
   const path = join(root, rel);
   let size;
@@ -445,7 +471,9 @@ function loadProject(root) {
 
   let manifest = null;
   let manifestError = null;
-  if (files.includes(MANIFEST) || existsSync(join(root, MANIFEST))) {
+  if (isLink(join(root, MANIFEST))) {
+    manifestError = "it is a link, and the check reads only the project's own files";
+  } else if (existsSync(join(root, MANIFEST))) {
     try {
       manifest = JSON.parse(readFileSync(join(root, MANIFEST), "utf8"));
     } catch (error) {
@@ -454,7 +482,7 @@ function loadProject(root) {
   }
 
   let pkg = null;
-  if (existsSync(join(root, "package.json"))) {
+  if (isPlainFile(join(root, "package.json"))) {
     try {
       pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
     } catch {
@@ -675,7 +703,7 @@ function checkAgents(p) {
   const id = "agents";
   const title = "AGENTS.md carries the rules, unchanged";
   const fix = `run node ${DEFAULT_TOOL_PATH} init. It puts the block back word for word.`;
-  const agentsFile = p.files.find((f) => f.toLowerCase() === "agents.md") ?? (existsSync(join(p.root, "AGENTS.md")) ? "AGENTS.md" : null);
+  const agentsFile = p.files.find((f) => f.toLowerCase() === "agents.md") ?? null;
   if (!agentsFile) return result(id, title, "CHECKED", FAIL, "There is no AGENTS.md.", [{ message: "There is no AGENTS.md, so agents working on this code don't get the rules.", fix }]);
   const text = normaliseBlock(p.text(agentsFile) ?? "");
   const begin = text.indexOf("<!-- our.one rules ");
@@ -1168,11 +1196,15 @@ function manifestTemplate(root) {
   };
 }
 
-/** Create a file only if it doesn't exist. */
+/** Create a file only if it doesn't exist, and only inside the project. */
 function create(root, rel, content, report) {
   const path = join(root, rel);
-  if (existsSync(path)) {
+  if (existsSync(path) || isLink(path)) {
     report.kept.push(rel);
+    return false;
+  }
+  if (!writable(root, rel)) {
+    report.notes.push(`${rel} would be written outside the project, through a link, so it wasn't created.`);
     return false;
   }
   mkdirSync(dirname(path), { recursive: true });
@@ -1192,7 +1224,9 @@ export function init(root) {
 
   // AGENTS.md: the rules block, put back word for word; the rest is kept.
   const agentsPath = join(root, "AGENTS.md");
-  if (!existsSync(agentsPath)) {
+  if (!writable(root, "AGENTS.md")) {
+    report.notes.push("AGENTS.md is a link, so it was left alone. Put the rules block in the project's own AGENTS.md.");
+  } else if (!existsSync(agentsPath)) {
     writeFileSync(agentsPath, `# AGENTS.md\n\nInstructions for any coding agent working on this project.\n\n${RULES_BLOCK}\n`, { flag: "wx" });
     report.created.push("AGENTS.md");
   } else {
@@ -1209,7 +1243,9 @@ export function init(root) {
 
   // CLAUDE.md imports AGENTS.md, so Claude Code reads the rules too.
   const claudePath = join(root, "CLAUDE.md");
-  if (!existsSync(claudePath)) {
+  if (!writable(root, "CLAUDE.md")) {
+    report.notes.push("CLAUDE.md is a link, so it was left alone. Add a line @AGENTS.md to the project's own CLAUDE.md.");
+  } else if (!existsSync(claudePath)) {
     writeFileSync(claudePath, "@AGENTS.md\n", { flag: "wx" });
     report.created.push("CLAUDE.md");
   } else if (!/^@AGENTS\.md\s*$/m.test(readFileSync(claudePath, "utf8"))) {
@@ -1226,8 +1262,10 @@ export function init(root) {
   const hook = { type: "command", command: hookCommand(toolPath) };
   const settingsRel = ".claude/settings.json";
   const settingsPath = join(root, settingsRel);
-  if (!existsSync(settingsPath)) {
+  if (!existsSync(settingsPath) && !isLink(settingsPath)) {
     create(root, settingsRel, `${JSON.stringify({ hooks: { Stop: [{ hooks: [hook] }] } }, null, 2)}\n`, report);
+  } else if (!writable(root, settingsRel)) {
+    report.notes.push(`${settingsRel} is a link, or in a folder that leads outside the project, so it was left alone. Add a Stop hook that runs: ${hook.command}`);
   } else {
     let settings = null;
     try {

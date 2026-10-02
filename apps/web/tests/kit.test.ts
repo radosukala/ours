@@ -12,7 +12,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -568,6 +568,41 @@ describe("init", () => {
     expect(r.status).toBe(2);
     expect(r.stderr).toContain("Refusing to set up");
     expect(filesIn(home)).toEqual([]);
+  });
+});
+
+describe("links: the tool reads and writes only the project's own files", () => {
+  it("init writes nothing through a link to a file or a folder outside the project", () => {
+    const outside = project({ "victim.txt": "FICTIONAL file outside the project\n", "elsewhere/keep.txt": "kept\n" });
+    const dir = project({});
+    symlinkSync(join(outside, "victim.txt"), join(dir, "AGENTS.md"));
+    symlinkSync(join(outside, "victim.txt"), join(dir, "CLAUDE.md"));
+    symlinkSync(join(outside, "elsewhere"), join(dir, ".github"));
+    symlinkSync(join(outside, "elsewhere"), join(dir, ".claude"));
+    const r = run(dir, ["init"]);
+    expect(r.status).toBe(0);
+    expect(readFileSync(join(outside, "victim.txt"), "utf8")).toBe("FICTIONAL file outside the project\n");
+    expect(filesIn(join(outside, "elsewhere"))).toEqual(["keep.txt"]);
+    const said = r.stdout.replace(/\s+/g, " ");
+    expect(said).toContain("AGENTS.md is a link, so it was left alone.");
+    expect(said).toContain("CLAUDE.md is a link, so it was left alone.");
+    expect(said).toContain(".github/workflows/our-one.yml would be written outside the project, through a link, so it wasn't created.");
+    expect(said).toContain(".claude/settings.json would be written outside the project, through a link, so it wasn't created.");
+  });
+
+  it("check doesn't read a manifest, an AGENTS.md or a costs file that is a link", () => {
+    const outside = project({ "our.one.json": manifest(), "AGENTS.md": tool.RULES_BLOCK, "COSTS.md": "# Costs\n\nFICTIONAL, kept outside.\n" });
+    const files = good();
+    delete files["our.one.json"];
+    delete files["AGENTS.md"];
+    delete files["COSTS.md"];
+    const dir = project(files);
+    for (const f of ["our.one.json", "AGENTS.md", "COSTS.md"]) symlinkSync(join(outside, f), join(dir, f));
+    const r = report(dir);
+    expect(r.checks.find((c) => c.id === "manifest")!.findings[0]!.message).toBe(
+      "It doesn't parse: it is a link, and the check reads only the project's own files",
+    );
+    expect(r.checks.find((c) => c.id === "agents")!.summary).toBe("There is no AGENTS.md.");
   });
 });
 

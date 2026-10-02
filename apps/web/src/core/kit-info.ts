@@ -7,7 +7,7 @@
 export const KIT_TOOL = {
   version: "0.1.0",
   rules: "0",
-  sha256: "83650f1a3390694c1a003b4a0ce477518ac138ab4816341eb00ba1573db90aa8",
+  sha256: "ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7",
 } as const;
 
 /** The one line a builder gives their coding agent (/build; kit/README.md says it too). */

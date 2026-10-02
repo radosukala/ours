@@ -67,7 +67,7 @@ node -e "const c=require('crypto'),f=require('fs');console.log(c.createHash('sha
 The last line prints the file's SHA-256. It must be:
 
 ```text
-83650f1a3390694c1a003b4a0ce477518ac138ab4816341eb00ba1573db90aa8
+ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7
 ```
 
 If it isn't, stop and tell the person. The tool is one file with no
