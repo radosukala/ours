@@ -1,0 +1,55 @@
+{
+  "$schema": "https://our.one/kit/our.one.schema.json",
+  "rules": "0",
+  "name": "FICTIONAL Book Club",
+  "purpose": "A small private page for a book club of about ten friends that shows who is in the club, which book is next and who is coming, and emails each member a reminder of the next meeting once a month.",
+  "maintainers": [
+    {
+      "name": "FICTIONAL Maintainer",
+      "contact": "maintainer@example.test"
+    }
+  ],
+  "source": "https://example.test/fictional/book-club",
+  "license": "MIT",
+  "costs": "COSTS.md",
+  "data": {
+    "collects": [
+      {
+        "what": "Each member's first name, entered by the organizer.",
+        "why": "To show the other members who is in the club and who is coming, and to greet the member in the reminder email.",
+        "kept": "While the person is a member. It is deleted when they delete their data, or when the organizer removes them from the club."
+      },
+      {
+        "what": "Each member's email address, entered by the organizer.",
+        "why": "To send the member the monthly reminder of the next meeting, with their private link. It is never shown to other members.",
+        "kept": "While the person is a member. It is deleted when they delete their data, or when the organizer removes them from the club."
+      },
+      {
+        "what": "The meetings each member said they would come to. Only a yes is kept; saying no removes the answer. No time of answering is kept.",
+        "why": "To show the members who is coming to the next meeting.",
+        "kept": "Until 12 months after the meeting, when the monthly reminder run deletes it, or sooner if the member deletes their data."
+      },
+      {
+        "what": "A random key in each member's private link.",
+        "why": "So each member can open the club page, answer, download their data or delete it, without a password.",
+        "kept": "While the person is a member. It is deleted with the rest of their data."
+      }
+    ],
+    "sharedWith": [
+      {
+        "who": "Resend",
+        "what": "Each member's first name and email address, their private link, and the next meeting's date, time, place and book, in the monthly reminder email.",
+        "why": "To deliver the monthly reminder email.",
+        "packages": ["resend"]
+      },
+      {
+        "who": "A hosting provider, not chosen yet",
+        "what": "Everything listed in data.collects, because the database file would be stored on its servers, and visitors' IP addresses in its own logs.",
+        "why": "To run the page and store the database. Hosting isn't decided; the provider will be named here before the app runs there."
+      }
+    ],
+    "boundary": ["src/data"],
+    "export": "A member opens the private link from their reminder email and chooses Download my data: a JSON file with their first name, email address, private link and the meetings they said they would come to.",
+    "delete": "A member opens their private link and chooses Delete my data, which deletes their name, email address, link and answers at once. The organizer can also remove a member with npm run admin -- remove <id>."
+  }
+}

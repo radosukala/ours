@@ -1,0 +1,26 @@
+{
+  "name": "fictional-book-club",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small private page for a FICTIONAL book club: who is in it, which book is next, who is coming, and a monthly reminder email.",
+  "license": "MIT",
+  "author": "FICTIONAL Maintainer <maintainer@example.test>",
+  "repository": {
+    "type": "git",
+    "url": "https://example.test/fictional/book-club"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "admin": "node --env-file-if-exists=.env src/admin.js",
+    "remind": "node --env-file-if-exists=.env src/remind.js",
+    "check": "node scripts/our-one.mjs check"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "resend": "^4.0.0"
+  }
+}
