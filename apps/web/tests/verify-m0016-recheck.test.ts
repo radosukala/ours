@@ -232,7 +232,7 @@ function piecesIn(out: string, secret: string): string[] {
 
 describe("defects (each FAILS on 25ce8f0)", () => {
   // C1
-  it("DEFECT (HIGH): the fix changed rules version 0 without a new rules version or a decision: rule 8 became 'No secrets or data in the repository' (D-0019 §C's rule 8 is 'No secrets in the code') with a new duty over people's data, and rule 10 gained 'Ask the person for anything only they know' — D-0019 prohibits 'changing the rules without a new rules version and a decision', and kit/README.md says the same; the block still says version 0, so the trial's project, whose block nobody touched, now fails 'agents' with 'The rules block in AGENTS.md was changed'", () => {
+  it("fixed (HIGH): the fix changed rules version 0 without a new rules version or a decision: rule 8 became 'No secrets or data in the repository' (D-0019 §C's rule 8 is 'No secrets in the code') with a new duty over people's data, and rule 10 gained 'Ask the person for anything only they know' — D-0019 prohibits 'changing the rules without a new rules version and a decision', and kit/README.md says the same; the block still says version 0, so the trial's project, whose block nobody touched, now fails 'agents' with 'The rules block in AGENTS.md was changed'", () => {
     const d19 = record("decisions/D-0019.md");
     expect(d19).toContain("| 8 | No secrets in the code. | CHECKED for the patterns the tool knows |");
     expect(d19).toContain("A change to the rules is a new rules version, by a new decision.");
@@ -262,7 +262,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C2
-  it("DEFECT (MEDIUM): the new comment stripper reads page text as JavaScript, so ordinary words hide what follows them: in JSX text a URL's '//' blanks the rest of its line and 'image/*' blanks everything up to the next '*/', in a .tsx page as in a Vue template, and so does a regular expression holding '/*' after return; claims, a Google tag, a store import and a query written after them all pass — a regression, since 0.1.0 (the trial's copy) read page text as it is and fails each", () => {
+  it("fixed (MEDIUM): the new comment stripper reads page text as JavaScript, so ordinary words hide what follows them: in JSX text a URL's '//' blanks the rest of its line and 'image/*' blanks everything up to the next '*/', in a .tsx page as in a Vue template, and so does a regular expression holding '/*' after return; claims, a Google tag, a store import and a query written after them all pass — a regression, since 0.1.0 (the trial's copy) read page text as it is and fails each", () => {
     const cases: { id: string; what: string; files: Record<string, string>; trigger: string; plain: string }[] = [
       {
         id: "claims",
@@ -318,7 +318,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C3
-  it("DEFECT (MEDIUM): T5's fix doesn't hold in a real project: a data.boundary of \"src\" that holds all of the app's code fails only while every code file is inside it, so the config file every Next.js project keeps at its root (next.config.ts, or eslint.config.mjs) makes it pass, and rule 1 again says nothing", () => {
+  it("fixed (MEDIUM): T5's fix doesn't hold in a real project: a data.boundary of \"src\" that holds all of the app's code fails only while every code file is inside it, so the config file every Next.js project keeps at its root (next.config.ts, or eslint.config.mjs) makes it pass, and rule 1 again says nothing", () => {
     expect(flat(read("SPEC.md"))).toContain("a boundary that holds all the code fails;");
     const files = {
       ...good(),
@@ -336,7 +336,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C4
-  it("DEFECT (MEDIUM): T6's fix knows a handed-out client only by the names prisma, db.select/insert/update/delete/execute/transaction/query, pool.query, supabase and sql``, so the commonest shapes still pass: a Prisma client handed out as db (create-t3-app's `db.post.findMany()`), Kysely's `db.selectFrom()`, and the MongoDB driver's `db.collection()` — routes anywhere query people's data while the boundary check passes", () => {
+  it("fixed (MEDIUM): T6's fix knows a handed-out client only by the names prisma, db.select/insert/update/delete/execute/transaction/query, pool.query, supabase and sql``, so the commonest shapes still pass: a Prisma client handed out as db (create-t3-app's `db.post.findMany()`), Kysely's `db.selectFrom()`, and the MongoDB driver's `db.collection()` — routes anywhere query people's data while the boundary check passes", () => {
     const route = (q: string) => `import { db } from "@/data/db";\nexport async function GET() {\n  return Response.json(await ${q});\n}\n`;
     // T6's own case, the client named prisma, fails.
     const prisma = {
@@ -378,7 +378,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C5
-  it("DEFECT (MEDIUM): our.one's own copy of the check — the run D-0019 §D and build.md say counts — fails any project that carries another version of the tool, on that copy's own code: its fs writes fail 'boundary' and its rules text fails 'claims'; the trial's project, as committed with 0.1.0, fails exactly so under 0.2.0, and a project that passes with this tool fails under a copy one comment newer", () => {
+  it("fixed (MEDIUM): our.one's own copy of the check — the run D-0019 §D and build.md say counts — fails any project that carries another version of the tool, on that copy's own code: its fs writes fail 'boundary' and its rules text fails 'claims'; the trial's project, as committed with 0.1.0, fails exactly so under 0.2.0, and a project that passes with this tool fails under a copy one comment newer", () => {
     expect(record("decisions/D-0019.md")).toContain("Runs its own copy of the check on the commit named");
     expect(flat(readFileSync(join(KIT_DIR, "build.md"), "utf8"))).toContain("our.one runs its own copy of the check on the commit you name.");
 
@@ -402,7 +402,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C6
-  it("DEFECT (MEDIUM): the claims scan, now over all code and message files, is quadratic on ordinary input: it rebuilds the whole file's line table for every string of a JSON file, and builds its text with += while reading the last character at each space, so V8 flattens the string each time — measured: a messages/en.json of 5,000 strings (228 KB) took 5.4 s, 10,000 strings 24 s, 20,000 strings more than 60 s; one ordinary 400 KB .tsx file 1.6 s, 800 KB 6.2 s, 990 KB 9.1 s; Next.js's own dist (8,005 files) 107 s, 69 s of it in normaliseText's space(); a project with nothing of the kind 0.15 s", () => {
+  it("fixed (MEDIUM): the claims scan, now over all code and message files, is quadratic on ordinary input: it rebuilds the whole file's line table for every string of a JSON file, and builds its text with += while reading the last character at each space, so V8 flattens the string each time — measured: a messages/en.json of 5,000 strings (228 KB) took 5.4 s, 10,000 strings 24 s, 20,000 strings more than 60 s; one ordinary 400 KB .tsx file 1.6 s, 800 KB 6.2 s, 990 KB 9.1 s; Next.js's own dist (8,005 files) 107 s, 69 s of it in normaliseText's space(); a project with nothing of the kind 0.15 s", () => {
     const timed = (files: Record<string, string>) => run(project({ ...good(), ...files }), ["check", "--json"], undefined, 8_000);
     const control = timed({});
     expect([control.signal, control.status]).toEqual([null, 0]);
@@ -414,7 +414,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   }, 60_000);
 
   // C7
-  it("DEFECT (LOW): the new scanner and parser that SPEC §18.18 calls linear are quadratic on crafted code: the stripper rescans to the end of the line from every '/' after '(' when a '[' never closes ('(/[' repeated: 60 KB took 2.3 s, 120 KB 9.2 s), and importsOf searches back to the file's start for 'import' or 'export' from every from\"…\" (40,000 lines of from\"a\", 320 KB, took 12.9 s) — T2's class, one small file stalling the check and the stop hook", () => {
+  it("fixed (LOW): the new scanner and parser that SPEC §18.18 calls linear are quadratic on crafted code: the stripper rescans to the end of the line from every '/' after '(' when a '[' never closes ('(/[' repeated: 60 KB took 2.3 s, 120 KB 9.2 s), and importsOf searches back to the file's start for 'import' or 'export' from every from\"…\" (40,000 lines of from\"a\", 320 KB, took 12.9 s) — T2's class, one small file stalling the check and the stop hook", () => {
     expect(flat(read("SPEC.md"))).toContain("with a linear parser for imports");
     const a = run(project({ ...good(), "src/app/gen.ts": rep("(/[", 40_000) }), ["check", "--json"], undefined, 5_000);
     const b = run(project({ ...good(), "src/app/gen.ts": rep('from"a"\n', 40_000) }), ["check", "--json"], undefined, 5_000);
@@ -422,7 +422,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   }, 30_000);
 
   // C8
-  it("DEFECT (LOW): T24's fix redacts a secret only when it is whole, and quoted() cuts a manifest value to 57 characters first: a database address pasted into data.boundary, with a longer user name, is printed with 24 of its password's 27 characters in every output mode (text, --json, --hook), while the secrets check reports finding it — D-0019 prohibits a tool that 'prints a secret it finds'", () => {
+  it("fixed (LOW): T24's fix redacts a secret only when it is whole, and quoted() cuts a manifest value to 57 characters first: a database address pasted into data.boundary, with a longer user name, is printed with 24 of its password's 27 characters in every output mode (text, --json, --hook), while the secrets check reports finding it — D-0019 prohibits a tool that 'prints a secret it finds'", () => {
     const password = "Fict1onalPassw0rdLongEnough";
     const address = ["postgres://application_user_name:", password, "@db.prod.example.net:5432/app"].join("");
     const dir = project({ ...good(), "our.one.json": manifest({}, { boundary: ["src/data", address] }) });
@@ -436,7 +436,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C9
-  it("DEFECT (LOW): on its own errors --hook exits 2, which blocks the stop, and does so again when stop_hook_active is true, so the agent is sent back with '… isn't a folder.' at every stop (Claude Code 2.1.185 only stops it at its block cap); init's note for a folder inside a larger repository suggests a relative --project for the root's settings, which resolves against the hook's working folder, and Claude Code runs a hook in the session's current folder (its log says it falls back to the original one only when that is gone)", () => {
+  it("fixed (LOW): on its own errors --hook exits 2, which blocks the stop, and does so again when stop_hook_active is true, so the agent is sent back with '… isn't a folder.' at every stop (Claude Code 2.1.185 only stops it at its block cap); init's note for a folder inside a larger repository suggests a relative --project for the root's settings, which resolves against the hook's working folder, and Claude Code runs a hook in the session's current folder (its log says it falls back to the original one only when that is gone)", () => {
     const repo = project({ "package.json": "{}", "apps/x/package.json": JSON.stringify({ name: "fictional", license: "MIT" }) });
     const sub = join(repo, "apps/x");
     mkdirSync(join(sub, "scripts"));
@@ -458,7 +458,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C10
-  it("DEFECT (LOW): init changes AGENTS.md outside the rules block: it collapses every run of blank lines in the file (a PEP 8 sample in a code fence loses its two blank lines) and says 'Updated: AGENTS.md (the rules block)' though the block was intact; and when the block has lost its end marker, init adds a second block, the check says to run init, and the second init deletes the person's own section between the stray marker and the new block — build.md says init 'overwrites nothing, except the rules block'", () => {
+  it("fixed (LOW): init changes AGENTS.md outside the rules block: it collapses every run of blank lines in the file (a PEP 8 sample in a code fence loses its two blank lines) and says 'Updated: AGENTS.md (the rules block)' though the block was intact; and when the block has lost its end marker, init adds a second block, the check says to run init, and the second init deletes the person's own section between the stray marker and the new block — build.md says init 'overwrites nothing, except the rules block'", () => {
     expect(flat(readFileSync(join(KIT_DIR, "build.md"), "utf8"))).toContain("`init` creates what is missing and overwrites nothing, except the rules block in `AGENTS.md`");
     const sample = "```python\nimport os\n\n\ndef main():\n    pass\n```";
     const before = `# AGENTS.md\n\nOur FICTIONAL notes.\n\n${sample}\n\n${tool.RULES_BLOCK}\n`;
@@ -481,7 +481,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C11
-  it("DEFECT (LOW): the licence signatures put single spaces where the official texts wrap, so a full licence text wrapped another way fails as 'a line naming it isn't enough' — the trial's own MIT LICENSE rewrapped at 60 columns fails, as do 89 of the 1,106 MIT licence files (Babel's: 'obtaining / a copy') and yaml's ISC in this repository's node_modules, npm's own ISC text ('this / software', in the npm on this machine) and BSD-3-Clause texts that wrap 'are / met:' (libvpx's, in Homebrew) — while the two header lines of Apache-2.0 alone pass as its full text (T32's case, one line longer)", () => {
+  it("fixed (LOW): the licence signatures put single spaces where the official texts wrap, so a full licence text wrapped another way fails as 'a line naming it isn't enough' — the trial's own MIT LICENSE rewrapped at 60 columns fails, as do 89 of the 1,106 MIT licence files (Babel's: 'obtaining / a copy') and yaml's ISC in this repository's node_modules, npm's own ISC text ('this / software', in the npm on this machine) and BSD-3-Clause texts that wrap 'are / met:' (libvpx's, in Homebrew) — while the two header lines of Apache-2.0 alone pass as its full text (T32's case, one line longer)", () => {
     const trialLicence = readFileSync(join(TRIAL, "LICENSE"), "utf8");
     expect(check(project({ ...good(), LICENSE: trialLicence }), "licence").outcome).toBe("pass");
     const rewrap = (text: string, width: number) =>
@@ -522,7 +522,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C12
-  it("DEFECT (LOW): T23's fix doesn't hold for the commonest test defaults: a tracked .env.test with a local DATABASE_URL (which the database-address rule itself lets through), NEXTAUTH_URL or AUTH_TRUST_HOST fails rule 8 by name — SECRET_NAME matches DATABASE_URL and any name holding AUTH — with a fix to remove the file and replace the secret", () => {
+  it("fixed (LOW): T23's fix doesn't hold for the commonest test defaults: a tracked .env.test with a local DATABASE_URL (which the database-address rule itself lets through), NEXTAUTH_URL or AUTH_TRUST_HOST fails rule 8 by name — SECRET_NAME matches DATABASE_URL and any name holding AUTH — with a fix to remove the file and replace the secret", () => {
     const local = ["postgresql://postgres:", "postgres", "@localhost:5432/app_test"].join("");
     // The same address in code passes; T23's own case passes.
     expect(check(project({ ...good(), "src/data/url.ts": `export const url = "${local}";\n` }), "secrets").outcome).toBe("pass");
@@ -534,7 +534,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C13
-  it("DEFECT (LOW): the new costs rules fail honest costs files: a table with a Total row whose empty cells are the usual markdown ('A row of the table in COSTS.md is empty.'), and any to-do app's, since the placeholder test is case-insensitive and 'Todo' reads as TODO ('COSTS.md still says TODO')", () => {
+  it("fixed (LOW): the new costs rules fail honest costs files: a table with a Total row whose empty cells are the usual markdown ('A row of the table in COSTS.md is empty.'), and any to-do app's, since the placeholder test is case-insensitive and 'Todo' reads as TODO ('COSTS.md still says TODO')", () => {
     const total = "# Costs\n\n| What | Provider | A month | Paid by |\n|---|---|---|---|\n| Hosting | FICTIONAL host | $5 | the maintainer |\n| Database | FICTIONAL database | $0 | the maintainer |\n| **Total** | | $5 | |\n\nThe maintainer's pay: none.\n";
     const todo = "# Costs of the FICTIONAL Todo app\n\nHosting: $5 a month, paid by the maintainer. The maintainer's pay: none.\n";
     const outcomes = { total: check(project({ ...good(), "COSTS.md": total }), "costs").outcome, todo: check(project({ ...good(), "COSTS.md": todo }), "costs").outcome };
@@ -542,7 +542,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C14
-  it("DEFECT (LOW): the denial rule lets a phrase through only right after the negation, so honest denials still fail rule 9 — 'not approved or listed by our.one', 'Not affiliated with or endorsed by our.one', 'It will not be listed on our.one' — the class the agent trial reported ('Honest denials fail')", () => {
+  it("fixed (LOW): the denial rule lets a phrase through only right after the negation, so honest denials still fail rule 9 — 'not approved or listed by our.one', 'Not affiliated with or endorsed by our.one', 'It will not be listed on our.one' — the class the agent trial reported ('Honest denials fail')", () => {
     // The denial the fix let through passes.
     expect(check(project({ ...good(), "README.md": "# FICTIONAL tool\n\nThis project is not approved by our.one.\n" }), "claims").outcome).toBe("pass");
     const denials = ["This project is not approved or listed by our.one.", "Not affiliated with or endorsed by our.one.", "It will not be listed on our.one until people choose it."];
@@ -551,7 +551,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C15
-  it("DEFECT (LOW): the leave check counts any address of a service's domain written in code as a call that sends it data, so ordinary links fail rule 3 — a forum link to community.auth0.com, a docs link to docs.pinecone.io in an article, a link to pusher.com — each reported as 'It calls …, which sends data to …'", () => {
+  it("fixed (LOW): the leave check counts any address of a service's domain written in code as a call that sends it data, so ordinary links fail rule 3 — a forum link to community.auth0.com, a docs link to docs.pinecone.io in an article, a link to pusher.com — each reported as 'It calls …, which sends data to …'", () => {
     const pages: [string, string][] = [
       ["community.auth0.com", 'export const Footer = () => <a href="https://community.auth0.com/t/fictional">Why we left Auth0</a>;\n'],
       ["docs.pinecone.io", 'export const Article = () => <p>Read <a href="https://docs.pinecone.io/guides/indexes">how vector indexes work</a>.</p>;\n'],
@@ -562,7 +562,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C16
-  it("DEFECT (LOW): honest code fails rule 1: imports and re-exports that bring only types, written with inline type modifiers (`import { type Pool } from \"pg\"`, `export { type InferSelectModel } from \"drizzle-orm\"`, the form typescript-eslint's consistent-type-imports writes) while `import type` passes; a string that shows an import as text; and a static site's build script that writes its sitemap (failing data too). The re-export and the sitemap are new in 0.2.0; the other two were in 0.1.0 as well", () => {
+  it("fixed (LOW): honest code fails rule 1: imports and re-exports that bring only types, written with inline type modifiers (`import { type Pool } from \"pg\"`, `export { type InferSelectModel } from \"drizzle-orm\"`, the form typescript-eslint's consistent-type-imports writes) while `import type` passes; a string that shows an import as text; and a static site's build script that writes its sitemap (failing data too). The re-export and the sitemap are new in 0.2.0; the other two were in 0.1.0 as well", () => {
     expect(check(project({ ...good(), "src/app/types.ts": 'import type { Pool } from "pg";\nexport type P = Pool;\n' }), "boundary").outcome).toBe("pass");
     const site = {
       ...good(),
@@ -584,7 +584,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C17
-  it("DEFECT (LOW): T35's and T16's fixes match only exact non-answers, so close variants pass and the summary says the project has 'export and deletion': data.export 'Not yet implemented.', data.delete 'Planned for a later version.', and data.noPersonalData 'N/A' beside a database", () => {
+  it("fixed (LOW): T35's and T16's fixes match only exact non-answers, so close variants pass and the summary says the project has 'export and deletion': data.export 'Not yet implemented.', data.delete 'Planned for a later version.', and data.noPersonalData 'N/A' beside a database", () => {
     expect(check(project({ ...good(), "our.one.json": manifest({}, { export: "Not built yet." }) }), "data").outcome).toBe("fail");
     const variants: [string, Record<string, unknown>][] = [
       ["export: Not yet implemented.", { export: "Not yet implemented." }],
@@ -596,7 +596,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C18
-  it("DEFECT (LOW): two secrets of kinds the tool recognises still pass rule 8: a Redis address with a password and no user name (redis://:password@host, the form Redis documents), and a Gemini key written in the same file as a Firebase web config (the exemption for Firebase's public key covers any Google key within 400 characters of 'authDomain')", () => {
+  it("fixed (LOW): two secrets of kinds the tool recognises still pass rule 8: a Redis address with a password and no user name (redis://:password@host, the form Redis documents), and a Gemini key written in the same file as a Firebase web config (the exemption for Firebase's public key covers any Google key within 400 characters of 'authDomain')", () => {
     const gemini = ["AI", "za", "Sy", rep("F", 33)].join("");
     expect(check(project({ ...good(), "src/data/ai.ts": `export const ai = new GoogleGenerativeAI("${gemini}");\n` }), "secrets").outcome).toBe("fail");
     const cases: [string, string][] = [
@@ -608,7 +608,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C19
-  it("DEFECT (LOW): the new import parser takes the nearest 'import' or 'export' before a from\"…\" as the statement's start, so a name holding either word drops the whole import, and a store client outside the boundary passes: `import importDb from \"better-sqlite3\"`, `import { Pool as exportPool } from \"pg\"`", () => {
+  it("fixed (LOW): the new import parser takes the nearest 'import' or 'export' before a from\"…\" as the statement's start, so a name holding either word drops the whole import, and a store client outside the boundary passes: `import importDb from \"better-sqlite3\"`, `import { Pool as exportPool } from \"pg\"`", () => {
     expect(check(project({ ...good(), "src/app/csv.ts": 'import Database from "better-sqlite3";\nexport const db = new Database("people.db");\n' }), "boundary").outcome).toBe("fail");
     const cases = ['import importDb from "better-sqlite3";\nexport const db = new importDb("people.db");\n', 'import { Pool as exportPool } from "pg";\nexport const pool = new exportPool();\n'];
     const outcomes = cases.map((code) => [code.split("\n")[0], check(project({ ...good(), "src/app/csv.ts": code }), "boundary").outcome]);
@@ -616,7 +616,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C20
-  it("DEFECT (LOW): any folder named tests, fixtures, spec or e2e is taken for tests at any depth, so a product's own pages there are never read for rules 1, 4 and 9: a football club's src/app/fixtures/page.tsx (or a school's src/app/tests/) can import pg, load Google's tag and say 'member-owned' and pass (0.1.0 did the same; round one didn't report it)", () => {
+  it("fixed (LOW): any folder named tests, fixtures, spec or e2e is taken for tests at any depth, so a product's own pages there are never read for rules 1, 4 and 9: a football club's src/app/fixtures/page.tsx (or a school's src/app/tests/) can import pg, load Google's tag and say 'member-owned' and pass (0.1.0 did the same; round one didn't report it)", () => {
     const page = 'import Script from "next/script";\nimport { Pool } from "pg";\nexport default async function Page() {\n  const r = await new Pool().query("select * from matches");\n  return <main><p>A member-owned football club. {r.rowCount}</p><Script src="https://www.googletagmanager.com/gtag/js?id=G-FICTION01" /></main>;\n}\n';
     // The same page anywhere else fails all three.
     const elsewhere = report(project({ ...good(), "src/app/matches/page.tsx": page }));
@@ -630,7 +630,7 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C21
-  it("DEFECT (LOW): T34's fix refuses the home folder and the filesystem's root only, so check run on any folder that holds the home folder (its parent, /Users or /home) reads every file under it, ~/.ssh included: with HOME pointed at a FICTIONAL folder, it reported the key in home/.ssh", () => {
+  it("fixed (LOW): T34's fix refuses the home folder and the filesystem's root only, so check run on any folder that holds the home folder (its parent, /Users or /home) reads every file under it, ~/.ssh included: with HOME pointed at a FICTIONAL folder, it reported the key in home/.ssh", () => {
     const outer = project({}, { git: false });
     const home = join(outer, "home");
     mkdirSync(join(home, ".ssh"), { recursive: true });

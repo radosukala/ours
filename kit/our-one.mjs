@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * our-one.mjs: the our.one build kit's tool. Version 0.2.0, rules 0.
+ * our-one.mjs: the our.one build kit's tool. Version 0.2.1, rules 0.
  *
  *   node scripts/our-one.mjs init     set this project up for our.one
  *   node scripts/our-one.mjs check    check it against the rules
@@ -34,7 +34,7 @@ import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.2.1";
 export const RULES_VERSION = "0";
 export const MANIFEST = "our.one.json";
 export const SCHEMA_URL = "https://our.one/kit/our.one.schema.json";
@@ -53,7 +53,7 @@ export const RULES_BLOCK = [
   BEGIN,
   `## our.one rules (version ${RULES_VERSION})`,
   "",
-  "This project is being built to be proposed to our.one. These rules come from the common agreement (https://our.one/agreement), which is still a draft. Three of them go further than its words, and wait for the founder's approval: rule 1, and no session recording and no data hubs in rule 4. They bind every person and every coding agent working on this code. If a task would break one, stop and say which.",
+  "This project is being built to be proposed to our.one. These rules come from the common agreement (https://our.one/agreement), which is still a draft. They bind every person and every coding agent working on this code. If a task would break one, stop and say which.",
   "",
   "1. **Keep personal data inside the boundary.** Only code in the folders `our.one.json` names in `data.boundary` may use a database or a file store, or the libraries that reach one.",
   "2. **Declare before you collect.** Before code keeps a new kind of personal data, add it to `data.collects`: what it is, why the service needs it, and how long it is kept.",
@@ -62,9 +62,9 @@ export const RULES_BLOCK = [
   "5. **Nothing is sold.** Build nothing that sells, rents or trades people's data, or the project.",
   "6. **People can leave.** Keep export and deletion working for everything in `data.collects`.",
   "7. **Costs are public.** Keep the costs file `our.one.json` names up to date.",
-  "8. **No secrets or data in the repository.** Keys and passwords live in the environment, and people's data in the store, never in a file the repository tracks.",
+  "8. **No secrets in the code.** Keys and passwords live in the environment, never in a file the repository tracks.",
   "9. **Say only what is true.** Until our.one's records say otherwise, the project is its maintainer's. Don't present it as its users' property, or as approved, listed or protected by our.one.",
-  "10. **Run the check before you finish:** `node scripts/our-one.mjs check`. Fix every FAIL. Ask the person for anything only they know, and never invent it. Never change the check, or this block, to make it pass.",
+  "10. **Run the check before you finish:** `node scripts/our-one.mjs check`. Fix every FAIL. Never change the check, or this block, to make it pass.",
   END,
 ].join("\n");
 
@@ -115,13 +115,21 @@ const STORE_CALLS = [{ name: "PrismaClient", re: /\bnew\s+PrismaClient\s*\(/g }]
 
 /**
  * Queries written outside the boundary against a client made inside it
- * and handed out, the commonest way round rule 1.
+ * and handed out, the commonest way round rule 1. A client is handed out
+ * under any name (Prisma's is often "db"), so the methods only a database
+ * client has are looked for on any name; the common ones (create, update,
+ * delete) only on the names a client usually has.
  */
 const STORE_QUERIES = [
-  { name: "a Prisma query", re: /\bprisma\s*\.\s*\$?[A-Za-z_]\w*\s*\.\s*(?:findMany|findUnique|findFirst|findUniqueOrThrow|findFirstOrThrow|create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany|count|aggregate|groupBy)\s*\(/g },
-  { name: "a raw Prisma query", re: /\bprisma\s*\.\s*\$(?:queryRaw|executeRaw|queryRawUnsafe|executeRawUnsafe|transaction)\b/g },
-  { name: "a database query", re: /\b(?:db|tx)\s*\.\s*(?:select|insert|update|delete|execute|transaction|query)\s*[.(<]/g },
+  { name: "a Prisma query", re: /\b[A-Za-z_$][\w$]*\s*\.\s*\$?[A-Za-z_$][\w$]*\s*\.\s*(?:findMany|findUnique|findFirst|findUniqueOrThrow|findFirstOrThrow|createMany|createManyAndReturn|updateMany|deleteMany|upsert|aggregate|groupBy)\s*\(/g },
+  { name: "a database query", re: /\b(?:prisma|db|tx|trx|database)\s*\.\s*\$?[A-Za-z_$][\w$]*\s*\.\s*(?:create|update|delete|count|find|findOne|findById|insertOne|insertMany|updateOne|deleteOne)\s*\(/g },
+  { name: "a raw Prisma query", re: /\b[A-Za-z_$][\w$]*\s*\.\s*\$(?:queryRaw|executeRaw|queryRawUnsafe|executeRawUnsafe|transaction)\b/g },
+  { name: "a database query", re: /\b(?:db|tx|trx)\s*\.\s*(?:select|insert|update|delete|execute|transaction|query)\s*[.(<]/g },
+  { name: "a database query", re: /\bget[A-Z]?[Dd][Bb]\s*\(\s*\)\s*\.\s*(?:select|insert|update|delete|execute|transaction|query|selectFrom|insertInto|updateTable|deleteFrom|collection)\b/g },
   { name: "a database query", re: /\bpool\s*\.\s*query\s*\(/g },
+  { name: "a Kysely query", re: /\.\s*(?:selectFrom|insertInto|updateTable|deleteFrom|replaceInto|mergeInto)\s*\(/g },
+  { name: "a MongoDB or Firestore query", re: /\.\s*collection\s*\(\s*["'`]/g },
+  { name: "a Knex query", re: /\bknex\s*\(\s*["'`]/g },
   { name: "a Supabase query", re: /\bsupabase\s*\.\s*(?:from|rpc|storage)\b/g },
   { name: "a SQL query", re: /\bsql\s*`\s*(?:select|insert|update|delete|with)\b/gi },
 ];
@@ -290,8 +298,8 @@ export const SECRETS = [
   { kind: "an OpenAI API key", re: /T3BlbkFJ[A-Za-z0-9_-]{8,}/g, real: (m, text) => /\bsk-[A-Za-z0-9_-]{0,200}$/.test(text.slice(Math.max(0, m.index - 210), m.index)) },
   { kind: "a SendGrid API key", re: /\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{20,}/g },
   { kind: "a Resend API key", re: /\bre_[A-Za-z0-9]{20,}\b/g, real: (m) => /\d/.test(m[0]) && /[A-Z]/.test(m[0]) && /[a-z]/.test(m[0].slice(3)) },
-  // A Firebase web config's apiKey is public by design; any other Google key isn't.
-  { kind: "a Google API key", re: /\bAIza[0-9A-Za-z_-]{35}\b/g, real: (m, text) => !/authDomain|firebaseapp\.com|messagingSenderId|storageBucket/.test(text.slice(Math.max(0, m.index - 400), m.index + 400)) },
+  // A Firebase web config's apiKey is public by design; any other Google key isn't, even beside one.
+  { kind: "a Google API key", re: /\bAIza[0-9A-Za-z_-]{35}\b/g, real: (m, text) => !isFirebaseConfigKey(m, text) },
   { kind: "a Groq API key", re: /\bgsk_[A-Za-z0-9]{40,}/g },
   { kind: "a Replicate API token", re: /\br8_[A-Za-z0-9]{30,}/g },
   { kind: "a Hugging Face token", re: /\bhf_[A-Za-z0-9]{30,}/g },
@@ -299,7 +307,8 @@ export const SECRETS = [
   { kind: "an npm token", re: /\bnpm_[A-Za-z0-9]{36}\b/g },
   {
     kind: "a database address with a password",
-    re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|amqps?)(?:\+[a-z0-9]+)?(?:\+srv)?:\/\/[^\s:@/"'`]+:([^\s@/"'`]+)@([^\s/:"'`?#]+)/g,
+    // The user name may be empty: redis://:password@host is how Redis writes it.
+    re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|amqps?)(?:\+[a-z0-9]+)?(?:\+srv)?:\/\/[^\s:@/"'`]*:([^\s@/"'`]+)@([^\s/:"'`?#]+)/g,
     real: (m) => !isPlaceholderPassword(m[1]) && !isLocalHost(m[2]),
   },
 ];
@@ -322,48 +331,114 @@ function isLocalHost(host) {
   return /^(?:127\.\d+\.\d+\.\d+|0\.0\.0\.0)$/.test(h) || /\.(?:local|localhost|test|example|invalid)$/.test(h);
 }
 
+/** Is this Google key the apiKey of a Firebase web config, written as the config writes it? */
+function isFirebaseConfigKey(m, text) {
+  const before = text.slice(Math.max(0, m.index - 40), m.index);
+  if (!/(?:\bapiKey|["']apiKey["']|FIREBASE_API_KEY)\s*[:=]\s*["'`]?$/.test(before)) return false;
+  return /authDomain|firebaseapp\.com|messagingSenderId|storageBucket|FIREBASE_/.test(text.slice(Math.max(0, m.index - 400), m.index + 400));
+}
+
+/**
+ * An environment value that can't be a secret, as a test's defaults are: a
+ * placeholder, true or false, or an address on this machine, which the
+ * database-address rule lets through too. A number may be a PIN, and an
+ * address elsewhere may carry a key in its path, so neither is let through.
+ */
+function isHarmlessValue(value) {
+  if (PLACEHOLDER_VALUE.test(value)) return true;
+  if (/^(?:true|false|yes|no|on|off)$/i.test(value)) return true;
+  // An address with a query or a fragment could carry a token in it, so it isn't let through.
+  const url = /^[a-z][a-z0-9+.-]*:\/\/(?:[^\s:@/]*(?::[^\s@/]*)?@)?([^\s/:?#]+)(?:[:/][^\s?#]*)?$/i.exec(value);
+  return url !== null && isLocalHost(url[1]);
+}
+
 /**
  * Rule 9: phrases that present a project as its users' property, or as
- * approved by our.one. A phrase right after a denial ("not approved by
- * our.one") is let through.
+ * approved by our.one. A phrase a denial governs is let through: "not
+ * approved by our.one", "not approved or listed by our.one", "Not
+ * affiliated with or endorsed by our.one", "will not be listed on our.one".
  */
 export const CLAIMS = [
   { re: /\b(?:users?|members?|community|people|customers?)[- ]owned\b/gi, what: "presents it as its users' property" },
   { re: /\bowned\s+(?:and\s+[\w-]+\s+)?by\s+(?:all\s+(?:of\s+)?)?(?:(?:its|their|our|the)\s+)?(?:own\s+)?(?:users|members|people|community|customers)\b/gi, what: "presents it as its users' property" },
   { re: /\b(?:its|the|our)\s+(?:users|members|people|community)\s+(?:now\s+|together\s+|jointly\s+|collectively\s+)?own\s+(?:it|this)\b/gi, what: "presents it as its users' property" },
-  { re: /\b(?:approved|certified|endorsed|verified|vetted|accredited|listed|protected|hosted|backed|guaranteed)\s+(?:by|on|in)\s+our\.one\b/gi, what: "presents it as approved, listed or protected by our.one" },
+  // our.one, not a file named after it: "listed in our.one.json" claims nothing.
+  { re: /\b(?:approved|certified|endorsed|verified|vetted|accredited|listed|protected|hosted|backed|guaranteed)\s+(?:by|on|in)\s+our\.one\b(?!\.\w)/gi, what: "presents it as approved, listed or protected by our.one" },
   { re: /\bour\.one[- ](?:approved|certified|verified|endorsed|protected|listed|backed)\b/gi, what: "presents it as approved, listed or protected by our.one" },
 ];
-const DENIAL = /\b(?:not|never|nor|isn't|aren't|wasn't|weren't|no longer|hasn't been|haven't been|has not been|have not been)\s+(?:yet\s+|been\s+)*$/i;
+/** Words that deny what follows them. */
+const NEGATIONS = new Set(["not", "never", "nor", "neither", "no", "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "won't", "wouldn't", "can't", "cannot", "couldn't", "doesn't", "don't", "didn't", "shouldn't"]);
+/**
+ * Words that may stand between a denial and the phrase it governs: the
+ * verb's other forms, other words of approval joined by "or" and "and",
+ * and "our.one" itself. Any other word ends the denial's reach.
+ */
+const DENIED_TOO = new Set(["yet", "been", "be", "being", "ever", "longer", "officially", "formally", "currently", "presently", "in", "any", "way", "a", "an", "the", "with", "by", "on", "or", "nor", "and", "also", "either", "our.one", "approved", "certified", "endorsed", "verified", "vetted", "accredited", "listed", "protected", "hosted", "backed", "guaranteed", "affiliated", "associated", "connected", "sponsored", "partnered", "supported", "run", "operated"]);
 
-/** Open-source licences, by SPDX id, with words their full text always carries. */
+/** Does a denial govern the phrase that follows `before`? Read back word by word, at most twelve. */
+function isDenied(before) {
+  const words = before.slice(-200).match(/[A-Za-z][A-Za-z'.-]*|[^\sA-Za-z]/g) ?? [];
+  for (let k = words.length - 1, read = 0; k >= 0 && read < 12; k -= 1) {
+    const word = words[k].toLowerCase();
+    if (word === ",") continue;
+    read += 1;
+    if (NEGATIONS.has(word)) return true;
+    if (!DENIED_TOO.has(word)) return false;
+  }
+  return false;
+}
+
+/**
+ * Open-source licences, by SPDX id, with passages their full text always
+ * carries: its title where it has one, and words from its terms, so that a
+ * line naming the licence, or its heading alone, isn't taken for it. A list
+ * inside the list gives the forms a passage is found in. Passages are
+ * compared with the file's words however its lines are wrapped (see
+ * licenceWords).
+ */
+const MIT_GRANT = "Permission is hereby granted, free of charge, to any person obtaining a copy of this software";
+const BSD_TERMS = ["Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met", "Redistributions of source code must retain the above copyright notice", "THIS SOFTWARE IS PROVIDED BY"];
+const GPL_TERMS = "TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION";
+const GPL3 = ["GNU GENERAL PUBLIC LICENSE", "Version 3, 29 June 2007", "refers to version 3 of the GNU General Public License"];
+const LGPL3 = ["GNU LESSER GENERAL PUBLIC LICENSE", "Version 3, 29 June 2007", "This version of the GNU Lesser General Public License incorporates the terms and conditions of version 3 of the GNU General Public License"];
+const AGPL3 = ["GNU AFFERO GENERAL PUBLIC LICENSE", "Version 3, 19 November 2007", "refers to version 3 of the GNU Affero General Public License"];
 export const LICENCES = {
-  "Apache-2.0": [/Apache License/i, /Version 2\.0, January 2004/i],
-  MIT: [/Permission is hereby granted, free of charge, to any person obtaining a copy/i],
-  "MIT-0": [/Permission is hereby granted, free of charge, to any person obtaining a copy/i],
-  "BSD-2-Clause": [/Redistribution and use in source and binary forms, with or without\s+modification, are permitted provided that the following conditions\s+are met/i],
-  "BSD-3-Clause": [/Redistribution and use in source and binary forms, with or without\s+modification, are permitted provided that the following conditions\s+are met/i, /Neither the name of/i],
-  ISC: [/Permission to use, copy, modify, and\/or distribute this software for any\s+purpose with or without fee is hereby granted, provided that/i],
-  "0BSD": [/Permission to use, copy, modify, and\/or distribute this software for any\s+purpose with or without fee is hereby granted/i],
-  "MPL-2.0": [/Mozilla Public License,? Version 2\.0/i, /Definitions/i],
-  "GPL-2.0-only": [/GNU GENERAL PUBLIC LICENSE/i, /Version 2, June 1991/i],
-  "GPL-2.0-or-later": [/GNU GENERAL PUBLIC LICENSE/i, /Version 2, June 1991/i],
-  "GPL-3.0-only": [/GNU GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
-  "GPL-3.0-or-later": [/GNU GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
-  "LGPL-2.1-only": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 2\.1, February 1999/i],
-  "LGPL-2.1-or-later": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 2\.1, February 1999/i],
-  "LGPL-3.0-only": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
-  "LGPL-3.0-or-later": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
-  "AGPL-3.0-only": [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3, 19 November 2007/i],
-  "AGPL-3.0-or-later": [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3, 19 November 2007/i],
-  "EPL-2.0": [/Eclipse Public License - v 2\.0/i],
-  "EUPL-1.2": [/EUROPEAN UNION PUBLIC LICEN[CS]E v\. ?1\.2/i],
-  Unlicense: [/This is free and unencumbered software released into the public domain/i, /Anyone is free to copy, modify, publish, use, compile, sell, or\s+distribute/i],
-  "BSL-1.0": [/Boost Software License - Version 1\.0 - August 17th, 2003/i],
-  Zlib: [/This software is provided 'as-is', without any express or implied/i, /Permission is granted to anyone to use this software for any purpose/i],
-  "Artistic-2.0": [/The Artistic License 2\.0/i],
-  "UPL-1.0": [/The Universal Permissive License \(UPL\), Version 1\.0/i],
+  "Apache-2.0": ["Apache License", "Version 2.0, January 2004", "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION", "Grant of Copyright License"],
+  MIT: [MIT_GRANT],
+  "MIT-0": [MIT_GRANT, "to deal in the Software without restriction"],
+  "BSD-2-Clause": BSD_TERMS,
+  "BSD-3-Clause": [...BSD_TERMS, ["Neither the name of", "Neither the names of"]],
+  ISC: [["Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies", "Permission to use, copy, modify, and distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies"]],
+  "0BSD": ["Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted", "THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE"],
+  "MPL-2.0": [["Mozilla Public License Version 2.0", "Mozilla Public License, Version 2.0", "Mozilla Public License, v. 2.0"], "means the form of the work preferred for making modifications"],
+  "GPL-2.0-only": ["GNU GENERAL PUBLIC LICENSE", "Version 2, June 1991", GPL_TERMS],
+  "GPL-2.0-or-later": ["GNU GENERAL PUBLIC LICENSE", "Version 2, June 1991", GPL_TERMS],
+  "GPL-3.0-only": GPL3,
+  "GPL-3.0-or-later": GPL3,
+  "LGPL-2.1-only": ["GNU LESSER GENERAL PUBLIC LICENSE", "Version 2.1, February 1999", GPL_TERMS],
+  "LGPL-2.1-or-later": ["GNU LESSER GENERAL PUBLIC LICENSE", "Version 2.1, February 1999", GPL_TERMS],
+  "LGPL-3.0-only": LGPL3,
+  "LGPL-3.0-or-later": LGPL3,
+  "AGPL-3.0-only": AGPL3,
+  "AGPL-3.0-or-later": AGPL3,
+  "EPL-2.0": ["Eclipse Public License - v 2.0", "THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE PUBLIC LICENSE"],
+  "EUPL-1.2": [["EUROPEAN UNION PUBLIC LICENCE v. 1.2", "EUROPEAN UNION PUBLIC LICENSE v. 1.2", "EUROPEAN UNION PUBLIC LICENCE v.1.2"], "applies to the Work (as defined below)"],
+  Unlicense: ["This is free and unencumbered software released into the public domain", "Anyone is free to copy, modify, publish, use, compile, sell, or distribute"],
+  "BSL-1.0": ["Boost Software License - Version 1.0 - August 17th, 2003", "Permission is hereby granted, free of charge, to any person or organization obtaining a copy of the software and accompanying documentation covered by this license"],
+  Zlib: ["This software is provided 'as-is', without any express or implied", "Permission is granted to anyone to use this software for any purpose", "The origin of this software must not be misrepresented"],
+  "Artistic-2.0": ["The Artistic License 2.0", "Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed"],
+  "UPL-1.0": ["The Universal Permissive License (UPL), Version 1.0", "Subject to the condition set forth below, permission is hereby granted to any person obtaining a copy of this software"],
 };
+
+/** A licence's words as one line: quotation marks made plain, markdown's marks dropped, every run of spaces and line breaks one space, lower case. */
+function licenceWords(text) {
+  return text.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[*_#>`]+/g, " ").replace(/\s+/g, " ").toLowerCase();
+}
+
+/** Does a licence file's text hold the full text of this licence? */
+function holdsLicence(words, id) {
+  return LICENCES[id].every((passage) => (Array.isArray(passage) ? passage : [passage]).some((form) => words.includes(licenceWords(form))));
+}
 
 const LICENCE_FILE = /^(?:licen[cs]e|copying)(?:[-.][\w.-]+)?$/i;
 
@@ -382,7 +457,24 @@ const MESSAGES = /(?:^|\/)(?:messages|locales?|i18n|lang|translations)\/(?:[^/]+
 /** Code in a language the tool doesn't read. */
 const OTHER_LANGUAGE = /\.(?:py|rb|go|php|java|kt|kts|cs|rs|ex|exs|swift|scala|dart|clj)$/i;
 const OTHER_LANGUAGE_NAMES = { py: "Python", rb: "Ruby", go: "Go", php: "PHP", java: "Java", kt: "Kotlin", kts: "Kotlin", cs: "C#", rs: "Rust", ex: "Elixir", exs: "Elixir", swift: "Swift", scala: "Scala", dart: "Dart", clj: "Clojure" };
-const TEST = /(?:^|\/)(?:__tests__|__mocks__|__fixtures__|tests?|e2e|spec|fixtures?|cypress|playwright|test-utils)\/|\.(?:test|spec|stories|cy|e2e)\.[cm]?[jt]sx?$|(?:^|\/)(?:vitest|jest|playwright|cypress)\.(?:setup|config)\.[cm]?[jt]s$|(?:^|\/)setupTests\.[cm]?[jt]sx?$/i;
+/** Tests, by their names, and folders that hold nothing else wherever they are. */
+const TEST = /(?:^|\/)(?:__tests__|__mocks__|__fixtures__|cypress|playwright|test-utils)\/|\.(?:test|spec|stories|cy|e2e)\.[cm]?[jt]sx?$|(?:^|\/)(?:vitest|jest|playwright|cypress)\.(?:setup|config)\.[cm]?[jt]s$|(?:^|\/)setupTests\.[cm]?[jt]sx?$/i;
+/** Folders that usually hold tests. In a tree of pages (app/, pages/, routes/) the name is a page's: a club's fixtures, a school's tests. */
+const TEST_FOLDER = /(?:^|\/)(?:tests?|e2e|spec|fixtures?)\//gi;
+const PAGE_TREE = /(?:^|\/)(?:app|pages|routes)\//i;
+
+function isTest(rel) {
+  if (TEST.test(rel)) return true;
+  for (const m of rel.matchAll(TEST_FOLDER)) {
+    const above = m[0].startsWith("/") ? rel.slice(0, m.index + 1) : "";
+    if (!PAGE_TREE.test(above)) return true;
+  }
+  return false;
+}
+
+/** Configuration, and declarations of types: code, but not the product's (next.config.ts, eslint.config.mjs, .eslintrc.cjs, next-env.d.ts). */
+const CONFIG_FILE = /(?:^|\/)(?:[\w.-]+\.config|\.[\w-]+rc|gatsby-config)\.[cm]?[jt]s$/i;
+const DECLARATIONS = /\.d\.[cm]?ts$/i;
 
 function toPosix(path) {
   return path.split(sep).join("/");
@@ -568,114 +660,581 @@ function sha256(buffer) {
 
 /* ------------------------------------------------------------ code */
 
-/**
- * JavaScript's comments, blanked to spaces with every newline kept, so
- * positions and line numbers still match the file. Strings, template
- * literals and regular expressions are stepped over, so a "//" inside one
- * isn't taken for a comment.
+/*
+ * Code is read by a small lexer, closely enough for the checks, as a parser
+ * would: comments, strings, template literals and regular expressions; JSX,
+ * whose text and attributes aren't code; and in .vue, .svelte and .astro
+ * files the scripts, outside which nothing is code. So a "//" in a page's
+ * text, or "image/*", hides nothing. It reads each character a bounded
+ * number of times, so a crafted file can't stall it.
  */
-export function stripComments(text) {
-  const out = text.split("");
+
+/** What each character of a source file is. */
+const K_CODE = 0;
+const K_COMMENT = 1;
+const K_STRING = 2;
+const K_REGEX = 3;
+const K_JSX_TEXT = 4;
+/** A JSX tag: its name, its attributes and their values. */
+const K_JSX = 5;
+/** The address of a link a person may follow (an href), which is no call to a service. */
+const K_LINK = 6;
+/** Outside the scripts of a .vue, .svelte or .astro file. */
+const K_OUTSIDE = 7;
+
+const M_CODE = 0;
+const M_TEMPLATE = 1;
+const M_TAG = 2;
+const M_CHILDREN = 3;
+
+/** Words after which an expression starts, so that "/" begins a regular expression and "<" a JSX element. */
+const STARTS_EXPRESSION = new Set(["return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "throw", "case", "do", "else", "yield", "await", "default"]);
+/** Marks after which an expression starts. */
+const BEFORE_EXPRESSION = "(,=:[!&|?{};+-*%<>~^";
+/** A regular expression is never longer than this; past it, "/" is read as division, so no line is rescanned far. */
+const REGEX_MAX = 2048;
+/** After this many misreadings, "<" is never read as JSX again in the file. */
+const JSX_RETRIES = 50;
+/** A line of what was read as JSX text that starts with one of these shows the "<" was no JSX. */
+const STATEMENTS = ["import ", "export ", "const ", "let ", "var ", "function ", "class ", "interface ", "type ", "enum ", "declare ", "async function"];
+
+function isIdentStart(c) {
+  return (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c === 95 || c === 36 || (c > 127 && !isSpace(c));
+}
+
+function isIdentPart(c) {
+  return isIdentStart(c) || (c >= 48 && c <= 57);
+}
+
+function isSpace(c) {
+  return c === 32 || c === 9 || c === 10 || c === 13 || c === 11 || c === 12 || c === 0xa0 || c === 0xfeff || c === 0x2028 || c === 0x2029;
+}
+
+function isLetter(c) {
+  return (c >= 97 && c <= 122) || (c >= 65 && c <= 90);
+}
+
+/** What a regular expression's \s matches, by character code. */
+function isWhite(c) {
+  return (c >= 9 && c <= 13) || c === 32 || c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+}
+
+/**
+ * Reads `text` as code (`jsx`: whether "<" may start a JSX element).
+ * Returns `code`, the text with its comments blanked to spaces and every
+ * line break kept, so positions and lines still match the file; `kind`,
+ * what each character is; and `tokens`, the code's words ("id"), strings
+ * ("str", a template literal without ${} too) and marks ("p"), in order.
+ */
+function lex(text, jsx) {
   const n = text.length;
-  let prev = "";
+  const kind = new Uint8Array(n);
+  const blanks = [];
+  const tokens = [];
+  const stack = [{ m: M_CODE, depth: 0, link: false }];
+  const notJsx = new Set();
+  let jsxOn = jsx;
+  let retries = 0;
+  /** Where the outermost JSX element began, to read it again as code if it turns out not to be JSX. */
+  let checkpoint = null;
+  /** The last token of the code being read. */
+  let last = null;
   let i = 0;
-  const blank = (from, to) => {
-    for (let k = from; k < to; k += 1) if (out[k] !== "\n" && out[k] !== "\r") out[k] = " ";
+
+  // Forward searches, remembered, so that no part of the text is searched twice.
+  const searches = new Map();
+  const nextAt = (needle, from) => {
+    const s = searches.get(needle);
+    if (s && from >= s.from && (s.at === -1 || s.at >= from)) return s.at;
+    const at = text.indexOf(needle, from);
+    searches.set(needle, { from, at });
+    return at;
   };
-  while (i < n) {
-    const c = text[i];
-    const next = text[i + 1];
-    if (c === "/" && next === "/") {
-      const end = text.indexOf("\n", i);
-      const stop = end === -1 ? n : end;
-      blank(i, stop);
-      i = stop;
+  const lineEnd = (from) => {
+    const at = nextAt("\n", from);
+    return at === -1 ? n : at;
+  };
+  const comment = (from, to) => {
+    kind.fill(K_COMMENT, from, to);
+    blanks.push(from, to);
+  };
+  const push = (t) => {
+    tokens.push(t);
+    last = t;
+  };
+  const expressionHere = () => last === null || (last.t === "p" && BEFORE_EXPRESSION.includes(last.v)) || (last.t === "id" && STARTS_EXPRESSION.has(last.v));
+  const jsxHere = () => last === null || (last.t === "p" && last.v !== "}" && BEFORE_EXPRESSION.includes(last.v)) || (last.t === "id" && STARTS_EXPRESSION.has(last.v));
+
+  const stringEnd = (from, quote) => {
+    let j = from + 1;
+    while (j < n) {
+      const c = text.charCodeAt(j);
+      if (c === 92) j += 2;
+      else if (c === quote) return j + 1;
+      else if (c === 10 || c === 13) return j;
+      else j += 1;
+    }
+    return n;
+  };
+  // What scanning for regular expressions may cost in all: once spent, a scan looks only a short way.
+  let regexBudget = 8 * n + 65536;
+  const regexEnd = (from) => {
+    const first = text.charCodeAt(from + 1);
+    if (first === 47 || first === 42) return -1;
+    const limit = Math.min(n, from + (regexBudget > 0 ? REGEX_MAX : 64));
+    let inClass = false;
+    let j = from + 1;
+    let end = -1;
+    while (j < limit) {
+      const c = text.charCodeAt(j);
+      if (c === 10 || c === 13) break;
+      if (c === 92) {
+        j += 2;
+        continue;
+      }
+      if (c === 91) inClass = true;
+      else if (c === 93) inClass = false;
+      else if (c === 47 && !inClass) {
+        j += 1;
+        while (j < n && isIdentPart(text.charCodeAt(j))) j += 1;
+        end = j;
+        break;
+      }
+      j += 1;
+    }
+    regexBudget -= j - from;
+    return end;
+  };
+  // Is "<" here a JSX element, not a type's parameters (<T,> or <T extends U>)?
+  const jsxAt = (at) => {
+    const c = text.charCodeAt(at + 1);
+    if (c === 62) return true;
+    if (!isIdentStart(c)) return false;
+    let j = at + 2;
+    while (j < n && (isIdentPart(text.charCodeAt(j)) || text.charCodeAt(j) === 46 || text.charCodeAt(j) === 45 || text.charCodeAt(j) === 58)) j += 1;
+    while (j < n && isSpace(text.charCodeAt(j))) j += 1;
+    if (text.charCodeAt(j) === 44) return false;
+    return !(text.startsWith("extends", j) && !isIdentPart(text.charCodeAt(j + 7)));
+  };
+  const startsStatement = (at) => STATEMENTS.some((s) => text.startsWith(s, at));
+  // The element read since the checkpoint wasn't JSX: forget it, and read it again as code.
+  const notJsxAfterAll = () => {
+    const cp = checkpoint;
+    checkpoint = null;
+    notJsx.add(cp.at);
+    retries += 1;
+    if (retries > JSX_RETRIES) jsxOn = false;
+    tokens.length = cp.tokens;
+    blanks.length = cp.blanks;
+    kind.fill(K_CODE, cp.at, Math.min(n, i + 1));
+    stack.length = cp.stack;
+    last = cp.last;
+    i = cp.at;
+  };
+  const elementEnded = () => {
+    if (stack[stack.length - 1].m !== M_CODE) return;
+    last = { t: "jsx", v: "", s: i };
+    if (checkpoint !== null && stack.length === checkpoint.stack) checkpoint = null;
+  };
+
+  for (;;) {
+    while (i < n) {
+      const top = stack[stack.length - 1];
+      const c = text.charCodeAt(i);
+      if (top.m === M_CODE) {
+        if (isSpace(c)) {
+          i += 1;
+        } else if (c === 47) {
+          const d = text.charCodeAt(i + 1);
+          // "//" after a scheme ("https://") is an address in text, not a comment.
+          if (d === 47 && !(text.charCodeAt(i - 1) === 58 && isLetter(text.charCodeAt(i - 2)))) {
+            const end = lineEnd(i);
+            comment(i, end);
+            i = end;
+            continue;
+          }
+          if (d === 42) {
+            const end = nextAt("*/", i + 2);
+            // An unclosed "/*" opens no comment: the file would not parse.
+            if (end !== -1) {
+              comment(i, end + 2);
+              i = end + 2;
+              continue;
+            }
+          } else if (expressionHere()) {
+            const end = regexEnd(i);
+            if (end !== -1) {
+              kind.fill(K_REGEX, i, end);
+              push({ t: "re", v: "", s: i });
+              i = end;
+              continue;
+            }
+          }
+          push({ t: "p", v: "/", s: i });
+          i += 1;
+        } else if (c === 34 || c === 39) {
+          const end = stringEnd(i, c);
+          kind.fill(top.link ? K_LINK : K_STRING, i, end);
+          push({ t: "str", v: text.slice(i + 1, end > i + 1 && text.charCodeAt(end - 1) === c ? end - 1 : end), s: i });
+          i = end;
+        } else if (c === 96) {
+          const t = { t: "tpl", v: null, s: i };
+          push(t);
+          stack.push({ m: M_TEMPLATE, token: t, from: i + 1, plain: true, link: top.link });
+          kind[i] = top.link ? K_LINK : K_STRING;
+          i += 1;
+        } else if (c === 60 && jsxOn && jsxHere() && !notJsx.has(i) && jsxAt(i)) {
+          if (checkpoint === null) checkpoint = { at: i, tokens: tokens.length, blanks: blanks.length, stack: stack.length, last };
+          stack.push({ m: M_TAG, closing: false, name: null, attr: null });
+          kind[i] = K_JSX;
+          i += 1;
+        } else if (isIdentStart(c) || c === 92) {
+          let j = i + 1;
+          while (j < n && (isIdentPart(text.charCodeAt(j)) || text.charCodeAt(j) === 92)) j += 1;
+          push({ t: "id", v: text.slice(i, j), s: i });
+          i = j;
+        } else if (c >= 48 && c <= 57) {
+          let j = i + 1;
+          while (j < n && (isIdentPart(text.charCodeAt(j)) || text.charCodeAt(j) === 46)) j += 1;
+          push({ t: "num", v: "", s: i });
+          i = j;
+        } else if (c === 125 && top.depth === 0 && stack.length > 1) {
+          // The end of a template's ${…} or of a JSX {…}.
+          stack.pop();
+          kind[i] = stack[stack.length - 1].m === M_TEMPLATE ? K_STRING : K_JSX;
+          i += 1;
+        } else {
+          if (c === 123) top.depth += 1;
+          else if (c === 125) top.depth -= 1;
+          push({ t: "p", v: text[i], s: i });
+          i += 1;
+        }
+        continue;
+      }
+      if (top.m === M_TEMPLATE) {
+        let j = i;
+        while (j < n) {
+          const d = text.charCodeAt(j);
+          if (d === 92 || d === 96 || (d === 36 && text.charCodeAt(j + 1) === 123)) break;
+          j += 1;
+        }
+        const k = top.link ? K_LINK : K_STRING;
+        kind.fill(k, i, j);
+        i = j;
+        if (i >= n) continue;
+        const d = text.charCodeAt(i);
+        if (d === 92) {
+          kind.fill(k, i, Math.min(n, i + 2));
+          i += 2;
+        } else if (d === 96) {
+          kind[i] = k;
+          stack.pop();
+          if (top.plain) {
+            top.token.t = "str";
+            top.token.v = text.slice(top.from, i);
+          }
+          last = top.token;
+          i += 1;
+        } else {
+          kind.fill(k, i, i + 2);
+          top.plain = false;
+          stack.push({ m: M_CODE, depth: 0, link: top.link });
+          last = null;
+          i += 2;
+        }
+        continue;
+      }
+      if (top.m === M_TAG) {
+        if (c === 47 && text.charCodeAt(i + 1) === 62) {
+          kind.fill(K_JSX, i, i + 2);
+          i += 2;
+          stack.pop();
+          elementEnded();
+        } else if (c === 62) {
+          kind[i] = K_JSX;
+          i += 1;
+          if (top.closing) {
+            stack.pop();
+            elementEnded();
+          } else {
+            stack[stack.length - 1] = { m: M_CHILDREN };
+          }
+        } else if (c === 47 && text.charCodeAt(i + 1) === 47) {
+          const end = lineEnd(i);
+          comment(i, end);
+          i = end;
+        } else if (c === 47 && text.charCodeAt(i + 1) === 42 && nextAt("*/", i + 2) !== -1) {
+          const end = nextAt("*/", i + 2) + 2;
+          comment(i, end);
+          i = end;
+        } else if (c === 123) {
+          kind[i] = K_JSX;
+          stack.push({ m: M_CODE, depth: 0, link: isLinkAttribute(top) });
+          last = null;
+          i += 1;
+        } else if (c === 34 || c === 39) {
+          let j = i + 1;
+          while (j < n && text.charCodeAt(j) !== c) j += 1;
+          const end = Math.min(n, j + 1);
+          kind.fill(isLinkAttribute(top) ? K_LINK : K_JSX, i, end);
+          i = end;
+        } else if (isIdentStart(c)) {
+          let j = i + 1;
+          while (j < n && (isIdentPart(text.charCodeAt(j)) || text.charCodeAt(j) === 45 || text.charCodeAt(j) === 46 || text.charCodeAt(j) === 58)) j += 1;
+          if (top.name === null) top.name = text.slice(i, j);
+          else top.attr = text.slice(i, j);
+          kind.fill(K_JSX, i, j);
+          i = j;
+        } else {
+          kind[i] = K_JSX;
+          i += 1;
+        }
+        continue;
+      }
+      // M_CHILDREN: text, elements, and {…}.
+      if (c === 123) {
+        kind[i] = K_JSX;
+        stack.push({ m: M_CODE, depth: 0, link: false });
+        last = null;
+        i += 1;
+        continue;
+      }
+      if (c === 60) {
+        const d = text.charCodeAt(i + 1);
+        if (d === 47) {
+          kind.fill(K_JSX, i, i + 2);
+          stack[stack.length - 1] = { m: M_TAG, closing: true, name: null, attr: null };
+          i += 2;
+          continue;
+        }
+        if (d === 62 || isIdentStart(d)) {
+          stack.push({ m: M_TAG, closing: false, name: null, attr: null });
+          kind[i] = K_JSX;
+          i += 1;
+          continue;
+        }
+      }
+      // Text, to the next "{" or "<"; a line that starts like a statement shows the "<" was no JSX.
+      let j = i;
+      let misread = false;
+      while (j < n) {
+        const d = text.charCodeAt(j);
+        if ((d === 123 || d === 60) && j > i) break;
+        if (d === 10 && checkpoint !== null && startsStatement(j + 1)) {
+          misread = true;
+          break;
+        }
+        j += 1;
+      }
+      kind.fill(K_JSX_TEXT, i, j);
+      i = j;
+      if (misread) notJsxAfterAll();
+    }
+    // The file ended inside what was read as JSX: it wasn't JSX.
+    if (checkpoint !== null) {
+      notJsxAfterAll();
       continue;
     }
-    if (c === "/" && next === "*") {
-      const end = text.indexOf("*/", i + 2);
-      const stop = end === -1 ? n : end + 2;
-      blank(i, stop);
-      i = stop;
-      continue;
-    }
-    if (c === '"' || c === "'" || c === "`") {
-      i = endOfString(text, i, c);
-      prev = c;
-      continue;
-    }
-    if (c === "/" && (prev === "" || "(,=:[!&|?{};+-*%<>~^".includes(prev))) {
-      i = endOfRegex(text, i);
-      prev = "/";
-      continue;
-    }
-    if (c !== " " && c !== "\t" && c !== "\n" && c !== "\r") prev = c;
-    i += 1;
+    break;
   }
-  return out.join("");
+
+  const parts = [];
+  let pos = 0;
+  for (let k = 0; k < blanks.length; k += 2) {
+    parts.push(text.slice(pos, blanks[k]), text.slice(blanks[k], blanks[k + 1]).replace(/[^\r\n]/g, " "));
+    pos = blanks[k + 1];
+  }
+  parts.push(text.slice(pos));
+  return { code: parts.join(""), kind, tokens };
 }
 
-function endOfString(text, start, quote) {
-  let i = start + 1;
-  while (i < text.length) {
-    const c = text[i];
-    if (c === "\\") {
-      i += 2;
-      continue;
-    }
-    if (c === quote) return i + 1;
-    if (c === "\n" && quote !== "`") return i;
-    i += 1;
-  }
-  return i;
+/** Is the attribute being read the href of a link a person follows (not of a <link>, which the page loads itself)? */
+function isLinkAttribute(tag) {
+  return tag.attr !== null && tag.attr.toLowerCase() === "href" && (tag.name ?? "").toLowerCase() !== "link";
 }
 
-function endOfRegex(text, start) {
-  let i = start + 1;
-  let inClass = false;
-  while (i < text.length) {
-    const c = text[i];
-    if (c === "\n") return start + 1;
-    if (c === "\\") {
-      i += 2;
-      continue;
+/**
+ * The scripts of a .vue, .svelte or .astro file, at their places, with the
+ * rest blanked: a template's text is not code. Returns that text, the
+ * blanked ranges, and whether a script is written in JSX.
+ */
+function scriptsOf(text, ext) {
+  const ranges = [];
+  let covered = 0;
+  let jsx = false;
+  if (ext === "astro") {
+    const open = /^\s*---[ \t]*\r?\n/.exec(text);
+    if (open) {
+      const close = text.indexOf("\n---", open[0].length - 1);
+      covered = close === -1 ? text.length : close + 1;
+      ranges.push([open[0].length, covered]);
     }
-    if (c === "[") inClass = true;
-    else if (c === "]") inClass = false;
-    else if (c === "/" && !inClass) {
-      i += 1;
-      while (i < text.length && /[a-z]/i.test(text[i])) i += 1;
-      return i;
-    }
-    i += 1;
   }
-  return start + 1;
+  const lower = text.toLowerCase();
+  for (const m of text.matchAll(/<script\b[^>]*>/gi)) {
+    const from = m.index + m[0].length;
+    if (m.index < covered) continue;
+    const close = lower.indexOf("</script", from);
+    covered = close === -1 ? text.length : close;
+    ranges.push([from, covered]);
+    if (/\blang\s*=\s*["']?[jt]sx\b/i.test(m[0])) jsx = true;
+  }
+  const parts = [];
+  const outside = [];
+  let pos = 0;
+  for (const [from, to] of ranges) {
+    if (from > pos) {
+      parts.push(text.slice(pos, from).replace(/[^\r\n]/g, " "));
+      outside.push([pos, from]);
+    }
+    parts.push(text.slice(from, to));
+    pos = to;
+  }
+  if (pos < text.length) {
+    parts.push(text.slice(pos).replace(/[^\r\n]/g, " "));
+    outside.push([pos, text.length]);
+  }
+  return { source: parts.join(""), outside, jsx };
 }
 
-const STATEMENT_HEAD = /^\s+(?!type\s)[\w$*{},\s]*$/;
+/**
+ * A source file read as code: `code` (its comments blanked), `kind` (what
+ * each character is), `tokens`, `at` (the line of a position) and
+ * `imports`. `rel` names the file, for its language: .ts has no JSX, and a
+ * .vue, .svelte or .astro file's code is in its scripts.
+ */
+function analyse(text, rel = "", at = lineFinder(text)) {
+  const ext = (/\.([A-Za-z0-9]+)$/.exec(rel)?.[1] ?? "").toLowerCase();
+  let source = text;
+  let outside = [];
+  let jsx = !["ts", "mts", "cts"].includes(ext);
+  if (ext === "vue" || ext === "svelte" || ext === "astro") ({ source, outside, jsx } = scriptsOf(text, ext));
+  const { code, kind, tokens } = lex(source, jsx);
+  for (const [from, to] of outside) kind.fill(K_OUTSIDE, from, to);
+  return { code, kind, tokens, at, imports: importsFromTokens(tokens, at) };
+}
 
 /**
  * Every module a file imports, with its line and how: `import … from`,
- * `export … from`, `import "x"`, a dynamic import, or `require`. Type-only
- * imports bring no code and are left out; comments are read past.
+ * `export … from`, `import "x"`, a dynamic import, or `require`. Imports
+ * that bring only types (`import type`, or every name marked `type`) bring
+ * no code and are left out; comments, strings and a page's text are not
+ * code, so an import written in them is none.
  */
-export function importsOf(text) {
-  const code = stripComments(text);
-  const at = lineFinder(code);
+export function importsOf(text, rel = "") {
+  return analyse(text, rel).imports;
+}
+
+const isPunct = (t, v) => t !== undefined && t.t === "p" && t.v === v;
+const isWord = (t, v) => t !== undefined && t.t === "id" && (v === undefined || t.v === v);
+const isString = (t) => t !== undefined && t.t === "str";
+
+/** The imports in a file's tokens. Each token is read a bounded number of times. */
+function importsFromTokens(tokens, at) {
   const found = [];
-  for (const m of code.matchAll(/\bfrom\s*(["'`])([^"'`\n]{1,300})\1/g)) {
-    const floor = Math.max(0, m.index - 2000);
-    const imp = code.lastIndexOf("import", m.index);
-    const exp = code.lastIndexOf("export", m.index);
-    const start = Math.max(imp, exp);
-    if (start < floor) continue;
-    if (/[\w$]/.test(code[start - 1] ?? "")) continue;
-    if (!STATEMENT_HEAD.test(code.slice(start + 6, m.index))) continue;
-    found.push({ spec: m[2], line: at(m.index), kind: start === exp ? "export" : "import" });
+  let i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i];
+    if (t.t !== "id" || isPunct(tokens[i - 1], ".")) {
+      i += 1;
+      continue;
+    }
+    if (t.v === "require" && isPunct(tokens[i + 1], "(") && isString(tokens[i + 2]) && isPunct(tokens[i + 3], ")")) {
+      found.push({ spec: tokens[i + 2].v, line: at(t.s), kind: "require" });
+      i += 4;
+    } else if (t.v === "import" && isPunct(tokens[i + 1], "(")) {
+      if (isString(tokens[i + 2]) && (isPunct(tokens[i + 3], ")") || isPunct(tokens[i + 3], ","))) found.push({ spec: tokens[i + 2].v, line: at(t.s), kind: "import" });
+      i += 2;
+    } else if (t.v === "import" && isString(tokens[i + 1])) {
+      found.push({ spec: tokens[i + 1].v, line: at(t.s), kind: "import" });
+      i += 2;
+    } else if (t.v === "import" || t.v === "export") {
+      const r = t.v === "import" ? importClause(tokens, i + 1) : exportClause(tokens, i + 1);
+      if (r.spec !== null) found.push({ spec: r.spec, line: at(t.s), kind: t.v });
+      i = Math.max(r.next, i + 1);
+    } else {
+      i += 1;
+    }
   }
-  for (const m of code.matchAll(/\bimport\s*(["'`])([^"'`\n]{1,300})\1/g)) found.push({ spec: m[2], line: at(m.index), kind: "import" });
-  for (const m of code.matchAll(/\b(import|require)\s*\(\s*(["'`])([^"'`\n$]{1,300})\2\s*\)/g)) found.push({ spec: m[3], line: at(m.index), kind: m[1] });
-  return found.sort((a, b) => a.line - b.line);
+  return found;
+}
+
+/** `{ a, type b, c as d }` from the "{" at j: whether a name brings a value (not only a type), and the token after "}" (-1 if it isn't a list). */
+function nameList(tokens, j) {
+  let values = false;
+  let name = [];
+  for (let k = j + 1; k < tokens.length; k += 1) {
+    const t = tokens[k];
+    if (isPunct(t, ",") || isPunct(t, "}")) {
+      // "type X" and "type X as Y" bring a type; "type" alone, or "type as Y", is a value called type.
+      const typeOnly = name[0] === "type" && name.length >= 2 && (name[1] !== "as" || name.length === 4);
+      if (name.length > 0 && !typeOnly) values = true;
+      name = [];
+      if (t.v === "}") return { values, next: k + 1 };
+    } else if (t.t === "id" || t.t === "str") {
+      name.push(t.v);
+    } else {
+      return { values: false, next: -1 };
+    }
+  }
+  return { values: false, next: -1 };
+}
+
+/** After `import`: the module, if it brings a value, and where to read on. */
+function importClause(tokens, j) {
+  const none = (next) => ({ spec: null, next });
+  let typeOnly = false;
+  if (isWord(tokens[j], "type") && (isPunct(tokens[j + 1], "{") || isPunct(tokens[j + 1], "*") || (isWord(tokens[j + 1]) && tokens[j + 1].v !== "from"))) {
+    typeOnly = true;
+    j += 1;
+  }
+  let values = false;
+  if (isWord(tokens[j]) && !(tokens[j].v === "from" && isString(tokens[j + 1]))) {
+    values = true;
+    j += 1;
+    if (isPunct(tokens[j], ",")) j += 1;
+    else if (!isWord(tokens[j], "from")) return none(j);
+  }
+  if (isPunct(tokens[j], "{")) {
+    const list = nameList(tokens, j);
+    if (list.next === -1) return none(j + 1);
+    values = values || list.values;
+    j = list.next;
+  } else if (isPunct(tokens[j], "*")) {
+    if (!isWord(tokens[j + 1], "as") || !isWord(tokens[j + 2])) return none(j + 1);
+    values = true;
+    j += 3;
+  }
+  if (!isWord(tokens[j], "from") || !isString(tokens[j + 1])) return none(j);
+  return { spec: values && !typeOnly ? tokens[j + 1].v : null, next: j + 2 };
+}
+
+/** After `export`: the module it re-exports from, if it re-exports a value, and where to read on. */
+function exportClause(tokens, j) {
+  const none = (next) => ({ spec: null, next });
+  let typeOnly = false;
+  if (isWord(tokens[j], "type") && (isPunct(tokens[j + 1], "{") || isPunct(tokens[j + 1], "*"))) {
+    typeOnly = true;
+    j += 1;
+  }
+  let values;
+  if (isPunct(tokens[j], "*")) {
+    values = true;
+    j += 1;
+    if (isWord(tokens[j], "as")) {
+      if (!isWord(tokens[j + 1]) && !isString(tokens[j + 1])) return none(j);
+      j += 2;
+    }
+  } else if (isPunct(tokens[j], "{")) {
+    const list = nameList(tokens, j);
+    if (list.next === -1) return none(j + 1);
+    values = list.values;
+    j = list.next;
+  } else {
+    return none(j);
+  }
+  if (!isWord(tokens[j], "from") || !isString(tokens[j + 1])) return none(j);
+  return { spec: values && !typeOnly ? tokens[j + 1].v : null, next: j + 2 };
 }
 
 /** The package a module name belongs to, or null for a file, a built-in or an alias. */
@@ -692,16 +1251,52 @@ function matches(entry, spec) {
   return spec === entry || spec.startsWith(`${entry}/`);
 }
 
-/** The addresses written in code, with the host each names. */
-function addressesIn(code) {
+/**
+ * The addresses of a file's code that call a service: not those in
+ * comments or regular expressions, in a page's text, or a link's href,
+ * which only a person following it visits.
+ */
+function addressesIn(raw, a) {
   const out = [];
-  for (const m of code.matchAll(/\bhttps?:\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)) out.push({ host: m[1].toLowerCase(), index: m.index });
+  for (const m of raw.matchAll(/\bhttps?:\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)) {
+    const k = a.kind[m.index];
+    if (k === K_COMMENT || k === K_REGEX || k === K_JSX_TEXT || k === K_LINK) continue;
+    if (k === K_OUTSIDE && isLinkInMarkup(raw, m.index)) continue;
+    out.push({ host: m[1].toLowerCase(), index: m.index });
+  }
   return out;
+}
+
+/** In a template's markup, is the address at `index` the href of a link (not of a <link>, which the page loads)? */
+function isLinkInMarkup(raw, index) {
+  const before = raw.slice(Math.max(0, index - 300), index);
+  if (!/\bhref\s*=\s*["']?$/i.test(before)) return false;
+  return !/^<link\b/i.test(before.slice(before.lastIndexOf("<")));
 }
 
 function hostMatches(host, entry) {
   return host === entry || host.endsWith(`.${entry}`);
 }
+
+/** A path written out in full under a build's output (public/sitemap.xml), which holds no one's data. */
+const BUILD_OUTPUT = /^(?:\.\/)?(?:public|dist|build|out|static|\.next|\.output|_site)\/[^\s]*$/i;
+
+/** Does the fs write whose "(" is at `paren` write a build's output, to a path written out in full? */
+function writesBuildOutput(a, paren) {
+  let lo = 0;
+  let hi = a.tokens.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (a.tokens[mid].s < paren) lo = mid + 1;
+    else hi = mid;
+  }
+  const [open, path, after] = [a.tokens[lo], a.tokens[lo + 1], a.tokens[lo + 2]];
+  if (!isPunct(open, "(") || open.s !== paren || !isString(path) || !(isPunct(after, ",") || isPunct(after, ")"))) return false;
+  return BUILD_OUTPUT.test(path.v) && !/(?:^|\/)\.\.(?:\/|$)/.test(path.v);
+}
+
+/** The first lines of this tool, any version: a project's copy of it is the kit's code, not the project's. */
+const TOOL_HEADER = /^(?:#![^\n]*\n)?\/\*\*\s*\*\s*our-one\.mjs: the our\.one build kit's tool\. Version ([\w.+-]{1,40}), rules ([\w.-]{1,20})\./;
 
 /* ------------------------------------------------------------ project */
 
@@ -723,16 +1318,33 @@ function loadProject(root) {
       return false;
     }
   };
-  const readable = [];
-  for (const rel of files) {
-    if (ENV_FILE.test(basename(rel)) && !ENV_EXAMPLE.test(basename(rel))) continue; // read only by the secrets check
-    if (isSelfCopy(rel)) continue;
-    readable.push(rel);
-  }
   const text = (rel) => {
     if (!texts.has(rel)) texts.set(rel, readText(root, rel, skipped));
     return texts.get(rel);
   };
+  // Each file's line table, built once for every check that reads it.
+  const lineTables = new Map();
+  const lines = (rel) => {
+    if (!lineTables.has(rel)) lineTables.set(rel, lineFinder(text(rel) ?? ""));
+    return lineTables.get(rel);
+  };
+  const readable = [];
+  // Other copies of this tool, of any version: read for secrets, never as the project's code or words.
+  const copies = [];
+  const copied = new Set();
+  for (const rel of files) {
+    if (ENV_FILE.test(basename(rel)) && !ENV_EXAMPLE.test(basename(rel))) continue; // read only by the secrets check
+    if (isSelfCopy(rel)) continue;
+    readable.push(rel);
+    if (/\.[cm]?js$/i.test(rel) && !isTest(rel)) {
+      const t = text(rel);
+      const header = t === null ? null : TOOL_HEADER.exec(t.slice(0, 400));
+      if (header) {
+        copies.push({ file: rel, version: header[1], rules: header[2] });
+        copied.add(rel);
+      }
+    }
+  }
 
   let manifest = null;
   let manifestError = null;
@@ -756,27 +1368,31 @@ function loadProject(root) {
     }
   }
 
-  // Code: its imports, its addresses, and where it reaches a store.
+  // Code: its imports, its addresses, and where it reaches a store. Declarations of types run nothing.
   const code = new Map();
   for (const rel of readable) {
-    if (!SOURCE.test(rel) || TEST.test(rel)) continue;
+    if (!SOURCE.test(rel) || isTest(rel) || DECLARATIONS.test(rel) || copied.has(rel)) continue;
     const t = text(rel);
     if (t === null) continue;
-    code.set(rel, stripComments(t));
+    code.set(rel, analyse(t, rel, lines(rel)));
   }
   const imports = [];
-  for (const [rel] of code) for (const i of importsOf(text(rel))) imports.push({ ...i, file: rel });
+  for (const [rel, a] of code) for (const i of a.imports) imports.push({ ...i, file: rel });
 
   const storeUses = [];
   for (const i of imports) {
     if (STORES.some((s) => matches(s, i.spec))) storeUses.push({ file: i.file, line: i.line, what: i.spec, kind: i.kind === "export" ? "re-export" : "client" });
   }
-  for (const [rel, c] of code) {
-    const at = lineFinder(c);
-    for (const call of STORE_CALLS) for (const m of c.matchAll(call.re)) storeUses.push({ file: rel, line: at(m.index), what: call.name, kind: "client" });
-    for (const q of STORE_QUERIES) for (const m of c.matchAll(q.re)) storeUses.push({ file: rel, line: at(m.index), what: q.name, kind: "query" });
-    const usesFs = imports.some((i) => i.file === rel && FS_MODULES.includes(i.spec));
-    if (usesFs) for (const m of c.matchAll(FS_WRITES)) storeUses.push({ file: rel, line: at(m.index), what: "a file written with fs", kind: "client" });
+  for (const [rel, a] of code) {
+    // Only what is code counts: not a string that shows a query, nor a page's text.
+    const inCode = (index) => a.kind[index] === K_CODE;
+    for (const call of STORE_CALLS) for (const m of a.code.matchAll(call.re)) if (inCode(m.index)) storeUses.push({ file: rel, line: a.at(m.index), what: call.name, kind: "client" });
+    for (const q of STORE_QUERIES) for (const m of a.code.matchAll(q.re)) if (inCode(m.index)) storeUses.push({ file: rel, line: a.at(m.index), what: q.name, kind: "query" });
+    if (a.imports.some((i) => FS_MODULES.includes(i.spec))) {
+      for (const m of a.code.matchAll(FS_WRITES)) {
+        if (inCode(m.index) && !writesBuildOutput(a, m.index + m[0].length - 1)) storeUses.push({ file: rel, line: a.at(m.index), what: "a file written with fs", kind: "client" });
+      }
+    }
   }
 
   const deps = new Set();
@@ -787,9 +1403,9 @@ function loadProject(root) {
     }
   }
 
-  const otherLanguage = readable.filter((f) => OTHER_LANGUAGE.test(f) && !TEST.test(f));
+  const otherLanguage = readable.filter((f) => OTHER_LANGUAGE.test(f) && !isTest(f));
 
-  return { root, files, git, tracked, gitRoot: listed.gitRoot, readable, text, manifest, manifestError, pkg, code, imports, storeUses, deps, otherLanguage, skipped };
+  return { root, files, git, tracked, gitRoot: listed.gitRoot, readable, text, lines, manifest, manifestError, pkg, code, imports, storeUses, deps, otherLanguage, skipped, copies, copied };
 }
 
 /** Where a JSON document broke, as a line and a column: never the text around it, which could hold a secret. */
@@ -847,14 +1463,18 @@ function str(value, min, max) {
   return typeof value === "string" && value.trim().length >= min && value.length <= max;
 }
 
-/** A user's text, shortened, for a message. */
+/** A user's text, for a message: any secret in it hidden first, then shortened, so no part of one is shown. */
 function quoted(value) {
-  const s = String(value);
+  const s = redact(String(value));
   return s.length > 60 ? `${s.slice(0, 57)}…` : s;
 }
 
-/** An answer that says the thing doesn't exist: "N/A", "Not built yet.", "TBD". */
-const NON_ANSWER = /^\s*(?:n\/?a|none|no|nothing|not (?:built|available|supported|implemented|possible|done)(?: yet)?|not yet|tbd|tbc|todo|coming soon|later|soon|-+|\?+)\s*\.?\s*$/i;
+/**
+ * An answer that says the thing doesn't exist, or not yet: "N/A", "Not
+ * built yet.", "Not yet implemented.", "Planned for a later version.",
+ * "TBD", "Coming soon".
+ */
+const NON_ANSWER = /^\s*(?:(?:it(?:'s| is)|this is)\s+)?(?:n\/?a|none|no|nothing|nope|unknown|not applicable|-+|\?+|tbd|tbc|tba|todo|to do|wip|work in progress|in progress|coming soon|soon|later|someday|eventually|on the roadmap|not yet|not (?:yet )?(?:built|available|supported|implemented|possible|done|ready|offered|provided|planned|there|in place|live|working)(?: yet)?(?: for now)?|planned(?: for (?:a |the )?(?:later|future|next|coming) (?:version|release|update|stage))?|(?:will be|to be) (?:added|built|implemented|done|provided|offered)(?: (?:later|soon|in (?:a|the) (?:future|later|next) (?:version|release)))?|(?:in|for) (?:a|the) (?:future|later|next) (?:version|release|update))\s*[.!]?\s*$/i;
 
 export const TOP_KEYS = ["$schema", "rules", "name", "purpose", "maintainers", "source", "license", "costs", "data", "claims"];
 export const DATA_KEYS = ["collects", "sharedWith", "boundary", "noPersonalData", "export", "delete"];
@@ -1024,13 +1644,13 @@ function checkLicence(p) {
   } else if (canonical.every((x) => x !== null)) {
     const texts = files.map((f) => {
       try {
-        return readFileSync(f, "utf8");
+        return licenceWords(readFileSync(f, "utf8"));
       } catch {
         return "";
       }
     });
     for (const licence of canonical) {
-      if (!texts.some((t) => LICENCES[licence].every((re) => re.test(t)))) {
+      if (!texts.some((t) => holdsLicence(t, licence))) {
         findings.push({ message: `No licence file holds the full text of ${licence}.`, file: names[0], fix: `Put the full text of ${licence} in ${names[0]}: a line naming it isn't enough.` });
       }
     }
@@ -1066,6 +1686,11 @@ function checkAgents(p) {
       { message: `The block is for rules ${version}; this tool checks rules ${RULES_VERSION}.`, file: agentsFile, line: at(begins[0].index), fix },
     ]);
   }
+  if (text.indexOf(END, begins[0].index) === -1) {
+    return result(id, title, "CHECKED", FAIL, "The rules block in AGENTS.md has lost its end marker.", [
+      { message: `The rules block has no "${END}" line, so it isn't word for word what the tool expects. Delete what is left of it first: without the marker, init can't tell where it ends.`, file: agentsFile, line: at(begins[0].index), fix },
+    ]);
+  }
   if (text.indexOf(normaliseBlock(RULES_BLOCK)) === -1) {
     return result(id, title, "CHECKED", FAIL, "The rules block in AGENTS.md was changed.", [
       { message: "The rules block isn't word for word what the tool expects.", file: agentsFile, line: at(begins[0].index), fix },
@@ -1092,7 +1717,7 @@ function checkData(p) {
   const answer = (value) => str(value, 1, 400) && !isTodo(value) && !NON_ANSWER.test(value);
   if (!answer(d.export)) findings.push({ message: "data.export doesn't say how a person downloads their data.", file: MANIFEST, fix: "Build it, and say how. If it keeps nothing about anyone, say that instead." });
   if (!answer(d.delete)) findings.push({ message: "data.delete doesn't say how a person deletes their data.", file: MANIFEST, fix: "Build it, and say how. If it keeps nothing about anyone, say that instead." });
-  const why = str(d.noPersonalData, 1, 600) && !isTodo(d.noPersonalData);
+  const why = str(d.noPersonalData, 1, 600) && !isTodo(d.noPersonalData) && !NON_ANSWER.test(d.noPersonalData);
   if (collects && collects.length === 0) {
     const reasons = [];
     if (p.storeUses.length > 0) reasons.push("the code uses a database or a file store");
@@ -1152,7 +1777,9 @@ function checkBoundary(p) {
     boundary.push(clean);
   }
   const inside = (file) => boundary.some((b) => file === b || file.startsWith(`${b}/`));
-  if (boundary.length > 0 && sources.length > 1 && sources.every(inside)) {
+  // Judged on the product's code: a config file outside the boundary (next.config.ts) keeps nothing apart.
+  const product = sources.filter((f) => !CONFIG_FILE.test(f));
+  if (boundary.length > 0 && product.length > 1 && product.every(inside)) {
     findings.push({ message: `data.boundary (${boundary.map(quoted).join(", ")}) holds all of the code, so it keeps nothing apart.`, file: MANIFEST, fix: "Name only the folder whose code reaches the store, such as src/data, and keep the rest outside it." });
   }
   for (const use of uses) {
@@ -1203,13 +1830,12 @@ function checkLeave(p) {
     if (s) note(s, `imports ${pkg}`, pkg, i.file, i.line);
   }
   const gateway = SERVICES.find((x) => x.gateway);
-  for (const [rel, c] of p.code) {
-    const at = lineFinder(c);
-    for (const a of addressesIn(c)) {
-      const s = SERVICES.find((x) => (x.hosts ?? []).some((h) => hostMatches(a.host, h)));
-      if (s) note(s, `calls ${a.host}`, null, rel, at(a.index));
+  for (const [rel, a] of p.code) {
+    for (const address of addressesIn(p.text(rel), a)) {
+      const s = SERVICES.find((x) => (x.hosts ?? []).some((h) => hostMatches(address.host, h)));
+      if (s) note(s, `calls ${address.host}`, null, rel, a.at(address.index));
     }
-    if (p.imports.some((i) => i.file === rel && i.spec === "ai") && GATEWAY_MODEL.test(c)) note(gateway, "uses the AI SDK with a model named as provider/model", "ai", rel, at(c.search(GATEWAY_MODEL)));
+    if (a.imports.some((i) => i.spec === "ai") && GATEWAY_MODEL.test(a.code)) note(gateway, "uses the AI SDK with a model named as provider/model", "ai", rel, a.at(a.code.search(GATEWAY_MODEL)));
   }
   if (used.size === 0) {
     return others
@@ -1253,17 +1879,15 @@ function checkTracking(p) {
       if ((t.packages ?? []).some((e) => matches(e, i.spec)) || (t.specifiers ?? []).some((e) => matches(e, i.spec))) flag(t.name, `imports ${i.spec}`, i.file, i.line);
     }
   }
+  const hosts = TRACKING.flatMap((t) => (t.hosts ?? []).map((host) => ({ t, host, re: new RegExp(`(?:https?:)?//(?:[a-z0-9-]+\\.)*${host.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`, "gi") })));
+  // The text as it is, comments included: a page's words are never taken for a comment.
   for (const rel of p.readable) {
-    if (!MARKUP.test(rel) || TEST.test(rel)) continue;
-    const raw = p.text(rel);
-    if (raw === null) continue;
-    const text = p.code.get(rel) ?? raw;
-    const at = lineFinder(text);
+    if (!MARKUP.test(rel) || isTest(rel) || p.copied.has(rel)) continue;
+    const text = p.text(rel);
+    if (text === null) continue;
+    const at = p.lines(rel);
+    for (const { t, host, re } of hosts) for (const m of text.matchAll(re)) flag(t.name, `loads ${host}`, rel, at(m.index));
     for (const t of TRACKING) {
-      for (const host of t.hosts ?? []) {
-        const re = new RegExp(`(?:https?:)?//(?:[a-z0-9-]+\\.)*${host.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`, "gi");
-        for (const m of text.matchAll(re)) flag(t.name, `loads ${host}`, rel, at(m.index));
-      }
       for (const call of t.calls ?? []) for (const m of text.matchAll(call)) flag(t.name, "turned on in code", rel, at(m.index));
     }
     for (const m of text.matchAll(NEXT_THIRD_PARTIES_GOOGLE)) {
@@ -1276,14 +1900,17 @@ function checkTracking(p) {
     : result(id, title, "CHECKED", FAIL, "It loads ads or tracking.", findings);
 }
 
-/** Rule 8 (CHECKED): no secrets, and no database, in the repository. Prints where, never what. */
+/**
+ * Rule 8 (CHECKED): no secrets in the code. Prints where, never what. A
+ * database file in the repository fails here too, for its own reason: it
+ * holds people's data.
+ */
 function checkSecrets(p) {
   const id = "secrets";
-  const title = "No secrets or data in the repository";
+  const title = "No secrets in the code, and no database file";
   const findings = [];
   const skipped = { large: [], binary: 0, unreadable: [] };
-  const scan = (rel, text) => {
-    const at = lineFinder(text);
+  const scan = (rel, text, at = lineFinder(text)) => {
     for (const s of SECRETS) {
       for (const m of text.matchAll(s.re)) {
         if (s.real && !s.real(m, text)) continue;
@@ -1295,7 +1922,7 @@ function checkSecrets(p) {
   for (const rel of p.files) {
     const name = basename(rel);
     if (DATABASE_FILE.test(name)) {
-      findings.push({ message: `${rel} is a database file, and git doesn't ignore it.`, file: rel, fix: `People's data can't be in the repository: add ${name} to .gitignore and remove it (git rm --cached ${rel}).` });
+      findings.push({ message: `${rel} is a database file, and git doesn't ignore it. A database holds people's data, which doesn't belong in the repository.`, file: rel, fix: `Add ${name} to .gitignore, and remove it from the repository (git rm --cached ${rel}).` });
       continue;
     }
     if (ENV_FILE.test(name) && !ENV_EXAMPLE.test(name)) {
@@ -1309,9 +1936,10 @@ function checkSecrets(p) {
       const at = lineFinder(text);
       let offset = 0;
       for (const line of text.split("\n")) {
-        const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
-        const value = m ? m[2].replace(/^(["'])(.*)\1$/, "$2") : "";
-        if (m && SECRET_NAME.test(m[1]) && !PLACEHOLDER_VALUE.test(value)) {
+        const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/.exec(line);
+        const value = m ? line.slice(m[0].length).trim().replace(/^(["'])(.*)\1$/, "$2") : "";
+        // A local default (an address on this machine, true, a port) is no secret: .env.test holds them.
+        if (m && SECRET_NAME.test(m[1]) && !isHarmlessValue(value)) {
           findings.push({ message: `${rel} sets ${m[1]}, and git doesn't ignore the file.`, file: rel, line: at(offset), fix: `Add ${name} to .gitignore and remove it from the repository (git rm --cached ${rel}). If it was ever pushed, replace the secret.` });
         }
         offset += line.length + 1;
@@ -1320,9 +1948,10 @@ function checkSecrets(p) {
   }
   for (const rel of p.readable) {
     if (DATABASE_FILE.test(basename(rel))) continue;
-    const text = p.text(rel) ?? (p.skipped.large.includes(rel) ? readText(p.root, rel, skipped, MAX_SECRET_BYTES) : null);
+    const known = p.text(rel);
+    const text = known ?? (p.skipped.large.includes(rel) ? readText(p.root, rel, skipped, MAX_SECRET_BYTES) : null);
     if (text === null) continue;
-    scan(rel, text);
+    scan(rel, text, known === null ? lineFinder(text) : p.lines(rel));
   }
   const unread = [...new Set([...p.skipped.unreadable, ...skipped.unreadable, ...skipped.large])];
   const notes = [];
@@ -1345,12 +1974,20 @@ function checkCosts(p) {
   const text = p.text(path) ?? "";
   const at = lineFinder(text);
   if (text.trim().length < 20) return result(id, title, "CHECKED", FAIL, `${path} is empty.`, [{ message: `${path} says nothing yet.`, file: path, fix: "Write what it costs to run each month, and who pays." }]);
-  const ph = text.search(/\b(?:TODO|TBD|TBC|TBA|to be (?:decided|determined|confirmed|announced)|fill (?:this|it|these) in)\b/i);
+  // "TODO" in capitals, as init writes it: a to-do app's "Todo" is a word. The others in any case.
+  const todo = text.search(/\bTODO\b/);
+  const other = text.search(/\b(?:TBD|TBC|TBA|to be (?:decided|determined|confirmed|announced)|fill (?:this|it|these) in)\b/i);
+  const ph = todo === -1 ? other : other === -1 ? todo : Math.min(todo, other);
   if (ph !== -1) return result(id, title, "CHECKED", FAIL, `${path} still says TODO.`, [{ message: `${path} still says TODO, or another placeholder, instead of a cost.`, file: path, line: at(ph), fix: "Write each cost, or ask the person for it." }]);
   let offset = 0;
   for (const line of text.split("\n")) {
-    if (/^\s*\|/.test(line) && !/^\s*\|[\s:|-]+$/.test(line) && /\|\s*\|/.test(line)) {
-      return result(id, title, "CHECKED", FAIL, `${path} has an empty cell.`, [{ message: `A row of the table in ${path} is empty.`, file: path, line: at(offset), fix: "Fill each cell, or ask the person for it. Write 0 or none where something costs nothing." }]);
+    if (/^\s*\|/.test(line) && !/^\s*\|[\s:|-]+$/.test(line)) {
+      const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+      // A total's row leaves the cells it doesn't add up empty: "| **Total** | | $5 | |".
+      const total = /^(?:total|totals|subtotal|sum|in total)\b/i.test(cells[0].replace(/[*_`]/g, "").trim()) && cells.slice(1).some((cell) => cell !== "");
+      if (cells.some((cell) => cell === "") && !total) {
+        return result(id, title, "CHECKED", FAIL, `${path} has an empty cell.`, [{ message: `A row of the table in ${path} is empty.`, file: path, line: at(offset), fix: "Fill each cell, or ask the person for it. Write 0 or none where something costs nothing." }]);
+      }
     }
     offset += line.length + 1;
   }
@@ -1368,14 +2005,13 @@ function checkClaims(p) {
   const skipped = new Set(skip.map((s) => toPosix(s.file).replace(/^\.\//, "")));
   const used = new Set();
   const findings = [];
-  const scan = (rel, original, base, fixedAt) => {
+  const wanted = allowed.map((a) => ({ file: toPosix(a.file).replace(/^\.\//, ""), want: normaliseText(a.text).text }));
+  // `base` is read as a reader reads it; `line` gives a line of the file, built once for the file.
+  const scan = (rel, base, line, fixedAt) => {
     const { text, at } = normaliseText(base);
-    const line = lineFinder(original);
     const spans = [];
-    allowed.forEach((a, index) => {
-      if (toPosix(a.file).replace(/^\.\//, "") !== rel) return;
-      const want = normaliseText(a.text).text;
-      if (!want) return;
+    wanted.forEach(({ file, want }, index) => {
+      if (file !== rel || !want) return;
       for (let i = text.indexOf(want); i !== -1; i = text.indexOf(want, i + 1)) {
         spans.push([i, i + want.length]);
         used.add(index);
@@ -1384,28 +2020,31 @@ function checkClaims(p) {
     for (const claim of CLAIMS) {
       for (const m of text.matchAll(claim.re)) {
         if (spans.some(([s, e]) => m.index >= s && m.index + m[0].length <= e)) continue;
-        if (DENIAL.test(text.slice(Math.max(0, m.index - 30), m.index))) continue;
+        if (isDenied(text.slice(Math.max(0, m.index - 200), m.index))) continue;
         const where = fixedAt === null ? (at[m.index] ?? 0) : fixedAt;
         findings.push({ message: `"${m[0]}" ${claim.what}.`, file: rel, line: line(where), fix: "Only our.one's records can make that true. Remove it, or, if it's a definition or a denial, list the exact sentence in our.one.json under claims.allowed, with why." });
       }
     }
   };
-  const files = p.readable.filter((f) => !TEST.test(f) && f !== MANIFEST && (READ_BY_PEOPLE.test(f) || MESSAGES.test(f) || /^readme(?:\.md)?$/i.test(f)));
+  // Each file as it is, comments included: a page's words are never taken for a comment.
+  const files = p.readable.filter((f) => !isTest(f) && !p.copied.has(f) && f !== MANIFEST && (READ_BY_PEOPLE.test(f) || MESSAGES.test(f) || /^readme(?:\.md)?$/i.test(f)));
   for (const rel of files) {
     if (skipped.has(rel)) continue;
     const original = p.text(rel);
     if (original === null) continue;
+    const line = p.lines(rel);
     if (/\.json$/i.test(rel)) {
-      for (const [value, index] of jsonStrings(original)) scan(rel, original, value, index);
+      for (const [value, index] of jsonStrings(original)) scan(rel, value, line, index);
       continue;
     }
-    scan(rel, original, p.code.get(rel) ?? original, null);
+    scan(rel, original, line, null);
   }
   // The manifest itself: every string but the sentences it lets through.
   if (p.manifest && typeof p.manifest === "object") {
     const raw = readText(p.root, MANIFEST, { large: [], binary: 0, unreadable: [] }) ?? "";
+    const line = lineFinder(raw);
     const quotations = new Set(allowed.map((a) => a.text));
-    for (const [value, index] of jsonStrings(raw)) if (!quotations.has(value)) scan(MANIFEST, raw, value, index);
+    for (const [value, index] of jsonStrings(raw)) if (!quotations.has(value)) scan(MANIFEST, value, line, index);
   }
   allowed.forEach((a, index) => {
     if (!used.has(index)) findings.push({ message: `claims.allowed lists a sentence that isn't in ${quoted(a.file)}.`, file: MANIFEST, fix: "Remove it, or correct the file or the sentence." });
@@ -1438,22 +2077,29 @@ function jsonStrings(raw) {
  */
 function normaliseText(original) {
   const entities = { "&nbsp;": " ", "&apos;": "'", "&#39;": "'", "&rsquo;": "'", "&quot;": '"', "&amp;": "&", "&#x27;": "'" };
-  let text = "";
+  const names = Object.keys(entities);
+  const n = original.length;
+  // Built as a list and joined once: a string grown a character at a time is slow to read back.
+  const out = [];
   const at = [];
+  let spaced = true;
   let i = 0;
   const space = (from) => {
-    if (text.length > 0 && text[text.length - 1] !== " ") {
-      text += " ";
-      at.push(from);
-    }
+    if (spaced) return;
+    out.push(" ");
+    at.push(from);
+    spaced = true;
   };
-  while (i < original.length) {
+  while (i < n) {
     const ch = original[i];
-    if (ch === "<" && /[A-Za-z/]/.test(original[i + 1] ?? "")) {
-      const close = original.indexOf(">", i);
-      const reopen = original.indexOf("<", i + 1);
-      if (close !== -1 && close - i < 500 && (reopen === -1 || reopen > close)) {
-        i = close + 1;
+    const after = original.charCodeAt(i + 1);
+    if (ch === "<" && (isLetter(after) || after === 47)) {
+      // A tag: its ">" within 500 characters, with no "<" before it. The search stops at the next "<", so no text is searched twice.
+      const limit = Math.min(n, i + 500);
+      let j = i + 1;
+      while (j < limit && original[j] !== ">" && original[j] !== "<") j += 1;
+      if (j < limit && original[j] === ">") {
+        i = j + 1;
         continue;
       }
     }
@@ -1465,26 +2111,28 @@ function normaliseText(original) {
         continue;
       }
     }
-    if (/\s/.test(ch)) {
+    if (isWhite(original.charCodeAt(i))) {
       const start = i;
-      while (i < original.length && /\s/.test(original[i])) i += 1;
+      while (i < n && isWhite(original.charCodeAt(i))) i += 1;
       space(start);
       continue;
     }
     if (ch === "&") {
-      const entity = Object.keys(entities).find((e) => original.startsWith(e, i));
+      const entity = names.find((e) => original.startsWith(e, i));
       if (entity) {
-        text += entities[entity];
+        out.push(entities[entity]);
         at.push(i);
+        spaced = entities[entity] === " ";
         i += entity.length;
         continue;
       }
     }
-    text += ch === "’" ? "'" : ch;
+    out.push(ch === "’" ? "'" : ch);
     at.push(i);
+    spaced = false;
     i += 1;
   }
-  return { text, at };
+  return { text: out.join(""), at };
 }
 
 /** A secret in any message, summary or fix is replaced before anything is printed. */
@@ -1526,7 +2174,8 @@ export function check(root) {
     checks,
     forAPerson: FOR_A_PERSON,
     notBuilt: NOT_BUILT,
-    skipped: { large: p.skipped.large, binary: p.skipped.binary, unreadable: p.skipped.unreadable },
+    // Copies of this tool, of any version, read for secrets but not as the project's code: our.one runs its own.
+    skipped: { large: p.skipped.large, binary: p.skipped.binary, unreadable: p.skipped.unreadable, tool: p.copies.map((c) => ({ file: c.file, version: redact(c.version), rules: redact(c.rules) })) },
   };
 }
 
@@ -1579,6 +2228,7 @@ export function formatReport(r) {
   out.push("", "  Not built yet. For a protected service, our.one would provide these:");
   for (const q of r.notBuilt) out.push(bullet(q));
   if (r.skipped.large.length > 0) out.push("", wrap(`Not read for code, over 1 MB: ${r.skipped.large.join(", ")}.`, 66, "  "));
+  for (const c of r.skipped.tool) out.push("", wrap(`Not read as the project's code: ${c.file}, a copy of this tool (version ${c.version}, rules ${c.rules}). This check is version ${r.version}.`, 66, "  "));
   out.push(rule);
   out.push(wrap("There is no score on purpose. What passed is what a machine can see in the files; what it can't see is listed above, at the same weight.", 68, "  "), "");
   const failed = r.checks.filter((c) => c.outcome === FAIL);
@@ -1753,16 +2403,47 @@ function create(root, rel, content, report) {
   return true;
 }
 
-/** The rules block put back: one block, word for word, where the first was; the rest of AGENTS.md is kept. */
+/**
+ * The rules block put back: one block, word for word, where the first was.
+ * Every other block is removed, with the blank lines around it, and the
+ * rest of AGENTS.md is kept as it is. Returns null, changing nothing, when
+ * a block has lost its end marker: where it ends can't be told, and
+ * guessing could delete the person's own words.
+ */
 function withRulesBlock(current) {
-  const re = /<!-- our\.one rules [\w.-]+: begin[\s\S]*?<!-- our\.one rules [\w.-]+: end -->/g;
-  let first = true;
-  const replaced = current.replace(re, () => {
-    if (!first) return "";
-    first = false;
-    return RULES_BLOCK;
+  const begins = [...current.matchAll(/<!-- our\.one rules [\w.-]+: begin/g)].map((m) => m.index);
+  if (begins.length === 0) return `${current.trimEnd()}\n\n${RULES_BLOCK}\n`;
+  const blocks = [];
+  for (let k = 0; k < begins.length; k += 1) {
+    const end = /<!-- our\.one rules [\w.-]+: end -->/g;
+    end.lastIndex = begins[k];
+    const m = end.exec(current);
+    if (!m || (k + 1 < begins.length && m.index > begins[k + 1])) return null;
+    blocks.push([begins[k], m.index + m[0].length]);
+  }
+  const parts = [];
+  let pos = 0;
+  let joined = false;
+  blocks.forEach(([from, to], k) => {
+    let between = current.slice(pos, from);
+    if (joined) {
+      between = between.trimStart();
+      if (between) between = `\n\n${between}`;
+    }
+    if (k === 0) {
+      parts.push(between, RULES_BLOCK);
+    } else {
+      parts.push(between.trimEnd());
+      joined = true;
+    }
+    pos = to;
   });
-  return first ? `${current.replace(/\s*$/, "")}\n\n${RULES_BLOCK}\n` : replaced.replace(/\n{3,}/g, "\n\n");
+  let tail = current.slice(pos);
+  if (joined) {
+    const rest = tail.trimStart();
+    tail = rest ? `\n\n${rest}` : "\n";
+  }
+  return `${parts.join("")}${tail}`;
 }
 
 export function init(root) {
@@ -1784,7 +2465,10 @@ export function init(root) {
     try {
       const current = readFileSync(agentsPath, "utf8");
       const next = withRulesBlock(current);
-      if (next !== current) {
+      if (next === null) {
+        report.kept.push("AGENTS.md");
+        report.notes.push("AGENTS.md has a rules block that has lost its end marker, so init left the file as it is: it can't tell where the block ends. Delete what is left of the block, from its begin marker to the end of rule 10, and run init again. It puts the block back word for word.");
+      } else if (next !== current) {
         writeFileSync(agentsPath, next);
         report.updated.push("AGENTS.md (the rules block)");
       } else {
@@ -1869,7 +2553,7 @@ export function init(root) {
   }
   if (realGit && realGit !== realRoot) {
     const rel = toPosix(relative(realGit, realRoot));
-    report.notes.push(`This project is a folder (${rel}) inside a larger repository, and GitHub runs only the workflows at the repository's root. Add .github/workflows/our-one.yml there, with "working-directory: ${rel}" on the check's step, which runs: node ${toolPath} check. Claude Code reads .claude/settings.json from the folder it starts in: start it in ${rel}, or add the stop hook to the root's settings with --project ${rel}.`);
+    report.notes.push(`This project is a folder (${rel}) inside a larger repository, and GitHub runs only the workflows at the repository's root. Add .github/workflows/our-one.yml there, with "working-directory: ${rel}" on the check's step, which runs: node ${toolPath} check. Claude Code reads .claude/settings.json from the folder it starts in: start it in ${rel}, or add the stop hook to the root's settings with --project ${rel}. There, write both paths from the root, since Claude Code runs a hook in the session's current folder: node "\${CLAUDE_PROJECT_DIR}/${rel}/${toolPath}" check --hook --project "\${CLAUDE_PROJECT_DIR}/${rel}"`);
   } else {
     create(root, ".github/workflows/our-one.yml", workflow(toolPath), report);
   }
@@ -1944,6 +2628,7 @@ export function main(argv) {
   const args = [...argv];
   const flags = { json: false, hook: false, project: null, version: false, help: false };
   const positional = [];
+  let usage = null;
   while (args.length > 0) {
     const a = args.shift();
     if (a === "--json") flags.json = true;
@@ -1952,16 +2637,26 @@ export function main(argv) {
     else if (a === "--help" || a === "-h") flags.help = true;
     else if (a === "--project") {
       const dir = args.shift();
-      if (!dir) {
-        process.stderr.write("--project needs a folder.\n");
-        return 2;
-      }
-      flags.project = dir;
+      if (dir) flags.project = dir;
+      else usage ??= "--project needs a folder.\n";
     } else if (a.startsWith("--")) {
-      process.stderr.write(`Unknown option ${a}.\n\n${USAGE}`);
-      return 2;
+      usage ??= `Unknown option ${a}.\n\n${USAGE}`;
     } else positional.push(a);
   }
+  /**
+   * The tool's own error. As a stop hook, it sends the agent back once with
+   * it, like a failing check, so that the agent can mend the hook; while
+   * stop_hook_active is true it lets the agent stop, and tells the person.
+   */
+  const refuse = (message) => {
+    if (flags.hook && readHookInput().stop_hook_active === true) {
+      process.stdout.write(`${JSON.stringify({ systemMessage: `our.one check couldn't run: ${message.split("\n")[0]}` })}\n`);
+      return 0;
+    }
+    process.stderr.write(message);
+    return 2;
+  };
+  if (usage !== null) return refuse(usage);
   if (flags.help) {
     process.stdout.write(USAGE);
     return 0;
@@ -1971,23 +2666,18 @@ export function main(argv) {
     return 0;
   }
   const command = positional[0] ?? "check";
-  if (positional.length > 1 || !["init", "check", "rules"].includes(command)) {
-    process.stderr.write(`Unknown command "${positional.join(" ")}".\n\n${USAGE}`);
-    return 2;
-  }
+  if (positional.length > 1 || !["init", "check", "rules"].includes(command)) return refuse(`Unknown command "${positional.join(" ")}".\n\n${USAGE}`);
   if (command === "rules") {
     process.stdout.write(`${RULES_BLOCK}\n`);
     return 0;
   }
   const root = projectRoot(flags.project);
-  if (!existsSync(root) || !statSync(root).isDirectory()) {
-    process.stderr.write(`${root} isn't a folder.\n`);
-    return 2;
-  }
+  if (!existsSync(root) || !statSync(root).isDirectory()) return refuse(`${root} isn't a folder.\n`);
+  // Never the filesystem's root, the home folder, or a folder that holds the home folder: each would read ~/.ssh.
   const real = realOrSame(root);
-  if (real === parse(real).root || real === realOrSame(homedir())) {
-    process.stderr.write(`Refusing to ${command === "init" ? "set up" : "check"} ${root}: run it inside the project's own folder.\n`);
-    return 2;
+  const home = realOrSame(homedir());
+  if (real === parse(real).root || real === home || home.startsWith(real.endsWith(sep) ? real : `${real}${sep}`)) {
+    return refuse(`Refusing to ${command === "init" ? "set up" : "check"} ${root}: run it inside the project's own folder.\n`);
   }
   if (command === "init") {
     process.stdout.write(formatInit(init(root)));

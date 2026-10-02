@@ -1,6 +1,6 @@
 # Build on our.one
 
-Instructions for coding agents. Version 0.2.0, rules 0, 2 October 2026.
+Instructions for coding agents. Version 0.2.1, rules 0, 2 October 2026.
 
 You are a coding agent. The person you work for wants to build something
 for our.one, or to bring a project they already have. This file tells you
@@ -86,7 +86,7 @@ Invoke-WebRequest https://our.one/kit/our-one.mjs -OutFile scripts/our-one.mjs
 The last line prints the file's SHA-256. It must be:
 
 ```text
-8baef10e73d49add77a6d9bc23c8b53f5f4acd576258ca2d64974d64072ec52c
+4b6f75cbbf0e595c5e248d13b782ec355147cf6deb5e68ad52b12c17fa9b5d58
 ```
 
 If it isn't, stop and tell the person. The tool is one file with no

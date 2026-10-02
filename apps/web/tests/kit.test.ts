@@ -249,7 +249,8 @@ describe("licence", () => {
       "our.one.json": manifest({ license: "MIT OR Apache-2.0" }),
       "package.json": JSON.stringify({ license: "MIT OR Apache-2.0", dependencies: { pg: "1", resend: "1" } }),
       // The header a full Apache-2.0 text starts with (T32 asks for more than the name).
-      "LICENSE-APACHE": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\nFICTIONAL test copy.\n",
+      // Changed after the re-check (C11): the header alone passed as the full text; the check now also asks for the terms' heading and the first grant, which every full text carries.
+      "LICENSE-APACHE": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n2. Grant of Copyright License.\nFICTIONAL test copy.\n",
     };
     expect(check(project(files), "licence").outcome).toBe("pass");
   });
@@ -702,6 +703,118 @@ describe("what the tool never does", () => {
     const bad = spawnSync(process.execPath, [TOOL, "deploy"], { encoding: "utf8" });
     expect(bad.status).toBe(2);
     expect(spawnSync(process.execPath, [TOOL, "rules"], { encoding: "utf8" }).stdout).toBe(`${tool.RULES_BLOCK}\n`);
+  });
+});
+
+/* ============================================================ the re-check's fixes (0.2.1) */
+
+// Regression tests for the fixes of the re-check of M-0016 (C1 to C21 in
+// tests/verify-m0016-recheck.test.ts): what each fix lets through must not
+// open its denial path.
+describe("after the re-check: what the fixes let through, and what they still fail", () => {
+  it("reads code as code: a page's text, a string or a link is no code, but a query after a type's parameters, inside ${}, or beside a type-only name still counts", () => {
+    const query = 'export async function people(db: any) {\n  return db.select().from("people");\n}\n';
+    for (const [file, code] of [
+      ["src/app/a.tsx", `const f: <T>(x: T) => T = (x) => x;\n${query}`],
+      ["src/app/b.tsx", `export const id = <T,>(x: T) => x;\n${query}`],
+      ["src/app/c.tsx", `export const P = () => <p>Read https://example.test/x first.</p>;\n${query}`],
+      ["src/app/d.ts", "export const q = async (db: any) => `${await db.select().from(\"people\")}`;\n"],
+      ["src/app/e.ts", 'import { type Pool, Client } from "pg";\nexport const c = new Client();\n'],
+      ["src/lib/F.svelte", '<p>Upload a photo (image/*)</p>\n<script>\nimport pg from "pg";\n</script>\n'],
+      ["src/app/g.ts", `export const glob = 2 /* an unclosed comment;\n${query}`],
+      ["src/app/h.ts", 'import { writeFileSync } from "node:fs";\nexport const save = (id: string, photo: Buffer) => writeFileSync(`public/uploads/${id}.png`, photo);\n'],
+    ] as [string, string][]) {
+      expect([file, check(project({ ...good(), [file]: code }), "boundary").outcome]).toEqual([file, "fail"]);
+    }
+    expect(check(project({ ...good(), "src/app/doc.ts": 'export const doc = "Write db.select() in src/data.";\n' }), "boundary").outcome).toBe("pass");
+    expect(check(project({ ...good(), "scripts/robots.mjs": 'import { writeFileSync } from "node:fs";\nwriteFileSync("public/robots.txt", "User-agent: *\\n");\n' }), "boundary").outcome).toBe("pass");
+  });
+
+  it("counts a service's address the page loads (a <link>, a script), not a link a person follows", () => {
+    const loads = check(project({ ...good(), "src/app/x.tsx": 'export const H = () => <><link rel="preconnect" href="https://api.stripe.com" /><script src="https://js.pusher.com/8.0/pusher.min.js"></script></>;\n' }), "leave");
+    expect(loads.findings.map((f) => f.message)).toEqual([
+      "It calls api.stripe.com, which sends data to Stripe, and data.sharedWith doesn't name it.",
+      "It calls js.pusher.com, which sends data to Pusher, and data.sharedWith doesn't name it.",
+    ]);
+    const links = { "src/app/a.tsx": 'export const A = () => <a href={"https://pusher.com/docs"}>docs</a>;\n', "src/app/B.vue": '<template>\n  <a href="https://pusher.com/docs">docs</a>\n</template>\n<script setup>\nconst b = 1;\n</script>\n' };
+    expect(check(project({ ...good(), ...links }), "leave").outcome).toBe("pass");
+  });
+
+  it("claims: the manifest's name is not our.one, and a denial reaches only as far as its own words", () => {
+    expect(check(project({ ...good(), "README.md": "# FICTIONAL tool\n\nEvery service it uses is listed in our.one.json.\n" }), "claims").outcome).toBe("pass");
+    for (const text of ["Not only approved by our.one, it is loved.", "It isn't a toy: it's approved by our.one.", "It isn't approved by our.one, but it's listed on our.one."]) {
+      expect([text, check(project({ ...good(), "README.md": `# FICTIONAL tool\n\n${text}\n` }), "claims").outcome]).toEqual([text, "fail"]);
+    }
+    expect(check(project({ ...good(), "src/app/x.ts": "// A member-owned app.\nexport const x = 1;\n" }), "claims").outcome).toBe("fail");
+  });
+
+  it("a copy of another version of the tool is read for secrets, not as the project's code, and the report names it", () => {
+    const key = ["sk", "live", "FICT10NAL0000000000000000"].join("_");
+    const copy = readFileSync(TOOL, "utf8").replace(/Version [^,]+, rules 0\./, "Version 0.1.9, rules 0.");
+    const dir = project({ ...good(), "scripts/our-one.mjs": `${copy}// ${key}\n` });
+    const r = report(dir) as Report & { skipped: { tool: { file: string; version: string; rules: string }[] } };
+    expect(r.skipped.tool).toEqual([{ file: "scripts/our-one.mjs", version: "0.1.9", rules: "0" }]);
+    expect(r.checks.filter((c) => c.outcome === "fail").map((c) => [c.id, c.findings.map((f) => f.file)])).toEqual([["secrets", ["scripts/our-one.mjs"]]]);
+    expect(run(dir, ["check"]).stdout.replace(/\s+/g, " ")).toContain(`Not read as the project's code: scripts/our-one.mjs, a copy of this tool (version 0.1.9, rules 0). This check is version ${tool.VERSION}.`);
+  });
+
+  it("init leaves AGENTS.md as it is when a block has lost its end marker, and removes a second block with only the blank lines around it", () => {
+    const lines = tool.RULES_BLOCK.split("\n");
+    const broken = `# AGENTS.md\n\n${lines.slice(0, -1).join("\n")}\n\nOur notes.\n`;
+    const one = project({ "package.json": "{}", "AGENTS.md": broken });
+    const said = run(one, ["init"]).stdout.replace(/\s+/g, " ");
+    expect(readFileSync(join(one, "AGENTS.md"), "utf8")).toBe(broken);
+    expect(said).toContain("AGENTS.md has a rules block that has lost its end marker, so init left the file as it is");
+    expect(check(one, "agents").summary).toBe("The rules block in AGENTS.md has lost its end marker.");
+
+    const changed = tool.RULES_BLOCK.replace("No ads and no tracking.", "Some ads.");
+    const two = project({ "package.json": "{}", "AGENTS.md": `# AGENTS.md\n\nIntro.\n\n\nTwo blank lines above, kept.\n\n${tool.RULES_BLOCK}\n\n\n${changed}\n\n\nAfter.\n` });
+    run(two, ["init"]);
+    expect(readFileSync(join(two, "AGENTS.md"), "utf8")).toBe(`# AGENTS.md\n\nIntro.\n\n\nTwo blank lines above, kept.\n\n${tool.RULES_BLOCK}\n\nAfter.\n`);
+  });
+
+  it("the stop hook's own errors send the agent back once, then let it stop; and no folder that holds the home folder is set up or checked", () => {
+    const outer = project({}, { git: false });
+    const home = join(outer, "home");
+    mkdirSync(home);
+    const env = { ...process.env, HOME: home };
+    const hook = (active: boolean) => spawnSync(process.execPath, [TOOL, "check", "--hook", "--project", outer], { encoding: "utf8", env, input: JSON.stringify({ stop_hook_active: active }) });
+    const first = hook(false);
+    expect([first.status, first.stdout, first.stderr]).toEqual([2, "", `Refusing to check ${outer}: run it inside the project's own folder.\n`]);
+    const then = hook(true);
+    expect([then.status, (JSON.parse(then.stdout) as { systemMessage: string }).systemMessage]).toEqual([0, `our.one check couldn't run: Refusing to check ${outer}: run it inside the project's own folder.`]);
+    expect(spawnSync(process.execPath, [TOOL, "init", "--project", outer], { encoding: "utf8", env }).status).toBe(2);
+    expect(filesIn(outer)).toEqual([]);
+  });
+
+  it("secrets: local defaults pass, but a remote database's password, a token in an address, a Redis password and any key beside a Firebase config still fail", () => {
+    const remote = ["DATABASE_URL=postgres://app:", "Fict1onalPassw0rd", "@db.prod.example.net:5432/app\n"].join("");
+    for (const env of [remote, "AUTH_SECRET=FICTIONAL0123456789abcdef\n", "WEBHOOK_TOKEN_URL=https://hooks.example.net/in?token=FICTIONAL0123456789\n", "DB_PASSWORD=123456\n"]) {
+      expect([env.split("=")[0], check(project({ ...good(), ".env.test": env }), "secrets").outcome]).toEqual([env.split("=")[0], "fail"]);
+    }
+    expect(check(project({ ...good(), "src/data/r.ts": `export const u = "${["redis://default:", "Fict1onalPassw0rd", "@redis.prod.example.net:6379"].join("")}";\n` }), "secrets").outcome).toBe("fail");
+    const firebaseKey = ["AI", "za", "Sy", "F".repeat(33)].join("");
+    expect(check(project({ ...good(), "src/app/fb.ts": `export const firebaseConfig = { apiKey: "${firebaseKey}", authDomain: "fictional.firebaseapp.com" };\n` }), "secrets").outcome).toBe("pass");
+  });
+
+  it("costs, data, licence and tests: a total with no amount, a folder of tests outside a tree of pages, and a full text however it is wrapped", () => {
+    expect(check(project({ ...good(), "COSTS.md": "# Costs\n\n| What | A month |\n|---|---|\n| Hosting | $5 |\n| **Total** | |\n" }), "costs").outcome).toBe("fail");
+    expect(check(project({ ...good(), "our.one.json": manifest({}, { export: "Email the maintainer, who sends it within 30 days." }) }), "data").outcome).toBe("pass");
+    expect(check(project({ ...good(), "tests/helpers.ts": 'import pg from "pg";\nexport const reset = () => new pg.Pool().query("truncate people");\n' }), "boundary").outcome).toBe("pass");
+    expect(check(project({ ...good(), "src/routes/spec/+page.ts": 'import pg from "pg";\nexport const load = () => new pg.Pool().query("select 1");\n' }), "boundary").outcome).toBe("fail");
+    const bsd = [
+      "Copyright FICTIONAL Maintainer",
+      "",
+      "Redistribution and use in source and binary forms, with or without modification,",
+      "are permitted provided that the following conditions are met:",
+      "* Redistributions of source code must retain the above copyright",
+      "  notice, this list of conditions and the following disclaimer.",
+      "* Neither the names of the FICTIONAL project nor the names of its contributors may be used.",
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS.",
+      "",
+    ].join("\n");
+    const bsdProject = { ...good(), "our.one.json": manifest({ license: "BSD-3-Clause" }), "package.json": JSON.stringify({ license: "BSD-3-Clause", dependencies: { pg: "1", resend: "1" } }), LICENSE: bsd };
+    expect(check(project(bsdProject), "licence").outcome).toBe("pass");
   });
 });
 

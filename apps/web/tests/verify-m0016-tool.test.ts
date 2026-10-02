@@ -575,7 +575,8 @@ describe("defects (each FAILS on a92bbb5)", () => {
     const repo = project({ LICENSE: MIT, ...Object.fromEntries(Object.entries(without(good(), "LICENSE")).map(([k, v]) => [`apps/x/${k}`, v])) });
     expect(check(join(repo, "apps/x"), "licence").outcome).toBe("pass");
     expect(check(project({ ...without(good(), "LICENSE"), "LICENSES/MIT.txt": MIT }), "licence").outcome).toBe("pass");
-    const lgpl = { ...good(), "our.one.json": manifest({ license: "LGPL-2.1-only" }), "package.json": pkg({}, { license: "LGPL-2.1-only" }), LICENSE: "GNU LESSER GENERAL PUBLIC LICENSE\nVersion 2.1, February 1999\nFICTIONAL test copy.\n" };
+    // Changed after the re-check (C11): a licence's heading alone passed as its full text; the check now also asks for the LGPL's terms' heading, which every full text carries.
+    const lgpl = { ...good(), "our.one.json": manifest({ license: "LGPL-2.1-only" }), "package.json": pkg({}, { license: "LGPL-2.1-only" }), LICENSE: "GNU LESSER GENERAL PUBLIC LICENSE\nVersion 2.1, February 1999\nFICTIONAL test copy.\nTERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION\n" };
     expect(check(project(lgpl), "licence").outcome).toBe("pass");
   });
 

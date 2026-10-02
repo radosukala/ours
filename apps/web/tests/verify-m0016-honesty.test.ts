@@ -328,10 +328,12 @@ describe("defects (each FAILS on a92bbb5)", () => {
     const agreement = textOf(render(AgreementPage));
     for (const term of [/session record/i, /data hubs?/i, /\bboundary\b/i]) expect(agreement).not.toMatch(term);
 
-    const said = [
-      ["/build", textOf(sectionOf(render(BuildPage), "build-rules"))],
-      ["the rules block", flat(tool.RULES_BLOCK)],
-    ] as const;
+    // Changed after the re-check (C1): the rules block is rules version 0's text, word for word as tool
+    // 0.1.0 wrote it and D-0019 §C adopted it; changing it needs a new rules version, by a new decision.
+    // So the block keeps "These rules come from the common agreement", and the three rules that go
+    // further are named outside it: on /build, read here, and in kit/README.md.
+    expect(flat(kitText("README.md"))).toContain("Three of the ten go further than the agreement's words, and wait for the founder's approval");
+    const said = [["/build", textOf(sectionOf(render(BuildPage), "build-rules"))]] as const;
     for (const [where, text] of said) {
       if (/\bfrom the common agreement\b/i.test(text)) {
         expect([where, /\bfurther\b|\bbeyond\b|not in the agreement|our\.one's own|\bthree of them\b/i.test(text)]).toEqual([where, true]);

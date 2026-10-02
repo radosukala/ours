@@ -63,7 +63,7 @@ const RULES: readonly Rule[] = [
   { title: "Nothing is sold.", checked: "A person reads the proposal." },
   { title: "People can leave.", checked: "The check reads our.one.json. A person tries export and deletion." },
   { title: "Costs are public.", checked: "The check reads the costs file." },
-  { title: "No secrets or data in the repository.", checked: "The check knows the common kinds of key, and database files." },
+  { title: "No secrets in the code.", checked: "The check knows the common kinds of key, and database files." },
   { title: "Say only what is true.", checked: "The check knows the common phrases." },
   { title: "Run the check before you finish:", checked: "The check finds the rules block unchanged. The hook and the workflow run it." },
 ];

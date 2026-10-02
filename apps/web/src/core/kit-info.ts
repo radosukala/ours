@@ -5,9 +5,9 @@
  * carry kit/. tests/kit.test.ts fails if these differ from the file's.
  */
 export const KIT_TOOL = {
-  version: "0.2.0",
+  version: "0.2.1",
   rules: "0",
-  sha256: "8baef10e73d49add77a6d9bc23c8b53f5f4acd576258ca2d64974d64072ec52c",
+  sha256: "4b6f75cbbf0e595c5e248d13b782ec355147cf6deb5e68ad52b12c17fa9b5d58",
 } as const;
 
 /** The one line a builder gives their coding agent (/build; kit/README.md says it too). */
