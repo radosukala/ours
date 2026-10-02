@@ -1,0 +1,76 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0011
+title: The framework — services their users fund and will control, run by maintainers they pay; the feed as its first project
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0017
+
+human_source:
+  path: proposals/P-0011.md
+evidence:
+  - path: proposals/P-0011.evidence-conversation-2026-10-01-02.md
+  - path: proposals/P-0011.evidence-review-2026-10-01.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+input_from:
+  - id: fact-check-agents
+    kind: agent
+    role: verifier
+  - id: cold-read-critics
+    kind: agent
+    role: reviewer
+  - id: outside-reviewer
+    kind: unknown
+    role: reviewer
+
+affected_groups:
+  - everyone who joins our.one, who would join a framework of services rather than one feed
+  - builders who propose services and become maintainers under a two-way agreement
+  - people who name a need without joining the feed
+  - the founder, as the feed's unpaid maintainer and as the holder of everything until a holder exists
+
+unresolved:
+  - the first independent project and the builder to ask
+  - "the data line's seven safeguards (proposed 2 October; none built)"
+  - whether the holder comes before the first trial of a protected service
+  - whether the feed's identity and connections move to the holder before 100,000
+  - the holder's legal form, able to act as data controller and to hold funds
+  - whether maintainers of protected services are processors under GDPR Art. 28 (for an advokát)
+  - whether independent experiments are listed at all
+  - the result of the five-stranger message test
+
+cost:
+  proposer_hours: 6
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-01
+    actor: { id: founder, kind: human }
+    position: the plan leaves money on the table; bring builders in as aspiring maintainers paid by users; think more revolutionary than a friends feed
+  - date: 2026-10-01
+    actor: { id: claude, kind: agent }
+    position: yes; apps don't need owners who can sell them, they need maintainers paid by the people who use them; App.net and the June our.one tried paid users and builders and failed, so the people come first
+  - date: 2026-10-01
+    actor: { id: founder, kind: human }
+    position: yes to direction; the framework must not care about size; define user ownership simply; a clear future for maintainers; cannot start with feed only; the feed is the first project, its maintainer unpaid for now
+  - date: 2026-10-01
+    actor: { id: outside-reviewer, kind: unknown }
+    position: ownership needs authority over rules and budget; maintainers need a real agreement; interest is not a customer; delisting is no remedy; shared costs public and approved; a per-service route to control
+  - date: 2026-10-01
+    actor: { id: claude, kind: agent }
+    position: adopt the review's five corrections; reconcile its per-service route with no structure before traction by making traction the first funded service
+  - date: 2026-10-02
+    actor: { id: founder, kind: human }
+    position: yes to all; traction is the first funded service; a line maintainers cannot cross on user data; data and the social graph centralized so no single app is a point of failure
+  - date: 2026-10-02
+    actor: { id: claude, kind: agent }
+    position: the line is THE-LAYER's data contract and runtime boundary, designed in September and not built; seven safeguards proposed, each with its status; no protected service but the feed before its safeguards exist

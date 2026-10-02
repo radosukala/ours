@@ -1,0 +1,69 @@
+schema: ours.decision/v0.1
+decision_id: D-0017
+title: The framework — services their users fund and will control, with the feed as the first
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0017.md
+
+proposal: P-0011
+prerequisite_decisions: [D-0011, D-0012, D-0013, D-0016]
+
+outcome: >
+  our.one becomes a network of services that their users fund and will
+  control, built, improved and run by maintainers; the feed is the first
+  project under the same framework, maintained by the founder, unpaid by
+  declared choice. "Owned by its users" is defined by decisions (the users
+  together decide the essential rules, approve the budget and can change
+  who runs the service with continuity; no sale of that; each person can
+  take their data and leave) and is never claimed of anything today. The
+  agreement works both ways (scope, pay once funded, term, notice and
+  disputes for maintainers). Projects are independent experiments, labelled
+  as such, or protected services whose assets a holder keeps. Traction is
+  the first service its users fund; the holder is set up then; each service
+  names its own route to control; 100,000 stays the feed's trigger. Shared
+  costs are public and approved; nobody invests in any service for a
+  return. Interest, trials and intentions to buy are counted apart; naming
+  a need takes no account. The public launch carries the framework in
+  readable words and waits for its pages; deploying under M-0012 stays
+  separate. The founder's data line is adopted as a requirement; its seven
+  safeguards are proposed and none is built. The word "owned" and the
+  launch scope are this record's readings of the founder's "yes", open to
+  correction. Authorizes nothing yet.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+prohibits:
+  - present-tense ownership claims (D-0012 stands); "owned" only as §B defines it, with its status
+  - stating any safeguard of §I as built before it is
+  - giving any service or maintainer members' data or connections before §I's safeguards exist for it
+  - taking money through our.one before a holder exists
+  - promising builders income
+
+effective_from: 2026-10-02T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending; the
+  word "owned" and the launch scope are interpretations of the founder's
+  "yes to all", open to correction; §K lists what is still open.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.
