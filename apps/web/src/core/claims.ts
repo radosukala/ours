@@ -159,8 +159,30 @@ export const PROHIBITED: readonly Prohibited[] = [
     reason: "D-0012 and M-0011: ownership in the future tense only in the listed handover sentences.",
   },
   {
-    pattern: new RegExp(`\\bit(?:${APOS}s| is) ours\\b`, "i"),
+    // The verification of M-0017 widened it: a word between ("It's already
+    // ours.", "It is now ours.") and anything named ("The feed is ours.",
+    // "our.one is ours."). A denial ("is not ours") is not a claim, and the
+    // message's own words, "should be ours" and "make it ours", aren't caught.
+    pattern: new RegExp(`(?<![\\w.])[\\w.]+(?:${APOS}s| is| are) (?:(?!not\\b|never\\b)\\w+ )?ours\\b`, "i"),
     reason: "D-0012: a members' body gives control, not ownership; \"it's ours\" was dropped.",
+  },
+  {
+    // D-0020's first prohibition (the verification of M-0017): user control,
+    // the holder or a safeguard told as existing. A denial ("isn't built",
+    // "none of the data safeguards is built", "until the holder exists")
+    // passes.
+    pattern:
+      /\buser control (?:is|was|has been) (?:now |already )?(?:built|here|in force|in place|live|working|ready)\b|\bholder (?:now|already) (?:holds?|has|keeps|owns)\b|\bholder (?:exists|is (?:now )?(?:formed|founded|set up|in place))\b|\bsafeguards? (?:is|are|was|were|has been|have been) (?:now |already )?(?:built|in place|working|live|in force)\b/i,
+    reason: "D-0020: nothing may say that user control, the holder or a safeguard exists before it does.",
+    unlessPrecededBy: /\b(?:none of (?:the|its)|no|not|until|before|once|when|if|unless)\s+(?:(?:the|its|data|seven|our)\s+){0,3}$/i,
+  },
+  {
+    // The verification of M-0017: the kit's own check knows the phrase; the
+    // site's scan didn't. The rules' denial ("or as approved, listed or
+    // protected by our.one") passes.
+    pattern: /\bprotected by our\.one\b/i,
+    reason: "D-0019 rule 9 and D-0020: nothing is protected by our.one; no safeguard is built.",
+    unlessPrecededBy: /\b(?:as|not|n't|never|nor|or)\b[^.]{0,60}$/i,
   },
   {
     // "hand it to" since M-0013: the front page's signed promise handed

@@ -830,7 +830,8 @@ describe("the invite page's 'Free to join.' (D-0016 §N item 6)", () => {
       const shown = textOf(html).includes("Free to join. The promise behind our.one");
       seen[name] = {
         line: shown,
-        cardLink: shown ? /<a class="[^"]*pledgeLink[^"]*" href="\/#front-runs">The promise behind our\.one<\/a>/.test(html) : null,
+        // Changed after the verification of M-0017: the link goes to /feed, where the section moved (D-0020 §B).
+        cardLink: shown ? /<a class="[^"]*pledgeLink[^"]*" href="\/feed#front-runs">The promise behind our\.one<\/a>/.test(html) : null,
         frontForm: buttonOf(front) !== null,
         joinRequest: asked === "OK" ? "OK" : asked === `CLOSED: ${JOIN_REQUESTS_OFF}` ? "CLOSED: JOIN_REQUESTS_OFF" : asked,
         inviteForm: html.includes(">Send me a link</button>"),

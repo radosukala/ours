@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Environment files: keys and settings stay out of the repository
+.env
+.env.*
+!.env.example
+
+# Local database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

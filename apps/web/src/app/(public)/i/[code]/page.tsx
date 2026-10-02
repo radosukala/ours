@@ -143,7 +143,7 @@ export default async function InvitePage({
           {clientIpHeader() !== null ? (
             <p className="muted small">
               Free to join.{" "}
-              <Link href="/#front-runs" className={styles.pledgeLink}>
+              <Link href="/feed#front-runs" className={styles.pledgeLink}>
                 The promise behind our.one
               </Link>
             </p>

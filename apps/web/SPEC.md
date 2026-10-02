@@ -2635,9 +2635,8 @@ it.
    `/maintainers`, which says how to write. `/privacy` says what a draft
    does.
 5. **`/projects`** adds the two possibilities, labelled, under *"Possibilities,
-   not projects"*, and the two drafts under *"The next one"*.
-   **`/maintainers`** adds a sentence on starting with an idea, and the two
-   drafts. **`/build`** leads with *"Build something people can depend
+   not projects"*. **`/maintainers`** adds a sentence on starting with an
+   idea, and the two drafts, drawn once the page's JavaScript runs. **`/build`** leads with *"Build something people can depend
    on."*, the deal, *"1. Start with the idea"*, *"2. Build it with your
    coding agent"* (the line, its copy button, what has been tried, and
    what the agent does, now five steps), the rules, the check's limits,
@@ -2653,3 +2652,31 @@ it.
 7. **The claims scan** reads the new files, as it reads all of `src/app`
    and `src/components`; tests/front-door.test.ts scans every rendered
    state of the front door.
+
+**After the verification** (two verifiers and an agent trial; 31 findings,
+all fixed; `receipts/conformance/2026-10-03-M-0017.verification.md`):
+
+- **Words:** the illustration ends "…and today only the founder could";
+  the rights' status says none of the *collective* rights is in force,
+  and that on the feed you can already take your data and leave and see
+  its costs; the feed "will run under the common agreement, which every
+  service on our.one will sign"; the last heading is *"What should we make
+  ours?"*; the drafts' note follows `PROPOSALS_EMAIL`, says each answer can
+  be up to 600 characters, and "A person reads every one you send."
+- **The feed's picture** on the front door ends as the app draws it: the
+  caught-up marker above a post from before the last visit.
+- **The invite page's** "The promise behind our.one" goes to
+  `/feed#front-runs`.
+- **The claims scan** has rules for user control, the holder or a
+  safeguard told as existing, and for "protected by our.one", and its "it's
+  ours" rule catches a word between and anything named.
+- **In use:** the acid focus ring on the builders' band; placeholders in
+  the muted ink; the "recorded" badge in the text colour; the tab's ring
+  inside it; each tab panel takes focus; before hydration a browser that
+  will run scripts shows the first panel alone and keeps the tabs' room;
+  44px targets on touch screens, and the footer's links spaced to tap.
+- **`build.md`** asks the project's name, the repository's address, how a
+  person downloads and deletes their data, who can see it including
+  whoever runs the service, and which companies (the person chooses); its
+  step 2 has the agent write the people a note; `/build` says what the
+  trial found.

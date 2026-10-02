@@ -538,7 +538,7 @@ function phoneHeight(selectors: string[], fallbackFont: number, rules: CssRule[]
 /* =============================================================== findings */
 
 describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
-  it("DEFECT (MEDIUM): in the builders' dark band the focus ring is rust on forest, 2.52:1, under the 3:1 a focus indicator needs against what is next to it (WCAG 1.4.11, for 2.4.7's visible focus) — measured in headless Chrome 154 by Tab at 320, 375 and 1280px, light: 'Draft an idea first', 'The maintainer's deal', 'Copy the line', 'Read build.md' and 'How building on our.one works.' each drew a 3px #bf411d ring on #253328 (dark: #ec8d66 on #0b110c, 7.8:1); globals.css gives every public :focus-visible var(--rust), and door.module.css gives .builders no ring of its own", () => {
+  it("fixed (MEDIUM): in the builders' dark band the focus ring is rust on forest, 2.52:1, under the 3:1 a focus indicator needs against what is next to it (WCAG 1.4.11, for 2.4.7's visible focus) — measured in headless Chrome 154 by Tab at 320, 375 and 1280px, light: 'Draft an idea first', 'The maintainer's deal', 'Copy the line', 'Read build.md' and 'How building on our.one works.' each drew a 3px #bf411d ring on #253328 (dark: #ec8d66 on #0b110c, 7.8:1); globals.css gives every public :focus-visible var(--rust), and door.module.css gives .builders no ring of its own", () => {
     const own = ALL_RULES.flatMap((r) => r.selectors).filter((s) => /builders/.test(s) && /focus-visible/.test(s));
     const band = ring(own);
     for (const scheme of SCHEMES) {
@@ -547,7 +547,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     }
   });
 
-  it("DEFECT (MEDIUM): in the dark theme the drafts' placeholders are 3.46:1 on their field (WCAG 1.4.3) — measured in Chrome 154 with a dialog open at 320, 375 and 1280px: getComputedStyle(textarea, '::placeholder') is Chrome's own #757575, on the field's #1b241d (--card); light is 4.56:1. globals.css styles .draft__field textarea, and gives it no ::placeholder colour", () => {
+  it("fixed (MEDIUM): in the dark theme the drafts' placeholders are 3.46:1 on their field (WCAG 1.4.3) — measured in Chrome 154 with a dialog open at 320, 375 and 1280px: getComputedStyle(textarea, '::placeholder') is Chrome's own #757575, on the field's #1b241d (--card); light is 4.56:1. globals.css styles .draft__field textarea, and gives it no ::placeholder colour", () => {
     const UA_PLACEHOLDER = "#757575"; // Chrome 154's, in both themes, measured
     const own = ALL_RULES.filter((r) => r.selectors.some((s) => /::?placeholder/.test(s) && /draft/.test(s)));
     for (const scheme of SCHEMES) {
@@ -558,7 +558,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     }
   });
 
-  it("DEFECT (MEDIUM): on /power and /rules in the light theme the 'recorded' and 'ENFORCED' badges are 4.13:1 (WCAG 1.4.3; 12px bold) — measured in Chrome 154 at all five widths: .badgeRecorded's rust #bf411d on its 10% rust tint over the paper, #f0e1d6 (dark: 5.77:1). M-0017's .public block points --accent at the rust and --accent-soft at the tint; before it the badge was the app's blue on a blue tint, about 2.7:1, so this is inherited, better, and still under 4.5", () => {
+  it("fixed (MEDIUM): on /power and /rules in the light theme the 'recorded' and 'ENFORCED' badges are 4.13:1 (WCAG 1.4.3; 12px bold) — measured in Chrome 154 at all five widths: .badgeRecorded's rust #bf411d on its 10% rust tint over the paper, #f0e1d6 (dark: 5.77:1). M-0017's .public block points --accent at the rust and --accent-soft at the tint; before it the badge was the app's blue on a blue tint, about 2.7:1, so this is inherited, better, and still under 4.5", () => {
     for (const scheme of SCHEMES) {
       const applies = (m: string | null) => m === null || (scheme === "dark" && DARK(m));
       const sels = ALL_RULES.flatMap((r) => r.selectors).filter((s) => /(^|\s)\.badgeRecorded$/.test(s));
@@ -569,7 +569,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     }
   });
 
-  it("DEFECT (LOW): on a phone a focused tab's ring is cut away on three sides — measured in Chrome 154 at 320 and 375px, by arrow keys: the ring (3px, 3px out) reaches 6px above, below and left of the tab, and the tab list, a scroll box under 760px (overflow-x: auto; overflow-y: hidden), clips it there, so only its side bars show (ring 417–482px against the list's 423–477px; left edge 10 against 16). The study's tabs had no overflow, and the three tabs fit at 320px", () => {
+  it("fixed (LOW): on a phone a focused tab's ring is cut away on three sides — measured in Chrome 154 at 320 and 375px, by arrow keys: the ring (3px, 3px out) reaches 6px above, below and left of the tab, and the tab list, a scroll box under 760px (overflow-x: auto; overflow-y: hidden), clips it there, so only its side bars show (ring 417–482px against the list's 423–477px; left edge 10 against 16). The study's tabs had no overflow, and the three tabs fit at 320px", () => {
     const r = ring([".tab:focus-visible", ".tabs .tab:focus-visible"]);
     const reach = r.width + r.offset;
     const clips = D_RULES.filter((x) => PHONE(x.media) && x.selectors.includes(".tabs")).some((x) => {
@@ -581,7 +581,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect({ clips, reach, room, fits: !clips || reach <= 0 || room >= reach }).toMatchObject({ fits: true });
   });
 
-  it("DEFECT (LOW): choosing 'Your work' or 'Your audience' drops its panel 24px under a second rule — measured in Chrome 154 at 375 and 1280px: the gap under the tab list is 0 for 'Your people' and 24px, over a 1px border, for the other two. door.module.css's .panel + .panel:not([hidden]) is meant for the panels stacked without JavaScript, and it still matches a shown panel whose hidden sibling comes before it", () => {
+  it("fixed (LOW): choosing 'Your work' or 'Your audience' drops its panel 24px under a second rule — measured in Chrome 154 at 375 and 1280px: the gap under the tab list is 0 for 'Your people' and 24px, over a 1px border, for the other two. door.module.css's .panel + .panel:not([hidden]) is meant for the panels stacked without JavaScript, and it still matches a shown panel whose hidden sibling comes before it", () => {
     const tree = door({}, true);
     const [first, second] = panels(tree);
     expect(first && second).toBeTruthy();
@@ -595,7 +595,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect(pushes).toEqual([]);
   });
 
-  it("DEFECT (LOW): the two possibilities' panels hold nothing focusable and aren't focusable themselves, so Tab from 'Your work' skips past its words — measured in Chrome 154: Tab from 'Your work' reached 'Every project, and what it's held to', and every tabpanel's tabIndex was -1. The WAI-ARIA tabs pattern that ServiceTabs cites puts tabindex=\"0\" on a panel with no focusable content", () => {
+  it("fixed (LOW): the two possibilities' panels hold nothing focusable and aren't focusable themselves, so Tab from 'Your work' skips past its words — measured in Chrome 154: Tab from 'Your work' reached 'Every project, and what it's held to', and every tabpanel's tabIndex was -1. The WAI-ARIA tabs pattern that ServiceTabs cites puts tabindex=\"0\" on a panel with no focusable content", () => {
     const tree = door({}, true);
     const tabpanels = findAll(tree, (e) => e.attrs.role === "tabpanel");
     expect(tabpanels).toHaveLength(3);
@@ -604,7 +604,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect(bare.map((p) => p.attrs.tabindex ?? "(none)")).toEqual(["0", "0"]);
   });
 
-  it("DEFECT (LOW): with PROPOSALS_EMAIL unset the dialog still says 'email opens your own email app', and offers no way to email — seen in Chrome 154 on the server without the address (:3422): on / that note stood over a lone 'Copy my draft', and /build, /projects and /maintainers showed the same lone button under the same note. drafts.ts has one note for both states; the front door's last line follows the address (partFoot), the dialog's doesn't", () => {
+  it("fixed (LOW): with PROPOSALS_EMAIL unset the dialog still says 'email opens your own email app', and offers no way to email — seen in Chrome 154 on the server without the address (:3422): on / that note stood over a lone 'Copy my draft', and /build, /projects and /maintainers showed the same lone button under the same note. drafts.ts has one note for both states; the front door's last line follows the address (partFoot), the dialog's doesn't", () => {
     const tree = door({ email: null }, true);
     const shown = dialogs(tree).map((d) => ({
       email: byText(d, "button", /^Open in my email$/).length,
@@ -618,7 +618,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     }
   });
 
-  it("DEFECT (LOW): after 'Copy my draft', changing an answer leaves 'Copied. Nothing was sent.' standing over a draft the clipboard doesn't hold — measured in Chrome 154: three FICTIONAL answers copied, the second then changed; the status still read 'Copied. Nothing was sent.' and the clipboard lacked the change. Draft.tsx's update() clears the fallback, not the status", () => {
+  it("fixed (LOW): after 'Copy my draft', changing an answer leaves 'Copied. Nothing was sent.' standing over a draft the clipboard doesn't hold — measured in Chrome 154: three FICTIONAL answers copied, the second then changed; the status still read 'Copied. Nothing was sent.' and the clipboard lacked the change. Draft.tsx's update() clears the fallback, not the status", () => {
     // An answer changes through the field's onChange, which calls update().
     const body = /function update\([^)]*\)\s*\{([\s\S]*?)\n  \}/.exec(DRAFT_TSX)?.[1] ?? "";
     const onChange = /onChange=\{([^\n]*)\}/.exec(DRAFT_TSX)?.[1] ?? "";
@@ -626,7 +626,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect(`${body}\n${onChange}`).toMatch(/setStatus\(/);
   });
 
-  it("DEFECT (LOW): without JavaScript, /maintainers' two draft buttons link to the sections they sit in, so pressing one only scrolls to the heading above it — in Chrome 154 with scripts off: 'Draft an idea ↗' under 'Propose a service' goes to /maintainers#maintainers-propose, and 'Draft a need ↗' under 'Need something?' to /maintainers#maintainers-need", () => {
+  it("fixed (LOW): without JavaScript, /maintainers' two draft buttons link to the sections they sit in, so pressing one only scrolls to the heading above it — in Chrome 154 with scripts off: 'Draft an idea ↗' under 'Propose a service' goes to /maintainers#maintainers-propose, and 'Draft a need ↗' under 'Need something?' to /maintainers#maintainers-need", () => {
     vi.stubEnv("PROPOSALS_EMAIL", EMAIL);
     const tree = page(MaintainersPage);
     const links = findAll(tree, (e) => e.tag === "a" && /^Draft /.test(text(e)));
@@ -641,7 +641,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect(selfLinks).toEqual([]);
   });
 
-  it("DEFECT (LOW): a fresh load of /#ours lands 624px past the section at 1280px and 1,077px past it at 375px — measured in Chrome 154 (/#open landed 23px low, /#build 54px, /#part on the mark): the server draws all three project panels, hydration hides two, and Chrome's scroll anchoring holds #projects where it was, so all below it moves up; a visitor who scrolls before the scripts run sees the same jump. The server's markup should hide what the hydrated page hides, and show the panels to a browser without scripts another way (a <noscript> style, say)", () => {
+  it("fixed (LOW): a fresh load of /#ours lands 624px past the section at 1280px and 1,077px past it at 375px — measured in Chrome 154 (/#open landed 23px low, /#build 54px, /#part on the mark): the server draws all three project panels, hydration hides two, and Chrome's scroll anchoring holds #projects where it was, so all below it moves up; a visitor who scrolls before the scripts run sees the same jump. The server's markup should hide what the hydrated page hides, and show the panels to a browser without scripts another way (a <noscript> style, say)", () => {
     const server = door({}, false);
     const hydrated = door({}, true);
     const hidden = (t: El) => panels(t).map((p) => p.attrs.hidden !== undefined);
@@ -656,7 +656,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect(sameAsHydrated || byScripting, `server panels hidden: ${JSON.stringify(hidden(server))}`).toBe(true);
   });
 
-  it("DEFECT (LOW): on a phone the footer's links are 15px targets in rows 19.5px apart, so their 24px circles meet (WCAG 2.5.8) on every public page — measured in Chrome 154 with touch at 320 and 375px: 'Contract' and 'Open code', 'Agreement' and 'Costs', 'Open code' and 'Privacy'; and at 320px on /power 'The public ledger' beside the wrapped 'Founding authority, section 4: no bank account' (13px at /power's line-height 1.6, 20.8px rows). The footer's type predates M-0017; nothing gives these links a taller box", () => {
+  it("fixed (LOW): on a phone the footer's links are 15px targets in rows 19.5px apart, so their 24px circles meet (WCAG 2.5.8) on every public page — measured in Chrome 154 with touch at 320 and 375px: 'Contract' and 'Open code', 'Agreement' and 'Costs', 'Open code' and 'Privacy'; and at 320px on /power 'The public ledger' beside the wrapped 'Founding authority, section 4: no bank account' (13px at /power's line-height 1.6, 20.8px rows). The footer's type predates M-0017; nothing gives these links a taller box", () => {
     /** The rows' pitch: the line's own line-height, or the one it inherits; or a link's own taller box. */
     const pitch = (lines: RegExp[], link: RegExp) => {
       const applies = (m: string | null) => m === null || COARSE(m) || PHONE(m);
@@ -676,7 +676,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     expect({ footer, records }).toEqual({ footer: expect.toSatisfy((v: number) => v >= 24), records: expect.toSatisfy((v: number) => v >= 24) });
   });
 
-  it("DEFECT (LOW): on a phone the picture's 'IMAGINE' and 'FIRST PROJECT', the words that mark its cards, are drawn at 12px in a 440-unit picture: 7.9px on a 320px screen, 9.4px at 375px — measured in Chrome 154 (the picture is 288px wide at 320). The study set them to 16px there (10.3px), and its cards have 47–68px to spare at that size; SPEC §18.19 and D-0020 give no reason, and the stylesheet's comment says 'big enough to read at a phone's width'", () => {
+  it("fixed (LOW): on a phone the picture's 'IMAGINE' and 'FIRST PROJECT', the words that mark its cards, are drawn at 12px in a 440-unit picture: 7.9px on a 320px screen, 9.4px at 375px — measured in Chrome 154 (the picture is 288px wide at 320). The study set them to 16px there (10.3px), and its cards have 47–68px to spare at that size; SPEC §18.19 and D-0020 give no reason, and the stylesheet's comment says 'big enough to read at a phone's width'", () => {
     const STUDY = 16;
     for (const s of [".orbitKicker", ".orbitFirstKicker"]) {
       const size = parseFloat(value([s], "font-size", (m) => m === null || PHONE(m), D_RULES) ?? "0");
@@ -684,7 +684,7 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     }
   });
 
-  it("DEFECT (LOW): on a phone the header and the front door's new links and small buttons are under SPEC §9's 44px — measured in Chrome 154 at 375px with touch: the four places 40.1px (the stylesheet's comment over them says 44px), 'Sign in' 40px, 'Copy the line' 42px, the text links 35.6–38.7px ('More about the feed', 'Every project, and what it's held to', 'What the feed's contract promises', 'The maintainer's deal', 'Start with the kit'), 'Read build.md' and 'Who holds the power today' 18.6px, the strip's three links 15px, the wordmark 27px. Each meets WCAG 2.5.8's 24px or its spacing; SPEC §9 asks 44px, as M-0014's re-check held .pledgeLink to it", () => {
+  it("fixed (LOW): on a phone the header and the front door's new links and small buttons are under SPEC §9's 44px — measured in Chrome 154 at 375px with touch: the four places 40.1px (the stylesheet's comment over them says 44px), 'Sign in' 40px, 'Copy the line' 42px, the text links 35.6–38.7px ('More about the feed', 'Every project, and what it's held to', 'What the feed's contract promises', 'The maintainer's deal', 'Start with the kit'), 'Read build.md' and 'Who holds the power today' 18.6px, the strip's three links 15px, the wordmark 27px. Each meets WCAG 2.5.8's 24px or its spacing; SPEC §9 asks 44px, as M-0014's re-check held .pledgeLink to it", () => {
     const measured: Record<string, number> = {
       ".public-nav a": phoneHeight([".public-nav a"], 13, G_RULES),
       ".public-header__signin": phoneHeight([".public-header__signin"], 13, G_RULES),
@@ -808,7 +808,10 @@ describe("closed checks (each held, and passes)", () => {
     expect(ILLUSTRATION.done).toMatch(/An illustration/);
     const off = fig(door({}, false));
     expect(findAll(off, (e) => e.tag === "button")).toEqual([]);
-    expect(text(off)).toContain(ILLUSTRATION.idle);
+    // Changed after the fixes (the honesty verification's 15th finding): with
+    // no button yet, the first words don't ask for a press.
+    expect(text(off)).toContain(ILLUSTRATION.still);
+    expect(text(off)).not.toContain("Try changing the maintainer");
   });
 
   it("closed: the draft dialog, by keyboard and to a screen reader — on all four pages in Chrome 154 Enter on a draft button opens a modal dialog with focus in its first field; Chrome's accessibility tree has it as a modal 'dialog' named by its title, the field named by its question, the status line 'polite'; Escape (on all four pages) and Close (44 × 44px, on the front door) put focus back on the button that opened it; an empty draft says so and moves focus to the first empty field; two buttons of the same kind share their answers, and a need and an idea don't", () => {
@@ -877,16 +880,22 @@ describe("closed checks (each held, and passes)", () => {
   it("closed: without JavaScript — in Chrome 154 with scripts off, every draft button on /, /build, /projects and /maintainers is a link to /maintainers#maintainers-propose or #maintainers-need, both there and saying how to write; the tabs aren't drawn and all three panels' words are on the page, each with its label; the illustration shows its first state with no button; no copy button is drawn; nothing scrolls sideways at 320 or 1280px", () => {
     vi.stubEnv("PROPOSALS_EMAIL", EMAIL);
     const pages = [door({ email: EMAIL }), page(BuildPage), page(ProjectsPage), page(MaintainersPage)];
-    for (const tree of pages) {
+    // Changed after the fixes: /projects has no drafts (D-0020 §E names the
+    // front door, /build and /maintainers; the honesty verification's 17th
+    // finding), and /maintainers draws its two only once the page's
+    // JavaScript runs, since without it they linked to the sections they sit
+    // in (this file's ninth finding).
+    const withDrafts = new Set([0, 1]);
+    pages.forEach((tree, i) => {
       const drafts = findAll(tree, (e) => /^Draft /.test(text(e)) && (e.tag === "a" || e.tag === "button"));
-      expect(drafts.length).toBeGreaterThan(0);
+      expect(drafts.length > 0, `page ${i}`).toBe(withDrafts.has(i));
       for (const d of drafts) {
         expect(d.tag).toBe("a");
         expect([DRAFT_FALLBACK.idea, DRAFT_FALLBACK.need]).toContain(d.attrs.href);
       }
       expect(byText(tree, "button", /^Copy the line$/)).toEqual([]);
       expect(dialogs(tree)).toEqual([]);
-    }
+    });
     const front = pages[0]!;
     expect(findAll(front, (e) => e.attrs.role === "tablist")).toEqual([]);
     const words = text(front);
@@ -901,7 +910,8 @@ describe("closed checks (each held, and passes)", () => {
     vi.stubEnv("PROPOSALS_EMAIL", EMAIL);
     const kinds = (t: El) => dialogs(t).map((d) => text(findAll(d, (e) => e.tag === "h2")[0]!));
     expect(kinds(page(BuildPage, true))).toEqual([DRAFT_KINDS.idea.title]);
-    expect(kinds(page(ProjectsPage, true))).toEqual([DRAFT_KINDS.need.title, DRAFT_KINDS.idea.title]);
+    // Changed after the fixes: /projects has no drafts (the honesty verification's 17th finding).
+    expect(kinds(page(ProjectsPage, true))).toEqual([]);
     expect(kinds(page(MaintainersPage, true))).toEqual([DRAFT_KINDS.idea.title, DRAFT_KINDS.need.title]);
     const build = page(BuildPage, true);
     expect(byText(build, "button", /^Copy the line$/)).toHaveLength(1);

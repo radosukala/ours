@@ -655,8 +655,8 @@ describe("defects (each FAILS on 25ce8f0)", () => {
     const text = textOf(renderToStaticMarkup(createElement(BuildPage)));
     // Changed after the fix (C22): the sentence now names the version the trial passed.
     // Changed after D-0020 (M-0017): the line changed, so the sentence says which
-    // line was tried, and that the new one hasn't been yet.
-    expect(text).toContain("This line hasn't been tried yet. The line before it was tried once: an agent in Claude Code, given it and a person's answers, built a small fictional app and passed version 0.1.0 of the check.");
+    // line was tried with which version; the new line's trial, M-0017's, passed 0.2.1.
+    expect(text).toContain("The line before it was tried once too, and passed version 0.1.0.");
     expect(text).toContain(`Version ${KIT_TOOL.version}`);
     expect(record("receipts/conformance/2026-10-02-M-0016-agent-trial/REPORT.md")).toContain("ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7");
     expect(KIT_TOOL.sha256).not.toBe("ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7");

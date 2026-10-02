@@ -858,7 +858,8 @@ describe("the invite page, signed out (D-0016 §I)", () => {
     const open = textOf(html);
     expect(open).toContain(`${heading} ${LEDE} Your email We'll email you a link to join. Send me a link Free to join. The promise behind our.one Already on our.one? Sign in, then open this link again.`);
     // The card's link style since D-0016 §N (it was the shared .link on dcff190).
-    expect(html).toMatch(/<a class="[^"]*pledgeLink[^"]*" href="\/#front-runs">The promise behind our\.one<\/a>|<a href="\/#front-runs" class="[^"]*pledgeLink[^"]*">The promise behind our\.one<\/a>/);
+    // Changed after the verification of M-0017: the link goes to /feed, where the section moved (D-0020 §B).
+    expect(html).toMatch(/<a class="[^"]*pledgeLink[^"]*" href="\/feed#front-runs">The promise behind our\.one<\/a>|<a href="\/feed#front-runs" class="[^"]*pledgeLink[^"]*">The promise behind our\.one<\/a>/);
     expect(render({ joining: true, count: null, seatsOpen: null })).toContain('<h2 id="front-runs">Keep your people. Change who runs it.</h2>');
     for (const form of [renderToStaticMarkup(createElement(JoinRequestForm, { code })), rendered(JoinForm)]) {
       expect(textOf(form)).not.toMatch(/\b(?:pay|payment|price|card|subscription|fee)\b|€|\$/i);

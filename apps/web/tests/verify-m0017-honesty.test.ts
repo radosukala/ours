@@ -265,7 +265,7 @@ afterEach(() => {
 /* ------------------------------------------------------------- defects */
 
 describe("defects (each FAILS on cb1aadd)", () => {
-  it("DEFECT (MEDIUM): the invite page's link 'The promise behind our.one' still goes to /#front-runs, but / is now the front door, which has no #front-runs and carries no promise: the section on who runs it, with the signed card and the handover, moved to /feed (D-0016 §I sends the link 'to the section on who runs it'; the build moved the section and left the link, and the older tests still pass because they look for the anchor in FrontPage, not at the address the link names)", async () => {
+  it("fixed (MEDIUM): the invite page's link 'The promise behind our.one' still goes to /#front-runs, but / is now the front door, which has no #front-runs and carries no promise: the section on who runs it, with the signed card and the handover, moved to /feed (D-0016 §I sends the link 'to the section on who runs it'; the build moved the section and left the link, and the older tests still pass because they look for the anchor in FrontPage, not at the address the link names)", async () => {
     const source = read("src/app/(public)/i/[code]/page.tsx");
     const link = /<Link href="([^"]+)"[^>]*>\s*The promise behind our\.one\s*<\/Link>/.exec(source);
     expect(link).not.toBeNull();
@@ -288,7 +288,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect({ href, lands: (byPath[path ?? ""] ?? "").includes(`id="${anchor}"`) }).toEqual({ href, lands: true });
   });
 
-  it("DEFECT (MEDIUM): the illustration's last words, shown once a visitor presses 'Appoint a successor', say 'no one holds the right to make it yet'; the founder holds it — /feed's signed card says 'I hand over … the right to replace me … Until then, I hold all three.', D-0016 §N gives the founder's bootstrap authority as its source ('nobody else holds it today'), and FOUNDING-AUTHORITY §5 lets the founder 'appoint and remove stewards and operators' — so the front door tells a stranger that nobody can change who runs the feed, the reverse of what holds today", async () => {
+  it("fixed (MEDIUM): the illustration's last words, shown once a visitor presses 'Appoint a successor', say 'no one holds the right to make it yet'; the founder holds it — /feed's signed card says 'I hand over … the right to replace me … Until then, I hold all three.', D-0016 §N gives the founder's bootstrap authority as its source ('nobody else holds it today'), and FOUNDING-AUTHORITY §5 lets the founder 'appoint and remove stewards and operators' — so the front door tells a stranger that nobody can change who runs the feed, the reverse of what holds today", async () => {
     expect(ILLUSTRATION.done).toContain("An illustration");
     expect(record("decisions/D-0016.md")).toContain(
       "For the right to replace the maintainer, the source is the founder's bootstrap authority (AGENTS.md §2, authority/FOUNDING-AUTHORITY.md): nobody else holds it today.",
@@ -301,7 +301,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(ILLUSTRATION.done).not.toMatch(/\b(?:no one|nobody|no-one) holds the right\b/i);
   });
 
-  it("DEFECT (MEDIUM): 'What we mean by ours' lists 'Anyone can take their own data and leave.' and 'What it costs, and what its maintainer is paid, is public.', then says 'None of it is in force: today, the founder decides.'; both hold on the feed today — /agreement says 'In force on the feed' for each, and the same front door says the feed's 'costs are public' — so the status tells a visitor they can't take their data from the feed (D-0017 §B says none of the *collective* rights is in force)", () => {
+  it("fixed (MEDIUM): 'What we mean by ours' lists 'Anyone can take their own data and leave.' and 'What it costs, and what its maintainer is paid, is public.', then says 'None of it is in force: today, the founder decides.'; both hold on the feed today — /agreement says 'In force on the feed' for each, and the same front door says the feed's 'costs are public' — so the status tells a visitor they can't take their data from the feed (D-0017 §B says none of the *collective* rights is in force)", () => {
     const ours = textOf(section(renderDoor(), "ours"));
     expect(ours).toContain("Anyone can take their own data and leave.");
     expect(ours).toContain("What it costs, and what its maintainer is paid, is public.");
@@ -317,7 +317,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(OURS_STATUS).not.toMatch(/\bnone of it is in force\b/i);
   });
 
-  it("DEFECT (MEDIUM): 'The feed runs under the same framework as every project after it.' puts in the present what the feed's own terms put in the future — /contract: 'The feed will also run under the common agreement … It is being developed in public.'; /projects: 'The common agreement they will run under is being developed.' — the claim M-0015's verification found HIGH on /projects ('run under the common agreement'). D-0017 §A's 'under the same framework' is the nearest record; 'every project after it' is an absolute about projects that don't exist (AGENTS.md §10)", () => {
+  it("fixed (MEDIUM): 'The feed runs under the same framework as every project after it.' puts in the present what the feed's own terms put in the future — /contract: 'The feed will also run under the common agreement … It is being developed in public.'; /projects: 'The common agreement they will run under is being developed.' — the claim M-0015's verification found HIGH on /projects ('run under the common agreement'). D-0017 §A's 'under the same framework' is the nearest record; 'every project after it' is an absolute about projects that don't exist (AGENTS.md §10)", () => {
     const projects = textOf(section(renderDoor(), "projects"));
     expect(projects).toContain("Today the founder holds its domain, its data and its keys.");
     expect(textOf(render(ContractPage))).toContain(
@@ -331,7 +331,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(textOf(renderDoor())).not.toMatch(/\bThe feed (?:runs|is run|operates) under\b/);
   });
 
-  it("DEFECT (MEDIUM): the claims scan has no rule for D-0020's first prohibition — 'Saying that user control, the holder or any safeguard exists before it does' — so 'User control is built.', 'The holder now holds your data.', 'The data safeguards are built.' and 'Your data is protected by our.one.' all pass it, while M-0017's acceptance leans on the scan ('finds no prohibited claim'); the front door's own test checks a regex on / only, not on /build, /projects, /maintainers, the drafts or build.md (the kit's own check knows 'protected by our.one'; the site's doesn't)", () => {
+  it("fixed (MEDIUM): the claims scan has no rule for D-0020's first prohibition — 'Saying that user control, the holder or any safeguard exists before it does' — so 'User control is built.', 'The holder now holds your data.', 'The data safeguards are built.' and 'Your data is protected by our.one.' all pass it, while M-0017's acceptance leans on the scan ('finds no prohibited claim'); the front door's own test checks a regex on / only, not on /build, /projects, /maintainers, the drafts or build.md (the kit's own check knows 'protected by our.one'; the site's doesn't)", () => {
     expect(record("decisions/D-0020.md")).toContain("Saying that user control, the holder or any safeguard exists before it does.");
     expect(readRoot("mandates/M-0017.yaml")).toContain("The claims scan reads every new page and component and finds no prohibited claim.");
     // The pages' own denials pass, as they must after any fix.
@@ -350,7 +350,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(claims.filter((c) => scanText(c, null).length === 0)).toEqual([]);
   });
 
-  it("DEFECT (LOW): the claims scan's 'it's ours' rule (D-0012 dropped the phrase) sees only those words side by side, so 'It's already ours.', 'It is now ours.', 'The feed is ours.' and 'our.one is ours.' pass, while D-0020 made 'ours' the message's word and puts it on every public page ('The software we live in should be ours.' in every footer)", () => {
+  it("fixed (LOW): the claims scan's 'it's ours' rule (D-0012 dropped the phrase) sees only those words side by side, so 'It's already ours.', 'It is now ours.', 'The feed is ours.' and 'our.one is ours.' pass, while D-0020 made 'ours' the message's word and puts it on every public page ('The software we live in should be ours.' in every footer)", () => {
     expect(scanText("It's ours.", null).map((h) => h.match)).toEqual(["It's ours"]);
     // The message's own sentences pass, as they must after any fix.
     for (const s of [TAGLINE, DOOR_EYEBROW, `${IDEA_CLOSE[0]} ${IDEA_CLOSE[1]}`, "What we mean by ours"]) expect(scanText(s, null), s).toEqual([]);
@@ -360,7 +360,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(slip.filter((s) => scanText(s, null).length === 0)).toEqual([]);
   });
 
-  it("DEFECT (LOW): with PROPOSALS_EMAIL unset the dialog has no email button — right — but its note still says 'email opens your own email app, and you decide whether to send it', describing a way to send that isn't there; the front door's last line and /privacy follow the setting, the dialog's note doesn't (D-0018 §D: while the setting is empty, the pages show no way to send)", () => {
+  it("fixed (LOW): with PROPOSALS_EMAIL unset the dialog has no email button — right — but its note still says 'email opens your own email app, and you decide whether to send it', describing a way to send that isn't there; the front door's last line and /privacy follow the setting, the dialog's note doesn't (D-0018 §D: while the setting is empty, the pages show no way to send)", () => {
     const none = hydratedDraft("need", null);
     const withAddress = hydratedDraft("need", "ideas@example.test");
     expect(none).toContain("<dialog");
@@ -373,7 +373,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(textOf(none)).not.toMatch(/\bemail opens\b|\byour own email app\b|\bopen it in your (?:own )?email\b/i);
   });
 
-  it("DEFECT (LOW): with the address set, the front door's last line reads 'A draft stays in your browser until you copy it, or send it from your own email. A person reads every one.' — 'every one' is every draft, and nobody reads a draft that stays in the browser; it means every one that is sent", () => {
+  it("fixed (LOW): with the address set, the front door's last line reads 'A draft stays in your browser until you copy it, or send it from your own email. A person reads every one.' — 'every one' is every draft, and nobody reads a draft that stays in the browser; it means every one that is sent", () => {
     expect(partFoot(true)).toMatch(/^A draft stays in your browser until you copy it/);
     expect(textOf(section(renderDoor({ email: "ideas@example.test" }), "part"))).toContain(partFoot(true));
 
@@ -381,7 +381,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(partFoot(true)).not.toMatch(/\bA person reads every one\.$/);
   });
 
-  it("DEFECT (LOW): build.md's step 2 tells the agent to use the PITCH.md headings 'because `init` and the check expect them'; neither does — the check reads PITCH.md only for the word TODO (a FICTIONAL PITCH.md with none of the headings is 'written'), and init leaves any PITCH.md as it is — so an agent is told the check reads the proposal's parts, which it doesn't", () => {
+  it("fixed (LOW): build.md's step 2 tells the agent to use the PITCH.md headings 'because `init` and the check expect them'; neither does — the check reads PITCH.md only for the word TODO (a FICTIONAL PITCH.md with none of the headings is 'written'), and init leaves any PITCH.md as it is — so an agent is told the check reads the proposal's parts, which it doesn't", () => {
     const step2 = flat(BUILD_MD.slice(BUILD_MD.indexOf("## 2. Draft the idea"), BUILD_MD.indexOf("## 3. Get the tool")));
     expect(step2).toContain("Use these headings, in this order");
     const pitch = "# A FICTIONAL idea\n\nA FICTIONAL choir wants a shared rehearsal calendar.\n";
@@ -396,7 +396,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(step2).not.toMatch(/because `?init`? and the check expect them/);
   });
 
-  it("DEFECT (LOW): build.md's 'find out first' branch says 'stop here. Help them put the draft in front of the people it would serve', and question 9 suggests 'a trial they could offer', but nothing says that finding out writes no code and keeps no one's data; the rules, the check and the hook arrive only in step 3, so a coding agent that reads 'help them put the draft in front of people' as a sign-up page or a form collects addresses before any rule applies", () => {
+  it("fixed (LOW): build.md's 'find out first' branch says 'stop here. Help them put the draft in front of the people it would serve', and question 9 suggests 'a trial they could offer', but nothing says that finding out writes no code and keeps no one's data; the rules, the check and the hook arrive only in step 3, so a coding agent that reads 'help them put the draft in front of people' as a sign-up page or a form collects addresses before any rule applies", () => {
     const step2 = flat(BUILD_MD.slice(BUILD_MD.indexOf("## 2. Draft the idea"), BUILD_MD.indexOf("## 3. Get the tool")));
     expect(step2).toContain("To find out first:** stop here. Help them put the draft in front of the people it would serve.");
     expect(flat(BUILD_MD)).toContain("or a trial they could offer?");
@@ -410,7 +410,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     }).toEqual({ noCode: true, noData: true });
   });
 
-  it("DEFECT (LOW): /build says 'This line hasn't been tried yet.' — true today, and made false before anything is deployed: D-0020 §D has a fresh agent try the line 'before release', and M-0017's stopping rule runs that trial as step 2 of this verification; the page reads no receipt, so unless someone edits it, the deployed page will say the line was never tried (D-0020 §F: 'A status stays true on the deployed site and off it'; M-0016's re-check, C22, found the same kind of line out of date)", () => {
+  it("fixed (LOW): /build says 'This line hasn't been tried yet.' — true today, and made false before anything is deployed: D-0020 §D has a fresh agent try the line 'before release', and M-0017's stopping rule runs that trial as step 2 of this verification; the page reads no receipt, so unless someone edits it, the deployed page will say the line was never tried (D-0020 §F: 'A status stays true on the deployed site and off it'; M-0016's re-check, C22, found the same kind of line out of date)", () => {
     const text = textOf(render(BuildPage));
     expect(text).toContain(AGENT_LINE);
     expect(record("decisions/D-0020.md")).toContain("A fresh agent tries it before release");
@@ -422,7 +422,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(text).not.toContain("This line hasn't been tried yet.");
   });
 
-  it("DEFECT (LOW): kit/README.md, which M-0017 edited, still says 'Not deployed yet. our.one serves nothing at these addresses until it is deployed, and the line below points at nothing until then.' — a status that turns false the day our.one deploys; M-0012's precondition 11 makes the hosting lines on /privacy and /power follow the server, and doesn't name this one, and /build links the kit's folder, where GitHub shows this README", () => {
+  it("fixed (LOW): kit/README.md, which M-0017 edited, still says 'Not deployed yet. our.one serves nothing at these addresses until it is deployed, and the line below points at nothing until then.' — a status that turns false the day our.one deploys; M-0012's precondition 11 makes the hosting lines on /privacy and /power follow the server, and doesn't name this one, and /build links the kit's folder, where GitHub shows this README", () => {
     const readme = flat(readRoot("kit/README.md"));
     expect(readme).toContain(AGENT_LINE);
     expect(record("decisions/D-0020.md")).toContain("A status stays true on the deployed site and off it.");
@@ -435,7 +435,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(readme).not.toMatch(/\bNot deployed yet\b|\bpoints at nothing until then\b/);
   });
 
-  it("DEFECT (LOW): the front door's picture of the feed ends on '✓ You're caught up.', with a tick and nothing older below it; the app never draws a tick, and puts its marker, 'You've seen everything from before your last visit, …', above a post from before the last visit — the picture D-0015 §K corrected on the front page, and that /feed still shows as the app draws it; this one is captioned 'An example feed.' too", () => {
+  it("fixed (LOW): the front door's picture of the feed ends on '✓ You're caught up.', with a tick and nothing older below it; the app never draws a tick, and puts its marker, 'You've seen everything from before your last visit, …', above a post from before the last visit — the picture D-0015 §K corrected on the front page, and that /feed still shows as the app draws it; this one is captioned 'An example feed.' too", () => {
     const projects = section(renderDoor(), "projects");
     expect(textOf(projects)).toContain("An example feed. Fictional people.");
     const marker = renderToStaticMarkup(createElement(CaughtUpMarker, { since: PREVIEW_LAST_VISIT, now: PREVIEW_NOW }));
@@ -447,7 +447,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(textOf(projects)).not.toMatch(/✓\s*You're caught up/);
   });
 
-  it("DEFECT (LOW): the last section's heading, 'What should we make ours next?', says something has already been made ours — the feed, the only project — while the first screen says 'Founder-led today. User control isn't built yet.' (AGENTS.md §9: never state or imply ownership that hasn't happened; the claims scan can't read a presupposition)", () => {
+  it("fixed (LOW): the last section's heading, 'What should we make ours next?', says something has already been made ours — the feed, the only project — while the first screen says 'Founder-led today. User control isn't built yet.' (AGENTS.md §9: never state or imply ownership that hasn't happened; the claims scan can't read a presupposition)", () => {
     const html = renderDoor();
     expect(textOf(html)).toContain(DOOR_STATUS);
     const part = section(html, "part");
@@ -458,7 +458,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(heading).not.toMatch(/\bours next\b|\bours again\b|\banother one ours\b/i);
   });
 
-  it("DEFECT (LOW): before the page's JavaScript runs, and without it, the illustration says 'Try changing the maintainer.' and there is no button to press (Continuity.tsx draws it only once hydrated), so it asks for something the page can't do", () => {
+  it("fixed (LOW): before the page's JavaScript runs, and without it, the illustration says 'Try changing the maintainer.' and there is no button to press (Continuity.tsx draws it only once hydrated), so it asks for something the page can't do", () => {
     const ours = section(renderDoor(), "ours");
     expect(read("src/components/public/Continuity.tsx")).toContain("{ready ? (");
     const button = ours.includes(ILLUSTRATION.change);
@@ -467,7 +467,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(button || !/\bTry changing the maintainer\b/.test(textOf(ours))).toBe(true);
   });
 
-  it("DEFECT (LOW): 'In the open' links the code, the agreement and who holds power, but not the costs; D-0020 §A asks for 'links to the code, the costs, the agreement and who holds power' there (the costs are linked once, in the strip under the first screen)", () => {
+  it("fixed (LOW): 'In the open' links the code, the agreement and who holds power, but not the costs; D-0020 §A asks for 'links to the code, the costs, the agreement and who holds power' there (the costs are linked once, in the strip under the first screen)", () => {
     expect(record("decisions/D-0020.md")).toContain(
       "In the open: what is built, what is a draft, and what isn't built, with links to the code, the costs, the agreement and who holds power.",
     );
@@ -478,13 +478,22 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(hrefs).toContain("/costs");
   });
 
-  it("DEFECT (LOW): /projects offers both drafts, but D-0020 §E names where a visitor can draft — 'On the front door, /build and /maintainers' — and §B gives /projects 'the feed, with its facts, and the labelled possibilities'; M-0017's acceptance says the same of /projects, so a fourth place is more than either authorizes (AGENTS.md §12: the reading that authorizes more work is never the right one)", () => {
+  it("fixed (LOW): /projects offers both drafts, but D-0020 §E names where a visitor can draft — 'On the front door, /build and /maintainers' — and §B gives /projects 'the feed, with its facts, and the labelled possibilities'; M-0017's acceptance says the same of /projects, so a fourth place is more than either authorizes (AGENTS.md §12: the reading that authorizes more work is never the right one)", () => {
     const d20 = record("decisions/D-0020.md");
     expect(d20).toContain("On the front door, /build and /maintainers, a visitor can draft a need or an idea");
     expect(d20).toContain("/projects: the feed, with its facts, and the labelled possibilities.");
     expect(readRoot("mandates/M-0017.yaml")).toContain("/projects shows the feed and the labelled possibilities");
-    for (const page of [renderDoor(), render(BuildPage), render(MaintainersPage)]) {
+    // Changed after the rendering verification's ninth finding: /maintainers
+    // draws its drafts once the page's JavaScript runs (without it they
+    // linked to the sections they sit in), so it is read hydrated, as buttons.
+    for (const page of [renderDoor(), render(BuildPage)]) {
       expect(links(page).some(([text]) => /^Draft /.test(text))).toBe(true);
+    }
+    hydration.ready = true;
+    try {
+      expect(render(MaintainersPage)).toMatch(/<button[^>]*>Draft an idea/);
+    } finally {
+      hydration.ready = false;
     }
     const drafts = links(render(ProjectsPage)).filter(([text]) => /^Draft /.test(text));
     // A record that names /projects among the places would settle it too.
@@ -497,7 +506,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(drafts.length === 0 || named, `${drafts.length} drafts on /projects; a record names /projects among the places: ${named}`).toBe(true);
   });
 
-  it("DEFECT (LOW): each answer in a draft stops at 600 characters, and nothing in the dialog says so: typing stops and a longer paste loses its end without a word — the answer to 'what happens to a long draft?' should be on the page, as it is for the email link ('The draft is too long for an email link …')", () => {
+  it("fixed (LOW): each answer in a draft stops at 600 characters, and nothing in the dialog says so: typing stops and a longer paste loses its end without a word — the answer to 'what happens to a long draft?' should be on the page, as it is for the email link ('The draft is too long for an email link …')", () => {
     const html = hydratedDraft("idea", "ideas@example.test");
     const limits = [...html.matchAll(/<textarea[^>]*\bmaxlength="(\d+)"/gi)].map((m) => Number(m[1]));
     expect(limits).toEqual([600, 600, 600]);
@@ -854,7 +863,12 @@ describe("closed (each passes on cb1aadd)", () => {
     expect(flat(readRoot("receipts/conformance/2026-10-02-M-0016.verification.md"))).toContain(
       "it built a small book-club app and reached READY TO PROPOSE with the tool unchanged.",
     );
-    expect(readdirSync(join(ROOT, "receipts/conformance")).filter((f) => /agent-trial$/.test(f))).toEqual(["2026-10-02-M-0016-agent-trial"]);
+    // Changed after the verification's own trial (step 2 of M-0017's stopping
+    // rule): its project and report are a second agent-trial folder.
+    expect(readdirSync(join(ROOT, "receipts/conformance")).filter((f) => /agent-trial$/.test(f))).toEqual([
+      "2026-10-02-M-0016-agent-trial",
+      "2026-10-03-M-0017-agent-trial",
+    ]);
     const absolutes = [
       ...IDEA_TEXT,
       STRIP_LINE,

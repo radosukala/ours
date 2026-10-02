@@ -1,0 +1,17 @@
+{
+  "name": "linden-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A tool-lending library for the households on Linden Row.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --env-file-if-exists=.env src/server.js",
+    "test": "node --test",
+    "check": "node scripts/our-one.mjs check"
+  }
+}

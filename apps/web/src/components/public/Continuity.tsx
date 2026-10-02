@@ -54,7 +54,7 @@ export function Continuity() {
         </button>
       ) : null}
       <p className={styles.result} role="status">
-        {changed ? ILLUSTRATION.done : ILLUSTRATION.idle}
+        {!ready ? ILLUSTRATION.still : changed ? ILLUSTRATION.done : ILLUSTRATION.idle}
       </p>
     </figure>
   );

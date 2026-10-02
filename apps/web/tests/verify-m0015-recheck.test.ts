@@ -753,7 +753,10 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
     // checked as before.
     const all = pageLinks();
     const links = all.filter(([, a]) => !/\bbtn\b/.test(a.attrs.class ?? ""));
-    expect(all.length - links.length).toBe(4);
+    // Changed after the verification of M-0017: /projects has no drafts now, and
+    // /maintainers draws its two only once the page's JavaScript runs, so none
+    // is in these server-rendered pages.
+    expect(all.length - links.length).toBe(0);
     expect(links.length).toBeGreaterThan(25);
     const problems: string[] = [];
     for (const [page, a] of links) {

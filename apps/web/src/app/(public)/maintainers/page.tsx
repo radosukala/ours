@@ -111,7 +111,7 @@ export default function MaintainersPage() {
           find out whether they want it.
         </p>
         <div className={styles.drafts}>
-          <DraftButton kind="idea" label="Draft an idea" email={email} className="btn btn--primary btn--large" />
+          <DraftButton kind="idea" label="Draft an idea" email={email} className="btn btn--primary btn--large" fallback={false} />
         </div>
         <p>When it&apos;s ready, write to us with:</p>
         <ul className="prose">
@@ -140,7 +140,7 @@ export default function MaintainersPage() {
           what you use or pay for it today.
         </p>
         <div className={styles.drafts}>
-          <DraftButton kind="need" label="Draft a need" email={email} className="btn btn--primary btn--large" />
+          <DraftButton kind="need" label="Draft a need" email={email} className="btn btn--primary btn--large" fallback={false} />
         </div>
         {email ? (
           <p>

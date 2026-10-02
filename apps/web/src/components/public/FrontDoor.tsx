@@ -28,7 +28,8 @@ import { Continuity } from "./Continuity";
 import { CopyLine } from "./CopyLine";
 import { Diagram } from "./Diagram";
 import { DraftButton } from "./Draft";
-import { NEW_POSTS, PREVIEW_CAPTION } from "./FeedPreview";
+import { CaughtUpMarker } from "@/components/Marker";
+import { NEW_POSTS, PREVIEW_CAPTION, PREVIEW_LAST_VISIT, PREVIEW_NOW, SEEN_POST } from "./FeedPreview";
 import { GetInForm } from "./GetInForm";
 import {
   AGENT_FOOT,
@@ -167,9 +168,20 @@ function FeedPanel({ joining, count, seatsOpen, seatsWaiting }: Omit<FrontDoorPr
             </div>
           </div>
         ))}
-        <p className={styles.caughtUp}>
-          <span aria-hidden="true">✓</span> You&apos;re caught up.
-        </p>
+        {/* The app's own marker, above a post from before the last visit,
+            as the app draws it (D-0015 §K; the verification of M-0017). */}
+        <div className={styles.caughtUp}>
+          <CaughtUpMarker since={PREVIEW_LAST_VISIT} now={PREVIEW_NOW} />
+        </div>
+        <div className={styles.samplePost}>
+          <span className={styles.avatar} aria-hidden="true">
+            {SEEN_POST.name[0]}
+          </span>
+          <div>
+            <strong>{SEEN_POST.name}</strong>
+            <p>{SEEN_POST.text}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -325,8 +337,8 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
             </div>
             <div>
               <p>
-                The feed runs under the same framework as every project after it. Its code and its costs are open.
-                Today the founder holds its domain, its data and its keys.
+                The feed will run under the common agreement, which every service on our.one will sign. Its code and
+                its costs are open. Today the founder holds its domain, its data and its keys.
               </p>
               <p className={styles.proofLinks}>
                 <Link href="/projects" className={styles.textLink}>
@@ -466,6 +478,8 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
                       <Link href="/feed">The feed&apos;s page</Link>
                       {" · "}
                       <External href={OPEN_CODE_URL}>Its code</External>
+                      {" · "}
+                      <Link href="/costs">Its costs</Link>
                     </>
                   ) : row.title === "The builder kit" ? (
                     <Link href="/build">Build on our.one</Link>
@@ -491,7 +505,7 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
             <h2 id="part-title">
               <span className={styles.line}>{PART_HEADING[0]} </span>
               <span className={styles.line}>
-                make <em className={styles.ours}>ours</em> next?
+                make <em className={styles.ours}>ours</em>?
               </span>
             </h2>
             <p>

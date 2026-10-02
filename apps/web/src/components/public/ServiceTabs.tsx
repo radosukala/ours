@@ -27,7 +27,7 @@ export function ServiceTabs({ tabs, label }: { tabs: readonly Tab[]; label: stri
   }
 
   return (
-    <div>
+    <div className={styles.tabsBox} data-ready={ready ? "" : undefined}>
       {ready ? (
         <div role="tablist" aria-label={label} className={styles.tabs}>
           {tabs.map((tab, i) => (
@@ -68,6 +68,7 @@ export function ServiceTabs({ tabs, label }: { tabs: readonly Tab[]; label: stri
           role={ready ? "tabpanel" : undefined}
           aria-labelledby={ready ? `${base}-tab-${tab.id}` : undefined}
           hidden={ready && i !== current}
+          tabIndex={ready ? 0 : undefined}
           className={styles.panel}
         >
           {tab.panel}

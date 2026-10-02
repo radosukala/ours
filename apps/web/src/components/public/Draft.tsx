@@ -18,11 +18,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useHydrated } from "./useHydrated";
 import {
+  ANSWER_LIMIT,
   DRAFT_FALLBACK,
   DRAFT_KINDS,
   type DraftKind,
   draftMailto,
+  draftNote,
   draftText,
+  LIMIT_LINE,
 } from "./drafts";
 
 /** The answers so far, per kind: page memory only, never storage. */
@@ -41,17 +44,26 @@ export function DraftButton({
   label,
   email,
   className,
+  fallback = true,
 }: {
   kind: DraftKind;
   label: string;
   /** PROPOSALS_EMAIL, or null while it is unset. */
   email: string | null;
   className?: string;
+  /**
+   * Whether, without JavaScript, the button is a link to /maintainers. On
+   * /maintainers itself the section already says how to write, so there it
+   * is drawn only once the page's JavaScript runs (the verification of
+   * M-0017).
+   */
+  fallback?: boolean;
 }) {
   const ready = useHydrated();
   const dialog = useRef<HTMLDialogElement>(null);
 
   if (!ready) {
+    if (!fallback) return null;
     return (
       <a href={DRAFT_FALLBACK[kind]} className={className}>
         {label}
@@ -94,7 +106,8 @@ function DraftDialog({
   const words = DRAFT_KINDS[kind];
   const id = useId();
   const [values, setValues] = useState<string[]>(() => [...answers[kind]]);
-  const [status, setStatus] = useState<string>(words.note);
+  const note = draftNote(email !== null);
+  const [status, setStatus] = useState<string>(note);
   const [fallback, setFallback] = useState<string | null>(null);
   const fields = useRef<(HTMLTextAreaElement | null)[]>([]);
   const fallbackField = useRef<HTMLTextAreaElement>(null);
@@ -106,12 +119,12 @@ function DraftDialog({
     if (!el) return;
     const opening = () => {
       setValues([...answers[kind]]);
-      setStatus(words.note);
+      setStatus(note);
       setFallback(null);
     };
     el.addEventListener(OPENING, opening);
     return () => el.removeEventListener(OPENING, opening);
-  }, [ref, kind, words.note]);
+  }, [ref, kind, note]);
 
   // When the draft is shown to copy by hand, select it once, as it appears.
   useEffect(() => {
@@ -125,6 +138,7 @@ function DraftDialog({
     setValues(next);
     remember(kind, next);
     setFallback(null);
+    setStatus(note);
   }
 
   /** The draft, or null after pointing at the first empty answer. */
@@ -181,7 +195,9 @@ function DraftDialog({
         <h2 id={`${id}-title`} className="draft__title">
           {words.title}
         </h2>
-        <p className="draft__intro">{words.intro}</p>
+        <p className="draft__intro">
+          {words.intro} {LIMIT_LINE}
+        </p>
         {words.questions.map((q, i) => (
           <label key={q.label} className="draft__field" htmlFor={`${id}-${i}`}>
             <span className="draft__label">{q.label}</span>
@@ -193,7 +209,7 @@ function DraftDialog({
               }}
               value={values[i]}
               placeholder={q.placeholder}
-              maxLength={600}
+              maxLength={ANSWER_LIMIT}
               rows={3}
               onChange={(e) => update(i, e.target.value)}
             />

@@ -98,7 +98,7 @@ export const OURS_RIGHTS: readonly { title: string; text: string }[] = [
 ];
 
 export const OURS_STATUS =
-  "Proposed, in a draft nobody has signed yet. None of it is in force: today, the founder decides.";
+  "Proposed, in a draft nobody has signed yet. None of its collective rights is in force: today, the founder decides. On the feed, you can already take your data and leave, and its costs are public.";
 
 /** The illustration (D-0020 §A): what it shows, and what it isn't. */
 export const ILLUSTRATION = {
@@ -111,7 +111,9 @@ export const ILLUSTRATION = {
   change: "Appoint a successor",
   reset: "Back to the start",
   idle: "Try changing the maintainer. This only illustrates the idea: our.one can't do it today.",
-  done: "The maintainer changed. The people, their relationships and their rules stayed. An illustration: no one has made this change, and no one holds the right to make it yet.",
+  done: "The maintainer changed. The people, their relationships and their rules stayed. An illustration: no one has made this change, and today only the founder could.",
+  /** Before the page's JavaScript runs, there is no button to press (the verification of M-0017). */
+  still: "This only illustrates the idea: our.one can't do it today.",
 } as const;
 
 /* -------------------------------------------------------------- builders */
@@ -194,7 +196,7 @@ export const OPEN_FOOT = "Authority today: the founder, under bootstrap. No memb
 
 /* ------------------------------------------------------------- your part */
 
-export const PART_HEADING = ["What should we", "make ours next?"] as const;
+export const PART_HEADING = ["What should we", "make ours?"] as const;
 
 export const PART_INTRO: readonly string[] = [
   "Bring the people you'd want to hear from.",
@@ -223,6 +225,6 @@ export const PART_OPTIONS = {
 /** Under the options: what a draft does, as true with the address set as without (D-0020 §E). */
 export function partFoot(emailSet: boolean): string {
   return emailSet
-    ? "A draft stays in your browser until you copy it, or send it from your own email. A person reads every one."
+    ? "A draft stays in your browser until you copy it, or send it from your own email. A person reads every one you send."
     : "A draft stays in your browser until you copy it. Needs and ideas open at launch: until then, keep yours.";
 }

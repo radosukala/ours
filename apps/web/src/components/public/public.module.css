@@ -966,6 +966,15 @@
   font-size: 13px;
 }
 
+/* A record's links, apart enough to tap (WCAG 2.5.8; the verification of
+   M-0017). */
+@media (pointer: coarse) {
+  .meta a {
+    display: inline-block;
+    padding-block: 3px;
+  }
+}
+
 .amount {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1019,10 +1028,12 @@
   white-space: nowrap;
 }
 
+/* In the text colour on the accent's tint: the rust on its own tint is
+   4.13:1 (the verification of M-0017). */
 .badgeRecorded {
   border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text);
 }
 
 .badgeStated {

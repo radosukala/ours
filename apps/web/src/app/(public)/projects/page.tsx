@@ -12,20 +12,16 @@
  * form, "go to", so the claims scan has nothing to let through here.
  *
  * Since D-0020 §B, the page also shows the front door's two possibilities,
- * each labelled, with no project announced, and the next one can start as
- * a draft: a need, or an idea (D-0020 §E). Rendered per request, because
- * the drafts offer email only while PROPOSALS_EMAIL is set.
+ * each labelled, with no project announced. The drafts are where D-0020 §E
+ * puts them: the front door, /build and /maintainers (the verification of
+ * M-0017).
  */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { POSSIBILITIES } from "@/components/public/door";
-import { DraftButton } from "@/components/public/Draft";
 import { MAINTAINER, THRESHOLD } from "@/components/public/handover";
 import { LEDE } from "@/components/public/lede";
 import styles from "@/components/public/public.module.css";
-import { proposalsEmail } from "@/core/config";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -34,7 +30,6 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
-  const email = proposalsEmail();
   return (
     <article className={styles.page}>
       <p className={styles.kicker}>A first project. A wider possibility.</p>
@@ -118,12 +113,8 @@ export default function ProjectsPage() {
         <h2 id="project-next">The next one</h2>
         <p>
           Not chosen yet. Propose a service, or tell us what you need. Either
-          can start as a draft, before any code.
+          can start before any code.
         </p>
-        <div className={styles.drafts}>
-          <DraftButton kind="need" label="Draft a need" email={email} className="btn btn--primary btn--large" />
-          <DraftButton kind="idea" label="Draft an idea" email={email} className="btn btn--outline btn--large" />
-        </div>
         <p className={styles.links}>
           <Link href="/build" className={styles.pairLink}>
             Build on our.one

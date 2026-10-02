@@ -13,9 +13,11 @@ it in order, and tell the person what you are doing at each step.
   its maintainer, under the common agreement: https://our.one/agreement
 - The agreement is a draft and nobody has signed it, so none of its
   collective rights is in force yet. Don't tell the person otherwise.
-- The rules a project follows come from that agreement. Three of them go
-  further than its words, and wait for the founder's approval: the data
-  boundary in rule 1, and no session recording and no data hubs in rule 4.
+- The rules a project follows come from that agreement: the rules block
+  that step 3 puts in the project's `AGENTS.md`. Three of them go further
+  than its words, and wait for the founder's approval: the data boundary
+  in the block's rule 1, and no session recording and no data hubs in its
+  rule 4.
 - The feed is the first project. Its code is the reference, and it passes
   the same check you will run. Its `our.one.json` and `AGENTS.md` are the
   examples to follow:
@@ -49,33 +51,40 @@ then be proposed to our.one, and let them decide.
 ## 1. Ask the person
 
 Ask these, and keep the answers: they fill in `our.one.json`, `COSTS.md`
-and `PITCH.md` later.
+and `PITCH.md` later. Step 2 puts some in `PITCH.md`; if the person stops
+after it, keep the rest in a short `NOTES.md` beside it. Neither holds
+anyone's data but the person's own.
 
-1. What should it do, and for whom? What do those people use or pay for
-   today?
+1. What should it do, and for whom? What is it called, even for now? What
+   do those people use or pay for today?
 2. Is there code already? If so, where? Bring it into the project's folder.
 3. What will it keep about the people who use it, and for how long?
    Everything it stores about a person counts: an email address, a name,
-   what they write, when they did something. Who can see each of these?
-4. Which outside services will it use: hosting, a database, email,
-   payments, AI models, error reports, maps? Hosting and the database count
-   too, once chosen.
+   what they write, when they did something. Who can see each of these,
+   including whoever runs the service? How will a person download it, and
+   delete it?
+4. Which outside services will it use: hosting, a database, email, a
+   domain, payments, AI models, error reports, maps? The person chooses the
+   companies, because they decide where people's data is kept and what it
+   costs. If they have no view, propose the simplest, and ask them to
+   choose.
 5. What will it cost each month, who pays, and what is the maintainer paid,
    if anything?
 6. Which open-source licence? If they have no view, suggest Apache-2.0,
-   the feed's licence.
-7. Who maintains it, and how can people reach them?
+   the feed's licence, and ask them to say yes to it.
+7. Who maintains it, and how can people reach them? Where will its code be
+   public (the repository's address)?
 8. What do they want from our.one now: feedback, people to try it, or
    people who would pay? And what has to happen before it runs for real?
 9. How could they find out whether those people want it: people they could
-   ask, or a trial they could offer?
+   ask, or a trial they could offer? And what happens if they don't?
 
 ## 2. Draft the idea, before any code
 
 Before anything is set up or built, write the idea down with the person, in
 `PITCH.md` at the project's root (make the folder if there is none yet).
-Use these headings, in this order, because `init` and the check expect
-them:
+Use these headings, in this order: they are the ones `init` writes, so
+the draft and the finished proposal are one file:
 
 ```text
 # Proposal: <the project's name>
@@ -105,7 +114,11 @@ the order our.one recommends: a need people have is worth more than code
 nobody asked for. Interest is a start. It isn't an audience, or funding.
 
 - **To find out first:** stop here. Help them put the draft in front of
-  the people it would serve. Once proposals open, they can send it to
+  the people it would serve. `PITCH.md` is written for our.one, so write
+  them a short note in plain words, from it, that they can send or read
+  out themselves. Finding out writes no code and collects no one's data: no
+  sign-up page and no form, and no list of who said yes in the project's
+  folder. Once proposals open, they can send the draft to
   our.one too: the address is on https://our.one/maintainers. Come back to
   step 3 when they decide to build.
 - **If they have code already, or decide to build now:** go on.
@@ -138,7 +151,7 @@ The last line prints the file's SHA-256. It must be:
 
 If it isn't, stop and tell the person. The tool is one file with no
 dependencies, for Node 18 or later. It reads the project's files and runs
-`git` to list them. It makes no network request, and when it finds a
+`git` to list them; `init` also reads the remote's address. It makes no network request, and when it finds a
 secret it prints where, never the secret. You can read it before you run
 it.
 
@@ -163,8 +176,9 @@ existing `CLAUDE.md` is left as it is:
 | `.claude/settings.json` | A Claude Code stop hook: the check runs each time you stop |
 | `.github/workflows/our-one.yml` | The check, on every push and pull request |
 
-Then put the licence's full text in `LICENSE`. A line naming the licence
-isn't enough.
+Then put the licence's full text in `LICENSE`, as its publisher gives it
+(for Apache-2.0, https://www.apache.org/licenses/LICENSE-2.0.txt), never
+from memory. A line naming the licence isn't enough.
 
 If the project is a folder inside a larger repository, run the tool with
 `--project <folder>`. GitHub runs only the workflows at the repository's
@@ -254,9 +268,10 @@ Finish `PITCH.md` with the person: the parts you left as TODO in step 2,
 and anything that has changed since. It asks what the common agreement
 asks of every proposal: the need, what people would have to change, the price,
 the scope and the budget with the maintainer's pay, what it asks for now,
-and what has to happen first. Copy into it the check's RESULT line and its
+and what has to happen first. Copy into it the check's RESULT lines and its
 tool sha256 line, with the commit the check ran on. Commit `PITCH.md`
-afterwards: our.one runs its own copy of the check on the commit you name.
+afterwards: that commit changes only `PITCH.md`, and our.one runs its own
+copy of the check on the commit you name.
 
 Proposals go by email, and a person reads every one. Once proposals open,
 the address is on https://our.one/maintainers. Until then, that page says

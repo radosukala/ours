@@ -5,9 +5,9 @@ the rules, and a tool that sets a project up and checks it. Decided by
 [`D-0019`](../decisions/D-0019.md), built under
 [`M-0016`](../mandates/M-0016.md).
 
-**Not deployed yet.** our.one serves nothing at these addresses until it
-is deployed, and the line below points at nothing until then. The files are
-here, in the repository, in the meantime.
+**Where the files are.** Once our.one is deployed, it serves them at the
+addresses below, from the commit it runs. They are here, in the
+repository, either way.
 
 | File | What it is | Served at, once deployed |
 |---|---|---|

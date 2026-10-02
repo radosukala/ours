@@ -193,7 +193,18 @@ const SAMPLES: Record<string, string[]> = {
     "our.one belongs to you.",
     "You will be its owners.",
   ],
-  [`\\bit(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is) ours\\b`]: ["It's ours.", "it is ours"],
+  // Changed after the verification of M-0017: the rule was widened ("It's
+  // already ours.", "The feed is ours."), and two rules joined it for D-0020's
+  // first prohibition and "protected by our.one".
+  "(?<![\\w.])[\\w.]+(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is| are) (?:(?!not\\b|never\\b)\\w+ )?ours\\b": ["It's ours.", "it is ours", "It's already ours.", "It is now ours.", "The feed is ours.", "our.one is ours."],
+  "\\buser control (?:is|was|has been) (?:now |already )?(?:built|here|in force|in place|live|working|ready)\\b|\\bholder (?:now|already) (?:holds?|has|keeps|owns)\\b|\\bholder (?:exists|is (?:now )?(?:formed|founded|set up|in place))\\b|\\bsafeguards? (?:is|are|was|were|has been|have been) (?:now |already )?(?:built|in place|working|live|in force)\\b": [
+    "User control is built.",
+    "The holder now holds your data.",
+    "The holder exists.",
+    "The data safeguards are built.",
+    "Every safeguard is now in place.",
+  ],
+  "\\bprotected by our\\.one\\b": ["Your data is protected by our.one.", "Protected by our.one"],
   // "hand it to" since M-0013 (D-0015 §C): the rule could not see the signed promise's form. The
   // verification of M-0013 added the past tense and our.one by name.
   "\\bhand(?:s|ed|ing)? (?:it )?over\\b|\\bhand(?:s|ed|ing)? (?:it|our\\.one) (?:over )?to\\b|\\bgives? it away\\b": [

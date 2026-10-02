@@ -1,0 +1,71 @@
+{
+  "$schema": "https://our.one/kit/our.one.schema.json",
+  "rules": "0",
+  "name": "Linden Tools",
+  "purpose": "Neighbours on Linden Row list the tools they're happy to lend and borrow each other's for a few days, instead of asking in a WhatsApp group where requests get lost or buying tools they use twice a year.",
+  "maintainers": [
+    {
+      "name": "Mira Holm",
+      "contact": "mira.holm@example.test"
+    }
+  ],
+  "source": "https://git.example.test/mira/linden-tools",
+  "license": "Apache-2.0",
+  "costs": "COSTS.md",
+  "data": {
+    "collects": [
+      {
+        "what": "Each person's name.",
+        "why": "So the neighbours who have joined know whose tools they are, and who is asking to borrow one.",
+        "kept": "Until the person deletes their account."
+      },
+      {
+        "what": "Each person's email address.",
+        "why": "To send them sign-in links. Neighbours don't see it.",
+        "kept": "Until the person deletes their account."
+      },
+      {
+        "what": "Each person's house number on Linden Row, just the number.",
+        "why": "So neighbours know which house to go to for a tool, and where to bring it back.",
+        "kept": "Until the person deletes their account."
+      },
+      {
+        "what": "The tools each person lists, and when they listed them.",
+        "why": "So the neighbours who have joined can see what they could borrow.",
+        "kept": "Until the person removes the tool, or deletes their account."
+      },
+      {
+        "what": "Loans: who asked to borrow which tool from whom, and when it was asked for, lent, returned, declined or withdrawn.",
+        "why": "So the lender and the borrower, the only two people who see a loan, can keep track of the tool.",
+        "kept": "A year after the loan ends; a request nobody answers, a year after it was made; a tool still lent out stays on record until it is back. Deleted at once with either person's account."
+      },
+      {
+        "what": "Sign-in links: the email address a link was sent to, whether it is for joining or signing in, and when it was made. Only a hash of the link's code is stored.",
+        "why": "To let people join and sign in with a link sent by email, without a password.",
+        "kept": "Until it is used, or for 15 minutes; an unused one is deleted within the hour after."
+      },
+      {
+        "what": "Sessions: when a person signed in, and when that session ends. The session's code is in a cookie on their device; only its hash is stored.",
+        "why": "To keep a person signed in.",
+        "kept": "30 days, or until they sign out or delete their account; an ended one is deleted within the hour after."
+      }
+    ],
+    "sharedWith": [
+      {
+        "who": "Hetzner: a small server in Germany that Mira rents",
+        "what": "Everything in data.collects: the database is a file on the server, in Hetzner's data centre, and visits reach it through Hetzner's network. Mira, who runs the server, could read all of it, loans included.",
+        "why": "To run Linden Tools and keep its database.",
+        "packages": []
+      },
+      {
+        "who": "Resend",
+        "what": "A person's email address, and the email with their sign-in link, each time they ask for one.",
+        "why": "To send sign-in links by email. Only when the server's environment holds a Resend key; without one, nothing is sent.",
+        "packages": []
+      }
+    ],
+    "boundary": ["src/data"],
+    "export": "Signed in, open Your account and choose Download everything about you: one JSON file with your account, your tools, every loan you are part of, and your sign-in links and sessions.",
+    "delete": "Signed in, open Your account and choose Delete your account: it deletes your account, email address, house number, tools, every loan you were part of, and your sign-in links and sessions, at once."
+  }
+}

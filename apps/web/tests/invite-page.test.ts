@@ -44,7 +44,9 @@ async function invitePage(): Promise<string> {
 
 const HEADING = "Anna FICTIONAL (@anna_inv) invited you to connect on our.one";
 const OLD_PITCH = "A home for friends and people you choose to follow. Their posts, in order, with an end when you're caught up.";
-const PROMISE_LINK = /<a [^>]*href="\/#front-runs"[^>]*>The promise behind our\.one<\/a>/;
+// Changed after the verification of M-0017: the section on who runs it moved
+// to /feed with the front page's words (D-0020 §B), so the link goes there.
+const PROMISE_LINK = /<a [^>]*href="\/feed#front-runs"[^>]*>The promise behind our\.one<\/a>/;
 
 beforeEach(async () => {
   await reset();

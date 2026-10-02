@@ -292,8 +292,12 @@ describe("the front door's copy (D-0020 §A)", () => {
     const html = section(render(), "ours");
     const text = textOf(html);
     expect(text).toContain(ILLUSTRATION.label);
-    expect(text).toContain(ILLUSTRATION.idle);
+    // Changed after the verification of M-0017: with no button yet, it doesn't
+    // invite a press; and its last words say who could make the change today.
+    expect(text).toContain(ILLUSTRATION.still);
+    expect(text).not.toContain(ILLUSTRATION.idle);
     expect(ILLUSTRATION.done).toContain("An illustration");
+    expect(ILLUSTRATION.done).toContain("today only the founder could");
     expect(html).not.toContain(ILLUSTRATION.change);
   });
 
@@ -319,11 +323,15 @@ describe("the front door's copy (D-0020 §A)", () => {
   it("your part: the feed, a need and an idea, with what a draft does, true with the address set and without it", () => {
     for (const email of [null, "ideas@example.test"]) {
       const text = textOf(section(render({ email }), "part"));
-      expect(text).toContain("What should we make ours next?");
+      // Changed after the verification of M-0017: "next" said something had
+      // already been made ours; the heading asks without it.
+      expect(text).toContain("What should we make ours?");
+      expect(text).not.toContain("make ours next");
       expect(text).toContain(partFoot(email !== null));
     }
     expect(partFoot(false)).toContain("Needs and ideas open at launch");
-    expect(partFoot(true)).toContain("A person reads every one.");
+    // Changed after the verification of M-0017: every one that is sent.
+    expect(partFoot(true)).toContain("A person reads every one you send.");
   });
 });
 
@@ -377,12 +385,15 @@ describe("the drafts (D-0020 §D and §E)", () => {
     expect(withAddress).toContain("unless you copy it or open it in your own email app and send it yourself.");
   });
 
-  it("/projects shows the two possibilities, labelled, and the drafts as links without JavaScript", () => {
+  // Changed after the verification of M-0017: the drafts are where D-0020 §E
+  // puts them (the front door, /build and /maintainers), not on /projects.
+  it("/projects shows the two possibilities, labelled, and no drafts", () => {
     const html = renderToStaticMarkup(createElement(ProjectsPage));
     const text = textOf(html);
     for (const p of POSSIBILITIES) expect(text).toContain(`${POSSIBILITY_LABEL} ${p.heading.join(" ")} ${p.text}`);
     expect(text).toContain("Neither is a project: nothing is announced, and no one has proposed either to our.one.");
-    expect(links(html)).toEqual(expect.arrayContaining([["Draft a need ↗", DRAFT_FALLBACK.need], ["Draft an idea ↗", DRAFT_FALLBACK.idea], ["The feed's page", "/feed"]]));
+    expect(links(html)).toContainEqual(["The feed's page", "/feed"]);
+    expect(links(html).filter(([t]) => /^Draft /.test(t))).toEqual([]);
   });
 });
 

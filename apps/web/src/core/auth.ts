@@ -207,7 +207,7 @@ export async function createSession(
   return { id, cookieValue: signValue(id), expiresAt };
 }
 
-/** The session id inside a cookie value, if its HMAC is ours. */
+/** The session id inside a cookie value, if its HMAC is this server's. */
 export function sessionIdFromCookie(value: unknown): string | null {
   return verifySignedValue(value);
 }

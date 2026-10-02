@@ -14,12 +14,20 @@ export type DraftWords = {
   questions: readonly [Question, Question, Question];
   /** The first line of the draft, and the email's subject. */
   subject: string;
-  /** Shown under the buttons until something happens. */
-  note: string;
 };
 
-const NOTE =
-  "Nothing is saved, sent or counted. Copying puts the draft on your clipboard; email opens your own email app, and you decide whether to send it. Close or reload this page, and a draft you haven't copied is gone.";
+/** Each answer's length, said in the dialog (the verification of M-0017). */
+export const ANSWER_LIMIT = 600;
+
+/** Under the buttons until something happens: with the email button, and without it. */
+export function draftNote(emailSet: boolean): string {
+  return emailSet
+    ? "Nothing is saved, sent or counted. Copying puts the draft on your clipboard; email opens your own email app, and you decide whether to send it. Close or reload this page, and a draft you haven't copied is gone."
+    : "Nothing is saved, sent or counted. Copying puts the draft on your clipboard. Close or reload this page, and a draft you haven't copied is gone.";
+}
+
+/** Said under the intro: how long an answer can be. */
+export const LIMIT_LINE = `Each answer can be up to ${ANSWER_LIMIT} characters.`;
 
 export const DRAFT_KINDS: Readonly<Record<DraftKind, DraftWords>> = {
   need: {
@@ -36,7 +44,6 @@ export const DRAFT_KINDS: Readonly<Record<DraftKind, DraftWords>> = {
       },
     ],
     subject: "A need for our.one",
-    note: NOTE,
   },
   idea: {
     eyebrow: "An idea, before any code",
@@ -55,7 +62,6 @@ export const DRAFT_KINDS: Readonly<Record<DraftKind, DraftWords>> = {
       },
     ],
     subject: "An idea for our.one",
-    note: NOTE,
   },
 };
 

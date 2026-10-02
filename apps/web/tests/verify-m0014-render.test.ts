@@ -749,7 +749,9 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
 
   it("closed: 'The promise behind our.one' is an internal link with a name and no new tab, to /#front-runs, and the front page has that heading in every state a signed-out visitor can meet (measured in Chrome: Next's client navigation to it from another public page at 390px, and a full load of /#front-runs at 1280px, both put the heading at the top of the window, 0px)", async () => {
     const link = promiseLink(await invitePage())[0]!;
-    expect([link.attrs.href, link.attrs.target, link.attrs.rel]).toEqual(["/#front-runs", undefined, undefined]);
+    // Changed after the verification of M-0017: the section on who runs it moved
+    // to /feed with the front page's words (D-0020 §B), and the link with it.
+    expect([link.attrs.href, link.attrs.target, link.attrs.rel]).toEqual(["/feed#front-runs", undefined, undefined]);
     for (const joining of [true, false]) {
       for (const count of [null, 0]) {
         const tree = parse(renderToStaticMarkup(createElement(FrontPage, { joining, count, seatsOpen: null })));

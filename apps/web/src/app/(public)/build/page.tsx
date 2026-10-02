@@ -45,7 +45,7 @@ const GIVE_UP: readonly string[] = [
 
 /** What has been tried, and with which line (H15; C22 of M-0016's re-check; D-0020 §D). */
 const TRIAL =
-  "It's written for coding agents that can read a web page and run commands. This line hasn't been tried yet. The line before it was tried once: an agent in Claude Code, given it and a person's answers, built a small fictional app and passed version 0.1.0 of the check.";
+  "It's written for coding agents that can read a web page and run commands. It has been tried once, in Claude Code, with a fictional person's answers: the agent drafted the idea first, and stopped when the person chose to find out. Told to build, it built a small app that passed version 0.2.1 of the check, once the person had said where its code would be public and which companies would host it. The line before it was tried once too, and passed version 0.1.0.";
 
 type Rule = { title: string; checked: string };
 

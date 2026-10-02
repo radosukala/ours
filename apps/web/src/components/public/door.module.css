@@ -445,13 +445,38 @@
   font-weight: 700;
 }
 
+/* The ring inside the tab, so the tab list's scroll box on a phone can't
+   cut it away (the verification of M-0017). */
+.tab:focus-visible {
+  outline-offset: -3px;
+}
+
 .panel {
   padding-top: 40px;
 }
 
-.panel + .panel:not([hidden]) {
+/* Without JavaScript the panels stand one under another, each set off by
+   a rule; once the tabs are drawn, only the chosen one shows. */
+.panel:not([role="tabpanel"]) + .panel:not([role="tabpanel"]) {
   margin-top: 24px;
   border-top: 1px solid var(--line);
+}
+
+/* Before the page's JavaScript runs, a browser that will run it shows the
+   first panel alone, and keeps the tabs' room, so nothing below jumps when
+   the tabs arrive (the verification of M-0017). A browser without
+   JavaScript shows every panel. */
+@media (scripting: enabled) {
+  .tabsBox:not([data-ready]) .panel + .panel {
+    display: none;
+  }
+
+  .tabsBox:not([data-ready])::before {
+    content: "";
+    display: block;
+    height: 52px;
+    border-bottom: 1px solid var(--line);
+  }
 }
 
 .possibility {
@@ -880,6 +905,13 @@
 
 .builders .eyebrow {
   color: var(--acid);
+}
+
+/* On the dark band the ring is the acid: the rust is 2.52:1 on the forest,
+   under the 3:1 a focus ring needs (the verification of M-0017). */
+.builders :focus-visible {
+  outline: 3px solid var(--acid);
+  outline-offset: 3px;
 }
 
 .builders .sectionHeading h2 {
@@ -1315,7 +1347,7 @@
   /* The picture's words, big enough to read at a phone's width. */
   .orbitKicker,
   .orbitFirstKicker {
-    font-size: 12px;
+    font-size: 16px;
     letter-spacing: 0;
   }
 
@@ -1548,6 +1580,24 @@
 
   .partIntro h2 {
     font-size: 42px;
+  }
+}
+
+/* 44px to tap on a touch screen (SPEC §9), as .pledgeLink and .pairLink
+   are (the verification of M-0017). */
+@media (pointer: coarse) {
+  .btnSmall,
+  .textLink,
+  .proofLinks .textLink {
+    min-height: 44px;
+  }
+
+  .values a,
+  .agentActions a,
+  .openFoot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }
 

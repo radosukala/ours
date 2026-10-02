@@ -1793,6 +1793,27 @@ body:has(.public) {
   color: var(--ink);
 }
 
+/* 44px to tap on a touch screen (SPEC §9): the header's places, Sign in
+   and the wordmark; and the footer's links, in rows far enough apart that
+   their targets don't meet (the verification of M-0017). */
+@media (pointer: coarse) {
+  .public-nav a,
+  .public-wordmark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .public-header__signin {
+    min-height: 44px;
+  }
+
+  .public-footer .site-footer__links a {
+    display: inline-block;
+    padding-block: 5px;
+  }
+}
+
 /* The shared classes, in the identity. */
 .public .headline {
   font-size: clamp(40px, 6vw, 76px);
@@ -1964,6 +1985,13 @@ body:has(.public) {
   font-weight: 400;
   line-height: 1.5;
   resize: vertical;
+}
+
+/* The placeholders in the page's muted ink, not the browser's grey, which
+   is 3.46:1 on the dark field (the verification of M-0017). */
+.public .draft__field textarea::placeholder {
+  color: var(--sub);
+  opacity: 1;
 }
 
 .draft__fallback {
