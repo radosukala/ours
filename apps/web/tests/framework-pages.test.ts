@@ -106,11 +106,11 @@ describe("/agreement: being developed, and honest about it", () => {
       expect(line, line).not.toMatch(/\b(?:is|are) built\b|\bin force\b/i);
     }
     const text = textOf(section);
-    expect(text).toContain("Seven safeguards hold that line. None of them is built yet:");
+    expect(text).toContain("Seven safeguards are meant to hold that line. None of them is built yet:");
     expect(text).toContain(
-      "Until all seven exist for a service, it gets nothing of yours from our.one: no data, no connections, no sign-in. The feed is the one exception, run by the founder until the holder exists.",
+      "Until all seven exist for a service, it gets nothing of yours from our.one: no data, no connections, no sign-in. The feed is the one exception: the founder holds it until the holder exists.",
     );
-    expect(text).toContain("it can't be prevented.");
+    expect(text).toContain("a service could misuse what it is allowed to show you or send. That can be recorded and challenged; it can't be prevented.");
   });
 
   it("states the feed's promise in the status line's form, never with 'have joined', and links onward", () => {
@@ -120,7 +120,8 @@ describe("/agreement: being developed, and honest about it", () => {
       `The contract promises: at ${THRESHOLD} people, as it counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`,
     );
     expect(text).not.toContain("have joined");
-    expect(text).toContain(`Run by ${MAINTAINER}, the founder, unpaid by choice.`);
+    expect(text).toContain(`Run by ${MAINTAINER}, the founder, through Ctrl AI, Inc., the founder's company. Unpaid, by choice.`);
+    expect(text).toContain("If that count is never reached, none of it goes to that body. The promise not to sell still holds.");
     for (const href of ["/maintainers", "/projects", "/contract"]) expect(markup).toContain(`href="${href}"`);
   });
 });
@@ -131,17 +132,20 @@ describe("/projects: the feed as the first project", () => {
     const markup = html(ProjectsPage);
     const text = textOf(markup);
     expect(text).toContain(LEDE);
-    expect(ddAfter(markup, "Run by")).toEqual([`${MAINTAINER}, the founder`]);
+    expect(ddAfter(markup, "Run by")).toEqual([`${MAINTAINER}, the founder, through Ctrl AI, Inc., the founder's company`]);
     expect(ddAfter(markup, "Paid")).toEqual(["None, by choice"]);
     expect(markup).toContain('href="/costs"');
     expect(ddAfter(markup, "Held today")).toEqual(["The founder holds its domain, its data and its keys."]);
     expect(ddAfter(markup, "Promised")).toEqual([
-      `At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`,
+      `At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members. If that count is never reached, none of it goes to that body, and the promise not to sell still holds.`,
     ]);
-    expect(ddAfter(markup, "Under the common agreement")[0]).toBe(
-      "In force: you can take your data and leave, and see its costs and rules. Promised: nobody sells it. Not yet: deciding its rules, approving its budget, changing who runs it.",
+    expect(ddAfter(markup, "Its users&#x27; rights today")[0]).toBe(
+      "Held by the contract: taking your data and leaving while your account is active, and seeing its costs and rules. Promised: nobody sells it. Not yet: deciding its rules, approving its budget, changing who runs it.",
     );
-    expect(ddAfter(markup, "Its exception")[0]).toContain("It is the one service that runs before its data safeguards exist.");
+    expect(ddAfter(markup, "Its exception")[0]).toBe(
+      "It is the one service that runs before its data safeguards exist. The founder holds it until the holder exists.",
+    );
+    expect(text).toContain("Every service on our.one will be a project with a page like this one");
     for (const href of ["/maintainers", "/agreement", "/contract"]) expect(markup).toContain(`href="${href}"`);
     expect(text).not.toContain("have joined");
   });
@@ -176,7 +180,13 @@ describe("/maintainers: 'Build the next one'", () => {
     expect(text).toContain("We're looking for people to build, improve and run the next ones, paid by the people who choose them, under the common agreement.");
     expect(text).toContain("Agreed pay, once the service is funded, for an agreed term, with a way to renew. Your pay is public.");
     expect(text).toContain("Money from anyone who expects a return from the service.");
-    expect(text).toContain("We don't judge whether it's a good idea: the people who would use it decide that.");
+    expect(text).toContain("We read every proposal by hand, and check it against the common agreement and the law.");
+    expect(text).not.toContain("good idea");
+    expect(text).toContain(
+      "If people choose your service and pay for it, you're paid what your agreement says. our.one takes no money for anyone until the holder exists.",
+    );
+    expect(text).not.toContain("pay you directly");
+    expect(text).toContain("It is meant to stay out of your reach");
     expect(text).toContain(
       "No one has signed the common agreement yet, there are no protected services besides the feed, and none of the data safeguards is built.",
     );

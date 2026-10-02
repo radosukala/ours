@@ -58,6 +58,8 @@ const MONEY =
 
 /** An apostrophe as it may be written in source: ' ’ &apos; &#39; &rsquo; */
 const APOS = "(?:'|’|&apos;|&#39;|&rsquo;)";
+/** An optional quotation mark, straight or curly, slipped between the words of a claim. */
+const QUOTE = `["“”'‘’]?`;
 
 export const PROHIBITED: readonly Prohibited[] = [
   // The kernel's list (packages/kernel/src/rules.ts, noFictionalOwnership),
@@ -170,6 +172,39 @@ export const PROHIBITED: readonly Prohibited[] = [
     pattern: /\bhand(?:s|ed|ing)? (?:it )?over\b|\bhand(?:s|ed|ing)? (?:it|our\.one) (?:over )?to\b|\bgives? it away\b/i,
     reason:
       "M-0011: every sentence about the handover is listed by exact text in ALLOWLIST; any other is refused until it is reviewed and listed.",
+  },
+  // The verification of M-0015 (honesty 8 and 15). The term /agreement
+  // defines, said of anything as a fact: in the active voice ("its users
+  // own it", "the users are its owners"), with a word or a quotation mark
+  // slipped in ('"owned" by its users', "owned by all its users", 'will be
+  // "owned"'), and in other compounds ("people-owned").
+  {
+    pattern:
+      /\b(?:users|people) own\b|\bwho use (?:it|them|the service|this service) own\b|\b(?:users|people|members) are (?:its |the |our )?(?:co-)?owners\b/i,
+    reason: "D-0012 and D-0017 §B: \"owned\" is defined on /agreement and claimed of nothing; none of its rights is in force.",
+  },
+  {
+    pattern: new RegExp(
+      `\\bowned${QUOTE}\\s+by\\s+(?:all\\s+(?:of\\s+)?|those\\s+who\\s+use|everyone\\s+who\\s+uses?)|\\bowned${QUOTE}\\s+by\\s+(?:(?:its|our|the)\\s+)?${QUOTE}(?:users|people|members|community|everyone)${QUOTE}|\\bowned${QUOTE}\\s+by\\s+(?:(?:its|our|the)\\s+)?${QUOTE}(?:users|people|members)\\b|\\bwill\\s+(?:\\w+\\s+)?(?:be\\s+)?${QUOTE}own(?:ed)?\\b|\\bpeople[- ]owned\\b`,
+      "i",
+    ),
+    reason: "D-0012 and D-0017 §B: \"owned\" is defined on /agreement, in its listed words only, and claimed of nothing.",
+  },
+  {
+    // The handover told as done in two more verbs, and the holder as
+    // having received what it only will (the verification of M-0015).
+    pattern:
+      /\b(?:moved|went|passed|transferred|handed) to the holder\b|\b(?:moved|now belongs?) to (?:(?:a|the) not-for-profit body of |(?:a|the) body of )?(?:its |the |our )?members\b/i,
+    reason: "D-0012 and D-0017 §E: nothing has gone to the holder or to the members' body; no holder exists.",
+  },
+  {
+    // D-0017 prohibits promising builders income: "can earn a living"
+    // stays conditional on people choosing and paying for the service.
+    pattern: new RegExp(
+      `\\byou(?:${APOS}ll| will) (?:be paid|earn)\\b|\\bwill earn (?:a|your) living\\b|\\bguaranteed (?:income|pay)\\b`,
+      "i",
+    ),
+    reason: "D-0017: no promise of income to builders; pay depends on people choosing and paying for a service.",
   },
   {
     pattern: /algorithm-free/i,

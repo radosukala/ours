@@ -109,11 +109,14 @@ export function controllerRepresentative(): string | null {
 
 /**
  * Where proposals and needs are sent (D-0018 §D; SPEC §18.17): an address
- * the founder chooses, read by hand. Null unless PROPOSALS_EMAIL is an
- * email address and not the confirmation placeholder: a missing human
- * decision switches proposals off, and the pages say they open at launch.
+ * the founder chooses, read by hand. Null unless a data controller is named
+ * and PROPOSALS_EMAIL is an email address and not the confirmation
+ * placeholder: a missing human decision switches proposals off, and the
+ * pages say they open at launch. Without a controller nobody would be
+ * answerable for what is sent (the verification of M-0015, honesty 7).
  */
 export function proposalsEmail(): string | null {
+  if (!controller()) return null;
   const email = env("PROPOSALS_EMAIL");
   if (!email || UNCONFIRMED.test(email)) return null;
   try {

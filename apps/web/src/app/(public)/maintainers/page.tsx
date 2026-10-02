@@ -64,9 +64,10 @@ export default function MaintainersPage() {
           <li>Your copyright. You keep it, and grant whoever comes next the rights needed to keep the service going.</li>
         </ul>
         <p>
-          The people who choose your service pay you directly. our.one takes
-          no money for anyone until the holder exists, and then only shared
-          costs, in public.
+          If people choose your service and pay for it, you&apos;re paid what
+          your agreement says. our.one takes no money for anyone until the
+          holder exists. After that, a protected service&apos;s funds are kept
+          by the holder, and only shared costs are taken from them, in public.
         </p>
       </section>
 
@@ -82,10 +83,10 @@ export default function MaintainersPage() {
       <section aria-labelledby="maintainers-data">
         <h2 id="maintainers-data">Your users&apos; data</h2>
         <p>
-          It stays out of your reach: you get only what your service declares,
-          through the holder, and never the database or the list of people.
-          None of that is built yet, so until it is, a new service gets
-          nothing of theirs from our.one.{" "}
+          It is meant to stay out of your reach: you would get only what your
+          service declares, through the holder, and never the database or the
+          list of people. None of that is built yet, so until it is, a new
+          service gets nothing of theirs from our.one.{" "}
           <Link href="/agreement">The common agreement</Link> has the details.
         </p>
       </section>
@@ -101,8 +102,7 @@ export default function MaintainersPage() {
         </ul>
         <p>
           We read every proposal by hand, and check it against the common
-          agreement and the law. We don&apos;t judge whether it&apos;s a good
-          idea: the people who would use it decide that.
+          agreement and the law.
         </p>
         {email ? (
           <p>

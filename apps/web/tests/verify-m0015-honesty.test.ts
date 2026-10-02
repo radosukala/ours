@@ -150,7 +150,7 @@ afterEach(() => {
 /* ------------------------------------------------------------- defects */
 
 describe("defects (each FAILS on 185bb67)", () => {
-  it("DEFECT: (HIGH) 'Whoever runs a service is paid directly by the people who choose it' and 'pay you directly' have no source; the holder keeps a protected service's funds (D-0017 §D) and /agreement's own Part 7 sends them to the holder", () => {
+  it("fixed: (HIGH) 'Whoever runs a service is paid directly by the people who choose it' and 'pay you directly' have no source; the holder keeps a protected service's funds (D-0017 §D) and /agreement's own Part 7 sends them to the holder", () => {
     // The records: the holder keeps the funds, and nothing says "directly".
     expect(record("decisions/D-0017.md")).toContain(
       "A holder keeps the name, the domain, the data, the deploy and the funds",
@@ -175,7 +175,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     expect(textOf(render(MaintainersPage))).not.toMatch(/\bpay you directly\b/);
   });
 
-  it("DEFECT: (HIGH) /projects says every service on our.one 'is a project, run under the common agreement' and lists what is 'In force' under it; the agreement is an unsigned draft that the feed 'will also run under' (/contract)", () => {
+  it("fixed: (HIGH) /projects says every service on our.one 'is a project, run under the common agreement' and lists what is 'In force' under it; the agreement is an unsigned draft that the feed 'will also run under' (/contract)", () => {
     expect(textOf(render(ContractPage))).toContain("The feed will also run under the common agreement");
     const agreement = textOf(render(AgreementPage));
     expect(agreement).toContain("No one has signed this agreement yet.");
@@ -189,7 +189,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (MEDIUM) the data line is told as held today: 'the line nobody running a service crosses' and 'Seven safeguards hold that line', while none of the seven is built", () => {
+  it("fixed: (MEDIUM) the data line is told as held today: 'the line nobody running a service crosses' and 'Seven safeguards hold that line', while none of the seven is built", () => {
     expect(record("decisions/D-0018.md")).toContain("Today none is built.");
     expect(record("decisions/D-0017.md")).toContain(`Public wording says "can't" only where code makes it true.`);
     const text = textOf(render(AgreementPage));
@@ -203,7 +203,7 @@ describe("defects (each FAILS on 185bb67)", () => {
       await reset();
     });
 
-    it("DEFECT: (MEDIUM) 'Take your own data and leave … whenever you want', 'In force on the feed … in Settings', leaves out the suspended account, which can neither export nor delete; D-0016 §N fixed the same omission on the front page", async () => {
+    it("fixed: (MEDIUM) 'Take your own data and leave … whenever you want', 'In force on the feed … in Settings', leaves out the suspended account, which can neither export nor delete; D-0016 §N fixed the same omission on the front page", async () => {
       const sam = await makeAccount({ handle: "sam_fictional", suspended: true });
       expect(await refusal(exportAccount(db(), sam.id))).toBe("NOT_FOUND");
       expect(await refusal(deleteAccount(db(), sam.id, sam.handle))).toBe("NOT_FOUND");
@@ -219,7 +219,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     });
   });
 
-  it("DEFECT: (MEDIUM) the risk no safeguard prevents is narrowed: D-0017 §I says misuse of what an app may 'show or send', which 'can be recorded'; the page says 'show you' and 'would be recorded'", () => {
+  it("fixed: (MEDIUM) the risk no safeguard prevents is narrowed: D-0017 §I says misuse of what an app may 'show or send', which 'can be recorded'; the page says 'show you' and 'would be recorded'", () => {
     expect(record("decisions/D-0017.md")).toContain(
       "What no safeguard prevents: misuse of what an app may show or send. That can be recorded and challenged, not prevented.",
     );
@@ -231,7 +231,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     expect(sentence).not.toContain("would be recorded");
   });
 
-  it("DEFECT: (MEDIUM) /projects and /agreement say the founder runs the feed 'until the holder exists'; D-0017 §D and D-0018 §A say he holds it until then, the contract gives the right to replace him to the members' body at 100,000, and D-0017 §K.4 is open", () => {
+  it("fixed: (MEDIUM) /projects and /agreement say the founder runs the feed 'until the holder exists'; D-0017 §D and D-0018 §A say he holds it until then, the contract gives the right to replace him to the members' body at 100,000, and D-0017 §K.4 is open", () => {
     expect(record("decisions/D-0018.md")).toContain("the founder holds it until the holder exists.");
     expect(record("decisions/D-0017.md")).toContain(
       "Whether the feed's identity and connections move to the holder before 100,000. That would amend D-0012 §B and contract promise 2.",
@@ -249,7 +249,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (MEDIUM) proposals open while no data controller is named: /maintainers links the address and /privacy says 'we keep your address and your message' beside 'The data controller is not yet named'", () => {
+  it("fixed: (MEDIUM) proposals open while no data controller is named: /maintainers links the address and /privacy says 'we keep your address and your message' beside 'The data controller is not yet named'", () => {
     vi.stubEnv("DATA_CONTROLLER", "");
     vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
     vi.stubEnv("PROPOSALS_EMAIL", "proposals@example.test");
@@ -263,7 +263,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     expect(privacy).not.toContain("If you email a proposal or a need");
   });
 
-  it("DEFECT: (MEDIUM) the claims scan misses the active voice of the term this build defines ('Its users own it.', 'The users are its owners.'), and the defined phrase itself with a word in quotes or 'all' inserted", () => {
+  it("fixed: (MEDIUM) the claims scan misses the active voice of the term this build defines ('Its users own it.', 'The users are its owners.'), and the defined phrase itself with a word in quotes or 'all' inserted", () => {
     expect(scanText("The feed is owned by its users.", PROJECTS_FILE).length).toBeGreaterThan(0);
     for (const claim of [
       "Its users own it.",
@@ -280,7 +280,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (MEDIUM) Parts 3 ('What they give up') and 6 ('Money') of /agreement have no 'Today' line; the notice says each part has one, and so do D-0018 §B and M-0015's acceptance", () => {
+  it("fixed: (MEDIUM) Parts 3 ('What they give up') and 6 ('Money') of /agreement have no 'Today' line; the notice says each part has one, and so do D-0018 §B and M-0015's acceptance", () => {
     expect(record("mandates/M-0015.yaml")).toContain('every part has a "Today:" line');
     expect(record("decisions/D-0018.md")).toContain("Each part says what holds it today.");
     const markup = render(AgreementPage);
@@ -299,25 +299,29 @@ describe("defects (each FAILS on 185bb67)", () => {
     expect(parts.filter(([, html]) => !/\bToday\b/.test(textOf(html))).map(([id]) => id)).toEqual([]);
   });
 
-  it("DEFECT: (LOW) 'Your privacy stays yours' says only 'Today: Promised.', naming nothing that holds it; the only text that promises it is this unsigned draft", () => {
+  it("fixed: (LOW) 'Your privacy stays yours' says only 'Today: Promised.', naming nothing that holds it; the only text that promises it is this unsigned draft", () => {
     const item = userRights().find((i) => i.startsWith("Your privacy stays yours"));
     expect(item).toBeDefined();
     const today = item!.slice(item!.indexOf("Today:"));
     expect(today).toMatch(/contract|law|code|not in force|draft/i);
   });
 
-  it("DEFECT: (LOW) Part 5 says an independent project's 'page says so', though whether they are listed at all is open (D-0017 §K.7); Part 7 sends every service's name, data and funds to the holder, which Part 5 says an independent project's maintainer keeps", () => {
+  // Fixed after the verification (D-0018's build, M-0015): Part 5 lists an
+  // independent project only "if our.one lists it at all", and Part 7 sends a
+  // *protected* service's name, data and funds to the holder. The search
+  // string follows the fixed sentence; the assertions are the verifier's.
+  it("fixed: (LOW) Part 5 no longer assumes independent projects get a page (D-0017 §K.7 is open), and Part 7 sends only a protected service's name, data and funds to the holder", () => {
     expect(record("decisions/D-0017.md")).toContain("Whether independent experiments are listed at all.");
     expect(record("decisions/D-0018.md")).toContain("listing independent experiments");
     const text = textOf(render(AgreementPage));
     expect(text).toContain("Whoever runs it holds everything: the accounts, the data and the name.");
     expect(text).not.toContain("its page says so");
-    const start = text.indexOf("When the people who use a service first pay for it");
+    const start = text.indexOf("When the people who use a protected service first pay for it");
     expect(start).toBeGreaterThan(-1);
     expect(text.slice(start, text.indexOf("Today: proposals are read by hand"))).toMatch(/protected/);
   });
 
-  it("DEFECT: (LOW) /agreement names Ctrl AI, Inc. as the feed's data controller from a literal, while /privacy names the configured controller or 'not yet named'; under any other setting the two pages disagree", () => {
+  it("fixed: (LOW) /agreement names Ctrl AI, Inc. as the feed's data controller from a literal, while /privacy names the configured controller or 'not yet named'; under any other setting the two pages disagree", () => {
     for (const [name, email] of [
       ["", ""],
       ["FICTIONAL Controller", "controller@example.test"],
@@ -333,7 +337,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (LOW) /projects says the feed is 'Run by Rado, the founder'; /power says 'Ctrl AI, Inc., the founder's company, is the maintainer' (D-0013 §A) and /contract 'me, Rado, through my company, Ctrl AI, Inc.'; D-0016 §N leaves the reading to the founder", () => {
+  it("fixed: (LOW) /projects says the feed is 'Run by Rado, the founder'; /power says 'Ctrl AI, Inc., the founder's company, is the maintainer' (D-0013 §A) and /contract 'me, Rado, through my company, Ctrl AI, Inc.'; D-0016 §N leaves the reading to the founder", () => {
     expect(record("decisions/D-0016.md")).toContain(
       `"Maintained by its founder." beside D-0013's naming of Ctrl AI, Inc. as the maintainer.`,
     );
@@ -347,7 +351,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (LOW) /agreement and /projects make the 100,000 promise in their own copy and never say what happens if it is never reached, which D-0012 §D asks of every page that makes it", () => {
+  it("fixed: (LOW) /agreement and /projects make the 100,000 promise in their own copy and never say what happens if it is never reached, which D-0012 §D asks of every page that makes it", () => {
     expect(record("decisions/D-0012.md")).toContain("Every public page that makes the promise also says:");
     expect(record("decisions/D-0012.md")).toContain("what happens if the threshold is never reached.");
     for (const [page, component] of [
@@ -363,7 +367,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (LOW) the claims scan misses the handover told as done in other verbs or to 'the holder', and income promised outright (D-0017's prohibition)", () => {
+  it("fixed: (LOW) the claims scan misses the handover told as done in other verbs or to 'the holder', and income promised outright (D-0017's prohibition)", () => {
     expect(
       scanText("Its domain, its data and the right to replace the maintainer went to a not-for-profit body of its members.", PROJECTS_FILE).length,
     ).toBeGreaterThan(0);
@@ -378,7 +382,7 @@ describe("defects (each FAILS on 185bb67)", () => {
     }
   });
 
-  it("DEFECT: (LOW) 'We don't judge whether it's a good idea: the people who would use it decide that.' commits the founder to a review policy no record adopts", () => {
+  it("fixed: (LOW) 'We don't judge whether it's a good idea: the people who would use it decide that.' commits the founder to a review policy no record adopts", () => {
     for (const path of [
       "decisions/D-0017.md",
       "decisions/D-0018.md",
@@ -392,9 +396,16 @@ describe("defects (each FAILS on 185bb67)", () => {
     expect(textOf(render(MaintainersPage))).not.toContain("We don't judge whether it's a good idea");
   });
 
-  it("DEFECT: (LOW) 'every change is a commit in the our.one records' and 'the public records' link to no record (AGENTS.md §10); /power and /costs link the file they speak of", () => {
+  // Fixed after the verification: the closing sentence now names and links
+  // the page's own source ("every change is a commit to its source"), and
+  // right 5 links "the public records of every decision" to the decisions.
+  it("fixed: (LOW) the agreement's records are linked: its own source, and the public records of every decision (AGENTS.md §10)", () => {
     const markup = render(AgreementPage);
-    expect(textOf(markup)).toContain("every change is a commit in the our.one records");
+    expect(textOf(markup)).toContain("every change is a commit to its source, which anyone can read");
+    expect(markup).toContain(
+      'href="https://github.com/radosukala/ours/blob/main/apps/web/src/app/(public)/agreement/page.tsx"',
+    );
+    expect(markup).toContain('href="https://github.com/radosukala/ours/tree/main/decisions"');
     expect(render(PowerPage)).toContain(
       'href="https://github.com/radosukala/ours/blob/main/apps/web/transparency/control.json"',
     );
@@ -503,8 +514,11 @@ describe("closed (each passes on 185bb67)", () => {
     expect(scanText(`{"Owned by its users"} ${DEFINITION.slice("Owned by its users ".length)}`, AGREEMENT_FILE)).toEqual([]);
     expect(scanText(`“${APPLIES}”`, AGREEMENT_FILE)).toEqual([]);
     // A page file is imported by nothing else, so the sentences stay on /agreement.
+    // Changed after the fix of honesty 17: the page now names its own source
+    // path, for the link in its last paragraph; the check reads imports only.
+    const imports = /(?:from\s*|import\s*\(\s*)["'][^"']*\(public\)\/agreement\/page["']/;
     for (const file of walk(join(WEB, "src")).filter((f) => !f.endsWith("core/claims.ts"))) {
-      expect(readFileSync(file, "utf8"), file).not.toContain("(public)/agreement/page");
+      expect(readFileSync(file, "utf8"), file).not.toMatch(imports);
     }
   });
 
@@ -595,7 +609,8 @@ describe("closed (each passes on 185bb67)", () => {
     const data = sectionsOf(agreement).get("agreement-data") ?? "";
     expect(textOf(data)).toContain("Seven safeguards");
     expect(data.match(/<h3\b/g)).toHaveLength(7);
-    expect(ddAfter(render(ProjectsPage), "Run by")).toEqual([`${MAINTAINER}, the founder`]);
+    // Changed after the fix of honesty 13: the line names the company, as /contract and /power do.
+    expect(ddAfter(render(ProjectsPage), "Run by")).toEqual([`${MAINTAINER}, the founder, through Ctrl AI, Inc., the founder's company`]);
     const contract = render(ContractPage);
     const list = contract.slice(contract.indexOf("<ol"), contract.indexOf("</ol>"));
     expect(list.match(/<li\b/g)).toHaveLength(8);

@@ -27,9 +27,9 @@ export default function ProjectsPage() {
     <article className={styles.page}>
       <h1 className="headline">Projects</h1>
       <p className="lede">
-        Every service on our.one is a project, run under the common agreement,
-        with a page that says who runs it, what it costs and what its users
-        control.
+        Every service on our.one will be a project with a page like this one:
+        who runs it, what it costs, and what its users control. The common
+        agreement they will run under is being developed.
       </p>
 
       <section aria-labelledby="project-feed">
@@ -37,7 +37,7 @@ export default function ProjectsPage() {
         <p>{LEDE}</p>
         <dl className={styles.facts}>
           <dt>Run by</dt>
-          <dd>{MAINTAINER}, the founder</dd>
+          <dd>{MAINTAINER}, the founder, through Ctrl AI, Inc., the founder&apos;s company</dd>
           <dt>Paid</dt>
           <dd>None, by choice</dd>
           <dt>Costs</dt>
@@ -48,18 +48,21 @@ export default function ProjectsPage() {
           <dd>The founder holds its domain, its data and its keys.</dd>
           <dt>Promised</dt>
           <dd>
-            {`At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`}
+            {`At ${THRESHOLD} people, as the contract counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`}{" "}
+            If that count is never reached, none of it goes to that body, and
+            the promise not to sell still holds.
           </dd>
-          <dt>Under the common agreement</dt>
+          <dt>Its users&apos; rights today</dt>
           <dd>
-            In force: you can take your data and leave, and see its costs and
-            rules. Promised: nobody sells it. Not yet: deciding its rules,
-            approving its budget, changing who runs it.
+            Held by the contract: taking your data and leaving while your
+            account is active, and seeing its costs and rules. Promised:
+            nobody sells it. Not yet: deciding its rules, approving its budget,
+            changing who runs it.
           </dd>
           <dt>Its exception</dt>
           <dd>
             It is the one service that runs before its data safeguards exist.
-            The founder runs it until the holder exists.
+            The founder holds it until the holder exists.
           </dd>
         </dl>
         <p className={styles.links}>

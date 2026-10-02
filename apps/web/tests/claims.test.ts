@@ -54,8 +54,26 @@ vi.mock("next/headers", () => ({
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
+/** A rule's source, found by a piece of it (for the rules built from strings). */
+function sourceOf(piece: string): string {
+  const rule = PROHIBITED.find((p) => p.pattern.source.includes(piece));
+  if (!rule) throw new Error(`no rule contains ${piece}`);
+  return rule.pattern.source;
+}
+
 /** One sample per pattern, keyed by the pattern's source. */
 const SAMPLES: Record<string, string[]> = {
+  // The verification of M-0015 (honesty 8 and 15).
+  [sourceOf("who use (?:it|them")]: ["Its users own it.", "The people who use it own it.", "The users are its owners."],
+  [sourceOf("those\\s+who\\s+use")]: [
+    "our.one is owned by those who use it.",
+    "The feed is people-owned.",
+    "The feed is “owned” by its users.",
+    'The feed will be "owned" by its users.',
+    "The feed is owned by all its users.",
+  ],
+  [sourceOf("to the holder")]: ["The domain moved to the holder.", "Its data now belongs to a not-for-profit body of its members."],
+  [sourceOf("guaranteed (?:income")]: ["You'll be paid.", "You will earn a living from it.", "Guaranteed income for maintainers."],
   "\\bmember-owned\\b": ["OURS is member-owned.", "A MEMBER-OWNED network"],
   "\\bowned by (?:our |the )?members\\b": ["It is owned by our members.", "owned by members", "Owned by the members"],
   "\\bmembers own\\b": ["The members own it."],

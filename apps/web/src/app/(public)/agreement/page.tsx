@@ -17,9 +17,15 @@
  * handover uses the status line's form, "go to".
  */
 import type { Metadata } from "next";
+import type React from "react";
 import Link from "next/link";
 import { MAINTAINER, THRESHOLD } from "@/components/public/handover";
 import styles from "@/components/public/public.module.css";
+import { repositoryUrl } from "@/components/public/repository";
+import { controller } from "@/core/config";
+
+/** Rendered per request: the data controller comes from the configuration, as on /privacy and /power. */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "The common agreement",
@@ -56,12 +62,12 @@ const USER_RIGHTS: readonly Clause[] = [
   {
     title: "Take your own data and leave.",
     text: "Download it, and delete it all, whenever you want.",
-    today: "In force on the feed: your profile, posts, replies and connections, in Settings. Held by the contract, the code and the law (GDPR).",
+    today: "In force on the feed while your account is active: your profile, posts, replies and connections, in Settings. If your account is suspended, write to the data controller and it is done for you. Held by the contract, the code and the law (GDPR).",
   },
   {
     title: "See the costs and the rules.",
     text: "What it costs to run, what whoever runs it is paid, who holds each key, and every change to its rules.",
-    today: "In force on the feed: the Costs, Who controls what and Rules pages, and the public records.",
+    today: "In force on the feed: the Costs, Who controls what and Rules pages, and the public records of every decision.",
   },
   {
     title: "Nobody sells it.",
@@ -71,7 +77,7 @@ const USER_RIGHTS: readonly Clause[] = [
   {
     title: "Your privacy stays yours.",
     text: "No vote of a service's users can expose or sell a person's data or private connections.",
-    today: "Promised.",
+    today: "There are no votes yet. When there are, this draft is what promises it.",
   },
 ];
 
@@ -91,7 +97,12 @@ const MAINTAINER_GIVES_UP: readonly string[] = [
   "The list of users. They get the access a service needs, and it can be withdrawn.",
 ];
 
-type Safeguard = { name: string; does: string; today: string };
+type Safeguard = {
+  name: string;
+  does: string;
+  /** What holds it today; null where the configuration says (the law: who the controller is). */
+  today: string | null;
+};
 
 /**
  * The data line's seven safeguards (D-0017 §I; D-0018 §A), each with its
@@ -101,7 +112,7 @@ const SAFEGUARDS: readonly Safeguard[] = [
   {
     name: "The law",
     does: "The holder is the data controller, and whoever runs a service may use your data only on its documented instructions.",
-    today: "Not yet. No holder exists, and Ctrl AI, Inc. is the feed's data controller.",
+    today: null,
   },
   {
     name: "The agreement",
@@ -135,8 +146,37 @@ const SAFEGUARDS: readonly Safeguard[] = [
   },
 ];
 
-function Today({ children }: { children: string }) {
+/** This page's own source, linked from its last paragraph. */
+const AGREEMENT_SOURCE = "apps/web/src/app/(public)/agreement/page.tsx";
+
+/** The public records of every decision, linked from right 5. */
+const RECORDS_LINK_TEXT = "the public records of every decision";
+
+function Today({ children }: { children: React.ReactNode }) {
   return <p className={styles.heldBy}>Today: {children}</p>;
+}
+
+/** A right's "Today" line, with the records linked where it names them. */
+function RightToday({ today }: { today: string }) {
+  const at = today.indexOf(RECORDS_LINK_TEXT);
+  if (at === -1) return <Today>{today}</Today>;
+  return (
+    <Today>
+      {today.slice(0, at)}
+      <a href={repositoryUrl("decisions", true)} rel="noopener noreferrer" target="_blank">
+        {RECORDS_LINK_TEXT}
+      </a>
+      {today.slice(at + RECORDS_LINK_TEXT.length)}
+    </Today>
+  );
+}
+
+/** The law's "Today", from this server's configuration (as /privacy and /power read it). */
+function lawToday(): string {
+  const named = controller();
+  return named
+    ? `Not yet. No holder exists, and ${named.name} is the feed's data controller.`
+    : "Not yet. No holder exists, and no data controller is named yet.";
 }
 
 export default function AgreementPage() {
@@ -181,7 +221,7 @@ export default function AgreementPage() {
               <p>
                 <strong>{r.title}</strong> {r.text}
               </p>
-              <Today>{r.today}</Today>
+              <RightToday today={r.today} />
             </li>
           ))}
         </ol>
@@ -209,10 +249,14 @@ export default function AgreementPage() {
             <li key={line}>{line}</li>
           ))}
         </ul>
+        <Today>
+          No one has signed this agreement yet. On the feed, the contract&apos;s
+          promise 1 holds the sale and the money.
+        </Today>
       </section>
 
       <section aria-labelledby="agreement-data">
-        <h2 id="agreement-data">4. Your data: the line nobody running a service crosses</h2>
+        <h2 id="agreement-data">4. Your data: a line nobody running a service should be able to cross</h2>
         <p>
           Whoever runs a service must never be able to take your data for
           their own use, or to sell it. Your data and your connections will be
@@ -220,7 +264,7 @@ export default function AgreementPage() {
           that no service failing or leaving takes them with it. Until the
           holder exists, the founder keeps the feed&apos;s.
         </p>
-        <p>Seven safeguards hold that line. None of them is built yet:</p>
+        <p>Seven safeguards are meant to hold that line. None of them is built yet:</p>
         <ul className={styles.items}>
           {SAFEGUARDS.map((s) => (
             <li key={s.name} className={styles.item}>
@@ -229,7 +273,7 @@ export default function AgreementPage() {
                 <dt>What</dt>
                 <dd>{s.does}</dd>
                 <dt>Today</dt>
-                <dd>{s.today}</dd>
+                <dd>{s.today ?? lawToday()}</dd>
               </dl>
             </li>
           ))}
@@ -237,11 +281,11 @@ export default function AgreementPage() {
         <p>
           Until all seven exist for a service, it gets nothing of yours from
           our.one: no data, no connections, no sign-in. The feed is the one
-          exception, run by the founder until the holder exists.
+          exception: the founder holds it until the holder exists.
         </p>
         <p>
-          Even then, a service could misuse what it is allowed to show you.
-          That would be recorded and could be challenged; it can&apos;t be
+          Even then, a service could misuse what it is allowed to show you or
+          send. That can be recorded and challenged; it can&apos;t be
           prevented.
         </p>
       </section>
@@ -252,7 +296,8 @@ export default function AgreementPage() {
           <dt>Independent</dt>
           <dd>
             Whoever runs it holds everything: the accounts, the data and the
-            name. It gets nothing of yours from our.one, and its page says so.
+            name. It gets nothing of yours from our.one, and if our.one lists
+            it at all, the listing says so.
           </dd>
           <dt>Protected</dt>
           <dd>
@@ -276,14 +321,19 @@ export default function AgreementPage() {
             Nobody earns a margin without doing the work.
           </li>
           <li>
-            our.one takes no money for anyone until the holder exists. Whoever
-            runs a service is paid directly by the people who choose it.
+            our.one takes no money for anyone until the holder exists. After
+            that, a protected service&apos;s funds are kept by the holder, and
+            whoever runs it is paid from them as their agreement says.
           </li>
           <li>
             What a service brings in isn&apos;t what whoever runs it earns: it
             also pays for hosting, support, security and reserves.
           </li>
         </ul>
+        <Today>
+          our.one takes no money. The founder pays the feed&apos;s costs, which
+          are public on <Link href="/costs">Costs</Link>.
+        </Today>
       </section>
 
       <section aria-labelledby="agreement-start">
@@ -300,9 +350,9 @@ export default function AgreementPage() {
             pay. These are counted apart, and none of them is a payment.
           </li>
           <li>
-            When the people who use a service first pay for it, its name, its
-            data and its funds go to the holder, which is set up then if it
-            doesn&apos;t exist yet.
+            When the people who use a protected service first pay for it, its
+            name, its data and its funds go to the holder, which is set up then
+            if it doesn&apos;t exist yet.
           </li>
         </ol>
         <p className={styles.heldBy}>
@@ -314,10 +364,17 @@ export default function AgreementPage() {
       <section aria-labelledby="agreement-feed">
         <h2 id="agreement-feed">8. The feed, the first project</h2>
         <ul className="prose">
-          <li>Run by {MAINTAINER}, the founder, unpaid by choice.</li>
+          <li>
+            Run by {MAINTAINER}, the founder, through Ctrl AI, Inc., the
+            founder&apos;s company. Unpaid, by choice.
+          </li>
           <li>Today the founder holds its domain, its data and its keys.</li>
           <li>
             {`The contract promises: at ${THRESHOLD} people, as it counts them, its domain, its data and the right to replace the maintainer go to a not-for-profit body of its members.`}
+          </li>
+          <li>
+            If that count is never reached, none of it goes to that body. The
+            promise not to sell still holds.
           </li>
         </ul>
         <p className={styles.links}>
@@ -327,9 +384,13 @@ export default function AgreementPage() {
       </section>
 
       <p>
-        This agreement is a draft, developed in public; every change is a
-        commit in the our.one records. The terms you join the feed under are
-        the contract.
+        This agreement is a draft, developed in public: every change is a
+        commit to{" "}
+        <a href={repositoryUrl(AGREEMENT_SOURCE)} rel="noopener noreferrer" target="_blank">
+          its source
+        </a>
+        , which anyone can read. The terms you join the feed under are the
+        contract.
       </p>
     </article>
   );
