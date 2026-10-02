@@ -238,6 +238,21 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     reason:
       "D-0012 §A, promise 1: a denial of investment. SPEC §18.7 allows it on /contract only, in this exact sentence.",
   },
+  // The common agreement (D-0017 §B and §J, D-0018 §E; SPEC §18.17). A page
+  // file is imported by nothing else, so these stay on /agreement: the
+  // definition of "owned", which claims it of nothing; the sentence that
+  // applies it, followed on the page by "None does yet."; and promise 1's
+  // denial of investment, for every service.
+  ...[
+    "Owned by its users means: its users, together, decide its essential rules, approve its budget, and can change who runs it while the service keeps going.",
+    "We call a service owned by its users only when all of that holds.",
+    "Neither a service nor any part of it will be sold, and nobody will invest in it for a return.",
+  ].map((sentence) => ({
+    file: "src/app/(public)/agreement/page.tsx",
+    sentence,
+    reason:
+      "D-0017 §B and D-0018 §E: the definition of \"owned\", the sentence that applies it, and the agreement's denial of investment, on /agreement only and in these exact words.",
+  })),
 ];
 
 export type Hit = {

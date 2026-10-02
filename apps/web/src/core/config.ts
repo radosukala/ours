@@ -107,6 +107,23 @@ export function controllerRepresentative(): string | null {
   return name;
 }
 
+/**
+ * Where proposals and needs are sent (D-0018 §D; SPEC §18.17): an address
+ * the founder chooses, read by hand. Null unless PROPOSALS_EMAIL is an
+ * email address and not the confirmation placeholder: a missing human
+ * decision switches proposals off, and the pages say they open at launch.
+ */
+export function proposalsEmail(): string | null {
+  const email = env("PROPOSALS_EMAIL");
+  if (!email || UNCONFIRMED.test(email)) return null;
+  try {
+    normEmail(email);
+  } catch {
+    return null;
+  }
+  return email;
+}
+
 /** New accounts can be created only while a controller is named (SPEC §8). */
 export function accountCreationOpen(): boolean {
   return controller() !== null;

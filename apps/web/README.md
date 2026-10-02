@@ -75,6 +75,10 @@ the EU (GDPR Article 27) on `/privacy`, reached at the controller's address.
 A controller inside the EU needs none; blank names none and switches nothing
 off.
 
+`PROPOSALS_EMAIL` is where proposals and needs go from `/maintainers`
+(D-0018 §D), read by hand. Leaving it blank switches proposals off: the
+page says they open at launch and shows no address.
+
 Two more settings are human decisions for a deployment, never defaults:
 
 - **`CLIENT_IP_HEADER`** names the header the host sets with the visitor's

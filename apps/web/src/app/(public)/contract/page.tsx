@@ -107,6 +107,11 @@ export default function ContractPage() {
         members I also hold the domain, the data and the keys, and I&apos;m
         not paid.
       </p>
+      <p>
+        These are the feed&apos;s terms. The feed will also run under the{" "}
+        <Link href="/agreement">common agreement</Link>, which every service
+        on our.one will sign. It is being developed in public.
+      </p>
 
       <ol className={styles.promiseList}>
         {PROMISES.map((p) => (

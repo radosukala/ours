@@ -20,6 +20,9 @@
  * the address is kept to send the join link, or in line until a seat opens
  * and it is invited, or until its owner asks for it to be deleted.
  *
+ * A proposal or a need sent by email (SPEC §18.17, D-0018 §D) is described
+ * only while PROPOSALS_EMAIL is set: until then nothing can be sent.
+ *
  * The controller's representative in the EU (GDPR Articles 13(1)(a) and 27;
  * D-0014, SPEC §18.14) is named under "Who is responsible" and in Contact,
  * from the configuration, and only while a controller is named. It is
@@ -31,6 +34,7 @@ import styles from "@/components/public/public.module.css";
 import {
   controller,
   controllerRepresentative,
+  proposalsEmail,
   EMAIL_TOKEN_TTL_MINUTES,
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
@@ -141,6 +145,7 @@ function emailProvider(): string {
 export default function PrivacyPage() {
   const named = controller();
   const representative = controllerRepresentative();
+  const proposals = proposalsEmail();
 
   return (
     <article className={styles.page}>
@@ -199,6 +204,14 @@ export default function PrivacyPage() {
         <p>
           {"If you ask for a seat, we keep your email address to send you the join link. If no seat is open, it waits in line until one opens and you are invited. The join link's record keeps the address until you join or ask us to delete it: nothing removes it automatically yet. To be deleted, write to the controller."}
         </p>
+        {proposals ? (
+          <p>
+            If you email a proposal or a need to{" "}
+            <a href={`mailto:${proposals}`}>{proposals}</a>, we keep your
+            address and your message to answer you and to follow up, until you
+            ask us to delete them. They aren&apos;t stored on our.one itself.
+          </p>
+        ) : null}
         <p>
           Three cookies, all needed for the site to work: one keeps you
           signed in; one holds your place for up to {PENDING_JOIN_TTL_MINUTES}{" "}

@@ -2275,3 +2275,88 @@ they are recorded (D-0016 §O). The small ones were also fixed:
   - "you can leave with everything" on `/contract`;
   - "we will do it for you", which is done by hand;
   - the invite form in production without the header.
+
+### 18.17 The framework pages (M-0015, 2 October 2026)
+
+**D-0017 and D-0018:**
+
+- our.one becomes a network of services that their users fund and will
+  control, with the feed as its first project;
+- the data line's seven safeguards are the rule for every protected service;
+- the common agreement is published as a draft.
+
+**The front page's headline and lede are unchanged.** They wait for the
+five-stranger test (D-0017 §H).
+
+1. **`/agreement`**, "The common agreement": the copy is the page file's,
+   word for word.
+   - **First comes the notice:** *"Being developed. None of the collective
+     rights below is in force yet, and each part says what holds it
+     today."*
+   - **What ownership means here:** the definition (D-0017 §B), *"We call a
+     service owned by its users only when all of that holds. None does
+     yet."*, and *"This is about control. It isn't shares: there is nothing
+     to trade, and nobody receives a payout."*
+   - **Part 1, what users get:** seven rights, each with a "Today:" line.
+     - In force on the feed: taking your data and leaving, and seeing the
+       costs and rules.
+     - Promised: no sale, and privacy against any vote.
+     - Not in force anywhere: rules, budget, and changing who runs it.
+   - **Parts 2 and 3:** what maintainers get, and what they give up.
+     "Today: No one has signed this agreement yet."
+   - **Part 4, the data line:** the seven safeguards, each with its "Today",
+     each not built or not yet. Then:
+     - *"Until all seven exist for a service, it gets nothing of yours from
+       our.one…"*;
+     - the feed's exception;
+     - *"…it can't be prevented."* about misuse of what a service may show.
+   - **Part 5:** independent and protected projects.
+   - **Part 6:** money: shared costs public and approved; no money taken for
+     anyone until the holder exists; revenue isn't income.
+   - **Part 7:** how a service starts, ending *"Today: proposals are read by
+     hand."*
+   - **Part 8:** the feed, the first project. Its promise reads *"at
+     {THRESHOLD} people, as it counts them, … go to a not-for-profit body of
+     its members"*. It never says "have joined", which D-0016 §N keeps open
+     for the founder.
+   - **Last:** *"This agreement is a draft, developed in public; every change
+     is a commit in the our.one records. The terms you join the feed under
+     are the contract."*
+2. **`/projects`:** the feed, the first project.
+   - The front page's lede, imported (`lede.ts`).
+   - Run by `MAINTAINER`, the founder. Paid: "None, by choice".
+   - Costs, linked. Held today: domain, data and keys.
+   - Promised: the status line's form, with "as the contract counts them".
+   - Under the common agreement: in force, promised, not yet.
+   - Its exception.
+   - "The next one", linking to `/maintainers`.
+3. **`/maintainers`**, "Build the next one":
+   - what the job is;
+   - what you get;
+   - what you give up;
+   - your users' data (out of reach, none of it built yet);
+   - how to propose a service;
+   - "Need something?";
+   - where it stands today.
+
+   **The two invitations are mailto links** to `PROPOSALS_EMAIL`
+   (`proposalsEmail()`), with the subjects "A proposal for our.one" and "A
+   need for our.one". While the setting is empty, a placeholder or not an
+   address, there is no link: *"Proposals open at launch."* and *"This opens
+   at launch, too."* No form, and nothing stored.
+4. **Every footer:** Contract · Agreement · Projects · Build with us · Open
+   code · Costs · Who controls what · Rules · Privacy.
+5. **`/contract`:** after the maintainer paragraph: *"These are the feed's
+   terms. The feed will also run under the common agreement, which every
+   service on our.one will sign. It is being developed in public."* The
+   eight promises are unchanged.
+6. **`/privacy`:** while `PROPOSALS_EMAIL` is set, one paragraph says what
+   happens to an emailed proposal or need, and that it isn't stored on
+   our.one itself.
+7. **The claims scan:** three sentences pass on `/agreement` only, in their
+   exact words (D-0018 §E): the definition, the sentence that applies it,
+   and the agreement's denial of investment. Everywhere else, and in any
+   other form, they are caught.
+8. **Tests:** `tests/framework-pages.test.ts` for every line above, the
+   denial paths first. The claims tests render the three pages, and run
+   with the address set as well.

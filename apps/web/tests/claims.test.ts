@@ -19,12 +19,15 @@ import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AppNotFound from "@/app/(app)/not-found";
+import AgreementPage from "@/app/(public)/agreement/page";
 import ContractPage from "@/app/(public)/contract/page";
 import CostsPage from "@/app/(public)/costs/page";
 import PublicLayout from "@/app/(public)/layout";
 import LandingPage from "@/app/(public)/page";
+import MaintainersPage from "@/app/(public)/maintainers/page";
 import PowerPage from "@/app/(public)/power/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
+import ProjectsPage from "@/app/(public)/projects/page";
 import RulesPage from "@/app/(public)/rules/page";
 import RootNotFound from "@/app/not-found";
 import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
@@ -551,6 +554,8 @@ const RULES_FILE = "src/components/public/floorRules.ts";
 const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
 /** The front page's copy: its listed handover sentences are shown only on / (M-0011, SPEC §18.12). */
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
+/** The /agreement copy (M-0015; D-0018 §E: three sentences let through there only). */
+const AGREEMENT_FILE = "src/app/(public)/agreement/page.tsx";
 
 describe("what people are shown: every public page, the footers and every mail, rendered (final verification, honesty-1)", () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -562,6 +567,9 @@ describe("what people are shown: every public page, the footers and every mail, 
       ["/", renderToStaticMarkup(landing), FRONT_FILE],
       ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
+      ["/agreement", renderToStaticMarkup(createElement(AgreementPage)), AGREEMENT_FILE],
+      ["/projects", renderToStaticMarkup(createElement(ProjectsPage)), null],
+      ["/maintainers", renderToStaticMarkup(createElement(MaintainersPage)), null],
       ["/privacy", renderToStaticMarkup(createElement(PrivacyPage)), null],
       ["/power", renderToStaticMarkup(createElement(PowerPage)), null],
       ["/costs", renderToStaticMarkup(createElement(CostsPage)), null],
@@ -594,12 +602,15 @@ describe("what people are shown: every public page, the footers and every mail, 
         OURS_VERSION: "v0-FICTIONAL",
       },
       "resend, set up incompletely": { MAIL_TRANSPORT: "resend" },
+      // M-0015: /maintainers and /privacy show the address only when it is set.
+      "proposals open": { PROPOSALS_EMAIL: "proposals@example.test" },
     };
     for (const [name, env] of Object.entries(configurations)) {
       vi.unstubAllEnvs();
       for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
       const rendered = await pages();
-      expect(rendered).toHaveLength(11);
+      // 14 since M-0015: /agreement, /projects and /maintainers.
+      expect(rendered).toHaveLength(14);
       for (const [page, html, file] of rendered) {
         expect(textOf(html).length, `${name}: ${page}`).toBeGreaterThan(0);
         expect(renderedHits(html, file), `${name}: ${page}`).toEqual([]);
@@ -609,7 +620,13 @@ describe("what people are shown: every public page, the footers and every mail, 
 
   it("shows each allowlisted sentence only on its own page: 'No algorithm…' on /rules, promise 1 on /contract", async () => {
     const rendered = await pages();
-    const home: Record<string, string> = { [RULES_FILE]: "/rules", [CONTRACT_FILE]: "/contract", [FRONT_FILE]: "/" };
+    // M-0015 added /agreement's three sentences (D-0018 §E).
+    const home: Record<string, string> = {
+      [RULES_FILE]: "/rules",
+      [CONTRACT_FILE]: "/contract",
+      [FRONT_FILE]: "/",
+      [AGREEMENT_FILE]: "/agreement",
+    };
     // Since D-0016 §K every entry belongs to one file: none is let through on every page.
     expect(ALLOWLIST.every((e) => Object.keys(e).sort().join() === "file,reason,sentence")).toBe(true);
     expect([...new Set(ALLOWLIST.map((e) => e.file))].sort()).toEqual(Object.keys(home).sort());

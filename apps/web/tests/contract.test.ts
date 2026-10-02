@@ -159,7 +159,11 @@ describe("/contract, word for word (SPEC §18.3)", () => {
       renderToStaticMarkup(createElement(InAppSiteFooter)),
     ]) {
       expect(html).toMatch(/<a href="\/contract">Contract<\/a>/);
-      expect(textOf(html)).toContain("Contract · Open code · Costs · Who controls what · Rules · Privacy");
+      // Changed under M-0015 (SPEC §18.17): the footer also links to the
+      // common agreement, the projects and "Build the next one".
+      expect(textOf(html)).toContain(
+        "Contract · Agreement · Projects · Build with us · Open code · Costs · Who controls what · Rules · Privacy",
+      );
     }
   });
 });

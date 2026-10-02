@@ -26,6 +26,12 @@ export function SiteFooter({ className }: { className?: string }) {
       <nav className="site-footer__links" aria-label="About our.one">
         <Link href="/contract">Contract</Link>
         <span aria-hidden="true"> · </span>
+        <Link href="/agreement">Agreement</Link>
+        <span aria-hidden="true"> · </span>
+        <Link href="/projects">Projects</Link>
+        <span aria-hidden="true"> · </span>
+        <Link href="/maintainers">Build with us</Link>
+        <span aria-hidden="true"> · </span>
         <a href={OPEN_CODE_URL} rel="noopener noreferrer" target="_blank">
           Open code
         </a>
