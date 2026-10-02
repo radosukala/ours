@@ -245,11 +245,15 @@ describe("defects (each FAILS on 25ce8f0)", () => {
     expect(block?.[1]).toBe("0");
     expect(tool.RULES_VERSION).toBe("0");
     expect(block?.[0]).toContain("8. **No secrets in the code.** Keys and passwords live in the environment, never in a file the repository tracks.");
-    expect(tool.RULES_BLOCK).toContain("8. **No secrets or data in the repository.** Keys and passwords live in the environment, and people's data in the store, never in a file the repository tracks.");
-    expect(tool.RULES_BLOCK).toContain("Ask the person for anything only they know, and never invent it.");
+    // Changed after the fix (C1): these lines described 0.2.0's block, which
+    // had rule 8 widened and rule 10 lengthened, and told the trial's project
+    // its block was changed. The block is D-0019's again, word for word, so
+    // they now say that: 0.1.0's text, and the trial's block passes.
+    expect(tool.RULES_BLOCK).toContain("8. **No secrets in the code.** Keys and passwords live in the environment, never in a file the repository tracks.");
+    expect(tool.RULES_BLOCK).not.toContain("Ask the person for anything only they know, and never invent it.");
 
-    // The trial's project, whose block nobody changed, is told it was changed.
-    expect(check(project({ ...good(), "AGENTS.md": trialAgents }), "agents").summary).toBe("The rules block in AGENTS.md was changed.");
+    // The trial's project, whose block nobody changed, passes the agents check.
+    expect(check(project({ ...good(), "AGENTS.md": trialAgents }), "agents").outcome).toBe("pass");
 
     // The defect: one version, two texts, and no decision names another version.
     const decisions = readdirSync(join(ROOT, "decisions"))
@@ -382,12 +386,17 @@ describe("defects (each FAILS on 25ce8f0)", () => {
     expect(record("decisions/D-0019.md")).toContain("Runs its own copy of the check on the commit named");
     expect(flat(readFileSync(join(KIT_DIR, "build.md"), "utf8"))).toContain("our.one runs its own copy of the check on the commit you name.");
 
-    // The trial's project, under the tool /build now offers: every boundary and claims finding is in its copy of the tool.
-    const trial = report(trialProject());
+    // Changed after the fix (C5): these lines described 0.2.0, under which the
+    // trial's copy of tool 0.1.0 failed boundary and claims as if it were the
+    // project's code. Now a copy of the tool, of any version, is left out of the
+    // project's code and words (still read for secrets), and the report names it
+    // with its version; the trial's boundary and claims pass.
+    const trial = report(trialProject()) as Report & { skipped: { tool: { file: string; version: string; rules: string }[] } };
     for (const id of ["boundary", "claims"]) {
       const c = trial.checks.find((x) => x.id === id)!;
-      expect([id, c.outcome, [...new Set(c.findings.map((f) => f.file))]]).toEqual([id, "fail", ["scripts/our-one.mjs"]]);
+      expect([id, c.outcome]).toEqual([id, "pass"]);
     }
+    expect(trial.skipped.tool).toEqual([{ file: "scripts/our-one.mjs", version: "0.1.0", rules: "0" }]);
 
     // A FICTIONAL project that passes with its own copy of this tool, where build.md puts it.
     const dir = project(good());
@@ -642,26 +651,32 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   });
 
   // C22
-  it("DEFECT (LOW): /build says the one trial 'built a small fictional app and passed the check', beside 'Version 0.2.0' and its SHA-256; the trial passed 0.1.0 (ab12bc2e…, its REPORT says), and 0.2.0 fails the trial's project as committed on agents, boundary and claims", () => {
+  it("fixed (LOW): /build says the one trial 'built a small fictional app and passed the check', beside 'Version 0.2.0' and its SHA-256; the trial passed 0.1.0 (ab12bc2e…, its REPORT says), and 0.2.0 fails the trial's project as committed on agents, boundary and claims", () => {
     const text = textOf(renderToStaticMarkup(createElement(BuildPage)));
-    expect(text).toContain("So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed the check.");
+    // Changed after the fix (C22): the sentence now names the version the trial passed.
+    expect(text).toContain("So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed version 0.1.0 of the check.");
     expect(text).toContain(`Version ${KIT_TOOL.version}`);
     expect(record("receipts/conformance/2026-10-02-M-0016-agent-trial/REPORT.md")).toContain("ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7");
     expect(KIT_TOOL.sha256).not.toBe("ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7");
     const r = report(trialProject());
-    expect(r.checks.filter((c) => c.outcome === "fail").map((c) => c.id)).toEqual(["agents", "boundary", "claims"]);
+    // Changed after the fix (C22, with C1 and C5): under 0.2.1 the trial's project
+    // as committed fails nothing; it failed agents, boundary and claims under 0.2.0.
+    expect(r.checks.filter((c) => c.outcome === "fail").map((c) => c.id)).toEqual([]);
 
     expect(/passed the check/.test(text) && !/0\.1\.0/.test(text)).toBe(false);
   });
 
   // C23
-  it("DEFECT (LOW): the feed's our.one.json names Vercel and Neon in sentences that turn false on M-0012's deploy ('our.one isn't deployed there yet', 'No database is set up there yet'), and M-0012 has no step that updates them, though the adapted tests say the words are 'true before the deploy and after it'; it cites D-0013 for an EU region D-0013 doesn't set (only the draft M-0012 does); and SPEC §18.18 item 2 still gives Resend as the feed's one outside service", () => {
+  it("fixed (LOW): the feed's our.one.json names Vercel and Neon in sentences that turn false on M-0012's deploy ('our.one isn't deployed there yet', 'No database is set up there yet'), and M-0012 has no step that updates them, though the adapted tests say the words are 'true before the deploy and after it'; it cites D-0013 for an EU region D-0013 doesn't set (only the draft M-0012 does); and SPEC §18.18 item 2 still gives Resend as the feed's one outside service", () => {
     type Shared = { who: string; why: string };
     const m = JSON.parse(read("our.one.json")) as { data: { sharedWith: Shared[] } };
     const vercel = m.data.sharedWith.find((s) => s.who === "Vercel")!;
     const neon = m.data.sharedWith.find((s) => s.who === "Neon")!;
-    expect(vercel.why).toContain("our.one isn't deployed there yet.");
-    expect(neon.why).toContain("in an EU region, as D-0013 and M-0012 set. No database is set up there yet.");
+    // Changed after the fix (C23): these lines quoted the two sentences that
+    // turned false at the deploy; the entries now say only what stays true,
+    // and cite M-0012 for the region.
+    expect(vercel.why).toBe("To host the site, as D-0013 chose.");
+    expect(neon.why).toBe("To keep the feed's data, in an EU region, as M-0012 sets.");
     const m12 = record("mandates/M-0012.md");
     expect(m12).toContain("Status: DRAFT");
     expect(m12).toContain("Neon: a database in an EU region.");

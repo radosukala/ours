@@ -110,7 +110,7 @@ export default function BuildPage() {
           <code>{AGENT_LINE}</code>
         </p>
         <p>
-          {"It's written for coding agents that can read a web page and run commands. So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed the check."}
+          {"It's written for coding agents that can read a web page and run commands. So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed version 0.1.0 of the check."}
         </p>
       </section>
 

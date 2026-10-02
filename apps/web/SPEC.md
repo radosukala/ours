@@ -2445,8 +2445,8 @@ propose, nothing more (D-0019 §E). Every safeguard stays not built.
    - **`our.one.schema.json`**, the manifest's schema, and a **README**.
      The kit's licence is Apache-2.0, like the feed's code.
 2. **The feed's own manifest** (`apps/web/our.one.json`): what `/privacy`
-   says it keeps, word for word, plus seat requests; Resend as its one
-   outside service; `src/core` and `scripts` as its boundary; its costs in
+   says it keeps, word for word, plus seat requests; Resend, Vercel and Neon as its
+   outside services, in words true before the deploy and after it; `src/core` and `scripts` as its boundary; its costs in
    `transparency/ledger.json`; and two sentences of `/agreement` listed in
    `claims.allowed`. `apps/web/AGENTS.md` carries the rules block, after a
    pointer to the repository's own AGENTS.md. A test runs the check on the
@@ -2542,8 +2542,11 @@ verifiers' tests were committed as written before any fix. The tool is now
   the person rather than invent.
 - **No secret is printed,** even in a parse error.
 
-Rule 8 now reads "No secrets or data in the repository". The block says
-which three rules go further than the agreement.
+Round one also changed the rules block's wording. The re-check found that
+D-0019 §C allows that only by a new rules version and a decision (C1), so
+the block is D-0019's again, word for word. Which three rules go further
+than the agreement is said on `/build`, in `build.md` and in the README,
+and the hook tells the agent to ask the person rather than invent.
 
 **Pages:**
 

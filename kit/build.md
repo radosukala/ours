@@ -14,6 +14,9 @@ step.
   its maintainer, under the common agreement: https://our.one/agreement
 - The agreement is a draft and nobody has signed it, so none of its
   collective rights is in force yet. Don't tell the person otherwise.
+- The rules a project follows come from that agreement. Three of them go
+  further than its words, and wait for the founder's approval: the data
+  boundary in rule 1, and no session recording and no data hubs in rule 4.
 - The feed is the first project. Its code is the reference, and it passes
   the same check you will run. Its `our.one.json` and `AGENTS.md` are the
   examples to follow:

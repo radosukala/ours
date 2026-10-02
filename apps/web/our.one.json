@@ -97,12 +97,12 @@
       {
         "who": "Vercel",
         "what": "Everything the site serves and receives, while it runs there.",
-        "why": "To host the site, as D-0013 chose. our.one isn't deployed there yet."
+        "why": "To host the site, as D-0013 chose."
       },
       {
         "who": "Neon",
         "what": "The database, which holds everything in data.collects, while it is kept there.",
-        "why": "To keep the feed's data, in an EU region, as D-0013 and M-0012 set. No database is set up there yet."
+        "why": "To keep the feed's data, in an EU region, as M-0012 sets."
       }
     ],
     "boundary": [
