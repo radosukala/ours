@@ -2,10 +2,9 @@
 
 Instructions for coding agents. Version 0.2.1, rules 0, 2 October 2026.
 
-You are a coding agent. The person you work for wants to build something
-for our.one, or to bring a project they already have. This file tells you
-how. Follow it in order, and tell the person what you are doing at each
-step.
+You are a coding agent. The person you work for wants to bring an idea to
+our.one, or a project they already have. This file tells you how. Follow
+it in order, and tell the person what you are doing at each step.
 
 ## What our.one is
 
@@ -21,6 +20,9 @@ step.
   the same check you will run. Its `our.one.json` and `AGENTS.md` are the
   examples to follow:
   https://github.com/radosukala/ours/tree/main/apps/web
+- A project starts as an idea, before any code: who it's for, and how to
+  find out whether they want it. That's the order our.one recommends, and
+  step 2 is where it happens.
 - Passing the check makes a project ready to propose. It doesn't list,
   approve or protect it: a person reads every proposal, and the people who
   would use the service decide.
@@ -65,8 +67,50 @@ and `PITCH.md` later.
 7. Who maintains it, and how can people reach them?
 8. What do they want from our.one now: feedback, people to try it, or
    people who would pay? And what has to happen before it runs for real?
+9. How could they find out whether those people want it: people they could
+   ask, or a trial they could offer?
 
-## 2. Get the tool, and set the project up
+## 2. Draft the idea, before any code
+
+Before anything is set up or built, write the idea down with the person, in
+`PITCH.md` at the project's root (make the folder if there is none yet).
+Use these headings, in this order, because `init` and the check expect
+them:
+
+```text
+# Proposal: <the project's name>
+
+## The need
+## What it offers
+## What people would have to change
+## Price, scope and budget
+## What you're asking for now
+## What has to happen first
+## The check
+```
+
+Fill in four of them now, from the person's answers:
+
+- **The need:** who has it, and what they use or pay for today.
+- **What it offers:** what using it would be like, in a few sentences.
+- **What you're asking for now:** feedback, people to try it, or people who
+  would pay.
+- **What has to happen first:** how the person will find out whether those
+  people want it, and what happens if they don't.
+
+Write TODO under the other three. They come later.
+
+Then ask the person: **find out first, or build now?** Finding out first is
+the order our.one recommends: a need people have is worth more than code
+nobody asked for. Interest is a start. It isn't an audience, or funding.
+
+- **To find out first:** stop here. Help them put the draft in front of
+  the people it would serve. Once proposals open, they can send it to
+  our.one too: the address is on https://our.one/maintainers. Come back to
+  step 3 when they decide to build.
+- **If they have code already, or decide to build now:** go on.
+
+## 3. Get the tool, and set the project up
 
 From the project's root folder (create it, and run `git init`, if it's
 new). First make sure `.gitignore` keeps out `node_modules`, environment
@@ -115,7 +159,7 @@ existing `CLAUDE.md` is left as it is:
 | `AGENTS.md` | The rules, for every agent that works on the code |
 | `CLAUDE.md` | One line, `@AGENTS.md`, so Claude Code reads the rules |
 | `COSTS.md` | What it costs to run each month, and who pays |
-| `PITCH.md` | The proposal, to fill in at the end |
+| `PITCH.md` | The proposal: `init` writes it only if step 2 didn't |
 | `.claude/settings.json` | A Claude Code stop hook: the check runs each time you stop |
 | `.github/workflows/our-one.yml` | The check, on every push and pull request |
 
@@ -129,7 +173,7 @@ root, so `init` doesn't write one in the folder: add
 the folder on the check's step. And Claude Code reads
 `.claude/settings.json` from the folder it starts in.
 
-## 3. Fill in our.one.json and COSTS.md
+## 4. Fill in our.one.json and COSTS.md
 
 Replace every TODO with the person's answers. Fill in `collects`,
 `sharedWith` and `boundary` too: `init` leaves the last two empty, and an
@@ -165,7 +209,7 @@ pays, and the maintainer's pay. Ask the person; don't guess.
 
 The schema is at https://our.one/kit/our.one.schema.json.
 
-## 4. Build
+## 5. Build
 
 Build what the person asked for, under the rules in `AGENTS.md`. In
 practice:
@@ -185,7 +229,7 @@ practice:
 - Keep keys in environment variables. Commit an `.env.example` with the
   names and no values.
 
-## 5. Check
+## 6. Check
 
 ```sh
 node scripts/our-one.mjs check
@@ -204,10 +248,11 @@ them what still fails.
 Then read the person the four questions the report lists under "For a
 person". No machine can answer them.
 
-## 6. Propose
+## 7. Propose
 
-Fill in `PITCH.md` with the person. It asks what the common agreement asks
-of every proposal: the need, what people would have to change, the price,
+Finish `PITCH.md` with the person: the parts you left as TODO in step 2,
+and anything that has changed since. It asks what the common agreement
+asks of every proposal: the need, what people would have to change, the price,
 the scope and the budget with the maintainer's pay, what it asks for now,
 and what has to happen first. Copy into it the check's RESULT line and its
 tool sha256 line, with the commit the check ran on. Commit `PITCH.md`

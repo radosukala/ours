@@ -572,7 +572,23 @@ describe("both themes (SPEC §9 tokens; SPEC §18.15 'the only colours are §9's
       const selector = code.slice(code.lastIndexOf("}", open) + 1, open).trim();
       return `${selector} ${m[0]}`;
     });
-    expect(literals.sort()).toEqual(
+    // Changed after D-0020 (M-0017): the public pages take their own identity
+    // (.public's tokens, each with a dark value, in globals.css), and the two
+    // pictures of the app keep the app's own look by restating :root's
+    // tokens on .phone and .mini, light and dark. Every value restated there
+    // must be :root's for the same token, in the same theme.
+    const restated = (scheme: "light" | "dark") => {
+      const at = scheme === "light" ? code.indexOf(".phone,") : code.indexOf(".phone,", code.indexOf("@media (prefers-color-scheme: dark)", code.indexOf(".phone,")));
+      const block = code.slice(code.indexOf("{", at) + 1, code.indexOf("}", at));
+      return Object.fromEntries([...block.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]));
+    };
+    for (const scheme of ["light", "dark"] as const) {
+      const own = scheme === "light" ? light : { ...light, ...dark };
+      const shown = restated(scheme);
+      expect(Object.keys(shown).length, scheme).toBeGreaterThan(5);
+      for (const [token, value] of Object.entries(shown)) expect([scheme, token, value]).toEqual([scheme, token, own[token]]);
+    }
+    expect(literals.filter((l) => !/^(?:@media \(prefers-color-scheme: dark\) \{\s*)?\.phone,\s*\.mini /.test(l)).sort()).toEqual(
       [".miniAvatar #ffffff", ".count::before #00ba7c", ".count::before rgba(0, 186, 124, 0.16)"].sort(),
     );
     // The initials are the app's own: .avatar is white on its hue in both themes.

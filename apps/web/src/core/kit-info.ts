@@ -10,5 +10,8 @@ export const KIT_TOOL = {
   sha256: "4b6f75cbbf0e595c5e248d13b782ec355147cf6deb5e68ad52b12c17fa9b5d58",
 } as const;
 
-/** The one line a builder gives their coding agent (/build; kit/README.md says it too). */
-export const AGENT_LINE = "Read https://our.one/build.md and use it to build my app for our.one.";
+/**
+ * The one line a builder gives their coding agent (/build and the front door;
+ * kit/README.md says it too). Since D-0020 §D it starts with the idea.
+ */
+export const AGENT_LINE = "Read https://our.one/build.md and follow it to help me bring my idea to our.one.";

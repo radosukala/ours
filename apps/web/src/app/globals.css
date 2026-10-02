@@ -1499,48 +1499,250 @@ hr {
 
 /* ----------------------------------------------------------- public pages */
 
+/*
+ * The public pages (SPEC §9; D-0020 §A and §B): the front door, the feed's
+ * page, the framework and the records, signing in and joining. Their
+ * identity is their own: warm paper, dark green ink, an acid green field and
+ * a rust accent, in the fonts the device already has. Nothing loads from
+ * anywhere else.
+ *
+ * The app's tokens are re-pointed inside .public, so the shared classes
+ * (buttons, fields, notices, the footer) take the identity with no rules of
+ * their own. The signed-in app (.app) keeps its look, and so does the
+ * picture of it on the feed's page (public.module.css, .phone and .mini).
+ * The dark version follows the device's setting.
+ */
+
 .public {
+  --paper: #f5f3eb;
+  --paper-deep: #ebeadf;
+  --card: #fffef8;
+  --ink: #222b24;
+  --sub: #586157;
+  --line: #d7dace;
+  --line-strong: #b9c0ac;
+  --acid: #e1f28b;
+  --on-acid: #222b24;
+  --rust: #bf411d;
+  --forest: #253328;
+  --forest-deep: #1d291f;
+  --forest-ink: #f5f3eb;
+  --forest-sub: #c8d2c2;
+  --forest-line: #50604f;
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --gutter: 48px;
+  --wrap: 1280px;
+  --read: 720px;
+
+  --bg: var(--paper);
+  --text: var(--ink);
+  --muted: var(--sub);
+  --border: var(--line);
+  --hover: var(--paper-deep);
+  --outline-border: var(--line-strong);
+  --accent: var(--rust);
+  --accent-soft: rgba(191, 65, 29, 0.1);
+  --primary-bg: var(--ink);
+  --primary-text: var(--paper);
+  --header-bg: var(--paper);
+
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: calc(var(--center-w) + 32px);
   min-height: 100dvh;
-  margin: 0 auto;
-  padding: 0 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  overflow-wrap: break-word;
 }
 
+@media (prefers-color-scheme: dark) {
+  .public {
+    --paper: #131a15;
+    --paper-deep: #1a221c;
+    --card: #1b241d;
+    --ink: #ebeee3;
+    --sub: #a7b19c;
+    --line: #2b382e;
+    --line-strong: #4a594b;
+    --rust: #ec8d66;
+    --forest: #0b110c;
+    --forest-deep: #070b08;
+    --forest-ink: #ebeee3;
+    --forest-sub: #b9c4b1;
+    --forest-line: #2c3a2e;
+    --accent-soft: rgba(236, 141, 102, 0.14);
+    --primary-text: #131a15;
+  }
+}
+
+/* The page behind the column, where a phone shows it when the page is
+   pulled past its end. */
+html:has(.public),
+body:has(.public) {
+  background: #f5f3eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:has(.public),
+  body:has(.public) {
+    background: #131a15;
+  }
+}
+
+@media (max-width: 760px) {
+  .public {
+    --gutter: 22px;
+  }
+}
+
+@media (max-width: 380px) {
+  .public {
+    --gutter: 16px;
+  }
+}
+
+.public ::selection {
+  background: var(--acid);
+  color: var(--on-acid);
+}
+
+.public :focus-visible {
+  outline: 3px solid var(--rust);
+  outline-offset: 3px;
+}
+
+/* The header: the wordmark, the four places, and Sign in. On a phone the
+   places take a second row, so nothing is hidden. */
 .public-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: var(--header-h);
+  border-bottom: 1px solid var(--line);
   padding-top: env(safe-area-inset-top);
 }
 
+.public-header__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 32px;
+  max-width: calc(var(--wrap) + 2 * var(--gutter));
+  min-height: 88px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* "our.one", with its dot in rust. */
+.public-wordmark {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.07em;
+  white-space: nowrap;
+}
+
+.public-wordmark__dot {
+  color: var(--rust);
+}
+
+.public-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.public-nav a,
 .public-header__signin {
-  color: var(--text);
+  white-space: nowrap;
+}
+
+.public-nav a:hover,
+.public-nav a[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.public-header__signin {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .public-header__signin:hover {
-  text-decoration: underline;
+  background: var(--paper-deep);
+}
+
+@media (max-width: 760px) {
+  .public-header__bar {
+    min-height: 0;
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+
+  .public-wordmark {
+    font-size: 27px;
+  }
+
+  .public-header__signin {
+    margin-left: auto;
+  }
+
+  .public-nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    gap: 2px 20px;
+    font-size: 13px;
+  }
+
+  /* 44px to tap, without moving the row (SPEC §9). */
+  .public-nav a {
+    display: inline-block;
+    padding-block: 10px;
+  }
 }
 
 .public-main {
   flex: 1;
-  padding: 24px 0 48px;
 }
 
-/* The front page's first screen is wider than the reading column
-   (SPEC §18.13): the header, the page and the footer widen with it. A
-   browser without :has() keeps the 600px column, and the page still
-   reads top to bottom. */
-.public:has(.front-wide) {
-  max-width: 1072px;
+/* A page's column: lined up with the wordmark, at reading width. The front
+   door's sections run edge to edge, and set their own (.wide); the feed's
+   page sets its own grid (.front-wide). */
+.public-main > :not(.wide) {
+  width: 100%;
+  max-width: calc(var(--wrap) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 56px var(--gutter) 96px;
+}
+
+.public-main > :not(.wide):not(.front-wide) > * {
+  max-width: var(--read);
+}
+
+@media (max-width: 760px) {
+  .public-main > :not(.wide) {
+    padding-top: 36px;
+    padding-bottom: 64px;
+  }
 }
 
 /* Get in: the address and the button on one line once there is room. */
+.public .form {
+  max-width: 520px;
+}
+
 @media (min-width: 540px) {
   .get-in-form {
     display: grid;
@@ -1555,14 +1757,253 @@ hr {
 }
 
 .public-footer {
-  padding: 16px 0 calc(32px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.public-footer__bar {
+  display: grid;
+  gap: 24px;
+  max-width: calc(var(--wrap) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 40px var(--gutter) 48px;
+}
+
+.public-footer__lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+}
+
+.public-footer__line {
+  color: var(--sub);
+  font-family: var(--serif);
+  font-size: 17px;
+  font-style: italic;
 }
 
 .public-footer .site-footer {
+  max-width: 64em;
   padding: 0;
+  gap: 10px;
 }
 
+.public-footer .site-footer__links a {
+  color: var(--ink);
+}
+
+/* The shared classes, in the identity. */
+.public .headline {
+  font-size: clamp(40px, 6vw, 76px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.public .lede {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.public .notice {
+  border-left: 3px solid var(--rust);
+  border-radius: 4px;
+  background: var(--paper-deep);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.public .notice--ok {
+  border-left-color: var(--ink);
+}
+
+.public .notice--error {
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.public .link,
+.public .notice a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 4px;
+}
+
+.public .link:hover,
+.public .notice a:hover {
+  text-decoration-color: currentColor;
+}
+
+.public .btn {
+  border-radius: 4px;
+  letter-spacing: 0.01em;
+}
+
+.public .btn--primary:hover {
+  opacity: 0.86;
+}
+
+.public .btn--outline {
+  border-color: var(--ink);
+}
+
+.public .input {
+  background: var(--card);
+}
+
+.public .prose h1 {
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.public .prose h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 760px) {
+  .public .lede {
+    font-size: 17px;
+  }
+}
+
+/* The drafts (D-0020 §E; Draft.tsx): a need or an idea, written in the
+   browser, in a dialog over the page. */
+.public .draft {
+  width: calc(100% - 32px);
+  max-width: 610px;
+  max-height: 90dvh;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 20px 90px rgba(16, 32, 14, 0.2);
+}
+
+.public .draft::backdrop {
+  background: rgba(19, 34, 20, 0.55);
+}
+
+.draft__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.draft__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.draft__close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.draft__body {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.draft__title {
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.draft__intro {
+  color: var(--sub);
+  font-size: 14px;
+}
+
+.draft__field {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.draft__hint {
+  color: var(--sub);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.draft__field textarea,
+.draft__fallback {
+  display: block;
+  width: 100%;
+  min-height: 84px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.draft__fallback {
+  min-height: 160px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.draft__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.draft__status {
+  min-height: 40px;
+  color: var(--sub);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .draft__head {
+    padding: 12px 16px;
+  }
+
+  .draft__body {
+    padding: 20px 16px;
+  }
+
+  .draft__title {
+    font-size: 27px;
+  }
+
+  .draft__actions .btn {
+    width: 100%;
+  }
+}
+
+/* Outside the public pages, the shared classes keep the app's look. */
 .headline {
   font-size: 31px;
   font-weight: 800;

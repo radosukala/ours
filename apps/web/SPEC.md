@@ -2563,3 +2563,93 @@ and the hook tells the agent to ask the person rather than invent.
 `build.md` covers the trial agent's gaps: what to ask, `.gitignore`,
 Windows, a monorepo, `COSTS.md`, the hook and the proposal's commit. The
 feed's manifest names the hosting and the database D-0013 chose.
+
+### 18.19 The front door (M-0017, 3 October 2026)
+
+**D-0020:** the founder chose another agent's review and design study: the
+front page becomes the network's front door, under *"The software we live
+in should be ours."*, and the feed becomes its first project, one step
+away. Builders start with an idea before any code. The words below are the
+files', word for word; this section says where each lives and what holds
+it.
+
+1. **`/`, the front door** (`components/public/FrontDoor.tsx`, its words in
+   `components/public/door.ts`, its look in `door.module.css`):
+   - **The first screen:** the eyebrow *"AI helps us build. Together, we can
+     make it ours."*; the headline on three lines with *"ours."* set apart;
+     the lede; the two entrances, *"I want this to exist"* (to `#part`) and
+     *"I want to build"* (to `#build`); then *"Founder-led today. User
+     control isn't built yet."* with a link to `#open`; and the picture,
+     whose description says the work and creator services are
+     possibilities. Under it: *"Software should answer to the people who
+     depend on it."*, with Open code, Public costs and A path to user
+     control.
+   - **`#idea`, "The moment we're in"** (the acid field).
+   - **`#projects`:** three tabs, *"Your people"*, *"Your work"* and *"Your
+     audience"*. The first is the feed, with its lede, its join form, the
+     lines under it and the count, by the same gates as `/feed` (/contract
+     counts "the number on the front page", and the seat email says to ask
+     again there). The other two are labelled *"A possibility · no project
+     announced"*, each with a card marked *"Concept only"*. Then the first
+     maintainer, *"unpaid, by choice"*, and what the founder holds today.
+   - **`#ours`:** the three rights, marked *Proposed*, with *"Proposed, in a
+     draft nobody has signed yet. None of it is in force: today, the
+     founder decides."*; and the illustration, which says it is one and
+     that our.one can't do it today.
+   - **`#build`** (the dark band): the invitation, pay only *"when people
+     choose a service and fund it"*, three terms from `/maintainers`, *"Draft
+     an idea first"*, the line for a coding agent with a button that copies
+     it, the three steps, and what passing the check means.
+   - **`#open`:** four rows, *Built* (the feed; the builder kit), *Draft*
+     (the common agreement) and *Not built yet* (control that doesn't
+     depend on the founder), each true whether or not the site is
+     deployed; and *"Authority today: the founder, under bootstrap. No
+     member ownership has been issued."*
+   - **`#part`:** the feed (*"Join the feed"* while joining is open, *"See
+     the feed"* and *"Joining opens soon."* while it isn't), a need and an
+     idea; and a last line that says what a draft does, which follows
+     `PROPOSALS_EMAIL`.
+   - **The route** (`app/(public)/page.tsx`) reads the count and the seats
+     as `/feed`'s does, and leaves a line out when one can't be read.
+     Signed-in visitors go to `/home`.
+2. **`/feed`, the feed's page** (`app/(public)/feed/page.tsx`, rendering
+   `components/public/FrontPage.tsx`): the front page's words, form, seats,
+   picture, promise and questions, moved unchanged. The count line, the
+   free line, the closed line and the seat line live in `join.ts`, which
+   the front door reads too; `FrontPage.tsx` re-exports them.
+3. **The public layout:** the header's wordmark (*"our"*, the dot in rust,
+   *"one"*), its four places (*"The idea"*, *"Projects"*, *"Build with
+   us"*, *"In the open"*, on a second row on a phone) and *"Sign in"*; the
+   footer's wordmark, the line *"The software we live in should be ours."*,
+   and the site footer as before. The identity is `.public`'s tokens in
+   `globals.css`, light and dark; the signed-in app keeps its own, and so
+   do the two pictures of it (`.phone`, `.mini`). The fonts are the
+   device's. Nothing loads from anywhere else.
+4. **The drafts** (`components/public/Draft.tsx`, their words in
+   `drafts.ts`): a need or an idea, three questions each, written in the
+   browser. *"Copy my draft"* puts it on the clipboard, or shows it,
+   selected, to copy by hand. *"Open in my email"* appears only while
+   `PROPOSALS_EMAIL` is set; the draft goes into the link only while the
+   link is 1,800 characters or fewer. Nothing is saved, sent or counted,
+   and no form posts it. Without JavaScript, each button is a link to
+   `/maintainers`, which says how to write. `/privacy` says what a draft
+   does.
+5. **`/projects`** adds the two possibilities, labelled, under *"Possibilities,
+   not projects"*, and the two drafts under *"The next one"*.
+   **`/maintainers`** adds a sentence on starting with an idea, and the two
+   drafts. **`/build`** leads with *"Build something people can depend
+   on."*, the deal, *"1. Start with the idea"*, *"2. Build it with your
+   coding agent"* (the line, its copy button, what has been tried, and
+   what the agent does, now five steps), the rules, the check's limits,
+   *"3. Then propose it"* and the tools. The *"On your own"* column is
+   gone (D-0020 §D).
+6. **`build.md`** starts with the idea: a ninth question in step 1 (how to
+   find out whether people want it), and a new step 2 that drafts
+   `PITCH.md`'s first four parts before any code and asks the person
+   whether to find out first or to build now. The steps after it are
+   renumbered; step 7 finishes `PITCH.md`. **The line for a coding agent**
+   is *"Read https://our.one/build.md and follow it to help me bring my
+   idea to our.one."* The rules, the tool and the schema are unchanged.
+7. **The claims scan** reads the new files, as it reads all of `src/app`
+   and `src/components`; tests/front-door.test.ts scans every rendered
+   state of the front door.

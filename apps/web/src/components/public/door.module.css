@@ -1,0 +1,1559 @@
+/*
+ * The front door (D-0020 §A; SPEC §18.19), from the design study the founder
+ * chose (P-0013): warm paper, dark green ink, an acid green field, a rust
+ * accent and large type. Every colour is one of .public's tokens
+ * (globals.css), so the dark version follows them.
+ */
+
+.door {
+  width: 100%;
+}
+
+.wrap {
+  max-width: calc(var(--wrap) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.line {
+  display: block;
+}
+
+.serif {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.muted {
+  color: var(--sub);
+}
+
+.eyebrow,
+.eyebrowSmall,
+.label,
+.state {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.eyebrowSmall {
+  font-size: 10px;
+}
+
+/* Buttons: square-cornered, with an arrow. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 50px;
+  padding: 12px 22px;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.btn:hover {
+  background: var(--paper-deep);
+}
+
+.btnSolid {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btnSolid:hover {
+  background: var(--sub);
+}
+
+.btnAcid {
+  border-color: var(--acid);
+  background: var(--acid);
+  color: var(--on-acid);
+}
+
+.btnAcid:hover {
+  background: #effbb9;
+}
+
+.btnSmall {
+  min-height: 42px;
+  padding: 9px 16px;
+  font-size: 13px;
+}
+
+.arrow {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid currentColor;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------ first screen */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+  grid-template-areas:
+    "eyebrow eyebrow"
+    "title   picture"
+    "text    picture";
+  gap: 24px 46px;
+  align-items: start;
+  padding: 44px 0 52px;
+}
+
+.hero > .eyebrow {
+  grid-area: eyebrow;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rust);
+}
+
+.headline {
+  grid-area: title;
+  max-width: 790px;
+  font-size: clamp(56px, 7.2vw, 102px);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.064em;
+}
+
+.ours {
+  color: var(--rust);
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.heroText {
+  grid-area: text;
+  max-width: 590px;
+}
+
+.lede {
+  max-width: 520px;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.heroStatus {
+  margin-top: 20px;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.heroStatus a,
+.oursStatus a,
+.builderLimit a,
+.openDetail a,
+.openFoot a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.heroStatus a:hover,
+.oursStatus a:hover,
+.openDetail a:hover,
+.openFoot a:hover {
+  color: var(--rust);
+}
+
+/* The picture. */
+.diagram {
+  grid-area: picture;
+  margin: 12px 0 0;
+}
+
+.diagramTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ink);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.orbit {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding-top: 24px;
+  font-family: var(--sans);
+}
+
+.orbitRing {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.orbitField {
+  fill: var(--acid);
+}
+
+.orbitLinks {
+  fill: none;
+  stroke: #8b9c66;
+  stroke-width: 1;
+}
+
+.orbitPeople circle {
+  fill: var(--on-acid);
+}
+
+.orbitPill {
+  fill: #f5f3eb;
+}
+
+.orbitName {
+  fill: #222b24;
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+
+.orbitMotto {
+  fill: #394a31;
+  font-size: 10px;
+  letter-spacing: 1.1px;
+}
+
+.orbitFirst {
+  fill: var(--forest);
+}
+
+.orbitFirstKicker {
+  fill: var(--acid);
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.orbitFirstName {
+  fill: var(--forest-ink);
+  font-size: 14px;
+}
+
+.orbitFirstArrow {
+  fill: var(--acid);
+  font-size: 20px;
+}
+
+.orbitCard {
+  fill: var(--paper);
+  stroke: var(--line-strong);
+}
+
+.orbitKicker {
+  fill: var(--sub);
+  font-size: 8px;
+  letter-spacing: 0.8px;
+}
+
+.orbitCardName {
+  fill: var(--ink);
+  font-size: 13px;
+}
+
+.orbitElse {
+  fill: var(--ink);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-style: italic;
+}
+
+.orbitPlus {
+  fill: var(--rust);
+  font-size: 20px;
+}
+
+.diagramCaption {
+  max-width: 365px;
+  margin: 4px auto 0;
+  color: var(--sub);
+  font-size: 12px;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Under the first screen. */
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  padding: 21px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 25px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.values a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.values a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.values a span {
+  color: var(--rust);
+}
+
+/* ---------------------------------------------------------------- sections */
+
+.section {
+  padding: 96px 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 16px;
+}
+
+.sectionHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 48px;
+  margin-bottom: 48px;
+}
+
+.sectionHeading .eyebrow {
+  padding-top: 9px;
+}
+
+.sectionHeading h2 {
+  font-size: clamp(34px, 4.2vw, 58px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.055em;
+}
+
+/* The idea: the acid field. */
+.acid {
+  border-top: 0;
+  background: var(--acid);
+  color: var(--on-acid);
+}
+
+.acid .sectionHeading {
+  margin-bottom: 28px;
+}
+
+.ideaText {
+  max-width: 630px;
+  margin-left: calc((100% - 48px) / 3 + 48px);
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.ideaText p + p {
+  margin-top: 16px;
+}
+
+.ideaText .quoteLine {
+  max-width: 740px;
+  margin-top: 39px;
+  font-size: clamp(30px, 4vw, 51px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+/* Projects. */
+.projectsIntro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 40px;
+  margin-bottom: 26px;
+  font-size: 14px;
+}
+
+.projectsIntro p {
+  max-width: 450px;
+}
+
+.tabs {
+  display: flex;
+  gap: 36px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  min-height: 52px;
+  margin-bottom: -1px;
+  padding: 15px 0;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--sub);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--rust);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.panel {
+  padding-top: 40px;
+}
+
+.panel + .panel:not([hidden]) {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.possibility {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 70px;
+  align-items: center;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+
+.label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.possibilityHeading {
+  margin: 10px 0 16px;
+  font-size: 37px;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+.possibilityBody {
+  max-width: 430px;
+  margin-bottom: 12px;
+  color: var(--sub);
+}
+
+/* The feed's way in: its join form, the lines under it, and the count. */
+.join {
+  display: grid;
+  gap: 10px;
+  max-width: 520px;
+  margin: 8px 0 18px;
+}
+
+.joinStrong {
+  font-size: 14px;
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+.joinSmall {
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.joinSmall a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The count, shown as a rank (no progress bar, D-0012 §D); the dot says
+   the number is live. */
+.count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.count::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rust);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* An example, drawn as a slip of paper. */
+.slip {
+  padding: 32px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: 8px 8px 0 var(--paper-deep);
+}
+
+.slipHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.slipHead strong {
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+.slipHead span {
+  color: var(--sub);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.samplePost {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr);
+  gap: 15px;
+  margin-top: 24px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  font-family: var(--serif);
+  font-size: 18px;
+}
+
+.samplePost strong {
+  display: block;
+  font-size: 13px;
+}
+
+.samplePost p {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.caughtUp {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 23px;
+  border-top: 1px solid var(--line);
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.caughtUp span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--acid);
+  color: var(--on-acid);
+}
+
+.workRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workRows li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.workRows li:last-child {
+  border-bottom: 0;
+}
+
+.paperDot {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--sub);
+  border-radius: 50%;
+}
+
+.letter {
+  padding: 27px 0 12px;
+  font-family: var(--serif);
+  font-size: 28px;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.slipNote {
+  margin-top: 15px;
+  color: var(--sub);
+  font-size: 11px;
+}
+
+.proof {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 48px;
+  margin-top: 47px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.proof p {
+  max-width: 670px;
+}
+
+.proofName {
+  margin-top: 9px;
+}
+
+.proofLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin-top: 10px;
+}
+
+.proofLinks .textLink {
+  font-size: 12px;
+}
+
+/* What "ours" means. */
+.ourSection {
+  background: var(--paper-deep);
+}
+
+.oursLede {
+  max-width: 620px;
+  font-size: 18px;
+}
+
+.oursGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 100px;
+  align-items: start;
+  margin-top: 42px;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.065em;
+}
+
+.state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.stateDraft::before {
+  border: 1px solid var(--ink);
+  background: transparent;
+}
+
+.stateFuture::before {
+  background: var(--rust);
+}
+
+.oursGrid .state::before {
+  border: 1px solid var(--ink);
+  background: transparent;
+}
+
+.rights {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rights li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 13px;
+  padding: 19px 0;
+  border-top: 1px solid var(--line-strong);
+}
+
+.rights li > span {
+  color: var(--sub);
+  font-family: var(--serif);
+  font-style: italic;
+}
+
+.rights strong {
+  display: block;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.rights p {
+  margin-top: 5px;
+  color: var(--sub);
+  font-size: 14px;
+}
+
+.oursStatus {
+  max-width: 560px;
+  margin-top: 24px;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+/* The illustration. */
+.continuity {
+  margin: 0;
+  padding: 29px 30px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+}
+
+.people {
+  display: flex;
+  align-items: center;
+  margin: 26px 0 11px;
+}
+
+.people span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -9px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: #d2dcb6;
+  color: #222b24;
+  font-family: var(--serif);
+  font-size: 19px;
+}
+
+.people span:first-child {
+  margin-left: 0;
+}
+
+.people span:nth-child(2n) {
+  background: #e8d1b8;
+}
+
+.stay {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kept {
+  padding: 8px 0 22px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.kept span {
+  display: block;
+}
+
+.operator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 22px 0 23px;
+}
+
+.operatorRole {
+  color: var(--sub);
+  font-size: 11px;
+}
+
+.operatorName {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: 22px;
+  font-style: italic;
+  transition: background-color 0.3s;
+}
+
+.glyphChanged {
+  background: var(--rust);
+}
+
+.changeButton {
+  width: 100%;
+}
+
+.result {
+  min-height: 57px;
+  margin-top: 17px;
+  color: var(--sub);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Builders: the dark band. */
+.builders {
+  border-top: 0;
+  background: var(--forest);
+  color: var(--forest-ink);
+}
+
+.builders .eyebrow {
+  color: var(--acid);
+}
+
+.builders .sectionHeading h2 {
+  font-size: clamp(38px, 4.8vw, 65px);
+}
+
+.builderGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 68px;
+  align-items: start;
+}
+
+.builderLede {
+  max-width: 490px;
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.builderPay {
+  margin-top: 19px;
+  color: var(--acid);
+}
+
+.terms {
+  margin: 27px 0 29px;
+  padding: 0;
+  list-style: none;
+}
+
+.terms li {
+  display: flex;
+  gap: 13px;
+  padding: 11px 0;
+  border-top: 1px solid var(--forest-line);
+  font-size: 14px;
+}
+
+.terms li::before {
+  content: "↗";
+  color: var(--acid);
+}
+
+.builderActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+
+.builders .textLink {
+  color: var(--acid);
+}
+
+.builderLimit {
+  max-width: 535px;
+  margin-top: 24px;
+  color: var(--forest-sub);
+  font-size: 12px;
+}
+
+.builderLimit a {
+  color: var(--forest-ink);
+}
+
+.agentBox {
+  overflow: hidden;
+  border: 1px solid var(--forest-line);
+  border-radius: 4px;
+}
+
+.agentTop {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 18px;
+  padding: 15px 21px;
+  border-bottom: 1px solid var(--forest-line);
+  font-size: 11px;
+}
+
+.agentTop span:first-child {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.agentTop span:last-child {
+  color: var(--acid);
+}
+
+.agentBody {
+  padding: 24px;
+}
+
+.agentBody h3 {
+  margin-bottom: 23px;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.agentLine code {
+  display: block;
+  padding-left: 15px;
+  border-left: 2px solid var(--acid);
+  color: var(--forest-ink);
+  font: 13px/1.7 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.agentActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 22px;
+  font-size: 12px;
+}
+
+.agentActions a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.agentActions :global(.copy-status) {
+  flex-basis: 100%;
+  color: var(--forest-sub);
+}
+
+.agentActions :global(.copy-status):empty {
+  display: none;
+}
+
+.agentFoot {
+  padding: 16px 24px;
+  background: var(--forest-deep);
+  color: var(--forest-sub);
+  font-size: 11px;
+}
+
+.kitSteps {
+  margin: 27px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kitSteps li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 13px 0;
+  border-top: 1px solid var(--forest-line);
+  font-size: 12px;
+}
+
+.kitSteps span {
+  color: var(--forest-sub);
+}
+
+/* In the open. */
+.openIntro {
+  max-width: 590px;
+  margin: -16px 0 38px calc((100% - 48px) / 3 + 48px);
+  font-size: 18px;
+}
+
+.openRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.openRow {
+  display: grid;
+  grid-template-columns: 185px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  padding: 27px 0;
+  border-top: 1px solid var(--line);
+}
+
+.openRow h3 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.openText {
+  margin-top: 9px;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.openDetail {
+  max-width: 360px;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.openFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px 24px;
+  margin-top: 20px;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+/* Your part. */
+.part {
+  background: var(--paper-deep);
+}
+
+.partIntro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px 80px;
+  margin-bottom: 42px;
+}
+
+.partIntro h2 {
+  font-size: clamp(43px, 5.7vw, 78px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.partIntro > p {
+  max-width: 340px;
+  margin-bottom: 7px;
+  font-size: 17px;
+}
+
+.partOptions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.partOption {
+  padding-top: 24px;
+  border-top: 1px solid var(--ink);
+}
+
+.partOption h3 {
+  margin: 12px 0;
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.partOption > p:not(.eyebrowSmall):not(.partAction):not(.partNote) {
+  max-width: 455px;
+  margin-bottom: 23px;
+  font-size: 14px;
+}
+
+.partAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.partNote {
+  margin-top: 12px;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.partFoot {
+  margin-top: 32px;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- the dark */
+
+@media (prefers-color-scheme: dark) {
+  .btnSolid:hover {
+    background: var(--sub);
+  }
+
+  .btnAcid:hover {
+    background: #d4e57c;
+  }
+
+  /* The idea's field: a deep olive, with the acid for its close. */
+  .acid {
+    background: #232e1b;
+    color: var(--ink);
+  }
+
+  .acid .quoteLine em {
+    color: var(--acid);
+  }
+
+  .orbitLinks {
+    stroke: #6d7d4f;
+  }
+
+  .orbitCard {
+    fill: var(--card);
+  }
+
+  .people span {
+    border-color: var(--paper);
+  }
+}
+
+/* ---------------------------------------------------------------- widths */
+
+@media (min-width: 1450px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+
+  .headline {
+    font-size: 111px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .headline {
+    font-size: 76px;
+  }
+
+  .lede {
+    font-size: 16px;
+  }
+
+  .actions .btn {
+    gap: 14px;
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+
+  .section {
+    padding: 75px 0;
+  }
+
+  .sectionHeading,
+  .proof {
+    gap: 28px;
+  }
+
+  .ideaText,
+  .openIntro {
+    margin-left: calc((100% - 28px) / 3 + 28px);
+  }
+
+  .oursGrid {
+    gap: 45px;
+  }
+
+  .builderGrid {
+    gap: 36px;
+  }
+
+  .possibility {
+    gap: 42px;
+  }
+
+  .openRow {
+    grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 26px;
+  }
+
+  .partOptions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .partIntro {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 32px 0;
+  }
+
+  .headline {
+    font-size: clamp(54px, 13.4vw, 88px);
+    line-height: 0.99;
+    letter-spacing: -0.06em;
+  }
+
+  .hero > .eyebrow {
+    font-size: 10px;
+  }
+
+  .lede {
+    font-size: 17px;
+  }
+
+  .actions {
+    margin-top: 22px;
+    gap: 10px;
+  }
+
+  .actions .btn {
+    padding: 13px 19px;
+    font-size: 13px;
+  }
+
+  .heroStatus {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .diagram {
+    width: 100%;
+    max-width: 450px;
+    margin: 10px auto 0;
+  }
+
+  .orbit {
+    padding-top: 15px;
+  }
+
+  /* The picture's words, big enough to read at a phone's width. */
+  .orbitKicker,
+  .orbitFirstKicker {
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+
+  .orbitCardName,
+  .orbitFirstName {
+    font-size: 15px;
+  }
+
+  .orbitFirstArrow {
+    display: none;
+  }
+
+  .orbitMotto {
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+
+  .diagramCaption {
+    font-size: 11px;
+  }
+
+  .strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 19px 0 24px;
+    font-size: 12px;
+  }
+
+  .values {
+    gap: 8px 16px;
+  }
+
+  .section {
+    padding: 57px 0;
+  }
+
+  .sectionHeading,
+  .proof {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .sectionHeading {
+    margin-bottom: 25px;
+  }
+
+  .sectionHeading h2 {
+    max-width: 580px;
+    font-size: 40px;
+  }
+
+  .ideaText,
+  .openIntro {
+    margin-left: 0;
+    font-size: 17px;
+  }
+
+  .openIntro {
+    margin-top: 0;
+    margin-bottom: 26px;
+    font-size: 16px;
+  }
+
+  .ideaText .quoteLine {
+    margin-top: 28px;
+    font-size: 34px;
+  }
+
+  .projectsIntro {
+    display: block;
+  }
+
+  .projectsIntro p + p {
+    margin-top: 15px;
+  }
+
+  /* The three tabs fit at 320px; a narrower screen scrolls them sideways,
+     with no scrollbar drawn and nothing cut off below. */
+  .tabs {
+    gap: 24px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .tab {
+    margin-bottom: 0;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .possibility {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .panel {
+    padding-top: 28px;
+  }
+
+  .possibilityHeading {
+    max-width: 450px;
+    font-size: 32px;
+  }
+
+  .possibilityBody {
+    max-width: none;
+    font-size: 15px;
+  }
+
+  .slip {
+    width: 100%;
+    max-width: 500px;
+    padding: 24px;
+  }
+
+  .proof {
+    margin-top: 34px;
+    padding-top: 22px;
+  }
+
+  .oursGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+    margin-top: 26px;
+  }
+
+  .oursLede {
+    font-size: 16px;
+  }
+
+  .rights li {
+    padding: 16px 0;
+  }
+
+  .continuity {
+    max-width: 500px;
+    padding: 25px;
+  }
+
+  .result {
+    min-height: 36px;
+  }
+
+  .builders .sectionHeading h2 {
+    font-size: 42px;
+  }
+
+  .builderGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 37px;
+  }
+
+  .builderLede {
+    font-size: 17px;
+  }
+
+  .builderLimit {
+    max-width: none;
+  }
+
+  .agentBody {
+    padding: 24px 20px;
+  }
+
+  .agentFoot {
+    padding: 16px 20px;
+  }
+
+  .openRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+    padding: 23px 0;
+  }
+
+  .openDetail {
+    max-width: 520px;
+  }
+
+  .openFoot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .partIntro {
+    display: block;
+    margin-bottom: 34px;
+  }
+
+  .partIntro h2 {
+    max-width: 500px;
+    font-size: 51px;
+  }
+
+  .partIntro > p {
+    max-width: 480px;
+    margin-top: 24px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .headline {
+    font-size: 52px;
+  }
+
+  .sectionHeading h2 {
+    font-size: 34px;
+  }
+
+  .tabs {
+    gap: 18px;
+  }
+
+  .tab {
+    font-size: 13px;
+  }
+
+  .partIntro h2 {
+    font-size: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .glyph {
+    transition: none;
+  }
+}

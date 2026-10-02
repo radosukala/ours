@@ -1,56 +1,51 @@
 /**
- * /build, "Build on our.one" (SPEC §18.18, M-0016, D-0019 §G): the two ways
- * to build an app, side by side; the one line a builder gives their coding
- * agent; what the agent does; the rules and how each is checked; what the
- * check can and can't tell; the proposal, by email (D-0018 §D, through
- * /maintainers); and the tools, with the tool's version and SHA-256.
+ * /build, "Build on our.one" (SPEC §18.18, as §18.19 amends it; M-0016 and
+ * M-0017; D-0019 §G, as D-0020 §B and §D amend it): the builders'
+ * invitation and its deal; the idea first, before any code; the line a
+ * builder gives their coding agent, and what the agent does; the rules and
+ * how each is checked; what the check can and can't tell; the proposal, by
+ * email (D-0018 §D, through /maintainers); and the tools, with the tool's
+ * version and SHA-256.
  *
- * Nothing in the our.one column is in force yet, and the column says so
- * under its last line. Passing the check makes a project ready to propose,
- * nothing more (D-0019 §E), and the page says that too.
+ * Nothing in the deal is in force yet, and the line under it says so.
+ * Passing the check makes a project ready to propose, nothing more (D-0019
+ * §E), and the page says that too. Since D-0020 §D the page states
+ * our.one's own deal and says nothing absolute about building alone.
  *
  * The rules' titles are the rules block's, word for word: tests/kit.test.ts
  * compares them with kit/our-one.mjs. The line for the agent names
- * our.one's own address; the "Today" line follows PROPOSALS_EMAIL.
+ * our.one's own address; the "Today" line and the drafts follow
+ * PROPOSALS_EMAIL.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CopyLine } from "@/components/public/CopyLine";
+import { BUILD_TERMS } from "@/components/public/door";
+import { DraftButton } from "@/components/public/Draft";
 import styles from "@/components/public/public.module.css";
 import { repositoryUrl } from "@/components/public/repository";
 import { proposalsEmail } from "@/core/config";
 import { AGENT_LINE, KIT_TOOL } from "@/core/kit-info";
 
-/** Rendered per request: the "Today" line follows PROPOSALS_EMAIL, as /agreement's does. */
+/** Rendered per request: the "Today" line and the drafts follow PROPOSALS_EMAIL, as /agreement's does. */
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Build on our.one",
   description:
-    "Two ways to build an app, and how to start one for our.one with your coding agent: the instructions it follows, the rules, and the check it runs.",
+    "Build something people can depend on: start with an idea and the people it would serve, then build it with your coding agent under the common agreement's rules.",
 };
 
-type Way = { title: string; lines: readonly string[] };
+/** What a maintainer gives up (D-0017 §C), as /maintainers says it. */
+const GIVE_UP: readonly string[] = [
+  "Selling the service, or the people who use it.",
+  "Money from anyone who expects a return from the service.",
+  "The list of users. You get the access your service needs, and it can be withdrawn.",
+];
 
-const ALONE: Way = {
-  title: "On your own",
-  lines: [
-    "You build first, then look for people to use it.",
-    "You pay the costs until it earns, or take money from people who expect a return.",
-    "You can sell it, and the people who use it go with the sale.",
-    "If you stop, it stops.",
-  ],
-};
-
-const ON_OUR_ONE: Way = {
-  title: "On our.one",
-  lines: [
-    "People say what they need, and you propose what you'd build.",
-    "If people choose it and fund it, your pay comes from that, as your agreement says. The costs and the pay are public.",
-    "Nobody may sell it, you included.",
-    "If you stop, someone else can be appointed and carry it on.",
-    "What it keeps about people is meant to stay out of your reach.",
-  ],
-};
+/** What has been tried, and with which line (H15; C22 of M-0016's re-check; D-0020 §D). */
+const TRIAL =
+  "It's written for coding agents that can read a web page and run commands. This line hasn't been tried yet. The line before it was tried once: an agent in Claude Code, given it and a person's answers, built a small fictional app and passed version 0.1.0 of the check.";
 
 type Rule = { title: string; checked: string };
 
@@ -69,62 +64,76 @@ const RULES: readonly Rule[] = [
 ];
 
 export default function BuildPage() {
+  const email = proposalsEmail();
   return (
     <article className={styles.page}>
-      <h1 className="headline">Build on our.one</h1>
+      <p className={styles.kicker}>Build with us</p>
+      <h1 className="headline">Build something people can depend on.</h1>
       <p className="notice">
         {"Being developed. The tools work today. The common agreement they follow is a draft that nobody has signed yet, and none of its collective rights is in force."}
       </p>
       <p className="lede">
-        {"Most apps are built alone: you build first, and look for people after. On our.one, you build for the people who will use it, under the common agreement: they will fund it and, in time, decide how it's run."}
+        {"Start with an idea and the people it would serve. Show it to them before you build it all, or bring a project you already have. When people choose a service and fund it, its agreed budget can pay you, or your team, to run it."}
       </p>
 
-      <section aria-labelledby="build-ways">
-        <h2 id="build-ways">Two ways to build</h2>
-        <div className={styles.ways}>
-          {[ALONE, ON_OUR_ONE].map((way) => (
-            <div key={way.title} className={styles.way}>
-              <h3 className={styles.itemTitle}>{way.title}</h3>
-              <ul className={styles.wayList}>
-                {way.lines.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-              {way === ON_OUR_ONE ? (
-                <p className={styles.heldBy}>
-                  {proposalsEmail()
-                    ? "Today: none of this is in force yet. Proposals and needs are read by hand, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "
-                    : "Today: none of this is in force yet. Proposals and needs open at launch, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "}
-                  <Link href="/agreement">The common agreement</Link>
-                </p>
-              ) : null}
-            </div>
+      <section aria-labelledby="build-deal">
+        <h2 id="build-deal">The deal</h2>
+        <h3>What you get</h3>
+        <ul className="prose">
+          {BUILD_TERMS.map((line) => (
+            <li key={line}>{line}</li>
           ))}
+        </ul>
+        <h3>What you give up</h3>
+        <ul className="prose">
+          {GIVE_UP.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <p className={styles.heldBy}>
+          {email
+            ? "Today: none of this is in force yet. Proposals and needs are read by hand, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "
+            : "Today: none of this is in force yet. Proposals and needs open at launch, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "}
+          <Link href="/agreement">The common agreement</Link>
+        </p>
+        <p>
+          <Link href="/maintainers">The maintainer&apos;s deal</Link>
+          {" has it in full, with how to propose a service and how to name a need."}
+        </p>
+      </section>
+
+      <section aria-labelledby="build-idea">
+        <h2 id="build-idea">1. Start with the idea</h2>
+        <p>
+          {"Before any code, write down what you'd build and for whom, what those people use today, and how you'd find out whether they want it. Then put it in front of them. Interest is a start. It isn't an audience, or funding."}
+        </p>
+        <div className={styles.drafts}>
+          <DraftButton kind="idea" label="Draft an idea" email={email} className="btn btn--primary btn--large" />
         </div>
+        <p>{"Your coding agent starts there too: it drafts the idea with you before it writes any code."}</p>
       </section>
 
       <section aria-labelledby="build-agent">
-        <h2 id="build-agent">Start with your coding agent</h2>
+        <h2 id="build-agent">2. Build it with your coding agent</h2>
         <p>{"You don't have to build it by hand. Give your coding agent this one line:"}</p>
         <p className={styles.prompt}>
           <code>{AGENT_LINE}</code>
         </p>
-        <p>
-          {"It's written for coding agents that can read a web page and run commands. So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed version 0.1.0 of the check."}
-        </p>
-      </section>
-
-      <section aria-labelledby="build-steps">
-        <h2 id="build-steps">What your agent does</h2>
+        <div className={styles.drafts}>
+          <CopyLine text={AGENT_LINE} className="btn btn--outline" />
+        </div>
+        <p>{TRIAL}</p>
+        <h3 id="build-steps">What your agent does</h3>
         <ol className="prose">
           <li>{"Asks you what you want to build, who it's for, and what it will keep about them."}</li>
+          <li>{"Drafts the idea with you in PITCH.md, before any code, and asks whether you'd rather find out first or build now."}</li>
           <li>
             {"Sets the project up: an our.one.json that says what it keeps and why, who else receives it, and which folders hold the code that touches it; the rules, in AGENTS.md; a costs file; and an open-source licence you choose."}
           </li>
           <li>
             {"Builds it under the rules, and runs the check before it finishes. In Claude Code, a hook runs the check each time the agent stops: if a check fails, it sends the agent back once with what fails, and tells it to ask you for anything only you know; then it lets it stop, and tells you."}
           </li>
-          <li>Drafts your proposal.</li>
+          <li>Finishes your proposal.</li>
         </ol>
       </section>
 
@@ -159,9 +168,9 @@ export default function BuildPage() {
       </section>
 
       <section aria-labelledby="build-propose">
-        <h2 id="build-propose">Then propose it</h2>
+        <h2 id="build-propose">3. Then propose it</h2>
         <p>
-          {"Your agent drafts the proposal in PITCH.md, with what the agreement asks of every proposal. Proposals go by email, and a person reads each one. "}
+          {"Your agent finishes the proposal in PITCH.md, with what the agreement asks of every proposal. Proposals go by email, and a person reads each one. "}
           <Link href="/maintainers">Build the next one</Link>
           {" says where to send it, what the job is, and what you get and give up."}
         </p>

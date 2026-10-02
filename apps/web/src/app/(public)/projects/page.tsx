@@ -7,16 +7,25 @@
  * Whether it moves to the holder before the contract's count is open
  * (D-0017 §K.4), and the page says so (the re-check of M-0015).
  *
- * The feed's description is the front page's lede, imported (D-0016 §A),
- * so the two can't drift apart. The promise at the threshold uses the
- * status line's form, "go to", so the claims scan has nothing to let
- * through here.
+ * The feed's description is its lede, imported (D-0016 §A), so the two
+ * can't drift apart. The promise at the threshold uses the status line's
+ * form, "go to", so the claims scan has nothing to let through here.
+ *
+ * Since D-0020 §B, the page also shows the front door's two possibilities,
+ * each labelled, with no project announced, and the next one can start as
+ * a draft: a need, or an idea (D-0020 §E). Rendered per request, because
+ * the drafts offer email only while PROPOSALS_EMAIL is set.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { POSSIBILITIES } from "@/components/public/door";
+import { DraftButton } from "@/components/public/Draft";
 import { MAINTAINER, THRESHOLD } from "@/components/public/handover";
 import { LEDE } from "@/components/public/lede";
 import styles from "@/components/public/public.module.css";
+import { proposalsEmail } from "@/core/config";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -25,8 +34,10 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
+  const email = proposalsEmail();
   return (
     <article className={styles.page}>
+      <p className={styles.kicker}>A first project. A wider possibility.</p>
       <h1 className="headline">Projects</h1>
       <p className="lede">
         Every service on our.one will be a project with a page like this one:
@@ -74,6 +85,9 @@ export default function ProjectsPage() {
           </dd>
         </dl>
         <p className={styles.links}>
+          <Link href="/feed" className={styles.pairLink}>
+            The feed&apos;s page
+          </Link>
           <Link href="/contract" className={styles.pairLink}>
             The contract
           </Link>
@@ -83,11 +97,33 @@ export default function ProjectsPage() {
         </p>
       </section>
 
+      <section aria-labelledby="project-possible">
+        <h2 id="project-possible">Possibilities, not projects</h2>
+        <p>
+          Two examples of what could come next. Neither is a project: nothing
+          is announced, and no one has proposed either to our.one.
+        </p>
+        <ul role="list" className={styles.items}>
+          {POSSIBILITIES.map((p) => (
+            <li key={p.id} className={styles.item}>
+              <p className={styles.meta}>{p.label}</p>
+              <h3 className={styles.itemTitle}>{p.heading.join(" ")}</h3>
+              <p>{p.text}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section aria-labelledby="project-next">
         <h2 id="project-next">The next one</h2>
         <p>
-          Not chosen yet. Propose a service, or tell us what you need.
+          Not chosen yet. Propose a service, or tell us what you need. Either
+          can start as a draft, before any code.
         </p>
+        <div className={styles.drafts}>
+          <DraftButton kind="need" label="Draft a need" email={email} className="btn btn--primary btn--large" />
+          <DraftButton kind="idea" label="Draft an idea" email={email} className="btn btn--outline btn--large" />
+        </div>
         <p className={styles.links}>
           <Link href="/build" className={styles.pairLink}>
             Build on our.one

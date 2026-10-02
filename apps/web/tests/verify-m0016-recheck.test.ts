@@ -654,7 +654,9 @@ describe("defects (each FAILS on 25ce8f0)", () => {
   it("fixed (LOW): /build says the one trial 'built a small fictional app and passed the check', beside 'Version 0.2.0' and its SHA-256; the trial passed 0.1.0 (ab12bc2e…, its REPORT says), and 0.2.0 fails the trial's project as committed on agents, boundary and claims", () => {
     const text = textOf(renderToStaticMarkup(createElement(BuildPage)));
     // Changed after the fix (C22): the sentence now names the version the trial passed.
-    expect(text).toContain("So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed version 0.1.0 of the check.");
+    // Changed after D-0020 (M-0017): the line changed, so the sentence says which
+    // line was tried, and that the new one hasn't been yet.
+    expect(text).toContain("This line hasn't been tried yet. The line before it was tried once: an agent in Claude Code, given it and a person's answers, built a small fictional app and passed version 0.1.0 of the check.");
     expect(text).toContain(`Version ${KIT_TOOL.version}`);
     expect(record("receipts/conformance/2026-10-02-M-0016-agent-trial/REPORT.md")).toContain("ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7");
     expect(KIT_TOOL.sha256).not.toBe("ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7");

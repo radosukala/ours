@@ -539,16 +539,20 @@ describe("closed (each passes on a92bbb5)", () => {
   it("closed: /build's structure — inside the public layout, one h1, an outline h1 → h2 → h3 that never skips a level, every section labelled by its own heading, one header, one main#main, one footer and one navigation 'About our.one' (the same outline in Chrome on next start at 320, 375 and 1280px)", () => {
     const html = renderToStaticMarkup(createElement(PublicLayout, null, createElement(BuildPage)));
     const headings = [...html.matchAll(/<(h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => `${m[1]} ${textOf(m[2]!)}`);
+    // Changed after D-0020 (M-0017): the page leads with the invitation and the
+    // deal, then the idea, the agent, the rules, the limits, the proposal and
+    // the tools; the "On your own" column is retired (D-0020 §D).
     expect(headings).toEqual([
-      "h1 Build on our.one",
-      "h2 Two ways to build",
-      "h3 On your own",
-      "h3 On our.one",
-      "h2 Start with your coding agent",
-      "h2 What your agent does",
+      "h1 Build something people can depend on.",
+      "h2 The deal",
+      "h3 What you get",
+      "h3 What you give up",
+      "h2 1. Start with the idea",
+      "h2 2. Build it with your coding agent",
+      "h3 What your agent does",
       "h2 The rules",
       "h2 What the check can tell, and what it can't",
-      "h2 Then propose it",
+      "h2 3. Then propose it",
       "h2 The tools",
     ]);
     const levels = headings.map((h) => Number(h[1]));
@@ -557,7 +561,9 @@ describe("closed (each passes on a92bbb5)", () => {
     expect(html.match(/<section\b/g)).toHaveLength(7);
     expect(html.match(/<section aria-labelledby=/g)).toHaveLength(7);
     expect([html.match(/<header\b/g)?.length, html.match(/<main id="main"/g)?.length, html.match(/<footer\b/g)?.length]).toEqual([1, 1, 1]);
-    expect([...html.matchAll(/<nav\b[^>]*\baria-label="([^"]+)"/g)].map((m) => m[1])).toEqual(["About our.one"]);
+    // Changed after D-0020 (M-0017): the public header names its places in a
+    // navigation of its own, "our.one", before the footer's.
+    expect([...html.matchAll(/<nav\b[^>]*\baria-label="([^"]+)"/g)].map((m) => m[1])).toEqual(["our.one", "About our.one"]);
   });
 
   it("closed: layout — no sideways scroll and nothing past the window's edge at 320, 375 or 1280px, light or dark; the agent line wraps inside its box (3 lines at 320px, 2 at 375 and 1280px) and the SHA-256 breaks anywhere (3 lines at 320px, 2 at 375 and 1280px); the two ways stack below 640px and stand side by side, 294px each, at 1280px (Chrome on next start, measured over the DevTools protocol; the same at 320px on /projects and /maintainers)", () => {
@@ -565,10 +571,10 @@ describe("closed (each passes on a92bbb5)", () => {
     expect(cssRule(css, ".prompt code")).toMatch(/overflow-wrap:\s*anywhere/);
     expect(cssRule(css, ".prompt code")).toMatch(/user-select:\s*all/);
     expect(cssRule(css, ".hash")).toMatch(/word-break:\s*break-all/);
-    expect(cssRule(css, ".way")).toMatch(/min-width:\s*0/);
-    expect(flat(css)).toContain("@media (min-width: 640px) { .ways { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }");
+    // Changed after D-0020 (M-0017): the two ways are retired (D-0020 §D), and
+    // the line starts with the idea; it wraps inside its box as before.
     const html = render(BuildPage);
-    expect(html).toMatch(/<p class="[^"]*prompt[^"]*"><code>Read https:\/\/our\.one\/build\.md and use it to build my app for our\.one\.<\/code><\/p>/);
+    expect(html).toMatch(/<p class="[^"]*prompt[^"]*"><code>Read https:\/\/our\.one\/build\.md and follow it to help me bring my idea to our\.one\.<\/code><\/p>/);
     expect(html).toMatch(new RegExp(`<code class="[^"]*hash[^"]*">${KIT_TOOL.sha256}</code>`));
   });
 
@@ -612,7 +618,12 @@ describe("closed (each passes on a92bbb5)", () => {
       if (link) expect(textOf(m[1]!).length, textOf(link[1]!)).toBeGreaterThan(textOf(link[1]!).length + 20);
     }
     const anchors = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
-    expect(anchors.length).toBe(7);
+    // Changed after D-0020 (M-0017): nine: the deal's two (the agreement, and
+    // the maintainer's deal inside a sentence), the draft's button (a link to
+    // /maintainers until the page's JavaScript runs, a .btn--large, 52px tall),
+    // the proposal's, and the tools' five.
+    expect(anchors.length).toBe(9);
+    expect(anchors.filter((m) => /class="btn btn--primary btn--large"/.test(m[1]!)).map((m) => textOf(m[2]!))).toEqual(["Draft an idea ↗"]);
     for (const m of anchors) {
       const attrs = m[1]!;
       const href = /href="([^"]+)"/.exec(attrs)![1]!;
@@ -624,6 +635,8 @@ describe("closed (each passes on a92bbb5)", () => {
         const route: Record<string, string> = {
           "/agreement": "src/app/(public)/agreement/page.tsx",
           "/maintainers": "src/app/(public)/maintainers/page.tsx",
+          // Changed after D-0020 (M-0017): the draft's link goes to /maintainers' section on proposing.
+          "/maintainers#maintainers-propose": "src/app/(public)/maintainers/page.tsx",
           "/build.md": "src/app/build.md/route.ts",
           "/kit/our-one.mjs": "src/app/kit/[file]/route.ts",
           "/kit/our.one.schema.json": "src/app/kit/[file]/route.ts",
@@ -802,7 +815,11 @@ describe("closed (each passes on a92bbb5)", () => {
     expect([r.forAPerson.length, r.notBuilt.map((s) => s.split(":")[0])]).toEqual([4, ["No keys", "Reach", "Leave", "The record", "Custody"]]);
     expect(record("decisions/D-0019.md")).toContain("These are D-0018 §A's safeguards: no keys, reach and leave at runtime, the record, and custody.");
     const m12 = record("mandates/M-0012.md");
-    expect(m12).toContain("10. The build kit: approve rules version 0 and the exact wording of /build and build.md (D-0019 §I).");
+    // Changed after D-0020 (M-0017): D-0020 §G adds the front door's pages and
+    // the new line to the same precondition; D-0019 §I's part stands.
+    expect(m12).toContain(
+      "10. The build kit and the front door: approve rules version 0 and the exact wording of /build and build.md (D-0019 §I), and of the front door, /feed, /projects and /maintainers, with the new line for a coding agent (D-0020 §G).",
+    );
     const yaml = readFileSync(join(ROOT, "mandates/M-0012.yaml"), "utf8");
     expect(yaml).toContain("- the founder approves rules version 0 and the exact wording of /build and build.md (D-0019 §I)");
     expect(yaml).toMatch(/prerequisite_decisions: \[[^\]]*\bD-0019\b[^\]]*\]/);

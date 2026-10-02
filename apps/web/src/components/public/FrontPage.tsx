@@ -35,8 +35,8 @@ import { DEFAULT_INVITES } from "@/core/config";
 import { FeedContrast } from "./FeedContrast";
 import { FeedPreview } from "./FeedPreview";
 import { GetInForm } from "./GetInForm";
-import { formatCount, MAINTAINER, NOTICE_DAYS, THRESHOLD } from "./handover";
-import { JOIN_LABEL, joinLabel } from "./join";
+import { MAINTAINER, NOTICE_DAYS, THRESHOLD } from "./handover";
+import { countLine, FREE_LINE, INVITE_CLOSED_LINE, JOIN_LABEL, joinLabel, seatLine } from "./join";
 import { LEDE } from "./lede";
 import styles from "./public.module.css";
 
@@ -71,32 +71,13 @@ export const FRONT_PAGE_TITLE = `our.one · ${HEADLINE[0]} ${HEADLINE[1]}`;
  */
 export { LEDE };
 
-/** The count, shown as the rank the next person would have. */
-export function countLine(n: number): string {
-  if (n === 0) return "Nobody is in yet. You'd be #1.";
-  if (n === 1) return "1 person is in. You'd be #2.";
-  return `${formatCount(n)} people are in. You'd be #${formatCount(n + 1)}.`;
-}
-
-/** Under the form, while joining is open (SPEC §18.15 item 1.3). */
-export const FREE_LINE = `Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`;
-
 /**
- * While joining is closed (SPEC §18.15 item 3). It states a fact and
- * promises nothing: an invite may have expired by the time joining opens
- * (the re-check of M-0013).
+ * The count line, the free line, the closed line and the seat line live in
+ * join.ts since D-0020, because the front door shows them too (the contract
+ * counts "the number on the front page", and the seat email says to ask
+ * again there). They are re-exported here, word for word.
  */
-export const INVITE_CLOSED_LINE = "Have an invite? It can't be used until joining opens.";
-
-/**
- * The seat line (D-0016 §B): shown only when no seat is open, under the
- * form, whose button then says "Join the waiting list". Opening seats
- * invites the longest-waiting addresses first (SPEC §18.4), so it promises
- * a place in line, not the next seat (the verification of M-0013).
- */
-export function seatLine(open: number): string | null {
-  return open <= 0 ? "No seats are open right now. Seats go to whoever has waited longest." : null;
-}
+export { countLine, FREE_LINE, INVITE_CLOSED_LINE, seatLine } from "./join";
 
 /** The court's finding (D-0015 §E), and its source: ECF No. 705, pages 8 and 9. */
 export const FRIENDS_SOURCE =

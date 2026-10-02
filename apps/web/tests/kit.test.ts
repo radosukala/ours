@@ -911,21 +911,26 @@ describe("/build (SPEC §18.18)", () => {
   it("says first that it is being developed and that nothing collective is in force", () => {
     expect(buildMeta.title).toBe("Build on our.one");
     const text = textOf(markup());
-    expect(text.startsWith("Build on our.one Being developed. The tools work today. The common agreement they follow is a draft that nobody has signed yet, and none of its collective rights is in force.")).toBe(true);
+    // Changed after D-0020 (M-0017): the page leads with the builders'
+    // invitation, under its small capitals; the notice still comes first after it.
+    expect(text.startsWith("Build with us Build something people can depend on. Being developed. The tools work today. The common agreement they follow is a draft that nobody has signed yet, and none of its collective rights is in force.")).toBe(true);
   });
 
-  it("shows the two ways side by side, with what holds the our.one column today", () => {
+  // Changed after D-0020 (M-0017): D-0020 §D retires the "On your own" column;
+  // the page states our.one's own deal, with what holds it today under it.
+  it("states the deal, what you get and give up, with what holds it today, and nothing absolute about building alone", () => {
     const text = textOf(markup());
-    expect(text).toContain("On your own You build first, then look for people to use it.");
-    expect(text).toContain("On our.one People say what they need, and you propose what you'd build.");
+    expect(text).toContain("What you get A defined scope, with ordinary product decisions yours.");
+    expect(text).toContain("What you give up Selling the service, or the people who use it.");
     expect(text).toContain(
       "Today: none of this is in force yet. Proposals and needs open at launch, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. The common agreement",
     );
-    expect(text).toContain("What it keeps about people is meant to stay out of your reach.");
+    expect(text).not.toMatch(/On your own|If you stop, it stops/);
   });
 
   it("gives the one line for a coding agent, pointing at /build.md", () => {
-    expect(AGENT_LINE).toBe("Read https://our.one/build.md and use it to build my app for our.one.");
+    // Changed after D-0020 (M-0017): the line starts with the idea (D-0020 §D).
+    expect(AGENT_LINE).toBe("Read https://our.one/build.md and follow it to help me bring my idea to our.one.");
     expect(markup()).toContain(`<code>${AGENT_LINE}</code>`);
     expect(readFileSync(join(KIT_DIR, "README.md"), "utf8")).toContain(AGENT_LINE);
   });

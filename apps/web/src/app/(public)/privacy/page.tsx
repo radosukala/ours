@@ -23,6 +23,10 @@
  * A proposal or a need sent by email (SPEC §18.17, D-0018 §D) is described
  * only while PROPOSALS_EMAIL is set: until then nothing can be sent.
  *
+ * The drafts of a need or an idea (D-0020 §E) are described always: what
+ * they do with what a visitor types, which is nothing until the visitor
+ * copies it or sends it from their own email.
+ *
  * The controller's representative in the EU (GDPR Articles 13(1)(a) and 27;
  * D-0014, SPEC §18.14) is named under "Who is responsible" and in Contact,
  * from the configuration, and only while a controller is named. It is
@@ -212,6 +216,11 @@ export default function PrivacyPage() {
             ask us to delete them. They aren&apos;t stored on our.one itself.
           </p>
         ) : null}
+        <p>
+          {proposals
+            ? "When you draft a need or an idea on our pages, what you type stays in your browser. Nothing is saved or sent, and it's gone when you close or reload the page, unless you copy it or open it in your own email app and send it yourself."
+            : "When you draft a need or an idea on our pages, what you type stays in your browser. Nothing is saved or sent, and it's gone when you close or reload the page, unless you copy it."}
+        </p>
         <p>
           Three cookies, all needed for the site to work: one keeps you
           signed in; one holds your place for up to {PENDING_JOIN_TTL_MINUTES}{" "}

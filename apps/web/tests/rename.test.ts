@@ -128,8 +128,14 @@ describe("no rendered public page, footer, email subject or body says OURS (SPEC
   it("the pages that name the product call it our.one", async () => {
     const pages = Object.fromEntries(await rendered());
     const says = (page: string, words: string) => expect(textOf(pages[page]!), page).toContain(words);
-    says("the public layout", "our.one");
-    expect(pages["the public layout"]).toMatch(/<a [^>]*aria-label="our\.one, home"[^>]*>our\.one<\/a>/);
+    // Changed after D-0020 (M-0017): the wordmark is "our", the dot and "one",
+    // the dot in a span of its own (the accent), so a projection that turns
+    // every tag into a space reads "our . one". Its link is still named
+    // our.one, and the words run together on the page.
+    expect(textOf(pages["the public layout"]!).replace(/our \. one/g, "our.one"), "the public layout").toContain("our.one");
+    expect(pages["the public layout"]).toMatch(
+      /<a [^>]*aria-label="our\.one, home"[^>]*>our<span class="public-wordmark__dot">\.<\/span>one<\/a>/,
+    );
     says("/signin", "Sign in to our.one");
     says("/signin", "New here? our.one is invite-only");
     says("/join", "Join our.one");

@@ -24,6 +24,9 @@ import BuildPage from "@/app/(public)/build/page";
 import ContractPage from "@/app/(public)/contract/page";
 import CostsPage from "@/app/(public)/costs/page";
 import PublicLayout from "@/app/(public)/layout";
+// Changed after D-0020 (M-0017): `/` is the front door, and the front page's
+// words moved to /feed unchanged; both are rendered below.
+import FeedPageRoute from "@/app/(public)/feed/page";
 import LandingPage from "@/app/(public)/page";
 import MaintainersPage from "@/app/(public)/maintainers/page";
 import PowerPage from "@/app/(public)/power/page";
@@ -598,7 +601,10 @@ function renderedHits(html: string, file: string | null = null) {
 const RULES_FILE = "src/components/public/floorRules.ts";
 /** The file holding the /contract copy: its one allowlisted sentence is shown only on /contract (SPEC §18.7). */
 const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
-/** The front page's copy: its listed handover sentences are shown only on / (M-0011, SPEC §18.12). */
+/**
+ * The front page's copy: its listed handover sentences are shown only on its
+ * page (M-0011, SPEC §18.12), which is /feed since D-0020.
+ */
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
 /** The /agreement copy (M-0015; D-0018 §E: three sentences let through there only, and the never-reached case). */
 const AGREEMENT_FILE = "src/app/(public)/agreement/page.tsx";
@@ -611,8 +617,12 @@ describe("what people are shown: every public page, the footers and every mail, 
   /** The pages, under the configuration in force when called. */
   async function pages(): Promise<[string, string, string | null][]> {
     const landing = (await LandingPage()) as ReactElement;
+    const feed = (await FeedPageRoute()) as ReactElement;
     return [
-      ["/", renderToStaticMarkup(landing), FRONT_FILE],
+      // Changed after D-0020 (M-0017): / is the front door, with no listed
+      // sentence; the front page's copy, and its listed sentences, are /feed's.
+      ["/", renderToStaticMarkup(landing), null],
+      ["/feed", renderToStaticMarkup(feed), FRONT_FILE],
       ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
       ["/agreement", renderToStaticMarkup(createElement(AgreementPage)), AGREEMENT_FILE],
@@ -660,7 +670,8 @@ describe("what people are shown: every public page, the footers and every mail, 
       for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
       const rendered = await pages();
       // 14 since M-0015: /agreement, /projects and /maintainers. 15 since M-0016: /build.
-      expect(rendered).toHaveLength(15);
+      // 16 since M-0017: the front door at /, and the feed's page at /feed.
+      expect(rendered).toHaveLength(16);
       for (const [page, html, file] of rendered) {
         expect(textOf(html).length, `${name}: ${page}`).toBeGreaterThan(0);
         expect(renderedHits(html, file), `${name}: ${page}`).toEqual([]);
@@ -674,7 +685,8 @@ describe("what people are shown: every public page, the footers and every mail, 
     const home: Record<string, string> = {
       [RULES_FILE]: "/rules",
       [CONTRACT_FILE]: "/contract",
-      [FRONT_FILE]: "/",
+      // Changed after D-0020 (M-0017): the front page's copy is /feed's.
+      [FRONT_FILE]: "/feed",
       [AGREEMENT_FILE]: "/agreement",
       [PROJECTS_FILE]: "/projects",
     };

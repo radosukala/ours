@@ -18,8 +18,12 @@ here, in the repository, in the meantime.
 A builder gives their agent one line:
 
 ```text
-Read https://our.one/build.md and use it to build my app for our.one.
+Read https://our.one/build.md and follow it to help me bring my idea to our.one.
 ```
+
+The agent starts with the idea: it drafts `PITCH.md` with the person before
+any code, and asks whether to find out first, from the people it would
+serve, or to build now ([`D-0020`](../decisions/D-0020.md) §D).
 
 ## What passing means
 

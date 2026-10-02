@@ -48,7 +48,10 @@ vi.mock("@/app/(public)/seat-actions", () => ({
   takeSeat: vi.fn(async () => ({ ok: true })),
 }));
 
-import FrontPageRoute, { metadata } from "@/app/(public)/page";
+// Changed after D-0020 (M-0017): the front page's words, form and promises
+// moved to /feed unchanged, and `/` became the front door
+// (tests/front-door.test.ts). These tests follow them there.
+import FrontPageRoute, { metadata } from "@/app/(public)/feed/page";
 import { CaughtUpMarker, EndMarker } from "@/components/Marker";
 import { FeedContrast } from "@/components/public/FeedContrast";
 import { FeedPreview, PREVIEW_LAST_VISIT, PREVIEW_NOW } from "@/components/public/FeedPreview";

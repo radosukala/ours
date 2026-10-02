@@ -313,7 +313,9 @@ describe("the handover sentences (D-0015: 'Any sentence about the handover that 
       }
     };
     walk("src");
-    expect(importers).toEqual(["src/app/(public)/page.tsx"]);
+    // Changed after D-0020 (M-0017): the front page's route moved to /feed; it is
+    // still the one file that imports FrontPage.tsx.
+    expect(importers).toEqual(["src/app/(public)/feed/page.tsx"]);
   });
 });
 

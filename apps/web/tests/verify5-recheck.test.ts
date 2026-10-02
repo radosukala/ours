@@ -658,6 +658,8 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
       }
     };
     walk(join(WEB_ROOT, "src"));
-    expect(importers).toEqual({ FrontPage: ["src/app/(public)/page.tsx"], contract: [] });
+    // Changed after D-0020 (M-0017): the front page's route moved to /feed; it is
+    // still the one file that imports FrontPage.tsx.
+    expect(importers).toEqual({ FrontPage: ["src/app/(public)/feed/page.tsx"], contract: [] });
   });
 });

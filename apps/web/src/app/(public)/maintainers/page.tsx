@@ -12,9 +12,15 @@
  *
  * Nothing here promises income (D-0017's prohibition): people are paid by
  * those who choose their service, and the page says what that means.
+ *
+ * Since D-0020 §D and §E, a proposal can start as an idea, before any code,
+ * and both a proposal and a need can be drafted here, in the browser, and
+ * copied or opened in the visitor's own email app. The two sections stay
+ * the anchors the drafts lead to without JavaScript.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DraftButton } from "@/components/public/Draft";
 import styles from "@/components/public/public.module.css";
 import { proposalsEmail } from "@/core/config";
 
@@ -39,6 +45,7 @@ export default function MaintainersPage() {
 
   return (
     <article className={styles.page}>
+      <p className={styles.kicker}>The maintainer&apos;s deal</p>
       <h1 className="headline">Build the next one</h1>
       <p className="lede">
         The feed is our first project. We&apos;re looking for people to build,
@@ -98,7 +105,15 @@ export default function MaintainersPage() {
 
       <section aria-labelledby="maintainers-propose">
         <h2 id="maintainers-propose">Propose a service</h2>
-        <p>Write to us with:</p>
+        <p>
+          A proposal can start as an idea, before any code: what you&apos;d
+          build and for whom, what those people use today, and how you&apos;d
+          find out whether they want it.
+        </p>
+        <div className={styles.drafts}>
+          <DraftButton kind="idea" label="Draft an idea" email={email} className="btn btn--primary btn--large" />
+        </div>
+        <p>When it&apos;s ready, write to us with:</p>
         <ul className="prose">
           <li>the need, and who has it;</li>
           <li>what people would have to change to use your service;</li>
@@ -124,6 +139,9 @@ export default function MaintainersPage() {
           You don&apos;t have to build anything. Tell us what you need, and
           what you use or pay for it today.
         </p>
+        <div className={styles.drafts}>
+          <DraftButton kind="need" label="Draft a need" email={email} className="btn btn--primary btn--large" />
+        </div>
         {email ? (
           <p>
             Write to <a href={mailto(email, NEED_SUBJECT)}>{email}</a>.

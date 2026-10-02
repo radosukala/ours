@@ -107,7 +107,9 @@ import ContractPage from "@/app/(public)/contract/page";
 import CostsPage from "@/app/(public)/costs/page";
 import InvitePage from "@/app/(public)/i/[code]/page";
 import PublicLayout from "@/app/(public)/layout";
-import FrontPageRoute from "@/app/(public)/page";
+// Changed after D-0020 (M-0017): the front page moved to /feed unchanged, its
+// close and all; `/` is the front door. The route rendered here is /feed.
+import FrontPageRoute from "@/app/(public)/feed/page";
 import PowerPage from "@/app/(public)/power/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
 import RulesPage from "@/app/(public)/rules/page";
@@ -1094,9 +1096,12 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
     expect(GLOBALS).toMatch(/\*,\s*\*::before,\s*\*::after\s*\{\s*box-sizing: border-box;/);
     const fontSize = parseFloat(inherited(link, "font-size") ?? BODY["font-size"]!);
     const lineHeight = parseFloat(inherited(link, "line-height") ?? BODY["line-height"]!);
-    expect([fontSize, lineHeight]).toEqual([13, 1.35]);
+    // Changed after D-0020 (M-0017): the public pages set their own line
+    // height (1.55, .public in globals.css), so the padded line alone is now
+    // 44.15px; the min-height still holds it at 44px or more.
+    expect([fontSize, lineHeight]).toEqual([13, 1.55]);
     const padded = Math.round((fontSize * lineHeight + 2 * parseFloat(touch["padding-block"]!)) * 100) / 100;
-    expect(padded).toBe(41.55);
+    expect(padded).toBe(44.15);
     const height = Math.max(padded, parseFloat(touch["min-height"]!));
     expect(height, `${fontSize}px × ${lineHeight} + 2 × ${touch["padding-block"]} on a coarse pointer`).toBeGreaterThanOrEqual(44);
   });

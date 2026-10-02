@@ -639,7 +639,20 @@ describe("headings, landmarks, lists and the blockquote", () => {
         "h2 8. The feed, the first project",
       ],
     ],
-    ["/projects", ProjectsPage, ["h1 Projects", "h2 The feed, the first project", "h2 The next one"]],
+    // Changed after D-0020 (M-0017): /projects also shows the front door's two
+    // possibilities, each labelled, under a heading of their own.
+    [
+      "/projects",
+      ProjectsPage,
+      [
+        "h1 Projects",
+        "h2 The feed, the first project",
+        "h2 Possibilities, not projects",
+        "h3 Your team's work. Your team's terms.",
+        "h3 The relationship is the valuable part.",
+        "h2 The next one",
+      ],
+    ],
     [
       "/maintainers",
       MaintainersPage,
@@ -673,7 +686,9 @@ describe("headings, landmarks, lists and the blockquote", () => {
       expect(findAll(tree, (e) => e.tag === "header").length, page).toBe(1);
       expect(findAll(tree, (e) => e.tag === "main").map((m) => m.attrs.id), page).toEqual(["main"]);
       expect(findAll(tree, (e) => e.tag === "footer").length, page).toBe(1);
-      expect(findAll(tree, (e) => e.tag === "nav").map((n) => n.attrs["aria-label"]), page).toEqual(["About our.one"]);
+      // Changed after D-0020 (M-0017): the public header names its places in a
+      // navigation of its own, "our.one", before the footer's.
+      expect(findAll(tree, (e) => e.tag === "nav").map((n) => n.attrs["aria-label"]), page).toEqual(["our.one", "About our.one"]);
     }
   });
 
@@ -764,7 +779,9 @@ describe("the links on the new pages", () => {
       }
     }
     // Changed by M-0016 (D-0019 §G): the footer, /projects and /maintainers also link /build, a route the app has.
-    expect([...hrefs].sort()).toEqual(["/", "/agreement", "/build", "/contract", "/costs", "/maintainers", "/power", "/privacy", "/projects", "/rules", "/signin"]);
+    // Changed after D-0020 (M-0017): the header's places, and /projects' link to
+    // the feed's own page, /feed, a route the app has.
+    expect([...hrefs].sort()).toEqual(["/", "/agreement", "/build", "/contract", "/costs", "/feed", "/maintainers", "/power", "/privacy", "/projects", "/rules", "/signin"]);
     for (const href of hrefs) expect([href, known.some((r) => r.test(href))]).toEqual([href, true]);
   });
 
@@ -787,7 +804,10 @@ describe("the links on the new pages", () => {
     expect(links.length).toBeGreaterThanOrEqual(13);
     expect(links.every(([, a]) => a !== undefined)).toBe(true);
     const problems: string[] = [];
-    for (const [page, a] of links) {
+    // Changed after D-0020 (M-0017): a draft's button, before the page's
+    // JavaScript runs, is a link drawn as a button (.btn--primary, light on
+    // its own dark background), not a link in a sentence; it is left out here.
+    for (const [page, a] of links.filter(([, l]) => !/\bbtn--primary\b/.test(l.attrs.class ?? ""))) {
       const inline = a.parent!.children.some((c) => typeof c === "string" && c.trim().length > 0);
       for (const scheme of ["light", "dark"] as const) {
         const onPage = contrast(colourOf(a, scheme), backgroundOf(a, scheme));
@@ -837,8 +857,12 @@ describe("the footer's nine links (SPEC §18.17 item 4)", () => {
     ];
     for (const [place, html] of places) {
       const navs = findAll(parse(html), (e) => e.tag === "nav");
-      expect(navs.map((n) => n.attrs["aria-label"]), place).toEqual(["About our.one"]);
-      const nav = navs[0]!;
+      // Changed after D-0020 (M-0017): in the public layout the header's places
+      // come first, in a navigation of their own, "our.one".
+      expect(navs.map((n) => n.attrs["aria-label"]), place).toEqual(
+        place === "the public layout" ? ["our.one", "About our.one"] : ["About our.one"],
+      );
+      const nav = navs.find((n) => n.attrs["aria-label"] === "About our.one")!;
       expect(anchors(nav).map((a) => [text(a), a.attrs.href]), place).toEqual(FOOTER);
       expect(anchors(nav).filter((a) => a.attrs.target).map((a) => text(a)), place).toEqual(["Open code"]);
       const separators = findAll(nav, (e) => e.tag === "span");
@@ -871,7 +895,10 @@ describe("layout at phone and desktop widths", () => {
       const root = article(parse(render(component)));
       const held = findAll(root, (e) => (declared(e, "white-space") ?? "").includes("nowrap") || /\d+px/.test(declared(e, "width") ?? ""))
         // One word kept whole (a .nowrap span, as the front page's card has) can't push the page sideways.
-        .filter((e) => /\s/.test(text(e)));
+        .filter((e) => /\s/.test(text(e)))
+        // Changed after D-0020 (M-0017): a draft's button keeps its short label
+        // on one line, as every .btn does ("Draft a need ↗", 14 characters).
+        .filter((e) => !(/\bbtn\b/.test(e.attrs.class ?? "") && text(e).length <= 24));
       expect(held.map((e) => `${e.tag}.${moduleClass(e)}`)).toEqual([]);
     }
   });

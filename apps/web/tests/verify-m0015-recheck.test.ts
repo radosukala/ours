@@ -575,7 +575,11 @@ describe("closed: the 29 fixes, where the verifiers' own assertions no longer re
     expect([(honesty.match(/it\("fixed: /g) ?? []).length, (rendering.match(/it\("fixed \(/g) ?? []).length]).toEqual([17, 12]);
     // Changed after the re-check's fixes: two more of the honesty file's checks follow the new wording.
     expect((honesty.match(/\/\/ (?:Changed|Fixed) after/g) ?? []).length).toBe(6);
-    expect((rendering.match(/\/\/ Changed after/g) ?? []).length).toBe(3);
+    // Changed after D-0020 (M-0017): six more of the rendering file's checks
+    // follow the front door's layout and pages, each with its reason; the
+    // round's own three are counted apart from them.
+    expect((rendering.match(/\/\/ Changed after (?!D-0020)/g) ?? []).length).toBe(3);
+    expect((rendering.match(/\/\/ Changed after D-0020 \(M-0017\)/g) ?? []).length).toBe(6);
   });
 
   it("closed: honesty 2's second assertion became vacuous — it reads rows labelled 'Under the common agreement', which the fix renamed, so its loop runs over nothing; re-asserted on the renamed row: no 'In force' under the draft, and what holds today is named as the contract", () => {
@@ -742,7 +746,14 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
   });
 
   it("closed: every link inside `.page` on the eight server-rendered pages takes its colour from `.page a` (inherit) and its underline from it — no earlier rule (.link, .prose a, .notice a) wins, none is doubly coloured — and is 4.5:1 or more on its background in both themes (the faint underline, 1.44:1 light and 1.65:1 dark, is the one M-0014 accepted for the card and the story); /unsubscribe's `.link` in its muted line is overridden the same way: muted and underlined, 6.12:1 and 4.58:1. Served so: the global sheet's chunk loads first and the module's second on all nine `.page` pages under all three configurations (27 responses from next start, 328f3c0)", () => {
-    const links = pageLinks();
+    // Changed after D-0020 (M-0017): a draft's button, before the page's
+    // JavaScript runs, is a link drawn as a button (.btn, on its own
+    // background), and keeps the button's colours and no underline
+    // (public.module.css, `.page a:global(.btn)`). Every other link is
+    // checked as before.
+    const all = pageLinks();
+    const links = all.filter(([, a]) => !/\bbtn\b/.test(a.attrs.class ?? ""));
+    expect(all.length - links.length).toBe(4);
     expect(links.length).toBeGreaterThan(25);
     const problems: string[] = [];
     for (const [page, a] of links) {
@@ -774,7 +785,9 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
       ["the in-app footer", render(InAppSiteFooter)],
       ["the right column", renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 }))],
     ] as const) {
-      const nav = findAll(parse(html), (e) => e.tag === "nav")[0]!;
+      // Changed after D-0020 (M-0017): the public layout's header has a
+      // navigation of its own, so the footer's is found by its name.
+      const nav = findAll(parse(html), (e) => e.tag === "nav" && e.attrs["aria-label"] === "About our.one")[0]!;
       const separators = findAll(nav, (e) => e.tag === "span");
       expect(separators.map((s) => [s.attrs["aria-hidden"], exactText(s)]), place).toEqual(Array.from({ length: 8 }, () => ["true", " · "]));
       expect(textOf(html), place).toContain(
