@@ -1,0 +1,63 @@
+schema: ours.decision/v0.1
+decision_id: D-0018
+title: The data safeguards, and the framework pages
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0018.md
+
+proposal: P-0011
+prerequisite_decisions: [D-0016, D-0017]
+
+outcome: >
+  D-0017 §I's seven safeguards (the law, the agreement, no keys, reach,
+  leave, the record, custody) are the rule for every protected service,
+  each with its status shown; none is built, and no protected service but
+  the feed touches anyone's data before all seven exist for it. The common
+  agreement is drafted and published as /agreement, marked "being
+  developed", each part saying what holds it today; the founder's review of
+  its exact wording is a precondition of deploying. The framework pages are
+  built: /agreement, /projects (the feed as the first project, and an
+  invitation), /maintainers ("Build the next one"), footer links, a line on
+  /contract and a paragraph on /privacy. Proposals and needs come by email
+  to PROPOSALS_EMAIL, read by hand; empty means proposals are off. The
+  front page's headline and lede wait for the message test. The claims scan
+  lets the definition of "owned", and the agreement's denial of
+  investment, through on /agreement only. Authorizes M-0015 (BUILD) and
+  amends the draft M-0012.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0015]
+
+prohibits:
+  - describing any safeguard as built before it is
+  - changing the front page's headline or lede before the message test
+  - collecting proposals or needs by any route other than email under M-0015
+  - putting the agreement on the live site before the founder approves its wording
+
+effective_from: 2026-10-02T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending; §C
+  reads "continue to build this project to launch" as building what D-0017
+  §H says the launch carries; PROPOSALS_EMAIL is [CONFIRM].
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

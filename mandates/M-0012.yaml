@@ -13,7 +13,7 @@ authority:
     role: founder-steward
   valid_from: 2026-09-28T00:00:00Z
   expires_at: 2027-06-30T00:00:00Z
-  prerequisite_decisions: [D-0011, D-0012, D-0013, D-0014, D-0015, D-0016]
+  prerequisite_decisions: [D-0011, D-0012, D-0013, D-0014, D-0015, D-0016, D-0017, D-0018]
 
 institution:
   constitution_version: ours-constitution/0.1
@@ -87,6 +87,8 @@ preconditions:
   - "the founder's secrets in Vercel: DATABASE_URL, SESSION_SECRET (32+ random bytes), CRON_SECRET, RESEND_API_KEY, MAIL_FROM, MAIL_TRANSPORT=resend, DATA_CONTROLLER=Ctrl AI, Inc., DATA_CONTROLLER_EMAIL=privacy@ctrlai.com, DATA_CONTROLLER_REPRESENTATIVE=Rado Sukala, CLIENT_IP_HEADER=x-vercel-forwarded-for, APP_URL=https://our.one, OURS_VERSION"
   - ONE moved to oneburger.cz, and our.one pointed at Vercel
   - a human confirms that the court's opinion says what the front page's 7% sentence cites (D-0015 §E; AGENTS.md §10)
+  - the founder approves the exact wording of the common agreement at /agreement (D-0018 §B)
+  - PROPOSALS_EMAIL set in Vercel to the address the founder chooses for proposals and needs (D-0018 §D)
 
 acceptance:
   tests:

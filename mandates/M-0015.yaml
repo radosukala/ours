@@ -1,0 +1,143 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0015
+title: The framework pages — the common agreement, the projects, "Build the next one", and the links to them
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0018
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-02T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0016, D-0017, D-0018]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0015.md
+
+objective: >
+  Build D-0018 §B to §E in apps/web. /agreement publishes the common
+  agreement in readable words, marked "being developed", every part saying
+  what holds it today, the data line's seven safeguards each marked not
+  built. /projects shows the feed as the first project (its lede, its
+  maintainer, no pay by choice, its budget, what the founder holds today,
+  the promise at the threshold in the status line's words, its exception)
+  and invites the next. /maintainers, "Build the next one", says what a
+  maintainer does, what they get and give up, how to propose a service and
+  how anyone can name a need, by email to PROPOSALS_EMAIL, read by hand;
+  while the setting is empty the page says proposals open at launch and
+  shows no address. The footer links to all three; /contract says the feed
+  will also run under the agreement; /privacy describes emailed proposals
+  only while the setting is set. The claims scan lets the definition of
+  "owned", the sentence that applies it and the agreement's denial of
+  investment through on /agreement only. The front page's headline and
+  lede, the contract's promises and every other page's copy are unchanged.
+  Fictional data only; nothing runs anywhere but this machine.
+
+human_outcome: >
+  A visitor, from any page's footer, can read what "owned by its users"
+  means and how much of it is in force today (none of the collective
+  rights), see the feed as the first project under the same terms, and, if
+  they build software, learn what the job offers and how to propose a
+  service; if they don't, how to name a need. Nothing on any page says a
+  safeguard exists before it does.
+
+adopted_constraints:
+  - Every collective right and every safeguard is shown with its status today; none reads as in force or built.
+  - The threshold and the maintainer's name come from their constants; the feed's lede is D-0016 §A's, imported, not retyped.
+  - No form, no database table and no stored data for proposals or needs; email only, to PROPOSALS_EMAIL, and nothing when it is empty or not an address.
+  - The front page's headline and lede and the contract's eight promises are unchanged.
+  - Every sentence about the handover uses the status line's form ("go to"), or is listed by exact text; no new handover verb is let through.
+  - No real person's data, no email to a real address, no provider account, no domain touched.
+
+hypotheses:
+  - A builder who reads "Build the next one" can say what they would get and what they would give up, without reading the agreement.
+  - A visitor who reads /agreement can say which of its rights are in force today.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+      - vercel.json
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: REVERSIBLE
+  affected_groups: []
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure]
+  privacy: [no-real-person-data-under-this-mandate]
+
+acceptance:
+  tests:
+    - /agreement, /projects and /maintainers render SPEC §18.17's copy word for word, each with its metadata title.
+    - On /agreement the lede says the agreement is being developed and that none of its collective rights is in force; every part has a "Today:" line; each of the seven safeguards is marked not built or not yet, and none as built.
+    - /projects shows D-0016 §A's lede by import, the maintainer by MAINTAINER, "None, by choice", the costs link, the promise in the status line's words, the exception, and a link to /maintainers.
+    - With PROPOSALS_EMAIL empty, blank, a placeholder or not an email address, /maintainers says proposals open at launch and has no mailto link, and /privacy has no proposals paragraph; with it set, both mailto links point at it and /privacy describes what is kept.
+    - Every public page's footer and the in-app footer link to /agreement, /projects and /maintainers, and keep their other links.
+    - /contract has its eight promises unchanged and a paragraph linking to /agreement.
+    - The front page's h1, lede and pinned sentences are unchanged.
+    - The claims scan finds no prohibited claim; the three sentences of D-0018 §E pass only on /agreement and are caught anywhere else.
+    - Typecheck, lint, tests and a production build pass; the three pages serve over HTTP; pnpm ours check M-0015 --changed authorises the finished working tree.
+  evidence:
+    - a build receipt in receipts/builds/ naming the commits, every check and its result, and what was not checked
+    - an independent verification in receipts/conformance/, with the verifiers' tests committed as written before any is adapted
+    - screenshots of the three pages, desktop and phone, with fictional data
+
+limits:
+  stop_conditions:
+    - a page would have to describe a safeguard or a collective right as in force
+    - a proposal route other than email would be needed
+    - the front page's headline or lede would have to change
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0015 commits; no data, schema or provider is touched
+  irreversible_residue: none
+
+human_approvals:
+  adoption: the founder's "yes to safeguards, draft the common agreement ... and continue to build this project to launc" (D-0018)
+  deploy: not authorized by this mandate (M-0012)
