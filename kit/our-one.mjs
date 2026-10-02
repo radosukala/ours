@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /**
- * our-one.mjs: the our.one build kit's tool. Version 0.1.0, rules 0.
+ * our-one.mjs: the our.one build kit's tool. Version 0.2.0, rules 0.
  *
  *   node scripts/our-one.mjs init     set this project up for our.one
  *   node scripts/our-one.mjs check    check it against the rules
  *   node scripts/our-one.mjs rules    print the rules block
  *
  * One file, no dependencies, Node 18 or later. It reads the project's
- * files and runs `git ls-files` (and, during init, `git remote get-url`)
- * to list them. It makes no network request. `init` writes only the files
- * it names, and never overwrites one, except the rules block in AGENTS.md,
- * which it puts back word for word, and the stop hook it adds to
- * .claude/settings.json. When it finds a secret, it prints the file, the
- * line and the kind of secret, never the secret.
+ * files, and runs git to list them and, during init, to read the remote's
+ * address. It makes no network request. init writes only the files it
+ * names, never through a link, and overwrites none of them, except the
+ * rules block in AGENTS.md, which it puts back word for word, and the stop
+ * hook it adds to .claude/settings.json. When it finds a secret, it prints
+ * the file, the line and the kind of secret, never the secret.
  *
  * What it checks is decided by our.one's records (D-0019 §C), not by this
  * file: a change to the rules is a new rules version, by a new decision.
- * Each check says how it is held. Most are CHECKED: a pattern that a
- * determined person can get around, and that cannot see what code does
- * when it runs. So every run also lists what a person must read, and the
- * safeguards our.one has not built.
+ * Each check says how it is held. Most are CHECKED: patterns that a
+ * determined person can get around, and that can't see what code does when
+ * it runs. So every run also lists what a person must read, and the
+ * safeguards our.one hasn't built.
  *
  * Passing makes a project ready to propose to our.one. Nothing more: it is
  * not listed, approved or protected by passing.
@@ -29,12 +29,12 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, fstatSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
 export const RULES_VERSION = "0";
 export const MANIFEST = "our.one.json";
 export const SCHEMA_URL = "https://our.one/kit/our.one.schema.json";
@@ -53,7 +53,7 @@ export const RULES_BLOCK = [
   BEGIN,
   `## our.one rules (version ${RULES_VERSION})`,
   "",
-  "This project is being built to be proposed to our.one. These rules come from the common agreement (https://our.one/agreement), which is still a draft. They bind every person and every coding agent working on this code. If a task would break one, stop and say which.",
+  "This project is being built to be proposed to our.one. These rules come from the common agreement (https://our.one/agreement), which is still a draft. Three of them go further than its words, and wait for the founder's approval: rule 1, and no session recording and no data hubs in rule 4. They bind every person and every coding agent working on this code. If a task would break one, stop and say which.",
   "",
   "1. **Keep personal data inside the boundary.** Only code in the folders `our.one.json` names in `data.boundary` may use a database or a file store, or the libraries that reach one.",
   "2. **Declare before you collect.** Before code keeps a new kind of personal data, add it to `data.collects`: what it is, why the service needs it, and how long it is kept.",
@@ -62,9 +62,9 @@ export const RULES_BLOCK = [
   "5. **Nothing is sold.** Build nothing that sells, rents or trades people's data, or the project.",
   "6. **People can leave.** Keep export and deletion working for everything in `data.collects`.",
   "7. **Costs are public.** Keep the costs file `our.one.json` names up to date.",
-  "8. **No secrets in the code.** Keys and passwords live in the environment, never in a file the repository tracks.",
+  "8. **No secrets or data in the repository.** Keys and passwords live in the environment, and people's data in the store, never in a file the repository tracks.",
   "9. **Say only what is true.** Until our.one's records say otherwise, the project is its maintainer's. Don't present it as its users' property, or as approved, listed or protected by our.one.",
-  "10. **Run the check before you finish:** `node scripts/our-one.mjs check`. Fix every FAIL. Never change the check, or this block, to make it pass.",
+  "10. **Run the check before you finish:** `node scripts/our-one.mjs check`. Fix every FAIL. Ask the person for anything only they know, and never invent it. Never change the check, or this block, to make it pass.",
   END,
 ].join("\n");
 
@@ -91,93 +91,135 @@ export const NOT_BUILT = [
  * Clients of a database or a file store. Rule 1: only code inside the
  * boundary imports them. An entry ending in "/" is a whole scope; any
  * other entry also matches its subpaths ("pg" matches "pg/lib", not
- * "pg-promise").
+ * "pg-promise"). Built-in clients are named with their prefix
+ * ("node:sqlite").
  */
 export const STORES = [
   "pg", "pg-promise", "postgres", "@neondatabase/serverless", "@vercel/postgres", "@planetscale/database",
   "mysql", "mysql2", "mariadb", "sqlite3", "better-sqlite3", "sqlite", "@libsql/client", "libsql",
-  "tedious", "mssql", "oracledb", "knex", "kysely", "drizzle-orm", "@prisma/client", "typeorm",
-  "sequelize", "@mikro-orm/", "objection", "mongodb", "mongoose", "redis", "@redis/client", "ioredis",
-  "@upstash/redis", "@vercel/kv", "firebase/firestore", "firebase/database", "firebase/storage",
-  "firebase-admin", "@google-cloud/firestore", "@google-cloud/storage", "@aws-sdk/client-dynamodb",
-  "@aws-sdk/lib-dynamodb", "dynamoose", "@aws-sdk/client-s3", "@aws-sdk/lib-storage", "@azure/storage-blob",
-  "@azure/cosmos", "@vercel/blob", "cassandra-driver", "neo4j-driver", "couchbase", "nano", "@supabase/",
-  "pocketbase", "@instantdb/", "faunadb", "@electric-sql/",
+  "node:sqlite", "bun:sqlite", "tedious", "mssql", "oracledb", "knex", "kysely", "drizzle-orm",
+  "@prisma/client", "typeorm", "sequelize", "@mikro-orm/", "objection", "mongodb", "mongoose", "redis",
+  "@redis/client", "ioredis", "redis-om", "@upstash/redis", "@vercel/kv", "firebase/firestore",
+  "firebase/database", "firebase/storage", "firebase/compat/firestore", "firebase/compat/database",
+  "firebase/compat/storage", "firebase-admin", "@google-cloud/firestore", "@google-cloud/storage",
+  "@google-cloud/bigquery", "@aws-sdk/client-dynamodb", "@aws-sdk/lib-dynamodb", "dynamoose",
+  "@aws-sdk/client-s3", "@aws-sdk/lib-storage", "@azure/storage-blob", "@azure/cosmos", "@vercel/blob",
+  "cassandra-driver", "neo4j-driver", "couchbase", "nano", "pouchdb", "nedb", "lowdb", "@supabase/",
+  "pocketbase", "@instantdb/", "faunadb", "fauna", "@electric-sql/", "convex/browser", "convex/server",
+  "@pinecone-database/pinecone", "appwrite", "node-appwrite", "@xata.io/client", "surrealdb",
+  "@surrealdb/", "duckdb", "@duckdb/", "arangojs",
 ];
 
-/** Code that reaches a store without importing a package by name (a generated Prisma client). */
+/** Code that reaches a store without importing it by name: a generated Prisma client. */
 const STORE_CALLS = [{ name: "PrismaClient", re: /\bnew\s+PrismaClient\s*\(/g }];
 
 /**
- * Outside services that receive data, by package. Rule 3: each one the
- * project uses is named in data.sharedWith, with its packages listed.
+ * Queries written outside the boundary against a client made inside it
+ * and handed out, the commonest way round rule 1.
+ */
+const STORE_QUERIES = [
+  { name: "a Prisma query", re: /\bprisma\s*\.\s*\$?[A-Za-z_]\w*\s*\.\s*(?:findMany|findUnique|findFirst|findUniqueOrThrow|findFirstOrThrow|create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany|count|aggregate|groupBy)\s*\(/g },
+  { name: "a raw Prisma query", re: /\bprisma\s*\.\s*\$(?:queryRaw|executeRaw|queryRawUnsafe|executeRawUnsafe|transaction)\b/g },
+  { name: "a database query", re: /\b(?:db|tx)\s*\.\s*(?:select|insert|update|delete|execute|transaction|query)\s*[.(<]/g },
+  { name: "a database query", re: /\bpool\s*\.\s*query\s*\(/g },
+  { name: "a Supabase query", re: /\bsupabase\s*\.\s*(?:from|rpc|storage)\b/g },
+  { name: "a SQL query", re: /\bsql\s*`\s*(?:select|insert|update|delete|with)\b/gi },
+];
+
+/** Writing files is using a file store (rule 1). Counted only in files that import fs. */
+const FS_MODULES = ["fs", "node:fs", "fs/promises", "node:fs/promises", "fs-extra", "graceful-fs"];
+const FS_WRITES = /\b(?:writeFileSync|writeFile|appendFileSync|appendFile|createWriteStream|outputFileSync|outputFile|outputJsonSync|outputJson|writeJsonSync|writeJson)\s*\(/g;
+
+/**
+ * Outside services that receive data. Rule 3: each one the project uses is
+ * named in data.sharedWith, by an entry whose "who" names it and whose
+ * "packages" list the packages that reach it. A service is found by its
+ * packages, or by an address of its API in the code. A generic entry is
+ * named by any entry that lists the package.
  */
 export const SERVICES = [
-  { name: "Resend", packages: ["resend"] },
-  { name: "SendGrid", packages: ["@sendgrid/"] },
-  { name: "Postmark", packages: ["postmark"] },
-  { name: "Mailgun", packages: ["mailgun.js", "mailgun-js"] },
-  { name: "Mailchimp", packages: ["@mailchimp/"] },
-  { name: "Amazon SES", packages: ["@aws-sdk/client-ses", "@aws-sdk/client-sesv2"] },
-  { name: "an email server (SMTP)", packages: ["nodemailer"] },
-  { name: "Twilio", packages: ["twilio"] },
-  { name: "Vonage", packages: ["@vonage/"] },
-  { name: "Stripe", packages: ["stripe", "@stripe/"] },
-  { name: "Paddle", packages: ["@paddle/"] },
-  { name: "Lemon Squeezy", packages: ["@lemonsqueezy/"] },
-  { name: "PayPal", packages: ["@paypal/"] },
-  { name: "OpenAI", packages: ["openai", "@ai-sdk/openai", "@langchain/openai"] },
-  { name: "Anthropic", packages: ["@anthropic-ai/sdk", "@ai-sdk/anthropic", "@langchain/anthropic"] },
-  { name: "Google AI", packages: ["@google/generative-ai", "@google/genai", "@ai-sdk/google", "@langchain/google-genai"] },
-  { name: "Mistral", packages: ["@mistralai/mistralai", "@ai-sdk/mistral"] },
-  { name: "Cohere", packages: ["cohere-ai"] },
-  { name: "Groq", packages: ["groq-sdk", "@ai-sdk/groq"] },
-  { name: "Replicate", packages: ["replicate"] },
-  { name: "Hugging Face", packages: ["@huggingface/inference"] },
-  { name: "ElevenLabs", packages: ["elevenlabs", "@elevenlabs/"] },
-  { name: "Sentry", packages: ["@sentry/"] },
-  { name: "Bugsnag", packages: ["@bugsnag/"] },
-  { name: "Datadog", packages: ["@datadog/", "dd-trace"] },
-  { name: "Rollbar", packages: ["rollbar"] },
-  { name: "Honeybadger", packages: ["@honeybadger-io/"] },
-  { name: "New Relic", packages: ["newrelic"] },
-  { name: "Axiom", packages: ["@axiomhq/"] },
-  { name: "Better Stack", packages: ["@logtail/"] },
-  { name: "Mixpanel", packages: ["mixpanel", "mixpanel-browser"] },
-  { name: "Amplitude", packages: ["@amplitude/", "amplitude-js"] },
-  { name: "Heap", packages: ["@heap/", "heap-api"] },
-  { name: "PostHog", packages: ["posthog-js", "posthog-node"] },
-  { name: "Plausible", packages: ["plausible-tracker", "next-plausible"] },
-  { name: "Fathom", packages: ["fathom-client"] },
-  { name: "Vercel Web Analytics", packages: ["@vercel/analytics"] },
-  { name: "Vercel Speed Insights", packages: ["@vercel/speed-insights"] },
-  { name: "Clerk", packages: ["@clerk/"] },
-  { name: "Auth0", packages: ["@auth0/"] },
-  { name: "Kinde", packages: ["@kinde-oss/"] },
-  { name: "WorkOS", packages: ["@workos-inc/"] },
-  { name: "Firebase (Google)", packages: ["firebase", "firebase-admin"] },
-  { name: "Supabase", packages: ["@supabase/"] },
-  { name: "Neon", packages: ["@neondatabase/serverless"] },
-  { name: "Vercel Postgres", packages: ["@vercel/postgres"] },
-  { name: "Vercel KV", packages: ["@vercel/kv"] },
-  { name: "Vercel Blob", packages: ["@vercel/blob"] },
-  { name: "PlanetScale", packages: ["@planetscale/database"] },
-  { name: "Upstash", packages: ["@upstash/"] },
-  { name: "Amazon S3", packages: ["@aws-sdk/client-s3", "@aws-sdk/lib-storage", "@aws-sdk/s3-request-presigner"] },
-  { name: "Google Cloud Storage", packages: ["@google-cloud/storage"] },
-  { name: "Azure Blob Storage", packages: ["@azure/storage-blob"] },
-  { name: "Cloudinary", packages: ["cloudinary", "next-cloudinary"] },
-  { name: "UploadThing", packages: ["uploadthing", "@uploadthing/"] },
-  { name: "Uploadcare", packages: ["@uploadcare/"] },
-  { name: "Algolia", packages: ["algoliasearch", "@algolia/"] },
-  { name: "Pusher", packages: ["pusher", "pusher-js"] },
-  { name: "Ably", packages: ["ably"] },
-  { name: "OneSignal", packages: ["@onesignal/", "onesignal-node"] },
-  { name: "Google Maps", packages: ["@googlemaps/", "@react-google-maps/api"] },
-  { name: "Mapbox", packages: ["mapbox-gl", "@mapbox/"] },
-  { name: "Intercom", packages: ["@intercom/", "react-use-intercom"] },
-  { name: "Crisp", packages: ["crisp-sdk-web"] },
+  { name: "Resend", packages: ["resend"], hosts: ["api.resend.com"] },
+  { name: "SendGrid", packages: ["@sendgrid/"], hosts: ["api.sendgrid.com"] },
+  { name: "Postmark", packages: ["postmark"], hosts: ["api.postmarkapp.com"] },
+  { name: "Mailgun", packages: ["mailgun.js", "mailgun-js"], hosts: ["api.mailgun.net", "api.eu.mailgun.net"] },
+  { name: "Mailchimp", packages: ["@mailchimp/"], hosts: ["api.mailchimp.com", "mandrillapp.com"] },
+  { name: "Amazon SES", who: /amazon|aws|\bses\b/i, packages: ["@aws-sdk/client-ses", "@aws-sdk/client-sesv2"] },
+  { name: "an email server (SMTP)", generic: true, packages: ["nodemailer"] },
+  { name: "Twilio", packages: ["twilio"], hosts: ["api.twilio.com"] },
+  { name: "Vonage", packages: ["@vonage/"], hosts: ["api.nexmo.com", "rest.nexmo.com"] },
+  { name: "Slack", packages: ["@slack/"], hosts: ["hooks.slack.com"] },
+  { name: "Telegram", packages: ["node-telegram-bot-api", "telegraf", "grammy"], hosts: ["api.telegram.org"] },
+  { name: "Stripe", packages: ["stripe", "@stripe/"], hosts: ["api.stripe.com"] },
+  { name: "Paddle", packages: ["@paddle/"], hosts: ["api.paddle.com"] },
+  { name: "Lemon Squeezy", who: /lemon/i, packages: ["@lemonsqueezy/"], hosts: ["api.lemonsqueezy.com"] },
+  { name: "PayPal", packages: ["@paypal/"], hosts: ["api-m.paypal.com", "api.paypal.com"] },
+  { name: "OpenAI", packages: ["openai", "@ai-sdk/openai", "@langchain/openai"], hosts: ["api.openai.com"] },
+  { name: "Anthropic", packages: ["@anthropic-ai/sdk", "@ai-sdk/anthropic", "@langchain/anthropic"], hosts: ["api.anthropic.com"] },
+  { name: "Google AI", who: /google|gemini/i, packages: ["@google/generative-ai", "@google/genai", "@ai-sdk/google", "@ai-sdk/google-vertex", "@google-cloud/vertexai", "@langchain/google-genai"], hosts: ["generativelanguage.googleapis.com", "aiplatform.googleapis.com"] },
+  { name: "Mistral", packages: ["@mistralai/mistralai", "@ai-sdk/mistral"], hosts: ["api.mistral.ai"] },
+  { name: "Cohere", packages: ["cohere-ai", "@ai-sdk/cohere"], hosts: ["api.cohere.ai", "api.cohere.com"] },
+  { name: "Groq", packages: ["groq-sdk", "@ai-sdk/groq"], hosts: ["api.groq.com"] },
+  { name: "xAI", who: /\bxai\b|grok/i, packages: ["@ai-sdk/xai"], hosts: ["api.x.ai"] },
+  { name: "Amazon Bedrock", who: /amazon|aws|bedrock/i, packages: ["@aws-sdk/client-bedrock-runtime", "@aws-sdk/client-bedrock", "@ai-sdk/amazon-bedrock"] },
+  { name: "OpenRouter", packages: ["@openrouter/"], hosts: ["openrouter.ai"] },
+  { name: "fal.ai", who: /\bfal\b/i, packages: ["@fal-ai/"], hosts: ["fal.run"] },
+  { name: "Replicate", packages: ["replicate"], hosts: ["api.replicate.com"] },
+  { name: "Hugging Face", who: /hugging/i, packages: ["@huggingface/inference"], hosts: ["api-inference.huggingface.co", "router.huggingface.co"] },
+  { name: "ElevenLabs", packages: ["elevenlabs", "@elevenlabs/"], hosts: ["api.elevenlabs.io"] },
+  { name: "an AI provider, through the AI SDK", generic: true, packages: ["@ai-sdk/"] },
+  { name: "an AI provider, through the AI SDK's gateway", generic: true, packages: [], gateway: true },
+  { name: "Sentry", packages: ["@sentry/"], hosts: ["ingest.sentry.io", "ingest.us.sentry.io", "ingest.de.sentry.io"] },
+  { name: "Bugsnag", packages: ["@bugsnag/"], hosts: ["notify.bugsnag.com", "sessions.bugsnag.com"] },
+  { name: "Datadog", packages: ["@datadog/", "dd-trace"], hosts: ["browser-intake-datadoghq.com", "browser-intake-datadoghq.eu"] },
+  { name: "Rollbar", packages: ["rollbar"], hosts: ["api.rollbar.com"] },
+  { name: "Honeybadger", packages: ["@honeybadger-io/"], hosts: ["api.honeybadger.io"] },
+  { name: "New Relic", who: /new ?relic/i, packages: ["newrelic"] },
+  { name: "Axiom", packages: ["@axiomhq/"], hosts: ["api.axiom.co"] },
+  { name: "Better Stack", who: /better ?stack|logtail/i, packages: ["@logtail/"] },
+  { name: "Mixpanel", packages: ["mixpanel", "mixpanel-browser"], hosts: ["api.mixpanel.com", "api-js.mixpanel.com", "api-eu.mixpanel.com"] },
+  { name: "Amplitude", packages: ["@amplitude/", "amplitude-js"], hosts: ["api2.amplitude.com", "api.eu.amplitude.com"] },
+  { name: "Heap", packages: ["@heap/", "heap-api"], hosts: ["heapanalytics.com"] },
+  { name: "PostHog", packages: ["posthog-js", "posthog-node"], hosts: ["i.posthog.com", "app.posthog.com"] },
+  { name: "Plausible", packages: ["plausible-tracker", "next-plausible"], hosts: ["plausible.io"] },
+  { name: "Fathom", packages: ["fathom-client"], hosts: ["cdn.usefathom.com"] },
+  { name: "Vercel Web Analytics", who: /vercel/i, packages: ["@vercel/analytics"] },
+  { name: "Vercel Speed Insights", who: /vercel/i, packages: ["@vercel/speed-insights"] },
+  { name: "Clerk", packages: ["@clerk/"], hosts: ["api.clerk.com", "api.clerk.dev"] },
+  { name: "Auth0", packages: ["@auth0/"], hosts: ["auth0.com"] },
+  { name: "Kinde", packages: ["@kinde-oss/"], hosts: ["kinde.com"] },
+  { name: "WorkOS", packages: ["@workos-inc/"], hosts: ["api.workos.com"] },
+  { name: "Firebase (Google)", who: /firebase|google/i, packages: ["firebase", "firebase-admin"], hosts: ["firebaseio.com", "firestore.googleapis.com", "identitytoolkit.googleapis.com"] },
+  { name: "Supabase", packages: ["@supabase/"], hosts: ["supabase.co"] },
+  { name: "Neon", packages: ["@neondatabase/serverless"], hosts: ["neon.tech"] },
+  { name: "Vercel Postgres", who: /vercel|neon/i, packages: ["@vercel/postgres"] },
+  { name: "Vercel KV", who: /vercel|upstash/i, packages: ["@vercel/kv"] },
+  { name: "Vercel Blob", who: /vercel/i, packages: ["@vercel/blob"], hosts: ["blob.vercel-storage.com"] },
+  { name: "PlanetScale", packages: ["@planetscale/database"], hosts: ["psdb.cloud"] },
+  { name: "Upstash", packages: ["@upstash/"], hosts: ["upstash.io"] },
+  { name: "Convex", packages: ["convex"], hosts: ["convex.cloud"] },
+  { name: "Pinecone", packages: ["@pinecone-database/pinecone"], hosts: ["pinecone.io"] },
+  { name: "Appwrite", packages: ["appwrite", "node-appwrite"], hosts: ["cloud.appwrite.io"] },
+  { name: "Amazon S3", who: /amazon|aws|\bs3\b/i, packages: ["@aws-sdk/client-s3", "@aws-sdk/lib-storage", "@aws-sdk/s3-request-presigner"] },
+  { name: "Google Cloud Storage", who: /google/i, packages: ["@google-cloud/storage"], hosts: ["storage.googleapis.com"] },
+  { name: "Azure Blob Storage", who: /azure|microsoft/i, packages: ["@azure/storage-blob"] },
+  { name: "Cloudinary", packages: ["cloudinary", "next-cloudinary"], hosts: ["api.cloudinary.com"] },
+  { name: "UploadThing", packages: ["uploadthing", "@uploadthing/"], hosts: ["uploadthing.com"] },
+  { name: "Uploadcare", packages: ["@uploadcare/"], hosts: ["upload.uploadcare.com", "api.uploadcare.com"] },
+  { name: "Algolia", packages: ["algoliasearch", "@algolia/"], hosts: ["algolia.net", "algolianet.com"] },
+  { name: "Pusher", packages: ["pusher", "pusher-js"], hosts: ["pusher.com"] },
+  { name: "Ably", packages: ["ably"], hosts: ["ably.io"] },
+  { name: "OneSignal", packages: ["@onesignal/", "onesignal-node"], hosts: ["onesignal.com"] },
+  { name: "Google Maps", who: /google/i, packages: ["@googlemaps/", "@react-google-maps/api"], hosts: ["maps.googleapis.com"] },
+  { name: "Mapbox", packages: ["mapbox-gl", "@mapbox/"], hosts: ["api.mapbox.com"] },
+  { name: "Intercom", packages: ["@intercom/", "react-use-intercom"], hosts: ["api.intercom.io"] },
+  { name: "Crisp", packages: ["crisp-sdk-web"], hosts: ["client.crisp.chat"] },
+  { name: "Airtable", packages: ["airtable"], hosts: ["api.airtable.com"] },
+  { name: "Notion", packages: ["@notionhq/client"], hosts: ["api.notion.com"] },
+  { name: "Google Sheets", who: /google/i, packages: ["google-spreadsheet"], hosts: ["sheets.googleapis.com"] },
 ];
+
+/** The AI SDK's gateway: the package "ai", given a model as "provider/model". */
+const GATEWAY_MODEL = /\bmodel\s*:\s*["'`][\w.-]+\/[\w.:-]+["'`]/;
 
 /**
  * Rule 4: ads, Google Analytics and Tag Manager, session recording, and
@@ -186,7 +228,7 @@ export const SERVICES = [
  * ("//host…"), so a sentence naming the company doesn't.
  */
 export const TRACKING = [
-  { name: "the Meta Pixel", packages: ["react-facebook-pixel"], hosts: ["connect.facebook.net"] },
+  { name: "the Meta Pixel or Conversions API", packages: ["react-facebook-pixel", "facebook-nodejs-business-sdk"], hosts: ["connect.facebook.net"] },
   { name: "Google Ads or AdSense", packages: ["react-adsense", "react-google-adsense"], hosts: ["pagead2.googlesyndication.com", "googleadservices.com", "doubleclick.net"] },
   { name: "the TikTok Pixel", hosts: ["analytics.tiktok.com"] },
   { name: "the LinkedIn Insight Tag", hosts: ["snap.licdn.com", "px.ads.linkedin.com"] },
@@ -200,18 +242,25 @@ export const TRACKING = [
   { name: "Outbrain", hosts: ["widgets.outbrain.com"] },
   {
     name: "Google Analytics",
-    packages: ["react-ga", "react-ga4", "ga-4-react", "vue-gtag", "vue-gtag-next", "ngx-google-analytics", "@analytics/google-analytics", "universal-analytics", "nextjs-google-analytics", "@react-native-firebase/analytics"],
-    specifiers: ["firebase/analytics"],
+    packages: ["react-ga", "react-ga4", "ga-4-react", "vue-gtag", "vue-gtag-next", "ngx-google-analytics", "@analytics/google-analytics", "universal-analytics", "nextjs-google-analytics", "@react-native-firebase/analytics", "nuxt-gtag", "@nuxtjs/google-analytics", "gatsby-plugin-google-gtag", "gatsby-plugin-google-analytics"],
+    specifiers: ["firebase/analytics", "firebase/compat/analytics"],
     hosts: ["google-analytics.com", "googletagmanager.com/gtag"],
   },
-  { name: "Google Tag Manager", packages: ["react-gtm-module", "@analytics/google-tag-manager"], hosts: ["googletagmanager.com"] },
+  { name: "Google Tag Manager", packages: ["react-gtm-module", "@analytics/google-tag-manager", "@gtm-support/", "@nuxtjs/gtm", "gatsby-plugin-google-tagmanager"], hosts: ["googletagmanager.com"] },
   { name: "Hotjar", packages: ["@hotjar/browser", "react-hotjar"], hosts: ["static.hotjar.com", "script.hotjar.com"] },
   { name: "FullStory", packages: ["@fullstory/", "react-fullstory"], hosts: ["edge.fullstory.com", "fullstory.com/s/fs.js"] },
   { name: "LogRocket", packages: ["logrocket", "logrocket-react"], hosts: ["cdn.logrocket.io", "cdn.lr-ingest.io"] },
   { name: "Microsoft Clarity", packages: ["@microsoft/clarity", "react-microsoft-clarity"], hosts: ["clarity.ms"] },
   { name: "Smartlook", packages: ["smartlook-client"], hosts: ["web-sdk.smartlook.com"] },
   { name: "Mouseflow", hosts: ["cdn.mouseflow.com"] },
+  { name: "rrweb, a session recorder", packages: ["rrweb", "rrweb-snapshot", "@rrweb/"] },
+  { name: "OpenReplay", packages: ["@openreplay/"] },
+  { name: "Highlight", packages: ["highlight.run", "@highlight-run/"] },
   { name: "Sentry's session replay", packages: ["@sentry/replay", "@sentry-internal/replay"], calls: [/\breplayIntegration\s*\(/g, /\bnew\s+(?:Sentry\.)?Replay\s*\(/g] },
+  { name: "PostHog's session recording", calls: [/\bstartSessionRecording\s*\(/g, /\bsession_recording\s*:\s*\{/g] },
+  { name: "Amplitude's session replay", packages: ["@amplitude/plugin-session-replay-browser", "@amplitude/session-replay-browser", "@amplitude/segment-session-replay-plugin"], calls: [/\bsessionReplayPlugin\s*\(/g] },
+  { name: "Datadog's session replay", calls: [/\bsessionReplaySampleRate\s*:\s*[1-9]/g, /\bstartSessionReplayRecording\s*\(/g] },
+  { name: "Mixpanel's session replay", calls: [/\brecord_sessions_percent\s*:\s*[1-9]/g, /\bstart_session_recording\s*\(/g] },
   { name: "Segment", packages: ["@segment/", "analytics-node"], hosts: ["cdn.segment.com"] },
   { name: "RudderStack", packages: ["@rudderstack/"], hosts: ["cdn.rudderlabs.com"] },
   { name: "mParticle", packages: ["@mparticle/"] },
@@ -219,12 +268,13 @@ export const TRACKING = [
 ];
 
 /** @next/third-parties ships Google Analytics and Tag Manager as components. */
-const NEXT_THIRD_PARTIES_GOOGLE = /\bimport\s*\{([^}]*)\}\s*from\s*["']@next\/third-parties\/google["']/g;
+const NEXT_THIRD_PARTIES_GOOGLE = /\bimport\s*\{([^}]{0,2000})\}\s*from\s*["']@next\/third-parties\/google["']/g;
 const GOOGLE_COMPONENTS = /\b(GoogleAnalytics|GoogleTagManager|sendGAEvent|sendGTMEvent)\b/;
 
 /**
  * Rule 8: secrets the tool can recognise. A finding names the file, the
- * line and the kind, never the secret.
+ * line and the kind, never the secret. `real` can rule out a match by the
+ * text around it.
  */
 export const SECRETS = [
   { kind: "a private key", re: /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/g },
@@ -232,20 +282,35 @@ export const SECRETS = [
   { kind: "an AWS access key", re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g, real: (m) => !m[0].endsWith("EXAMPLE") },
   { kind: "a GitHub token", re: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{40,})\b/g },
   { kind: "a Slack token", re: /\bxox[abposr]-[A-Za-z0-9-]{10,}/g },
+  { kind: "a Slack webhook address", re: /\bhooks\.slack\.com\/services\/T[A-Z0-9]{6,}\/B[A-Z0-9]{6,}\/[A-Za-z0-9]{16,}/g },
   { kind: "a live Stripe key", re: /\b(?:sk|rk)_live_[A-Za-z0-9]{16,}/g },
+  { kind: "a Stripe webhook secret", re: /\bwhsec_[A-Za-z0-9]{24,}/g },
   { kind: "an Anthropic API key", re: /\bsk-ant-[A-Za-z0-9_-]{20,}/g },
-  { kind: "an OpenAI API key", re: /\bsk-[A-Za-z0-9_-]*T3BlbkFJ[A-Za-z0-9_-]{8,}/g },
+  // Found by the part every OpenAI key carries, then the prefix before it: linear on any text.
+  { kind: "an OpenAI API key", re: /T3BlbkFJ[A-Za-z0-9_-]{8,}/g, real: (m, text) => /\bsk-[A-Za-z0-9_-]{0,200}$/.test(text.slice(Math.max(0, m.index - 210), m.index)) },
   { kind: "a SendGrid API key", re: /\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{20,}/g },
+  { kind: "a Resend API key", re: /\bre_[A-Za-z0-9]{20,}\b/g, real: (m) => /\d/.test(m[0]) && /[A-Z]/.test(m[0]) && /[a-z]/.test(m[0].slice(3)) },
+  // A Firebase web config's apiKey is public by design; any other Google key isn't.
+  { kind: "a Google API key", re: /\bAIza[0-9A-Za-z_-]{35}\b/g, real: (m, text) => !/authDomain|firebaseapp\.com|messagingSenderId|storageBucket/.test(text.slice(Math.max(0, m.index - 400), m.index + 400)) },
+  { kind: "a Groq API key", re: /\bgsk_[A-Za-z0-9]{40,}/g },
+  { kind: "a Replicate API token", re: /\br8_[A-Za-z0-9]{30,}/g },
+  { kind: "a Hugging Face token", re: /\bhf_[A-Za-z0-9]{30,}/g },
+  { kind: "a Supabase secret key", re: /\bsb_secret_[A-Za-z0-9_-]{20,}/g },
+  { kind: "an npm token", re: /\bnpm_[A-Za-z0-9]{36}\b/g },
   {
     kind: "a database address with a password",
-    re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^\s:@/"'`]+:([^\s@/"'`]+)@([^\s/:"'`?#]+)/g,
+    re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|amqps?)(?:\+[a-z0-9]+)?(?:\+srv)?:\/\/[^\s:@/"'`]+:([^\s@/"'`]+)@([^\s/:"'`?#]+)/g,
     real: (m) => !isPlaceholderPassword(m[1]) && !isLocalHost(m[2]),
   },
 ];
 
-/** Environment files that are examples, not secrets. */
+/** Environment files. Examples are scanned like any file; the others hold secrets by design. */
+const ENV_FILE = /^(?:\.env(?:\..+)?|\.dev\.vars|\.envrc)$/i;
 const ENV_EXAMPLE = /^\.env\.(?:example|sample|template|dist|defaults)$/i;
-const ENV_FILE = /^\.env(?:\..+)?$/i;
+const SECRET_NAME = /SECRET|TOKEN|PASSWORD|PASSWD|PWD|PRIVATE|CREDENTIAL|API_?KEY|ACCESS_?KEY|AUTH|DSN|DATABASE_URL|DB_URL|CONNECTION_STRING/i;
+const PLACEHOLDER_VALUE = /^(?:|<[^>]*>|\$\{[^}]*\}|x+|\*+|\.+|changeme|change-me|todo|placeholder|example|dummy|your[-_ ].*|replace[-_ ]?me)$/i;
+/** Files that hold a database: people's data, which rule 8 keeps out of the repository. */
+const DATABASE_FILE = /\.(?:db|sqlite|sqlite3|db3)$/i;
 
 function isPlaceholderPassword(password) {
   return /^(?:\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|<[^>]*>|\[[^\]]*\]|\*+|x+|\.\.\.|password|passwd|pass|secret|changeme|postgres|root|user|example|test|dev|local)$/i.test(password);
@@ -254,42 +319,50 @@ function isPlaceholderPassword(password) {
 function isLocalHost(host) {
   const h = host.toLowerCase();
   if (!h.includes(".")) return true; // localhost, or a service in docker compose ("db")
-  return /^(?:127\.\d+\.\d+\.\d+|0\.0\.0\.0)$/.test(h) || /\.(?:local|localhost|test|example|invalid|internal)$/.test(h);
+  return /^(?:127\.\d+\.\d+\.\d+|0\.0\.0\.0)$/.test(h) || /\.(?:local|localhost|test|example|invalid)$/.test(h);
 }
 
 /**
  * Rule 9: phrases that present a project as its users' property, or as
- * approved by our.one. Read in README.md and in files that render a page.
+ * approved by our.one. A phrase right after a denial ("not approved by
+ * our.one") is let through.
  */
 export const CLAIMS = [
   { re: /\b(?:users?|members?|community|people|customers?)[- ]owned\b/gi, what: "presents it as its users' property" },
-  { re: /\bowned\s+(?:and\s+[\w-]+\s+)?by\s+(?:all\s+(?:of\s+)?)?(?:its|their|our|the)\s+(?:own\s+)?(?:users|members|people|community|customers)\b/gi, what: "presents it as its users' property" },
+  { re: /\bowned\s+(?:and\s+[\w-]+\s+)?by\s+(?:all\s+(?:of\s+)?)?(?:(?:its|their|our|the)\s+)?(?:own\s+)?(?:users|members|people|community|customers)\b/gi, what: "presents it as its users' property" },
   { re: /\b(?:its|the|our)\s+(?:users|members|people|community)\s+(?:now\s+|together\s+|jointly\s+|collectively\s+)?own\s+(?:it|this)\b/gi, what: "presents it as its users' property" },
-  { re: /\b(?:approved|certified|endorsed|verified|vetted|accredited|listed)\s+by\s+our\.one\b/gi, what: "presents it as approved or listed by our.one" },
-  { re: /\bour\.one[- ](?:approved|certified|verified|endorsed)\b/gi, what: "presents it as approved by our.one" },
+  { re: /\b(?:approved|certified|endorsed|verified|vetted|accredited|listed|protected|hosted|backed|guaranteed)\s+(?:by|on|in)\s+our\.one\b/gi, what: "presents it as approved, listed or protected by our.one" },
+  { re: /\bour\.one[- ](?:approved|certified|verified|endorsed|protected|listed|backed)\b/gi, what: "presents it as approved, listed or protected by our.one" },
 ];
+const DENIAL = /\b(?:not|never|nor|isn't|aren't|wasn't|weren't|no longer|hasn't been|haven't been|has not been|have not been)\s+(?:yet\s+|been\s+)*$/i;
 
-/** Open-source licences, by SPDX id, with words their text always carries. */
+/** Open-source licences, by SPDX id, with words their full text always carries. */
 export const LICENCES = {
-  "Apache-2.0": [/Apache License/i, /Version 2\.0/i],
-  MIT: [/Permission is hereby granted, free of charge/i],
-  "MIT-0": [/Permission is hereby granted, free of charge/i],
-  "BSD-2-Clause": [/Redistribution and use in source and binary forms/i],
-  "BSD-3-Clause": [/Redistribution and use in source and binary forms/i, /Neither the name/i],
-  ISC: [/Permission to use, copy, modify, and\/or distribute this software/i],
-  "MPL-2.0": [/Mozilla Public License,? Version 2\.0/i],
-  "GPL-2.0-only": [/GNU GENERAL PUBLIC LICENSE/i, /Version 2/i],
-  "GPL-2.0-or-later": [/GNU GENERAL PUBLIC LICENSE/i, /Version 2/i],
-  "GPL-3.0-only": [/GNU GENERAL PUBLIC LICENSE/i, /Version 3/i],
-  "GPL-3.0-or-later": [/GNU GENERAL PUBLIC LICENSE/i, /Version 3/i],
-  "LGPL-3.0-only": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3/i],
-  "LGPL-3.0-or-later": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3/i],
-  "AGPL-3.0-only": [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3/i],
-  "AGPL-3.0-or-later": [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3/i],
+  "Apache-2.0": [/Apache License/i, /Version 2\.0, January 2004/i],
+  MIT: [/Permission is hereby granted, free of charge, to any person obtaining a copy/i],
+  "MIT-0": [/Permission is hereby granted, free of charge, to any person obtaining a copy/i],
+  "BSD-2-Clause": [/Redistribution and use in source and binary forms, with or without\s+modification, are permitted provided that the following conditions\s+are met/i],
+  "BSD-3-Clause": [/Redistribution and use in source and binary forms, with or without\s+modification, are permitted provided that the following conditions\s+are met/i, /Neither the name of/i],
+  ISC: [/Permission to use, copy, modify, and\/or distribute this software for any\s+purpose with or without fee is hereby granted, provided that/i],
+  "0BSD": [/Permission to use, copy, modify, and\/or distribute this software for any\s+purpose with or without fee is hereby granted/i],
+  "MPL-2.0": [/Mozilla Public License,? Version 2\.0/i, /Definitions/i],
+  "GPL-2.0-only": [/GNU GENERAL PUBLIC LICENSE/i, /Version 2, June 1991/i],
+  "GPL-2.0-or-later": [/GNU GENERAL PUBLIC LICENSE/i, /Version 2, June 1991/i],
+  "GPL-3.0-only": [/GNU GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
+  "GPL-3.0-or-later": [/GNU GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
+  "LGPL-2.1-only": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 2\.1, February 1999/i],
+  "LGPL-2.1-or-later": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 2\.1, February 1999/i],
+  "LGPL-3.0-only": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
+  "LGPL-3.0-or-later": [/GNU LESSER GENERAL PUBLIC LICENSE/i, /Version 3, 29 June 2007/i],
+  "AGPL-3.0-only": [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3, 19 November 2007/i],
+  "AGPL-3.0-or-later": [/GNU AFFERO GENERAL PUBLIC LICENSE/i, /Version 3, 19 November 2007/i],
+  "EPL-2.0": [/Eclipse Public License - v 2\.0/i],
   "EUPL-1.2": [/EUROPEAN UNION PUBLIC LICEN[CS]E v\. ?1\.2/i],
-  Unlicense: [/free and unencumbered software released into the public domain/i],
-  "BSL-1.0": [/Boost Software License - Version 1\.0/i],
-  Zlib: [/This software is provided 'as-is', without any express or implied/i],
+  Unlicense: [/This is free and unencumbered software released into the public domain/i, /Anyone is free to copy, modify, publish, use, compile, sell, or\s+distribute/i],
+  "BSL-1.0": [/Boost Software License - Version 1\.0 - August 17th, 2003/i],
+  Zlib: [/This software is provided 'as-is', without any express or implied/i, /Permission is granted to anyone to use this software for any purpose/i],
+  "Artistic-2.0": [/The Artistic License 2\.0/i],
+  "UPL-1.0": [/The Universal Permissive License \(UPL\), Version 1\.0/i],
 };
 
 const LICENCE_FILE = /^(?:licen[cs]e|copying)(?:[-.][\w.-]+)?$/i;
@@ -298,31 +371,71 @@ const LICENCE_FILE = /^(?:licen[cs]e|copying)(?:[-.][\w.-]+)?$/i;
 
 const SKIP_DIRS = new Set(["node_modules", ".git", ".next", ".nuxt", ".svelte-kit", ".output", ".vercel", ".turbo", "dist", "build", "out", "coverage", "vendor", ".cache", "target", "__pycache__", ".venv", "venv"]);
 const MAX_BYTES = 1_000_000;
+/** Secrets are looked for in larger files too: a built bundle can carry a key. */
+const MAX_SECRET_BYTES = 20_000_000;
 const SOURCE = /\.(?:[cm]?[jt]sx?|vue|svelte|astro)$/i;
-const MARKUP = /\.(?:html?|[cm]?[jt]sx?|vue|svelte|astro|mdx|ejs|hbs|liquid|php|erb)$/i;
-const RENDERS = /\.(?:html?|jsx|tsx|vue|svelte|astro|mdx)$/i;
-const TEST = /(?:^|\/)(?:__tests__|__mocks__|tests?|e2e|spec|fixtures?|cypress|playwright)\/|\.(?:test|spec|stories)\.[cm]?[jt]sx?$/i;
+const MARKUP = /\.(?:html?|[cm]?[jt]sx?|vue|svelte|astro|mdx|ejs|hbs|handlebars|liquid|njk|pug|php|erb)$/i;
+/** Files whose text people read: pages, templates and the code that writes them. */
+const READ_BY_PEOPLE = /\.(?:html?|[cm]?[jt]sx?|vue|svelte|astro|mdx|ejs|hbs|handlebars|liquid|njk|pug|erb)$/i;
+/** Message files that internationalised apps keep their words in. */
+const MESSAGES = /(?:^|\/)(?:messages|locales?|i18n|lang|translations)\/(?:[^/]+\/)*[^/]+\.json$/i;
+/** Code in a language the tool doesn't read. */
+const OTHER_LANGUAGE = /\.(?:py|rb|go|php|java|kt|kts|cs|rs|ex|exs|swift|scala|dart|clj)$/i;
+const OTHER_LANGUAGE_NAMES = { py: "Python", rb: "Ruby", go: "Go", php: "PHP", java: "Java", kt: "Kotlin", kts: "Kotlin", cs: "C#", rs: "Rust", ex: "Elixir", exs: "Elixir", swift: "Swift", scala: "Scala", dart: "Dart", clj: "Clojure" };
+const TEST = /(?:^|\/)(?:__tests__|__mocks__|__fixtures__|tests?|e2e|spec|fixtures?|cypress|playwright|test-utils)\/|\.(?:test|spec|stories|cy|e2e)\.[cm]?[jt]sx?$|(?:^|\/)(?:vitest|jest|playwright|cypress)\.(?:setup|config)\.[cm]?[jt]s$|(?:^|\/)setupTests\.[cm]?[jt]sx?$/i;
 
 function toPosix(path) {
   return path.split(sep).join("/");
 }
 
-/** Files under the project, as posix paths relative to it: git's list where there is one. */
+/** The folder holding the git repository this folder is in, or null. Found by looking for .git, without running git. */
+function gitRootOf(root) {
+  let dir = root;
+  for (;;) {
+    if (existsSync(join(dir, ".git"))) return dir;
+    const up = dirname(dir);
+    if (up === dir) return null;
+    dir = up;
+  }
+}
+
+/**
+ * Files under the project, as posix paths relative to it: git's list where
+ * git can run, without dependencies (node_modules) and without build output
+ * git doesn't track; otherwise the folder, walked. git runs with the
+ * project's own fsmonitor turned off: that setting names a program git
+ * would start.
+ */
 function listFiles(root) {
+  let out;
   try {
-    const out = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+    out = execFileSync("git", ["-c", "core.fsmonitor=false", "ls-files", "-z", "-t", "--cached", "--others", "--exclude-standard"], {
       cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
-      maxBuffer: 64 * 1024 * 1024,
+      maxBuffer: 256 * 1024 * 1024,
     });
-    const files = [...new Set(out.split("\0").filter(Boolean))];
-    return { files: files.filter((f) => isPlainFile(join(root, f))), git: true };
   } catch {
     const files = [];
     walk(root, "", files);
-    return { files, git: false };
+    return { files, tracked: null, git: false, gitRoot: gitRootOf(root) };
   }
+  const seen = new Set();
+  const tracked = new Set();
+  const files = [];
+  for (const entry of out.split("\0")) {
+    if (entry.length < 3) continue;
+    const tag = entry[0];
+    const rel = entry.slice(2);
+    const segments = rel.split("/");
+    if (segments.includes("node_modules")) continue;
+    if (tag === "?" && segments.some((s) => SKIP_DIRS.has(s))) continue;
+    if (seen.has(rel) || !isPlainFile(join(root, rel))) continue;
+    seen.add(rel);
+    if (tag !== "?") tracked.add(rel);
+    files.push(rel);
+  }
+  return { files, tracked, git: true, gitRoot: gitRootOf(root) };
 }
 
 function walk(root, rel, out) {
@@ -359,12 +472,29 @@ function isLink(path) {
   }
 }
 
+/** Is this path, followed through any link, inside the project? */
+function insideProject(root, rel) {
+  try {
+    const real = realpathSync(root);
+    const target = realpathSync(join(root, rel));
+    return target === real || target.startsWith(real + sep);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * May init write `rel`? Only inside the project, and never through a link:
- * neither the file nor any folder on its way may lead outside the project.
+ * neither the file nor any folder on its way may lead outside the project,
+ * and the file may not be a second name for one elsewhere (a hard link).
  */
 function writable(root, rel) {
-  const real = realpathSync(root);
+  let real;
+  try {
+    real = realpathSync(root);
+  } catch {
+    return false;
+  }
   let dir = dirname(join(root, rel));
   while (!existsSync(dir) && dir !== dirname(dir)) dir = dirname(dir);
   let realDir;
@@ -374,56 +504,178 @@ function writable(root, rel) {
     return false;
   }
   if (realDir !== real && !realDir.startsWith(real + sep)) return false;
-  return !isLink(join(root, rel));
+  const path = join(root, rel);
+  try {
+    const stat = lstatSync(path);
+    if (stat.isSymbolicLink() || stat.nlink > 1 || !stat.isFile()) return false;
+  } catch {
+    // Not there yet: fine.
+  }
+  return true;
 }
 
-function readText(root, rel, skipped) {
+/** A file's text, or null when it is too large, binary or can't be read; what was left unread is noted. */
+function readText(root, rel, skipped, limit = MAX_BYTES) {
   const path = join(root, rel);
   let size;
   try {
     size = statSync(path).size;
   } catch {
+    if (!skipped.unreadable.includes(rel)) skipped.unreadable.push(rel);
     return null;
   }
-  if (size > MAX_BYTES) {
-    skipped.large.push(rel);
+  if (size > limit) {
+    if (!skipped.large.includes(rel)) skipped.large.push(rel);
     return null;
   }
-  const buffer = readFileSync(path);
+  let buffer;
+  try {
+    buffer = readFileSync(path);
+  } catch {
+    if (!skipped.unreadable.includes(rel)) skipped.unreadable.push(rel);
+    return null;
+  }
   if (buffer.subarray(0, 8000).includes(0)) {
     skipped.binary += 1;
     return null;
   }
-  return buffer.toString("utf8");
+  return withoutBom(buffer.toString("utf8"));
 }
 
-function lineAt(text, index) {
-  let line = 1;
-  for (let i = 0; i < index && i < text.length; i += 1) if (text.charCodeAt(i) === 10) line += 1;
-  return line;
+function withoutBom(text) {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
+/** Line numbers for positions in `text`, from a table of where each line starts. */
+function lineFinder(text) {
+  const starts = [0];
+  for (let i = 0; i < text.length; i += 1) if (text.charCodeAt(i) === 10) starts.push(i + 1);
+  return (index) => {
+    let lo = 0;
+    let hi = starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (starts[mid] <= index) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo + 1;
+  };
 }
 
 function sha256(buffer) {
   return createHash("sha256").update(buffer).digest("hex");
 }
 
-/* ------------------------------------------------------------ imports */
+/* ------------------------------------------------------------ code */
 
-const IMPORTS = [
-  /\bimport\s+(?!type\b)(?:[\w$*{}\s,]+?\s+from\s+)?["']([^"'\n]+)["']/g,
-  /\bexport\s+(?!type\b)(?:\*(?:\s+as\s+[\w$]+)?|\{[^}]*\})\s+from\s+["']([^"'\n]+)["']/g,
-  /\bimport\s*\(\s*["']([^"'\n]+)["']\s*\)/g,
-  /\brequire\s*\(\s*["']([^"'\n]+)["']\s*\)/g,
-];
-
-/** Every module a file imports, with the line it is on. */
-export function importsOf(text) {
-  const found = [];
-  for (const re of IMPORTS) {
-    re.lastIndex = 0;
-    for (const m of text.matchAll(re)) found.push({ spec: m[1], line: lineAt(text, m.index) });
+/**
+ * JavaScript's comments, blanked to spaces with every newline kept, so
+ * positions and line numbers still match the file. Strings, template
+ * literals and regular expressions are stepped over, so a "//" inside one
+ * isn't taken for a comment.
+ */
+export function stripComments(text) {
+  const out = text.split("");
+  const n = text.length;
+  let prev = "";
+  let i = 0;
+  const blank = (from, to) => {
+    for (let k = from; k < to; k += 1) if (out[k] !== "\n" && out[k] !== "\r") out[k] = " ";
+  };
+  while (i < n) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (c === "/" && next === "/") {
+      const end = text.indexOf("\n", i);
+      const stop = end === -1 ? n : end;
+      blank(i, stop);
+      i = stop;
+      continue;
+    }
+    if (c === "/" && next === "*") {
+      const end = text.indexOf("*/", i + 2);
+      const stop = end === -1 ? n : end + 2;
+      blank(i, stop);
+      i = stop;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      i = endOfString(text, i, c);
+      prev = c;
+      continue;
+    }
+    if (c === "/" && (prev === "" || "(,=:[!&|?{};+-*%<>~^".includes(prev))) {
+      i = endOfRegex(text, i);
+      prev = "/";
+      continue;
+    }
+    if (c !== " " && c !== "\t" && c !== "\n" && c !== "\r") prev = c;
+    i += 1;
   }
-  return found;
+  return out.join("");
+}
+
+function endOfString(text, start, quote) {
+  let i = start + 1;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === "\\") {
+      i += 2;
+      continue;
+    }
+    if (c === quote) return i + 1;
+    if (c === "\n" && quote !== "`") return i;
+    i += 1;
+  }
+  return i;
+}
+
+function endOfRegex(text, start) {
+  let i = start + 1;
+  let inClass = false;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === "\n") return start + 1;
+    if (c === "\\") {
+      i += 2;
+      continue;
+    }
+    if (c === "[") inClass = true;
+    else if (c === "]") inClass = false;
+    else if (c === "/" && !inClass) {
+      i += 1;
+      while (i < text.length && /[a-z]/i.test(text[i])) i += 1;
+      return i;
+    }
+    i += 1;
+  }
+  return start + 1;
+}
+
+const STATEMENT_HEAD = /^\s+(?!type\s)[\w$*{},\s]*$/;
+
+/**
+ * Every module a file imports, with its line and how: `import … from`,
+ * `export … from`, `import "x"`, a dynamic import, or `require`. Type-only
+ * imports bring no code and are left out; comments are read past.
+ */
+export function importsOf(text) {
+  const code = stripComments(text);
+  const at = lineFinder(code);
+  const found = [];
+  for (const m of code.matchAll(/\bfrom\s*(["'`])([^"'`\n]{1,300})\1/g)) {
+    const floor = Math.max(0, m.index - 2000);
+    const imp = code.lastIndexOf("import", m.index);
+    const exp = code.lastIndexOf("export", m.index);
+    const start = Math.max(imp, exp);
+    if (start < floor) continue;
+    if (/[\w$]/.test(code[start - 1] ?? "")) continue;
+    if (!STATEMENT_HEAD.test(code.slice(start + 6, m.index))) continue;
+    found.push({ spec: m[2], line: at(m.index), kind: start === exp ? "export" : "import" });
+  }
+  for (const m of code.matchAll(/\bimport\s*(["'`])([^"'`\n]{1,300})\1/g)) found.push({ spec: m[2], line: at(m.index), kind: "import" });
+  for (const m of code.matchAll(/\b(import|require)\s*\(\s*(["'`])([^"'`\n$]{1,300})\2\s*\)/g)) found.push({ spec: m[3], line: at(m.index), kind: m[1] });
+  return found.sort((a, b) => a.line - b.line);
 }
 
 /** The package a module name belongs to, or null for a file, a built-in or an alias. */
@@ -440,14 +692,27 @@ function matches(entry, spec) {
   return spec === entry || spec.startsWith(`${entry}/`);
 }
 
+/** The addresses written in code, with the host each names. */
+function addressesIn(code) {
+  const out = [];
+  for (const m of code.matchAll(/\bhttps?:\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)) out.push({ host: m[1].toLowerCase(), index: m.index });
+  return out;
+}
+
+function hostMatches(host, entry) {
+  return host === entry || host.endsWith(`.${entry}`);
+}
+
 /* ------------------------------------------------------------ project */
 
 function loadProject(root) {
-  const skipped = { large: [], binary: 0 };
-  const { files, git } = listFiles(root);
+  const skipped = { large: [], binary: 0, unreadable: [] };
+  const listed = listFiles(root);
+  const { files, git, tracked } = listed;
   const self = selfInside(root);
-  const selfHash = sha256(readFileSync(fileURLToPath(import.meta.url)));
-  const selfSize = statSync(fileURLToPath(import.meta.url)).size;
+  const toolPath = fileURLToPath(import.meta.url);
+  const selfHash = sha256(readFileSync(toolPath));
+  const selfSize = statSync(toolPath).size;
   const texts = new Map();
   const isSelfCopy = (rel) => {
     if (rel === self) return true;
@@ -460,7 +725,7 @@ function loadProject(root) {
   };
   const readable = [];
   for (const rel of files) {
-    if (ENV_FILE.test(basename(rel)) && !ENV_EXAMPLE.test(basename(rel))) continue; // never read
+    if (ENV_FILE.test(basename(rel)) && !ENV_EXAMPLE.test(basename(rel))) continue; // read only by the secrets check
     if (isSelfCopy(rel)) continue;
     readable.push(rel);
   }
@@ -471,32 +736,47 @@ function loadProject(root) {
 
   let manifest = null;
   let manifestError = null;
-  if (isLink(join(root, MANIFEST))) {
-    manifestError = "it is a link, and the check reads only the project's own files";
-  } else if (existsSync(join(root, MANIFEST))) {
+  const manifestPath = join(root, MANIFEST);
+  if (isLink(manifestPath)) {
+    manifestError = "It is a link, and the check reads only the project's own files.";
+  } else if (existsSync(manifestPath)) {
     try {
-      manifest = JSON.parse(readFileSync(join(root, MANIFEST), "utf8"));
+      manifest = JSON.parse(withoutBom(readFileSync(manifestPath, "utf8")));
     } catch (error) {
-      manifestError = error instanceof Error ? error.message : String(error);
+      manifestError = whereItBroke(error);
     }
   }
 
   let pkg = null;
   if (isPlainFile(join(root, "package.json"))) {
     try {
-      pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+      pkg = JSON.parse(withoutBom(readFileSync(join(root, "package.json"), "utf8")));
     } catch {
       pkg = null;
     }
   }
 
-  // Imports, from source files that aren't tests.
-  const imports = [];
+  // Code: its imports, its addresses, and where it reaches a store.
+  const code = new Map();
   for (const rel of readable) {
     if (!SOURCE.test(rel) || TEST.test(rel)) continue;
     const t = text(rel);
     if (t === null) continue;
-    for (const i of importsOf(t)) imports.push({ ...i, file: rel });
+    code.set(rel, stripComments(t));
+  }
+  const imports = [];
+  for (const [rel] of code) for (const i of importsOf(text(rel))) imports.push({ ...i, file: rel });
+
+  const storeUses = [];
+  for (const i of imports) {
+    if (STORES.some((s) => matches(s, i.spec))) storeUses.push({ file: i.file, line: i.line, what: i.spec, kind: i.kind === "export" ? "re-export" : "client" });
+  }
+  for (const [rel, c] of code) {
+    const at = lineFinder(c);
+    for (const call of STORE_CALLS) for (const m of c.matchAll(call.re)) storeUses.push({ file: rel, line: at(m.index), what: call.name, kind: "client" });
+    for (const q of STORE_QUERIES) for (const m of c.matchAll(q.re)) storeUses.push({ file: rel, line: at(m.index), what: q.name, kind: "query" });
+    const usesFs = imports.some((i) => i.file === rel && FS_MODULES.includes(i.spec));
+    if (usesFs) for (const m of c.matchAll(FS_WRITES)) storeUses.push({ file: rel, line: at(m.index), what: "a file written with fs", kind: "client" });
   }
 
   const deps = new Set();
@@ -507,12 +787,29 @@ function loadProject(root) {
     }
   }
 
-  return { root, files, git, readable, text, manifest, manifestError, pkg, imports, deps, skipped };
+  const otherLanguage = readable.filter((f) => OTHER_LANGUAGE.test(f) && !TEST.test(f));
+
+  return { root, files, git, tracked, gitRoot: listed.gitRoot, readable, text, manifest, manifestError, pkg, code, imports, storeUses, deps, otherLanguage, skipped };
+}
+
+/** Where a JSON document broke, as a line and a column: never the text around it, which could hold a secret. */
+function whereItBroke(error) {
+  const message = error instanceof Error ? error.message : "";
+  const lc = /line (\d+) column (\d+)/.exec(message);
+  if (lc) return `It doesn't parse, near line ${lc[1]}, column ${lc[2]}.`;
+  const pos = /position (\d+)/.exec(message);
+  if (pos) return `It doesn't parse, near character ${pos[1]}.`;
+  return "It doesn't parse.";
 }
 
 function selfInside(root) {
   const self = fileURLToPath(import.meta.url);
-  const raw = relative(root, self);
+  let raw;
+  try {
+    raw = relative(realpathSync(root), self);
+  } catch {
+    raw = relative(root, self);
+  }
   if (!raw || isAbsolute(raw)) return null;
   const rel = toPosix(raw);
   return rel.startsWith("../") || rel === ".." ? null : rel;
@@ -550,8 +847,17 @@ function str(value, min, max) {
   return typeof value === "string" && value.trim().length >= min && value.length <= max;
 }
 
+/** A user's text, shortened, for a message. */
+function quoted(value) {
+  const s = String(value);
+  return s.length > 60 ? `${s.slice(0, 57)}…` : s;
+}
+
+/** An answer that says the thing doesn't exist: "N/A", "Not built yet.", "TBD". */
+const NON_ANSWER = /^\s*(?:n\/?a|none|no|nothing|not (?:built|available|supported|implemented|possible|done)(?: yet)?|not yet|tbd|tbc|todo|coming soon|later|soon|-+|\?+)\s*\.?\s*$/i;
+
 export const TOP_KEYS = ["$schema", "rules", "name", "purpose", "maintainers", "source", "license", "costs", "data", "claims"];
-export const DATA_KEYS = ["collects", "sharedWith", "boundary", "export", "delete"];
+export const DATA_KEYS = ["collects", "sharedWith", "boundary", "noPersonalData", "export", "delete"];
 
 /** The manifest's shape (STRUCTURAL). Every problem is listed at once. */
 function checkManifest(p) {
@@ -559,7 +865,7 @@ function checkManifest(p) {
   const title = "our.one.json is present and complete";
   if (p.manifestError !== null) {
     return result(id, title, "STRUCTURAL", FAIL, "our.one.json isn't valid JSON.", [
-      { message: `It doesn't parse: ${p.manifestError}`, file: MANIFEST, fix: "Fix the JSON. Comments and trailing commas aren't allowed." },
+      { message: p.manifestError, file: MANIFEST, fix: "Fix the JSON. Comments and trailing commas aren't allowed." },
     ]);
   }
   if (p.manifest === null) {
@@ -589,7 +895,7 @@ function checkManifest(p) {
   for (const key of Object.keys(m)) {
     if (!TOP_KEYS.includes(key)) {
       const hint = key.toLowerCase() === "licence" ? ' It is spelled "license", as in package.json.' : "";
-      add(`Unknown field "${key}".${hint}`, `Remove it. The fields are: ${TOP_KEYS.join(", ")}.`);
+      add(`Unknown field "${quoted(key)}".${hint}`, `Remove it. The fields are: ${TOP_KEYS.join(", ")}.`);
     }
   }
   if (m.rules !== RULES_VERSION) add(`"rules" must be "${RULES_VERSION}", the rules version this tool checks.`, `Set "rules": "${RULES_VERSION}".`);
@@ -603,7 +909,7 @@ function checkManifest(p) {
         add(`maintainers[${i}] must be an object with "name" and "contact".`, "Fix it.");
         return;
       }
-      for (const key of Object.keys(person)) if (!["name", "contact"].includes(key)) add(`maintainers[${i}] has an unknown field "${key}".`, "Remove it.");
+      for (const key of Object.keys(person)) if (!["name", "contact"].includes(key)) add(`maintainers[${i}] has an unknown field "${quoted(key)}".`, "Remove it.");
       if (!str(person.name, 1, 80)) add(`maintainers[${i}].name is missing.`, "Write the person's name.", `maintainers[${i}].name`);
       if (!isEmail(person.contact) && !isHttpsUrl(person.contact)) add(`maintainers[${i}].contact must be an email address or an https:// link.`, "Write one.", `maintainers[${i}].contact`);
     });
@@ -615,13 +921,13 @@ function checkManifest(p) {
   if (typeof d !== "object" || d === null || Array.isArray(d)) {
     add('"data" must be an object: collects, sharedWith, boundary, export and delete.', `Start from the one init writes: node ${DEFAULT_TOOL_PATH} init`);
   } else {
-    for (const key of Object.keys(d)) if (!DATA_KEYS.includes(key)) add(`Unknown field "data.${key}".`, `Remove it. The fields are: ${DATA_KEYS.join(", ")}.`);
+    for (const key of Object.keys(d)) if (!DATA_KEYS.includes(key)) add(`Unknown field "data.${quoted(key)}".`, `Remove it. The fields are: ${DATA_KEYS.join(", ")}.`);
     if (!Array.isArray(d.collects)) {
       add('"data.collects" must be a list, empty only if it keeps nothing about anyone.', 'Add [{"what": "…", "why": "…", "kept": "…"}] for each kind of personal data.');
     } else {
       d.collects.forEach((item, i) => {
         if (typeof item !== "object" || item === null || Array.isArray(item)) return add(`data.collects[${i}] must be an object.`, "Fix it.");
-        for (const key of Object.keys(item)) if (!["what", "why", "kept"].includes(key)) add(`data.collects[${i}] has an unknown field "${key}".`, 'The fields are "what", "why" and "kept".');
+        for (const key of Object.keys(item)) if (!["what", "why", "kept"].includes(key)) add(`data.collects[${i}] has an unknown field "${quoted(key)}".`, 'The fields are "what", "why" and "kept".');
         if (!str(item.what, 1, 600)) add(`data.collects[${i}].what is missing, or longer than 600 characters.`, "Say what is kept.", `data.collects[${i}].what`);
         if (!str(item.why, 1, 600)) add(`data.collects[${i}].why is missing, or longer than 600 characters.`, "Say why the service needs it.", `data.collects[${i}].why`);
         if (!str(item.kept, 1, 400)) add(`data.collects[${i}].kept is missing, or longer than 400 characters.`, "Say how long it is kept.", `data.collects[${i}].kept`);
@@ -632,7 +938,7 @@ function checkManifest(p) {
     } else {
       d.sharedWith.forEach((item, i) => {
         if (typeof item !== "object" || item === null || Array.isArray(item)) return add(`data.sharedWith[${i}] must be an object.`, "Fix it.");
-        for (const key of Object.keys(item)) if (!["who", "what", "why", "packages"].includes(key)) add(`data.sharedWith[${i}] has an unknown field "${key}".`, 'The fields are "who", "what", "why" and "packages".');
+        for (const key of Object.keys(item)) if (!["who", "what", "why", "packages"].includes(key)) add(`data.sharedWith[${i}] has an unknown field "${quoted(key)}".`, 'The fields are "who", "what", "why" and "packages".');
         if (!str(item.who, 1, 120)) add(`data.sharedWith[${i}].who is missing, or longer than 120 characters.`, "Name the service.", `data.sharedWith[${i}].who`);
         if (!str(item.what, 1, 400)) add(`data.sharedWith[${i}].what is missing, or longer than 400 characters.`, "Say what it receives.", `data.sharedWith[${i}].what`);
         if (!str(item.why, 1, 600)) add(`data.sharedWith[${i}].why is missing, or longer than 600 characters.`, "Say why.", `data.sharedWith[${i}].why`);
@@ -640,35 +946,63 @@ function checkManifest(p) {
       });
     }
     if (d.boundary !== undefined && (!Array.isArray(d.boundary) || d.boundary.some((x) => typeof x !== "string"))) add('"data.boundary" must be a list of folders.', 'For example ["src/data"].');
+    if (d.noPersonalData !== undefined && !str(d.noPersonalData, 1, 600)) add('"data.noPersonalData" must say, in a sentence, why it keeps nothing about anyone.', "Write it, or remove it.", "data.noPersonalData");
     if (!str(d.export, 1, 400)) add('"data.export" must say how a person downloads their data.', 'For example "Settings, then Download your data".', "data.export");
     if (!str(d.delete, 1, 400)) add('"data.delete" must say how a person deletes their data.', 'For example "Settings, then Delete account".', "data.delete");
   }
   if (m.claims !== undefined) {
     const c = m.claims;
-    if (typeof c !== "object" || c === null || Array.isArray(c) || Object.keys(c).some((k) => k !== "allowed") || !Array.isArray(c.allowed)) {
-      add('"claims" may only hold "allowed": a list of {file, text, why}.', "Fix it, or remove it.");
+    if (typeof c !== "object" || c === null || Array.isArray(c) || Object.keys(c).some((k) => !["allowed", "skip"].includes(k))) {
+      add('"claims" may only hold "allowed" (a list of {file, text, why}) and "skip" (a list of {file, why}).', "Fix it, or remove it.");
     } else {
-      c.allowed.forEach((item, i) => {
+      if (c.allowed !== undefined && !Array.isArray(c.allowed)) add('"claims.allowed" must be a list.', "Fix it.");
+      (Array.isArray(c.allowed) ? c.allowed : []).forEach((item, i) => {
         if (typeof item !== "object" || item === null || Array.isArray(item) || Object.keys(item).some((k) => !["file", "text", "why"].includes(k)) || !str(item.file, 1, 400) || !str(item.text, 8, 600) || !str(item.why, 8, 600)) {
           add(`claims.allowed[${i}] needs "file", "text" (the exact sentence) and "why".`, "Fix it.");
         }
       });
+      if (c.skip !== undefined && !Array.isArray(c.skip)) add('"claims.skip" must be a list.', "Fix it.");
+      (Array.isArray(c.skip) ? c.skip : []).forEach((item, i) => {
+        if (typeof item !== "object" || item === null || Array.isArray(item) || Object.keys(item).some((k) => !["file", "why"].includes(k)) || !str(item.file, 1, 400) || !str(item.why, 8, 600)) {
+          add(`claims.skip[${i}] needs "file" (one file) and "why".`, "Fix it.");
+        }
+      });
     }
   }
-  for (const path of todos) problems.push({ message: `${path} still says TODO.`, file: MANIFEST, fix: "Fill it in." });
+  for (const path of todos) problems.push({ message: `${path} still says TODO.`, file: MANIFEST, fix: "Fill it in with the person's answer." });
   return problems.length === 0
     ? result(id, title, "STRUCTURAL", PASS, "our.one.json is complete.")
     : result(id, title, "STRUCTURAL", FAIL, `our.one.json has ${problems.length} problem${problems.length === 1 ? "" : "s"}.`, problems);
 }
 
-/** The licence (CHECKED): open source, in a licence file, the same as package.json's. */
+/** The licence files at a folder: LICENSE and its kin, and a REUSE-style LICENSES/ folder. */
+function licenceFilesAt(dir) {
+  const out = [];
+  let names = [];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return out;
+  }
+  for (const name of names) if (LICENCE_FILE.test(name) && isPlainFile(join(dir, name))) out.push(join(dir, name));
+  let reuse = [];
+  try {
+    reuse = readdirSync(join(dir, "LICENSES"));
+  } catch {
+    reuse = [];
+  }
+  for (const name of reuse) if (/\.(?:txt|md)$/i.test(name) && isPlainFile(join(dir, "LICENSES", name))) out.push(join(dir, "LICENSES", name));
+  return out;
+}
+
+/** The licence (CHECKED): open source, in a licence file here or at the repository's root, the same as package.json's. */
 function checkLicence(p) {
   const id = "licence";
   const title = "It has an open-source licence";
   const declared = p.manifest && typeof p.manifest.license === "string" ? p.manifest.license.trim() : "";
   if (!declared || isTodo(declared)) {
     return result(id, title, "CHECKED", FAIL, "No licence is named in our.one.json.", [
-      { message: '"license" names no licence.', file: MANIFEST, fix: "Ask the person which open-source licence to use (Apache-2.0 is the feed's), add its text as LICENSE, and name it here." },
+      { message: '"license" names no licence.', file: MANIFEST, fix: "Ask the person which open-source licence to use (Apache-2.0 is the feed's), add its full text as LICENSE, and name it here." },
     ]);
   }
   const findings = [];
@@ -676,29 +1010,41 @@ function checkLicence(p) {
   const known = new Map(Object.keys(LICENCES).map((k) => [k.toLowerCase(), k]));
   const canonical = ids.map((x) => known.get(x.trim().toLowerCase()) ?? null);
   if (canonical.some((x) => x === null)) {
-    findings.push({ message: `"${declared}" isn't on the tool's list of open-source licences.`, file: MANIFEST, fix: `Use one of: ${Object.keys(LICENCES).join(", ")}. (A choice of two is written "MIT OR Apache-2.0".)` });
+    findings.push({ message: `"${quoted(declared)}" isn't on the tool's list of open-source licences.`, file: MANIFEST, fix: `Use one of: ${Object.keys(LICENCES).join(", ")}. (A choice of two is written "MIT OR Apache-2.0".)` });
   }
-  const licenceFiles = p.files.filter((f) => !f.includes("/") && LICENCE_FILE.test(f));
-  if (licenceFiles.length === 0) {
-    findings.push({ message: "There is no licence file (LICENSE, LICENCE or COPYING) at the project's root.", fix: "Add the licence's full text as LICENSE." });
+  let files = licenceFilesAt(p.root);
+  let atRoot = false;
+  if (files.length === 0 && p.gitRoot && p.gitRoot !== p.root) {
+    files = licenceFilesAt(p.gitRoot);
+    atRoot = files.length > 0;
+  }
+  const names = files.map((f) => toPosix(relative(p.root, f)));
+  if (files.length === 0) {
+    findings.push({ message: "There is no licence file (LICENSE, LICENCE or COPYING) at the project's root, or at the repository's.", fix: "Add the licence's full text as LICENSE." });
   } else if (canonical.every((x) => x !== null)) {
-    const texts = licenceFiles.map((f) => p.text(f) ?? "");
+    const texts = files.map((f) => {
+      try {
+        return readFileSync(f, "utf8");
+      } catch {
+        return "";
+      }
+    });
     for (const licence of canonical) {
       if (!texts.some((t) => LICENCES[licence].every((re) => re.test(t)))) {
-        findings.push({ message: `No licence file holds the text of ${licence}.`, file: licenceFiles[0], fix: `Put the full text of ${licence} in ${licenceFiles[0]}.` });
+        findings.push({ message: `No licence file holds the full text of ${licence}.`, file: names[0], fix: `Put the full text of ${licence} in ${names[0]}: a line naming it isn't enough.` });
       }
     }
   }
   const pkgLicense = p.pkg && typeof p.pkg.license === "string" ? p.pkg.license.trim() : null;
   if (pkgLicense && pkgLicense.toLowerCase() !== declared.toLowerCase()) {
-    findings.push({ message: `package.json says "${pkgLicense}", our.one.json says "${declared}".`, file: "package.json", fix: "Make them the same." });
+    findings.push({ message: `package.json says "${quoted(pkgLicense)}", our.one.json says "${quoted(declared)}".`, file: "package.json", fix: "Make them the same." });
   }
   return findings.length === 0
-    ? result(id, title, "CHECKED", PASS, `${canonical.join(" or ")}, in ${licenceFiles.join(", ")}.`)
+    ? result(id, title, "CHECKED", PASS, `${canonical.join(" or ")}, in ${names.join(", ")}${atRoot ? ", at the repository's root" : ""}.`)
     : result(id, title, "CHECKED", FAIL, "The licence isn't in order.", findings);
 }
 
-/** The rules block in AGENTS.md (CHECKED): present, and word for word. */
+/** The rules block in AGENTS.md (CHECKED): present once, and word for word. */
 function checkAgents(p) {
   const id = "agents";
   const title = "AGENTS.md carries the rules, unchanged";
@@ -706,18 +1052,23 @@ function checkAgents(p) {
   const agentsFile = p.files.find((f) => f.toLowerCase() === "agents.md") ?? null;
   if (!agentsFile) return result(id, title, "CHECKED", FAIL, "There is no AGENTS.md.", [{ message: "There is no AGENTS.md, so agents working on this code don't get the rules.", fix }]);
   const text = normaliseBlock(p.text(agentsFile) ?? "");
-  const begin = text.indexOf("<!-- our.one rules ");
-  if (begin === -1) return result(id, title, "CHECKED", FAIL, "AGENTS.md has no rules block.", [{ message: "AGENTS.md doesn't carry the our.one rules.", file: agentsFile, fix }]);
-  const version = /^<!-- our\.one rules ([\w.-]+): begin/.exec(text.slice(begin))?.[1];
-  if (version !== RULES_VERSION) {
-    return result(id, title, "CHECKED", FAIL, `AGENTS.md carries rules ${version ?? "of an unknown version"}.`, [
-      { message: `The block is for rules ${version ?? "?"}; this tool checks rules ${RULES_VERSION}.`, file: agentsFile, line: lineAt(text, begin), fix },
+  const at = lineFinder(text);
+  const begins = [...text.matchAll(/<!-- our\.one rules ([\w.-]+): begin/g)];
+  if (begins.length === 0) return result(id, title, "CHECKED", FAIL, "AGENTS.md has no rules block.", [{ message: "AGENTS.md doesn't carry the our.one rules.", file: agentsFile, fix }]);
+  if (begins.length > 1) {
+    return result(id, title, "CHECKED", FAIL, `AGENTS.md has ${begins.length} rules blocks.`, [
+      { message: "AGENTS.md carries more than one rules block, and an agent reads them all.", file: agentsFile, line: at(begins[1].index), fix },
     ]);
   }
-  const block = normaliseBlock(RULES_BLOCK);
-  if (text.indexOf(block) === -1) {
+  const version = begins[0][1];
+  if (version !== RULES_VERSION) {
+    return result(id, title, "CHECKED", FAIL, `AGENTS.md carries rules ${version}.`, [
+      { message: `The block is for rules ${version}; this tool checks rules ${RULES_VERSION}.`, file: agentsFile, line: at(begins[0].index), fix },
+    ]);
+  }
+  if (text.indexOf(normaliseBlock(RULES_BLOCK)) === -1) {
     return result(id, title, "CHECKED", FAIL, "The rules block in AGENTS.md was changed.", [
-      { message: "The rules block isn't word for word what the tool expects.", file: agentsFile, line: lineAt(text, begin), fix },
+      { message: "The rules block isn't word for word what the tool expects.", file: agentsFile, line: at(begins[0].index), fix },
     ]);
   }
   return result(id, title, "CHECKED", PASS, `${agentsFile} carries rules ${RULES_VERSION}, unchanged.`);
@@ -727,44 +1078,61 @@ function normaliseBlock(text) {
   return text.replace(/\r\n?/g, "\n").split("\n").map((l) => l.replace(/\s+$/, "")).join("\n");
 }
 
-/** What it does with personal data is declared (STRUCTURAL). */
+/** What it does with personal data is declared (STRUCTURAL), and squares with the code. */
 function checkData(p) {
   const id = "data";
   const title = "Its personal data is declared";
   const d = p.manifest?.data;
   if (!d || typeof d !== "object") return result(id, title, "STRUCTURAL", FAIL, "our.one.json has no data section.", [{ message: "There is no data section.", file: MANIFEST, fix: "Fill in data: collects, sharedWith, boundary, export and delete." }]);
   const findings = [];
-  if (!Array.isArray(d.collects)) findings.push({ message: "data.collects isn't a list.", file: MANIFEST, fix: "List what it keeps about people." });
-  if (!Array.isArray(d.sharedWith)) findings.push({ message: "data.sharedWith isn't a list.", file: MANIFEST, fix: "List the outside services that receive anything about people." });
-  if (!str(d.export, 1, 400) || isTodo(d.export)) findings.push({ message: "data.export doesn't say how a person downloads their data.", file: MANIFEST, fix: "Say how, and build it." });
-  if (!str(d.delete, 1, 400) || isTodo(d.delete)) findings.push({ message: "data.delete doesn't say how a person deletes their data.", file: MANIFEST, fix: "Say how, and build it." });
+  const collects = Array.isArray(d.collects) ? d.collects : null;
+  const shared = Array.isArray(d.sharedWith) ? d.sharedWith : null;
+  if (!collects) findings.push({ message: "data.collects isn't a list.", file: MANIFEST, fix: "List what it keeps about people." });
+  if (!shared) findings.push({ message: "data.sharedWith isn't a list.", file: MANIFEST, fix: "List the outside services that receive anything about people." });
+  const answer = (value) => str(value, 1, 400) && !isTodo(value) && !NON_ANSWER.test(value);
+  if (!answer(d.export)) findings.push({ message: "data.export doesn't say how a person downloads their data.", file: MANIFEST, fix: "Build it, and say how. If it keeps nothing about anyone, say that instead." });
+  if (!answer(d.delete)) findings.push({ message: "data.delete doesn't say how a person deletes their data.", file: MANIFEST, fix: "Build it, and say how. If it keeps nothing about anyone, say that instead." });
+  const why = str(d.noPersonalData, 1, 600) && !isTodo(d.noPersonalData);
+  if (collects && collects.length === 0) {
+    const reasons = [];
+    if (p.storeUses.length > 0) reasons.push("the code uses a database or a file store");
+    if (shared && shared.length > 0) reasons.push("data.sharedWith names services that receive something");
+    if (reasons.length > 0 && !why) {
+      findings.push({ message: `data.collects is empty, but ${reasons.join(", and ")}.`, file: MANIFEST, fix: "List what it keeps about people. If it truly keeps nothing about anyone, say why in data.noPersonalData; a person will read it." });
+    }
+  }
+  if (collects && collects.length > 0 && d.noPersonalData !== undefined) findings.push({ message: "data.noPersonalData says it keeps nothing about anyone, but data.collects lists what it keeps.", file: MANIFEST, fix: "Remove data.noPersonalData." });
   if (findings.length > 0) return result(id, title, "STRUCTURAL", FAIL, "The data section isn't complete.", findings);
-  const n = d.collects.length;
-  const s = d.sharedWith.length;
-  return result(id, title, "STRUCTURAL", PASS, n === 0 ? "It declares that it keeps nothing about anyone." : `It declares ${n} kind${n === 1 ? "" : "s"} of personal data and ${s} outside service${s === 1 ? "" : "s"}, with export and deletion.`);
+  const n = collects.length;
+  const s = shared.length;
+  return result(id, title, "STRUCTURAL", PASS, n === 0 ? (why ? "It declares that it keeps nothing about anyone, and data.noPersonalData says why, for a person to read." : "It declares that it keeps nothing about anyone.") : `It declares ${n} kind${n === 1 ? "" : "s"} of personal data and ${s} outside service${s === 1 ? "" : "s"}, with export and deletion.`);
 }
 
-/** Rule 1 (CHECKED): only code inside the boundary imports a store's client. */
+/** Code in other languages, as a phrase: "Python (api/main.py and 2 more)". */
+function otherLanguages(p) {
+  const byLang = new Map();
+  for (const f of p.otherLanguage) {
+    const ext = /\.([a-z]+)$/i.exec(f)[1].toLowerCase();
+    const lang = OTHER_LANGUAGE_NAMES[ext] ?? ext;
+    if (!byLang.has(lang)) byLang.set(lang, []);
+    byLang.get(lang).push(f);
+  }
+  return [...byLang].map(([lang, files]) => `${lang} (${files[0]}${files.length > 1 ? ` and ${files.length - 1} more` : ""})`).join(", ");
+}
+
+/** Rule 1 (CHECKED): only code inside the boundary reaches a store. */
 function checkBoundary(p) {
   const id = "boundary";
   const title = "Personal data stays inside the boundary";
-  const hasSource = p.readable.some((f) => SOURCE.test(f) && !TEST.test(f));
-  if (!hasSource) return result(id, title, "CHECKED", NOT_CHECKED, "No JavaScript or TypeScript found. In rules 0 the tool reads only those, so a person checks this.");
-  const uses = [];
-  for (const i of p.imports) {
-    const pkg = packageOf(i.spec);
-    if (pkg && STORES.some((s) => matches(s, i.spec))) uses.push({ file: i.file, line: i.line, what: i.spec });
+  const sources = [...p.code.keys()];
+  const others = p.otherLanguage.length > 0 ? ` The tool doesn't read ${otherLanguages(p)}, so a person checks that code.` : "";
+  if (sources.length === 0) return result(id, title, "CHECKED", NOT_CHECKED, `No JavaScript or TypeScript found. In rules 0 the tool reads only those, so a person checks this.${others}`);
+  const uses = p.storeUses;
+  if (uses.length === 0) {
+    return others
+      ? result(id, title, "CHECKED", NOT_CHECKED, `No database or file-store client found in the JavaScript and TypeScript.${others}`)
+      : result(id, title, "CHECKED", PASS, "No database or file-store client found in the code.");
   }
-  for (const rel of p.readable) {
-    if (!SOURCE.test(rel) || TEST.test(rel)) continue;
-    const t = p.text(rel);
-    if (t === null) continue;
-    for (const call of STORE_CALLS) {
-      call.re.lastIndex = 0;
-      for (const m of t.matchAll(call.re)) uses.push({ file: rel, line: lineAt(t, m.index), what: call.name });
-    }
-  }
-  if (uses.length === 0) return result(id, title, "CHECKED", PASS, "No database or file-store client found in the code.");
   const raw = p.manifest?.data?.boundary;
   if (!Array.isArray(raw) || raw.length === 0) {
     const first = uses[0];
@@ -777,53 +1145,94 @@ function checkBoundary(p) {
   for (const entry of raw) {
     const clean = String(entry).trim().replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/\*\*?$/, "").replace(/\/+$/, "");
     if (!clean || clean === "." || clean === "*" || clean.startsWith("/") || clean.split("/").includes("..")) {
-      findings.push({ message: `"${entry}" isn't a folder inside the project.`, file: MANIFEST, fix: "Name the folders that hold the code reaching the store, not the whole project." });
+      findings.push({ message: `"${quoted(entry)}" isn't a folder inside the project.`, file: MANIFEST, fix: "Name the folders that hold the code reaching the store, not the whole project." });
       continue;
     }
-    if (!existsSync(join(p.root, clean))) findings.push({ message: `data.boundary names "${clean}", which doesn't exist.`, file: MANIFEST, fix: "Name a folder that exists." });
+    if (!existsSync(join(p.root, clean))) findings.push({ message: `data.boundary names "${quoted(clean)}", which doesn't exist.`, file: MANIFEST, fix: "Name a folder that exists." });
     boundary.push(clean);
   }
-  for (const use of uses) {
-    if (!boundary.some((b) => use.file === b || use.file.startsWith(`${b}/`))) {
-      findings.push({ message: `${use.what} is used outside the boundary.`, file: use.file, line: use.line, fix: `Move this into ${boundary[0] ?? "the boundary"}, and call it from there.` });
-    }
+  const inside = (file) => boundary.some((b) => file === b || file.startsWith(`${b}/`));
+  if (boundary.length > 0 && sources.length > 1 && sources.every(inside)) {
+    findings.push({ message: `data.boundary (${boundary.map(quoted).join(", ")}) holds all of the code, so it keeps nothing apart.`, file: MANIFEST, fix: "Name only the folder whose code reaches the store, such as src/data, and keep the rest outside it." });
   }
-  return findings.length === 0
-    ? result(id, title, "CHECKED", PASS, `Only code in ${boundary.join(", ")} reaches a store (${uses.length} place${uses.length === 1 ? "" : "s"}).`)
-    : result(id, title, "CHECKED", FAIL, "Code outside the boundary reaches a store.", findings);
+  for (const use of uses) {
+    if (use.kind === "re-export") {
+      if (inside(use.file)) findings.push({ message: `It re-exports ${use.what}, so code outside the boundary can use the client directly.`, file: use.file, line: use.line, fix: "Export functions that do the work, not the client." });
+      else findings.push({ message: `${use.what} is re-exported outside the boundary.`, file: use.file, line: use.line, fix: `Move this into ${boundary[0] ?? "the boundary"}, and export functions, not the client.` });
+      continue;
+    }
+    if (inside(use.file)) continue;
+    findings.push(
+      use.kind === "query"
+        ? { message: `${use.what} runs outside the boundary.`, file: use.file, line: use.line, fix: `Move the query into a function in ${boundary[0] ?? "the boundary"}, and call that.` }
+        : { message: `${use.what} is used outside the boundary.`, file: use.file, line: use.line, fix: `Move this into ${boundary[0] ?? "the boundary"}, and call it from there.` },
+    );
+  }
+  if (findings.length > 0) return result(id, title, "CHECKED", FAIL, "Code outside the boundary reaches a store.", findings);
+  const summary = `Only code in ${boundary.join(", ")} reaches a store (${uses.length} place${uses.length === 1 ? "" : "s"}).`;
+  return others ? result(id, title, "CHECKED", NOT_CHECKED, `${summary}${others}`) : result(id, title, "CHECKED", PASS, summary);
+}
+
+/** The pattern that recognises a service's name in a "who". */
+function whoOf(service) {
+  if (service.who) return service.who;
+  const first = service.name.split(/[ (,]/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(first, "i");
 }
 
 /** Rule 3 (CHECKED): every outside service it uses is named. */
 function checkLeave(p) {
   const id = "leave";
   const title = "Every outside service that receives data is named";
-  if (!p.pkg && !p.readable.some((f) => SOURCE.test(f))) return result(id, title, "CHECKED", NOT_CHECKED, "No package.json and no JavaScript or TypeScript. In rules 0 the tool reads only those, so a person checks this.");
+  const others = p.otherLanguage.length > 0 ? ` The tool doesn't read ${otherLanguages(p)}, so a person checks that code.` : "";
+  if (!p.pkg && p.code.size === 0) return result(id, title, "CHECKED", NOT_CHECKED, `No package.json and no JavaScript or TypeScript. In rules 0 the tool reads only those, so a person checks this.${others}`);
   const used = new Map();
+  const note = (service, how, pkg, file, line) => {
+    const key = `${service.name}|${pkg ?? how}`;
+    if (!used.has(key)) used.set(key, { service, how, pkg, file, line });
+  };
+  const serviceOfPackage = (name) => SERVICES.find((s) => s.packages.some((e) => matches(e, name)));
   for (const dep of p.deps) {
-    for (const service of SERVICES) if (service.packages.some((e) => matches(e, dep))) used.set(`${service.name}|${dep}`, { service, pkg: dep, file: "package.json", line: undefined });
+    const s = serviceOfPackage(dep);
+    if (s) note(s, `depends on ${dep}`, dep, "package.json");
   }
   for (const i of p.imports) {
     const pkg = packageOf(i.spec);
     if (!pkg) continue;
-    for (const service of SERVICES) {
-      if (service.packages.some((e) => matches(e, pkg)) && !used.has(`${service.name}|${pkg}`)) used.set(`${service.name}|${pkg}`, { service, pkg, file: i.file, line: i.line });
-    }
+    const s = serviceOfPackage(pkg);
+    if (s) note(s, `imports ${pkg}`, pkg, i.file, i.line);
   }
-  if (used.size === 0) return result(id, title, "CHECKED", PASS, "No outside service the tool knows is used.");
-  const shared = Array.isArray(p.manifest?.data?.sharedWith) ? p.manifest.data.sharedWith : [];
-  const declared = shared.flatMap((s) => (Array.isArray(s?.packages) ? s.packages.filter((x) => typeof x === "string") : []));
+  const gateway = SERVICES.find((x) => x.gateway);
+  for (const [rel, c] of p.code) {
+    const at = lineFinder(c);
+    for (const a of addressesIn(c)) {
+      const s = SERVICES.find((x) => (x.hosts ?? []).some((h) => hostMatches(a.host, h)));
+      if (s) note(s, `calls ${a.host}`, null, rel, at(a.index));
+    }
+    if (p.imports.some((i) => i.file === rel && i.spec === "ai") && GATEWAY_MODEL.test(c)) note(gateway, "uses the AI SDK with a model named as provider/model", "ai", rel, at(c.search(GATEWAY_MODEL)));
+  }
+  if (used.size === 0) {
+    return others
+      ? result(id, title, "CHECKED", NOT_CHECKED, `No outside service the tool knows is used in the JavaScript and TypeScript.${others}`)
+      : result(id, title, "CHECKED", PASS, "No outside service the tool knows is used.");
+  }
+  const shared = Array.isArray(p.manifest?.data?.sharedWith) ? p.manifest.data.sharedWith.filter((s) => s && typeof s === "object") : [];
+  const listsPackage = (entry, pkg) => Array.isArray(entry.packages) && entry.packages.some((x) => typeof x === "string" && (matches(x, pkg) || x === pkg));
   const findings = [];
   const named = new Set();
-  for (const { service, pkg, file, line } of used.values()) {
-    if (declared.some((d) => matches(d, pkg) || d === pkg)) {
+  for (const { service, how, pkg, file, line } of used.values()) {
+    const whoMatches = (entry) => service.generic || (typeof entry.who === "string" && whoOf(service).test(entry.who));
+    const ok = shared.some((entry) => whoMatches(entry) && (pkg === null || listsPackage(entry, pkg)));
+    if (ok) {
       named.add(service.name);
-    } else {
-      findings.push({ message: `${pkg} sends data to ${service.name}, which data.sharedWith doesn't name.`, file, line, fix: `Add {"who": "${service.name}", "what": "…", "why": "…", "packages": ["${pkg}"]} to data.sharedWith, or stop using it.` });
+      continue;
     }
+    const hint = pkg === null ? `{"who": "${service.name}", "what": "…", "why": "…"}` : `{"who": "${service.generic ? "…" : service.name}", "what": "…", "why": "…", "packages": ["${pkg}"]}`;
+    findings.push({ message: `It ${how}, which sends data to ${service.name}, and data.sharedWith doesn't name it.`, file, line, fix: `Add ${hint} to data.sharedWith, or stop using it.` });
   }
-  return findings.length === 0
-    ? result(id, title, "CHECKED", PASS, `Named: ${[...named].join(", ")}.`)
-    : result(id, title, "CHECKED", FAIL, "An outside service isn't named.", findings);
+  if (findings.length > 0) return result(id, title, "CHECKED", FAIL, "An outside service isn't named.", findings);
+  const summary = `Named: ${[...named].join(", ")}.`;
+  return others ? result(id, title, "CHECKED", NOT_CHECKED, `${summary}${others}`) : result(id, title, "CHECKED", PASS, summary);
 }
 
 /** Rule 4 (CHECKED): no ads, no tracking. */
@@ -846,22 +1255,20 @@ function checkTracking(p) {
   }
   for (const rel of p.readable) {
     if (!MARKUP.test(rel) || TEST.test(rel)) continue;
-    const text = p.text(rel);
-    if (text === null) continue;
+    const raw = p.text(rel);
+    if (raw === null) continue;
+    const text = p.code.get(rel) ?? raw;
+    const at = lineFinder(text);
     for (const t of TRACKING) {
       for (const host of t.hosts ?? []) {
         const re = new RegExp(`(?:https?:)?//(?:[a-z0-9-]+\\.)*${host.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`, "gi");
-        for (const m of text.matchAll(re)) flag(t.name, `loads ${host}`, rel, lineAt(text, m.index));
+        for (const m of text.matchAll(re)) flag(t.name, `loads ${host}`, rel, at(m.index));
       }
-      for (const call of t.calls ?? []) {
-        call.lastIndex = 0;
-        for (const m of text.matchAll(call)) flag(t.name, "turned on in code", rel, lineAt(text, m.index));
-      }
+      for (const call of t.calls ?? []) for (const m of text.matchAll(call)) flag(t.name, "turned on in code", rel, at(m.index));
     }
-    NEXT_THIRD_PARTIES_GOOGLE.lastIndex = 0;
     for (const m of text.matchAll(NEXT_THIRD_PARTIES_GOOGLE)) {
       const which = GOOGLE_COMPONENTS.exec(m[1])?.[1];
-      if (which) flag(which.includes("GTM") || which.includes("TagManager") ? "Google Tag Manager" : "Google Analytics", `imports ${which} from @next/third-parties`, rel, lineAt(text, m.index));
+      if (which) flag(which.includes("GTM") || which.includes("TagManager") ? "Google Tag Manager" : "Google Analytics", `imports ${which} from @next/third-parties`, rel, at(m.index));
     }
   }
   return findings.length === 0
@@ -869,46 +1276,85 @@ function checkTracking(p) {
     : result(id, title, "CHECKED", FAIL, "It loads ads or tracking.", findings);
 }
 
-/** Rule 8 (CHECKED): no secrets in tracked files. Prints where, never what. */
+/** Rule 8 (CHECKED): no secrets, and no database, in the repository. Prints where, never what. */
 function checkSecrets(p) {
   const id = "secrets";
-  const title = "No secrets in the code";
+  const title = "No secrets or data in the repository";
   const findings = [];
+  const skipped = { large: [], binary: 0, unreadable: [] };
+  const scan = (rel, text) => {
+    const at = lineFinder(text);
+    for (const s of SECRETS) {
+      for (const m of text.matchAll(s.re)) {
+        if (s.real && !s.real(m, text)) continue;
+        findings.push({ message: `${rel} holds what looks like ${s.kind}.`, file: rel, line: at(m.index), fix: "Move it to an environment variable, and replace it: anyone who saw the file has it." });
+      }
+    }
+  };
+  let envNotChecked = false;
   for (const rel of p.files) {
     const name = basename(rel);
-    if (ENV_FILE.test(name) && !ENV_EXAMPLE.test(name)) {
-      if (p.git) findings.push({ message: `${rel} is an environment file, and git doesn't ignore it.`, file: rel, fix: `Add ${name} to .gitignore and remove it from the repository (git rm --cached ${rel}). If it was ever pushed, replace every secret in it.` });
+    if (DATABASE_FILE.test(name)) {
+      findings.push({ message: `${rel} is a database file, and git doesn't ignore it.`, file: rel, fix: `People's data can't be in the repository: add ${name} to .gitignore and remove it (git rm --cached ${rel}).` });
+      continue;
     }
-  }
-  for (const rel of p.readable) {
-    const text = p.text(rel);
-    if (text === null) continue;
-    for (const s of SECRETS) {
-      s.re.lastIndex = 0;
-      for (const m of text.matchAll(s.re)) {
-        if (s.real && !s.real(m)) continue;
-        findings.push({ message: `${rel} holds what looks like ${s.kind}.`, file: rel, line: lineAt(text, m.index), fix: "Move it to an environment variable, and replace it: anyone who saw the file has it." });
+    if (ENV_FILE.test(name) && !ENV_EXAMPLE.test(name)) {
+      if (!p.git) {
+        envNotChecked = true;
+        continue;
+      }
+      const text = readText(p.root, rel, skipped);
+      if (text === null) continue;
+      scan(rel, text);
+      const at = lineFinder(text);
+      let offset = 0;
+      for (const line of text.split("\n")) {
+        const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+        const value = m ? m[2].replace(/^(["'])(.*)\1$/, "$2") : "";
+        if (m && SECRET_NAME.test(m[1]) && !PLACEHOLDER_VALUE.test(value)) {
+          findings.push({ message: `${rel} sets ${m[1]}, and git doesn't ignore the file.`, file: rel, line: at(offset), fix: `Add ${name} to .gitignore and remove it from the repository (git rm --cached ${rel}). If it was ever pushed, replace the secret.` });
+        }
+        offset += line.length + 1;
       }
     }
   }
-  const note = p.git ? "" : " (Not a git repository, so environment files weren't checked.)";
-  return findings.length === 0
-    ? result(id, title, "CHECKED", PASS, `No secret the tool recognises.${note}`)
-    : result(id, title, "CHECKED", FAIL, "It looks like a secret is in the code.", findings);
+  for (const rel of p.readable) {
+    if (DATABASE_FILE.test(basename(rel))) continue;
+    const text = p.text(rel) ?? (p.skipped.large.includes(rel) ? readText(p.root, rel, skipped, MAX_SECRET_BYTES) : null);
+    if (text === null) continue;
+    scan(rel, text);
+  }
+  const unread = [...new Set([...p.skipped.unreadable, ...skipped.unreadable, ...skipped.large])];
+  const notes = [];
+  if (envNotChecked) notes.push(p.gitRoot ? " git couldn't run here, so the tool read the folder instead and couldn't tell which files git tracks: environment files weren't checked." : " Not a git repository, so environment files weren't checked.");
+  if (unread.length > 0) notes.push(` ${unread.length} file${unread.length === 1 ? "" : "s"} couldn't be read: ${unread.slice(0, 3).join(", ")}${unread.length > 3 ? ", …" : ""}.`);
+  if (findings.length > 0) return result(id, title, "CHECKED", FAIL, "It looks like a secret or people's data is in the repository.", findings);
+  if (unread.length > 0) return result(id, title, "CHECKED", NOT_CHECKED, `No secret the tool recognises in what it could read.${notes.join("")}`);
+  return result(id, title, "CHECKED", PASS, `No secret the tool recognises.${notes.join("")}`);
 }
 
-/** Rule 7 (CHECKED): the costs file exists and is filled in. */
+/** Rule 7 (CHECKED): the costs file exists, is the project's own, and states the costs. */
 function checkCosts(p) {
   const id = "costs";
   const title = "Its costs are public";
   const path = p.manifest && typeof p.manifest.costs === "string" ? p.manifest.costs.trim().replace(/\\/g, "/").replace(/^\.\//, "") : "";
   if (!path || isTodo(path)) return result(id, title, "CHECKED", FAIL, "No costs file is named.", [{ message: '"costs" names no file.', file: MANIFEST, fix: 'Write "COSTS.md", and fill it in.' }]);
-  if (path.startsWith("/") || path.split("/").includes("..")) return result(id, title, "CHECKED", FAIL, "The costs file is outside the project.", [{ message: `"${path}" is outside the project.`, file: MANIFEST, fix: "Keep the costs file in the project, where everyone can read it." }]);
-  if (!isPlainFile(join(p.root, path))) return result(id, title, "CHECKED", FAIL, `${path} doesn't exist.`, [{ message: `our.one.json names ${path}, which doesn't exist.`, file: MANIFEST, fix: `Create ${path}: what it costs to run each month, and who pays.` }]);
+  if (path.startsWith("/") || path.split("/").includes("..")) return result(id, title, "CHECKED", FAIL, "The costs file is outside the project.", [{ message: `"${quoted(path)}" is outside the project.`, file: MANIFEST, fix: "Keep the costs file in the project, where everyone can read it." }]);
+  if (!isPlainFile(join(p.root, path)) || !insideProject(p.root, path)) return result(id, title, "CHECKED", FAIL, `${path} doesn't exist.`, [{ message: `our.one.json names ${path}, which doesn't exist in the project.`, file: MANIFEST, fix: `Create ${path}: what it costs to run each month, and who pays.` }]);
   if (p.git && !p.files.includes(path)) return result(id, title, "CHECKED", FAIL, `git ignores ${path}.`, [{ message: `${path} is ignored by git, so nobody else can read it.`, file: MANIFEST, fix: `Keep ${path} in the repository.` }]);
   const text = p.text(path) ?? "";
+  const at = lineFinder(text);
   if (text.trim().length < 20) return result(id, title, "CHECKED", FAIL, `${path} is empty.`, [{ message: `${path} says nothing yet.`, file: path, fix: "Write what it costs to run each month, and who pays." }]);
-  if (/\bTODO\b/.test(text)) return result(id, title, "CHECKED", FAIL, `${path} still says TODO.`, [{ message: `${path} still has TODO in it.`, file: path, line: lineAt(text, text.search(/\bTODO\b/)), fix: "Fill it in." }]);
+  const ph = text.search(/\b(?:TODO|TBD|TBC|TBA|to be (?:decided|determined|confirmed|announced)|fill (?:this|it|these) in)\b/i);
+  if (ph !== -1) return result(id, title, "CHECKED", FAIL, `${path} still says TODO.`, [{ message: `${path} still says TODO, or another placeholder, instead of a cost.`, file: path, line: at(ph), fix: "Write each cost, or ask the person for it." }]);
+  let offset = 0;
+  for (const line of text.split("\n")) {
+    if (/^\s*\|/.test(line) && !/^\s*\|[\s:|-]+$/.test(line) && /\|\s*\|/.test(line)) {
+      return result(id, title, "CHECKED", FAIL, `${path} has an empty cell.`, [{ message: `A row of the table in ${path} is empty.`, file: path, line: at(offset), fix: "Fill each cell, or ask the person for it. Write 0 or none where something costs nothing." }]);
+    }
+    offset += line.length + 1;
+  }
+  if (!/\d/.test(text) && !/\b(?:nothing|none|free|zero|no cost)\b/i.test(text)) return result(id, title, "CHECKED", FAIL, `${path} states no cost.`, [{ message: `${path} doesn't state any cost.`, file: path, fix: "Write what each thing costs a month, even when it's nothing." }]);
   return result(id, title, "CHECKED", PASS, `${path}.`);
 }
 
@@ -916,14 +1362,15 @@ function checkCosts(p) {
 function checkClaims(p) {
   const id = "claims";
   const title = "It claims only what is true";
-  const allowed = Array.isArray(p.manifest?.claims?.allowed) ? p.manifest.claims.allowed.filter((a) => a && typeof a.file === "string" && typeof a.text === "string") : [];
+  const claims = p.manifest?.claims && typeof p.manifest.claims === "object" ? p.manifest.claims : {};
+  const allowed = Array.isArray(claims.allowed) ? claims.allowed.filter((a) => a && typeof a.file === "string" && typeof a.text === "string") : [];
+  const skip = Array.isArray(claims.skip) ? claims.skip.filter((s) => s && typeof s.file === "string") : [];
+  const skipped = new Set(skip.map((s) => toPosix(s.file).replace(/^\.\//, "")));
   const used = new Set();
   const findings = [];
-  const files = p.readable.filter((f) => !TEST.test(f) && (RENDERS.test(f) || /^readme(?:\.md)?$/i.test(f)));
-  for (const rel of files) {
-    const original = p.text(rel);
-    if (original === null) continue;
-    const { text, at } = normaliseText(original);
+  const scan = (rel, original, base, fixedAt) => {
+    const { text, at } = normaliseText(base);
+    const line = lineFinder(original);
     const spans = [];
     allowed.forEach((a, index) => {
       if (toPosix(a.file).replace(/^\.\//, "") !== rel) return;
@@ -935,36 +1382,93 @@ function checkClaims(p) {
       }
     });
     for (const claim of CLAIMS) {
-      claim.re.lastIndex = 0;
       for (const m of text.matchAll(claim.re)) {
         if (spans.some(([s, e]) => m.index >= s && m.index + m[0].length <= e)) continue;
-        findings.push({ message: `"${m[0]}" ${claim.what}.`, file: rel, line: lineAt(original, at[m.index] ?? 0), fix: "Only our.one's records can make that true. Remove it, or, if it's a definition or a denial, list the exact sentence in our.one.json under claims.allowed, with why." });
+        if (DENIAL.test(text.slice(Math.max(0, m.index - 30), m.index))) continue;
+        const where = fixedAt === null ? (at[m.index] ?? 0) : fixedAt;
+        findings.push({ message: `"${m[0]}" ${claim.what}.`, file: rel, line: line(where), fix: "Only our.one's records can make that true. Remove it, or, if it's a definition or a denial, list the exact sentence in our.one.json under claims.allowed, with why." });
       }
     }
+  };
+  const files = p.readable.filter((f) => !TEST.test(f) && f !== MANIFEST && (READ_BY_PEOPLE.test(f) || MESSAGES.test(f) || /^readme(?:\.md)?$/i.test(f)));
+  for (const rel of files) {
+    if (skipped.has(rel)) continue;
+    const original = p.text(rel);
+    if (original === null) continue;
+    if (/\.json$/i.test(rel)) {
+      for (const [value, index] of jsonStrings(original)) scan(rel, original, value, index);
+      continue;
+    }
+    scan(rel, original, p.code.get(rel) ?? original, null);
+  }
+  // The manifest itself: every string but the sentences it lets through.
+  if (p.manifest && typeof p.manifest === "object") {
+    const raw = readText(p.root, MANIFEST, { large: [], binary: 0, unreadable: [] }) ?? "";
+    const quotations = new Set(allowed.map((a) => a.text));
+    for (const [value, index] of jsonStrings(raw)) if (!quotations.has(value)) scan(MANIFEST, raw, value, index);
   }
   allowed.forEach((a, index) => {
-    if (!used.has(index)) findings.push({ message: `claims.allowed lists a sentence that isn't in ${a.file}.`, file: MANIFEST, fix: "Remove it, or correct the file or the sentence." });
+    if (!used.has(index)) findings.push({ message: `claims.allowed lists a sentence that isn't in ${quoted(a.file)}.`, file: MANIFEST, fix: "Remove it, or correct the file or the sentence." });
   });
-  return findings.length === 0
-    ? result(id, title, "CHECKED", PASS, allowed.length === 0 ? "No claim of users' ownership or of our.one's approval." : `No claim, beyond ${allowed.length} sentence${allowed.length === 1 ? "" : "s"} listed in claims.allowed for a person to read.`)
-    : result(id, title, "CHECKED", FAIL, "It claims something only our.one's records can make true.", findings);
+  for (const s of skip) if (!p.files.includes(toPosix(s.file).replace(/^\.\//, ""))) findings.push({ message: `claims.skip names ${quoted(s.file)}, which isn't in the project.`, file: MANIFEST, fix: "Remove it." });
+  if (findings.length > 0) return result(id, title, "CHECKED", FAIL, "It claims something only our.one's records can make true.", findings);
+  const notes = [];
+  if (allowed.length > 0) notes.push(`${allowed.length} sentence${allowed.length === 1 ? "" : "s"} listed in claims.allowed`);
+  if (skip.length > 0) notes.push(`${skip.length} file${skip.length === 1 ? "" : "s"} skipped by claims.skip`);
+  return result(id, title, "CHECKED", PASS, notes.length === 0 ? "No claim of users' ownership or of our.one's approval." : `No claim, beyond ${notes.join(" and ")}, for a person to read.`);
 }
 
-/** Whitespace as one space, and the common entities decoded, keeping each character's place in the original. */
+/** Every string value in a JSON document, with where it starts. */
+function jsonStrings(raw) {
+  const out = [];
+  for (const m of raw.matchAll(/"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"/g)) {
+    try {
+      out.push([JSON.parse(m[0]), m.index]);
+    } catch {
+      // Not a string after all.
+    }
+  }
+  return out;
+}
+
+/**
+ * The words as a reader sees them: tags dropped, JSX's {" "} read as a
+ * space, the common entities decoded, whitespace as one space; each
+ * character keeps its place in the original.
+ */
 function normaliseText(original) {
   const entities = { "&nbsp;": " ", "&apos;": "'", "&#39;": "'", "&rsquo;": "'", "&quot;": '"', "&amp;": "&", "&#x27;": "'" };
   let text = "";
   const at = [];
   let i = 0;
+  const space = (from) => {
+    if (text.length > 0 && text[text.length - 1] !== " ") {
+      text += " ";
+      at.push(from);
+    }
+  };
   while (i < original.length) {
     const ch = original[i];
+    if (ch === "<" && /[A-Za-z/]/.test(original[i + 1] ?? "")) {
+      const close = original.indexOf(">", i);
+      const reopen = original.indexOf("<", i + 1);
+      if (close !== -1 && close - i < 500 && (reopen === -1 || reopen > close)) {
+        i = close + 1;
+        continue;
+      }
+    }
+    if (ch === "{") {
+      const m = /^\{\s*(["'])(\s*)\1\s*\}/.exec(original.slice(i, i + 12));
+      if (m) {
+        space(i);
+        i += m[0].length;
+        continue;
+      }
+    }
     if (/\s/.test(ch)) {
       const start = i;
       while (i < original.length && /\s/.test(original[i])) i += 1;
-      if (text.length > 0 && text[text.length - 1] !== " ") {
-        text += " ";
-        at.push(start);
-      }
+      space(start);
       continue;
     }
     if (ch === "&") {
@@ -983,10 +1487,32 @@ function normaliseText(original) {
   return { text, at };
 }
 
+/** A secret in any message, summary or fix is replaced before anything is printed. */
+function redact(value) {
+  let out = value;
+  for (const s of SECRETS) out = out.replace(s.re, "[a secret, not shown]");
+  return out;
+}
+
+/** The proposal: written, still a template, or missing. */
+function pitchState(p) {
+  const file = p.files.find((f) => f.toLowerCase() === "pitch.md");
+  if (!file) return "missing";
+  const text = p.text(file) ?? "";
+  return /\bTODO\b/.test(text) ? "todo" : "written";
+}
+
 /** Every check, in the report's order (D-0019 §C). */
 export function check(root) {
   const p = loadProject(root);
-  const checks = [checkManifest, checkLicence, checkAgents, checkData, checkBoundary, checkLeave, checkTracking, checkSecrets, checkCosts, checkClaims].map((c) => c(p));
+  const checks = [checkManifest, checkLicence, checkAgents, checkData, checkBoundary, checkLeave, checkTracking, checkSecrets, checkCosts, checkClaims].map((c) => {
+    const r = c(p);
+    return {
+      ...r,
+      summary: redact(r.summary),
+      findings: r.findings.map((f) => ({ ...f, message: redact(f.message), ...(f.fix ? { fix: redact(f.fix) } : {}) })),
+    };
+  });
   const failed = checks.filter((c) => c.outcome === FAIL);
   return {
     tool: "our-one",
@@ -995,10 +1521,12 @@ export function check(root) {
     sha256: sha256(readFileSync(fileURLToPath(import.meta.url))),
     project: basename(root),
     result: failed.length === 0 ? "ready" : "not-ready",
+    pitch: pitchState(p),
+    code: p.code.size > 0 || p.otherLanguage.length > 0,
     checks,
     forAPerson: FOR_A_PERSON,
     notBuilt: NOT_BUILT,
-    skipped: { large: p.skipped.large, binary: p.skipped.binary },
+    skipped: { large: p.skipped.large, binary: p.skipped.binary, unreadable: p.skipped.unreadable },
   };
 }
 
@@ -1050,7 +1578,7 @@ export function formatReport(r) {
   for (const q of r.forAPerson) out.push(bullet(q));
   out.push("", "  Not built yet. For a protected service, our.one would provide these:");
   for (const q of r.notBuilt) out.push(bullet(q));
-  if (r.skipped.large.length > 0) out.push("", wrap(`Not read, over 1 MB: ${r.skipped.large.join(", ")}.`, 66, "  "));
+  if (r.skipped.large.length > 0) out.push("", wrap(`Not read for code, over 1 MB: ${r.skipped.large.join(", ")}.`, 66, "  "));
   out.push(rule);
   out.push(wrap("There is no score on purpose. What passed is what a machine can see in the files; what it can't see is listed above, at the same weight.", 68, "  "), "");
   const failed = r.checks.filter((c) => c.outcome === FAIL);
@@ -1061,6 +1589,8 @@ export function formatReport(r) {
   } else {
     out.push(`  RESULT: READY TO PROPOSE${notChecked.length > 0 ? `, with ${notChecked.length} check${notChecked.length === 1 ? "" : "s"} not run (${notChecked.map((c) => c.id).join(", ")})` : ""}.`);
     out.push(wrap("That's all passing means. It isn't listed, approved or protected: a person reads the open items, and the people who would use it decide.", 60, "          "));
+    if (!r.code) out.push(wrap("There is no code here yet, so the checks had little to read.", 60, "          "));
+    if (r.pitch !== "written") out.push(wrap(r.pitch === "missing" ? "Before you propose: there is no PITCH.md yet. Write it with the person." : "Before you propose: PITCH.md still says TODO. Fill it in with the person.", 60, "          "));
   }
   out.push("");
   return out.join("\n");
@@ -1074,7 +1604,8 @@ function formatHook(r) {
     for (const f of c.findings.slice(0, 5)) lines.push(`- ${c.id}: ${where(f)}${f.message}${f.fix ? ` Fix: ${f.fix}` : ""}`);
     if (c.findings.length > 5) lines.push(`- ${c.id}: …and ${c.findings.length - 5} more.`);
   }
-  lines.push(`Fix these, run node ${DEFAULT_TOOL_PATH} check until it passes, then finish. Don't change the check or the rules block to make it pass.`);
+  lines.push("If something only the person can tell you is missing (a name, a contact, the costs, the licence), ask them, and never invent it.");
+  lines.push(`Fix the rest, and run node ${DEFAULT_TOOL_PATH} check until it passes. Don't change the check or the rules block to make it pass.`);
   return lines.join("\n");
 }
 
@@ -1096,9 +1627,9 @@ The maintainer's pay: TODO (write "none" if there is none).
 
 const PITCH_TEMPLATE = `# Proposal: TODO the project's name
 
-A proposal to our.one. The common agreement asks every proposal for the
-parts below: https://our.one/agreement. Send it by email when proposals
-open; the address is on https://our.one/maintainers.
+A proposal to our.one, with the parts the common agreement asks every
+proposal for (D-0017 §G): https://our.one/agreement. Send it by email when
+proposals open; the address is on https://our.one/maintainers.
 
 ## The need
 
@@ -1121,14 +1652,16 @@ and the monthly budget, with the maintainer's pay.
 
 Feedback, people to try it, or people who would pay.
 
-## Before work starts
+## What has to happen first
 
-What has to happen first, and what happens if it doesn't.
+What has to happen before it runs for real (for example, enough people
+saying they'd pay), and what happens if it doesn't.
 
 ## The check
 
-The last lines of \`node scripts/our-one.mjs check\`, and the commit it
-ran on.
+The RESULT line and the tool's sha256 line from
+\`node scripts/our-one.mjs check\`, and the commit it ran on. Commit this
+file afterwards: our.one checks the commit you name.
 `;
 
 function hookCommand(toolPath) {
@@ -1157,7 +1690,7 @@ jobs:
 
 function gitRemote(root) {
   try {
-    const url = execFileSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const url = execFileSync("git", ["-c", "core.fsmonitor=false", "remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     const ssh = /^git@([^:]+):(.+?)(?:\.git)?$/.exec(url);
     if (ssh) return `https://${ssh[1]}/${ssh[2]}`;
     const https = /^https:\/\/(?:[^@/]+@)?([^/]+)\/(.+?)(?:\.git)?$/.exec(url);
@@ -1170,12 +1703,14 @@ function gitRemote(root) {
 
 function manifestTemplate(root) {
   let license = "TODO: the SPDX id of its open-source licence, such as Apache-2.0";
-  try {
-    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-    const known = Object.keys(LICENCES).find((k) => k.toLowerCase() === String(pkg.license ?? "").toLowerCase());
-    if (known) license = known;
-  } catch {
-    // No package.json: the field stays TODO.
+  if (isPlainFile(join(root, "package.json")) && insideProject(root, "package.json")) {
+    try {
+      const pkg = JSON.parse(withoutBom(readFileSync(join(root, "package.json"), "utf8")));
+      const known = Object.keys(LICENCES).find((k) => k.toLowerCase() === String(pkg.license ?? "").toLowerCase());
+      if (known) license = known;
+    } catch {
+      // A package.json that doesn't parse: the field stays TODO.
+    }
   }
   return {
     $schema: SCHEMA_URL,
@@ -1187,7 +1722,7 @@ function manifestTemplate(root) {
     license,
     costs: "COSTS.md",
     data: {
-      collects: [],
+      collects: [{ what: "TODO: one kind of personal data it keeps (add one entry for each)", why: "TODO: why the service needs it", kept: "TODO: for how long" }],
       sharedWith: [],
       boundary: [],
       export: "TODO: how a person downloads their data",
@@ -1196,7 +1731,7 @@ function manifestTemplate(root) {
   };
 }
 
-/** Create a file only if it doesn't exist, and only inside the project. */
+/** Create a file only if it doesn't exist, and only inside the project; a failure is noted, not thrown. */
 function create(root, rel, content, report) {
   const path = join(root, rel);
   if (existsSync(path) || isLink(path)) {
@@ -1207,10 +1742,27 @@ function create(root, rel, content, report) {
     report.notes.push(`${rel} would be written outside the project, through a link, so it wasn't created.`);
     return false;
   }
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, content, { flag: "wx" });
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, content, { flag: "wx" });
+  } catch (error) {
+    report.notes.push(`${rel} couldn't be created (${error && error.code ? error.code : "an error"}), so it was left out.`);
+    return false;
+  }
   report.created.push(rel);
   return true;
+}
+
+/** The rules block put back: one block, word for word, where the first was; the rest of AGENTS.md is kept. */
+function withRulesBlock(current) {
+  const re = /<!-- our\.one rules [\w.-]+: begin[\s\S]*?<!-- our\.one rules [\w.-]+: end -->/g;
+  let first = true;
+  const replaced = current.replace(re, () => {
+    if (!first) return "";
+    first = false;
+    return RULES_BLOCK;
+  });
+  return first ? `${current.replace(/\s*$/, "")}\n\n${RULES_BLOCK}\n` : replaced.replace(/\n{3,}/g, "\n\n");
 }
 
 export function init(root) {
@@ -1225,74 +1777,106 @@ export function init(root) {
   // AGENTS.md: the rules block, put back word for word; the rest is kept.
   const agentsPath = join(root, "AGENTS.md");
   if (!writable(root, "AGENTS.md")) {
-    report.notes.push("AGENTS.md is a link, so it was left alone. Put the rules block in the project's own AGENTS.md.");
+    report.notes.push("AGENTS.md is a link, or a second name for a file elsewhere, so it was left alone. Put the rules block in the project's own AGENTS.md.");
   } else if (!existsSync(agentsPath)) {
-    writeFileSync(agentsPath, `# AGENTS.md\n\nInstructions for any coding agent working on this project.\n\n${RULES_BLOCK}\n`, { flag: "wx" });
-    report.created.push("AGENTS.md");
+    create(root, "AGENTS.md", `# AGENTS.md\n\nInstructions for any coding agent working on this project.\n\n${RULES_BLOCK}\n`, report);
   } else {
-    const current = readFileSync(agentsPath, "utf8");
-    const re = /<!-- our\.one rules [\w.-]+: begin[\s\S]*?<!-- our\.one rules [\w.-]+: end -->/;
-    const next = re.test(current) ? current.replace(re, () => RULES_BLOCK) : `${current.replace(/\s*$/, "")}\n\n${RULES_BLOCK}\n`;
-    if (next !== current) {
-      writeFileSync(agentsPath, next);
-      report.updated.push("AGENTS.md (the rules block)");
-    } else {
-      report.kept.push("AGENTS.md");
+    try {
+      const current = readFileSync(agentsPath, "utf8");
+      const next = withRulesBlock(current);
+      if (next !== current) {
+        writeFileSync(agentsPath, next);
+        report.updated.push("AGENTS.md (the rules block)");
+      } else {
+        report.kept.push("AGENTS.md");
+      }
+    } catch (error) {
+      report.notes.push(`AGENTS.md couldn't be updated (${error && error.code ? error.code : "an error"}).`);
     }
   }
 
-  // CLAUDE.md imports AGENTS.md, so Claude Code reads the rules too.
+  // CLAUDE.md imports AGENTS.md, so Claude Code reads the rules too. One that exists is left as it is.
   const claudePath = join(root, "CLAUDE.md");
   if (!writable(root, "CLAUDE.md")) {
     report.notes.push("CLAUDE.md is a link, so it was left alone. Add a line @AGENTS.md to the project's own CLAUDE.md.");
   } else if (!existsSync(claudePath)) {
-    writeFileSync(claudePath, "@AGENTS.md\n", { flag: "wx" });
-    report.created.push("CLAUDE.md");
-  } else if (!/^@AGENTS\.md\s*$/m.test(readFileSync(claudePath, "utf8"))) {
-    writeFileSync(claudePath, `${readFileSync(claudePath, "utf8").replace(/\s*$/, "")}\n\n@AGENTS.md\n`);
-    report.updated.push("CLAUDE.md (imports AGENTS.md)");
+    create(root, "CLAUDE.md", "@AGENTS.md\n", report);
   } else {
     report.kept.push("CLAUDE.md");
+    let text = "";
+    try {
+      text = readFileSync(claudePath, "utf8");
+    } catch {
+      text = "";
+    }
+    if (!/^@AGENTS\.md\s*$/m.test(text)) report.notes.push("CLAUDE.md doesn't import AGENTS.md. Add a line @AGENTS.md to it, so Claude Code reads the rules.");
   }
 
   create(root, "COSTS.md", COSTS_TEMPLATE, report);
   create(root, "PITCH.md", PITCH_TEMPLATE, report);
 
-  // The stop hook: Claude Code runs the check whenever it tries to finish.
+  // The stop hook: Claude Code runs the check each time the agent stops.
   const hook = { type: "command", command: hookCommand(toolPath) };
   const settingsRel = ".claude/settings.json";
   const settingsPath = join(root, settingsRel);
   if (!existsSync(settingsPath) && !isLink(settingsPath)) {
     create(root, settingsRel, `${JSON.stringify({ hooks: { Stop: [{ hooks: [hook] }] } }, null, 2)}\n`, report);
   } else if (!writable(root, settingsRel)) {
-    report.notes.push(`${settingsRel} is a link, or in a folder that leads outside the project, so it was left alone. Add a Stop hook that runs: ${hook.command}`);
+    report.notes.push(`${settingsRel} is a link, a second name for a file elsewhere, or in a folder that leads outside the project, so it was left alone. Add a Stop hook that runs: ${hook.command}`);
   } else {
     let settings = null;
     try {
-      settings = JSON.parse(readFileSync(settingsPath, "utf8"));
+      settings = JSON.parse(withoutBom(readFileSync(settingsPath, "utf8")));
     } catch {
       settings = null;
     }
-    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    const plain = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
+    if (!plain(settings)) {
       report.notes.push(`${settingsRel} isn't valid JSON, so it was left alone. Add a Stop hook that runs: ${hook.command}`);
       report.kept.push(settingsRel);
+    } else if (settings.hooks !== undefined && !plain(settings.hooks)) {
+      report.notes.push(`${settingsRel} writes "hooks" in a shape the tool doesn't know, so it was left alone. Add a Stop hook that runs: ${hook.command}`);
+      report.kept.push(settingsRel);
+    } else if (settings.hooks && settings.hooks.Stop !== undefined && !Array.isArray(settings.hooks.Stop)) {
+      report.notes.push(`${settingsRel} writes its Stop hooks in a shape the tool doesn't know, so it was left alone. Add a Stop hook that runs: ${hook.command}`);
+      report.kept.push(settingsRel);
     } else {
-      const hooks = settings.hooks && typeof settings.hooks === "object" && !Array.isArray(settings.hooks) ? settings.hooks : {};
-      const stop = Array.isArray(hooks.Stop) ? hooks.Stop : [];
-      const present = JSON.stringify(stop).includes("our-one.mjs");
-      if (present) {
+      const hooks = settings.hooks ?? {};
+      const stop = hooks.Stop ?? [];
+      if (JSON.stringify(stop).includes("our-one.mjs")) {
         report.kept.push(settingsRel);
       } else {
         settings.hooks = { ...hooks, Stop: [...stop, { hooks: [hook] }] };
-        writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
-        report.updated.push(`${settingsRel} (the stop hook)`);
+        try {
+          writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
+          report.updated.push(`${settingsRel} (the stop hook)`);
+        } catch (error) {
+          report.notes.push(`${settingsRel} couldn't be updated (${error && error.code ? error.code : "an error"}).`);
+        }
       }
     }
   }
 
-  create(root, ".github/workflows/our-one.yml", workflow(toolPath), report);
+  // The workflow: GitHub runs only the workflows at the repository's root.
+  const gitRoot = gitRootOf(root);
+  let realRoot = root;
+  let realGit = gitRoot;
+  try {
+    realRoot = realpathSync(root);
+    if (gitRoot) realGit = realpathSync(gitRoot);
+  } catch {
+    // Keep the paths as given.
+  }
+  if (realGit && realGit !== realRoot) {
+    const rel = toPosix(relative(realGit, realRoot));
+    report.notes.push(`This project is a folder (${rel}) inside a larger repository, and GitHub runs only the workflows at the repository's root. Add .github/workflows/our-one.yml there, with "working-directory: ${rel}" on the check's step, which runs: node ${toolPath} check. Claude Code reads .claude/settings.json from the folder it starts in: start it in ${rel}, or add the stop hook to the root's settings with --project ${rel}.`);
+  } else {
+    create(root, ".github/workflows/our-one.yml", workflow(toolPath), report);
+  }
 
-  if (!readdirSync(root).some((f) => LICENCE_FILE.test(f))) report.notes.push("There is no licence file. Ask the person which open-source licence to use (Apache-2.0 is the feed's), and add its full text as LICENSE.");
+  if (licenceFilesAt(root).length === 0 && !(gitRoot && gitRoot !== root && licenceFilesAt(gitRoot).length > 0)) {
+    report.notes.push("There is no licence file. Ask the person which open-source licence to use (Apache-2.0 is the feed's), and add its full text as LICENSE.");
+  }
   return report;
 }
 
@@ -1302,7 +1886,7 @@ function formatInit(r) {
   if (r.updated.length) out.push("  Updated:", ...r.updated.map((f) => `    ${f}`), "");
   if (r.kept.length) out.push("  Already there, left as they are:", ...r.kept.map((f) => `    ${f}`), "");
   for (const n of r.notes) out.push(wrap(n, 68, "  "), "");
-  out.push(wrap(`Next: fill in every TODO in our.one.json and COSTS.md, then run: node ${DEFAULT_TOOL_PATH} check`, 68, "  "), "");
+  out.push(wrap(`Next: fill in every TODO in our.one.json and COSTS.md with the person's answers, build, and run the check before you finish: node ${DEFAULT_TOOL_PATH} check`, 68, "  "), "");
   return out.join("\n");
 }
 
@@ -1315,8 +1899,8 @@ const USAGE = `our-one.mjs ${VERSION}, rules ${RULES_VERSION}
   node scripts/our-one.mjs rules    print the rules block
 
 Options:
-  --project <dir>   the project's folder (default: the folder holding
-                    scripts/ when that has an our.one.json, otherwise here)
+  --project <dir>   the project's folder (default: the folder that holds
+                    scripts/, when the tool is in scripts/; otherwise here)
   --json            check: print the result as JSON
   --hook            check: run as a Claude Code stop hook
   --version         print the version and the tool's SHA-256
@@ -1325,21 +1909,34 @@ It makes no network request. init writes only the files it names.
 Instructions for coding agents: https://our.one/build.md
 `;
 
-/** The project's folder: --project, or the folder above scripts/ when it has an our.one.json, or here. */
+/** The project's folder: --project; or, when the tool is in a folder called scripts, the folder that holds it; or here. */
 function projectRoot(flag) {
   if (flag) return resolve(flag);
   const self = fileURLToPath(import.meta.url);
-  const above = dirname(dirname(self));
-  if (basename(dirname(self)) === "scripts" && existsSync(join(above, MANIFEST))) return above;
+  if (basename(dirname(self)) === "scripts") return dirname(dirname(self));
   return process.cwd();
 }
 
-function readStdin() {
-  if (process.stdin.isTTY) return "";
+/** The stop hook's input, read to its end; nothing when standard input is a terminal. */
+function readHookInput() {
   try {
-    return readFileSync(0, "utf8");
+    if (fstatSync(0).isCharacterDevice()) return {};
   } catch {
-    return "";
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(0, "utf8") || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function realOrSame(path) {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolve(path);
   }
 }
 
@@ -1387,24 +1984,27 @@ export function main(argv) {
     process.stderr.write(`${root} isn't a folder.\n`);
     return 2;
   }
+  const real = realOrSame(root);
+  if (real === parse(real).root || real === realOrSame(homedir())) {
+    process.stderr.write(`Refusing to ${command === "init" ? "set up" : "check"} ${root}: run it inside the project's own folder.\n`);
+    return 2;
+  }
   if (command === "init") {
-    if (root === parse(root).root || root === homedir()) {
-      process.stderr.write(`Refusing to set up ${root}: run init inside the project's own folder.\n`);
-      return 2;
-    }
     process.stdout.write(formatInit(init(root)));
     return 0;
   }
-  const r = check(root);
   if (flags.hook) {
-    let input = {};
+    let r;
     try {
-      input = JSON.parse(readStdin() || "{}");
-    } catch {
-      input = {};
+      r = check(root);
+    } catch (error) {
+      // The check's own failure never holds the agent back.
+      process.stdout.write(`${JSON.stringify({ systemMessage: `our.one check couldn't run: ${error instanceof Error ? error.message : String(error)}` })}\n`);
+      return 0;
     }
     if (r.result === "ready") return 0;
-    if (input && input.stop_hook_active === true) {
+    const input = readHookInput();
+    if (input.stop_hook_active === true) {
       // Sent back once already: let the agent stop, and tell the person.
       const failed = r.checks.filter((c) => c.outcome === FAIL).map((c) => c.id);
       process.stdout.write(`${JSON.stringify({ systemMessage: `our.one check still fails: ${failed.join(", ")}. Run: node ${DEFAULT_TOOL_PATH} check` })}\n`);
@@ -1413,13 +2013,23 @@ export function main(argv) {
     process.stderr.write(`${formatHook(r)}\n`);
     return 2;
   }
+  const r = check(root);
   if (flags.json) process.stdout.write(`${JSON.stringify(r, null, 2)}\n`);
   else process.stdout.write(formatReport(r));
   return r.result === "ready" ? 0 : 1;
 }
 
-const invoked = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : "";
-if (import.meta.url === invoked) {
+/** Run only when started as a program, by any path to this file, links included. */
+function startedAsProgram() {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (startedAsProgram()) {
   try {
     process.exitCode = main(process.argv.slice(2));
   } catch (error) {

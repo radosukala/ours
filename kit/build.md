@@ -1,6 +1,6 @@
 # Build on our.one
 
-Instructions for coding agents. Version 0.1.0, rules 0, 2 October 2026.
+Instructions for coding agents. Version 0.2.0, rules 0, 2 October 2026.
 
 You are a coding agent. The person you work for wants to build something
 for our.one, or to bring a project they already have. This file tells you
@@ -15,7 +15,8 @@ step.
 - The agreement is a draft and nobody has signed it, so none of its
   collective rights is in force yet. Don't tell the person otherwise.
 - The feed is the first project. Its code is the reference, and it passes
-  the same check you will run:
+  the same check you will run. Its `our.one.json` and `AGENTS.md` are the
+  examples to follow:
   https://github.com/radosukala/ours/tree/main/apps/web
 - Passing the check makes a project ready to propose. It doesn't list,
   approve or protect it: a person reads every proposal, and the people who
@@ -31,32 +32,43 @@ then be proposed to our.one, and let them decide.
 2. Nothing about a person goes to an outside service that `our.one.json`
    doesn't name.
 3. Nothing sells, rents or trades people's data, or the project.
-4. No secret in a file the repository tracks.
+4. No secret, and no one's data, in a file the repository tracks.
 5. Export and deletion are never weakened.
 6. No claim the records don't make true. Until our.one's records say
    otherwise, the project is its maintainer's. It isn't its users'
    property, and our.one hasn't approved, listed or protected it.
 7. The check and the rules block are never changed to make a check pass.
+8. Nothing only the person knows is invented: their name, how to reach
+   them, the costs, the licence. Ask them.
 
 ## 1. Ask the person
 
-Ask these, and keep their answers:
+Ask these, and keep the answers: they fill in `our.one.json`, `COSTS.md`
+and `PITCH.md` later.
 
-1. What should it do, and for whom?
-2. Is there code already? If so, where?
-3. What will it keep about the people who use it? Everything it stores
-   about a person counts: an email address, a name, what they write, when
-   they did something.
+1. What should it do, and for whom? What do those people use or pay for
+   today?
+2. Is there code already? If so, where? Bring it into the project's folder.
+3. What will it keep about the people who use it, and for how long?
+   Everything it stores about a person counts: an email address, a name,
+   what they write, when they did something. Who can see each of these?
 4. Which outside services will it use: hosting, a database, email,
-   payments, AI models, error reports, maps?
-5. Which open-source licence? If they have no view, suggest Apache-2.0,
+   payments, AI models, error reports, maps? Hosting and the database count
+   too, once chosen.
+5. What will it cost each month, who pays, and what is the maintainer paid,
+   if anything?
+6. Which open-source licence? If they have no view, suggest Apache-2.0,
    the feed's licence.
-6. Who maintains it, and how can people reach them?
+7. Who maintains it, and how can people reach them?
+8. What do they want from our.one now: feedback, people to try it, or
+   people who would pay? And what has to happen before it runs for real?
 
 ## 2. Get the tool, and set the project up
 
 From the project's root folder (create it, and run `git init`, if it's
-new):
+new). First make sure `.gitignore` keeps out `node_modules`, environment
+files (`.env`, `.env.local` and the like) and any local database file
+(`*.db`, `*.sqlite`): the check reads what git would commit.
 
 ```sh
 mkdir -p scripts
@@ -64,10 +76,17 @@ curl -fsSL https://our.one/kit/our-one.mjs -o scripts/our-one.mjs
 node -e "const c=require('crypto'),f=require('fs');console.log(c.createHash('sha256').update(f.readFileSync('scripts/our-one.mjs')).digest('hex'))"
 ```
 
+On Windows, in PowerShell, the first two lines are:
+
+```powershell
+New-Item -ItemType Directory -Force scripts | Out-Null
+Invoke-WebRequest https://our.one/kit/our-one.mjs -OutFile scripts/our-one.mjs
+```
+
 The last line prints the file's SHA-256. It must be:
 
 ```text
-ab12bc2eb62a7d25051c8f688f6149ac0f9844d0eba61ba0bdc82cf4ef0a7fa7
+8baef10e73d49add77a6d9bc23c8b53f5f4acd576258ca2d64974d64072ec52c
 ```
 
 If it isn't, stop and tell the person. The tool is one file with no
@@ -84,7 +103,8 @@ node scripts/our-one.mjs init
 
 `init` creates what is missing and overwrites nothing, except the rules
 block in `AGENTS.md`, which it puts back word for word, and the stop hook it
-adds to `.claude/settings.json`:
+adds to `.claude/settings.json`. It writes nothing through a link, and an
+existing `CLAUDE.md` is left as it is:
 
 | File | What it is |
 |---|---|
@@ -93,18 +113,24 @@ adds to `.claude/settings.json`:
 | `CLAUDE.md` | One line, `@AGENTS.md`, so Claude Code reads the rules |
 | `COSTS.md` | What it costs to run each month, and who pays |
 | `PITCH.md` | The proposal, to fill in at the end |
-| `.claude/settings.json` | A Claude Code stop hook: the check runs whenever you try to finish |
+| `.claude/settings.json` | A Claude Code stop hook: the check runs each time you stop |
 | `.github/workflows/our-one.yml` | The check, on every push and pull request |
 
-Then put the licence's full text in `LICENSE`.
+Then put the licence's full text in `LICENSE`. A line naming the licence
+isn't enough.
 
 If the project is a folder inside a larger repository, run the tool with
-`--project <folder>`, and change the paths in the hook and the workflow to
-match.
+`--project <folder>`. GitHub runs only the workflows at the repository's
+root, so `init` doesn't write one in the folder: add
+`.github/workflows/our-one.yml` at the root, with `working-directory` set to
+the folder on the check's step. And Claude Code reads
+`.claude/settings.json` from the folder it starts in.
 
-## 3. Fill in our.one.json
+## 3. Fill in our.one.json and COSTS.md
 
-Replace every TODO with the person's answers.
+Replace every TODO with the person's answers. Fill in `collects`,
+`sharedWith` and `boundary` too: `init` leaves the last two empty, and an
+empty list is a claim that there is nothing to name.
 
 - `rules`: `"0"`, the rules version this project follows.
 - `name` and `purpose`: its name, and one sentence on what it does for the
@@ -118,15 +144,21 @@ Replace every TODO with the person's answers.
 - `data.collects`: each kind of personal data, with `what`, `why` and
   `kept` (for how long).
 - `data.sharedWith`: each outside service that receives anything about a
-  person, with `who`, `what`, `why`, and `packages`, the npm packages that
-  reach it.
+  person, with `who` (its name), `what`, `why`, and `packages`, the npm
+  packages that reach it. Hosting and the database go here too.
 - `data.boundary`: the folders that hold all the code that uses a database
-  or a file store, such as `["src/data"]`.
+  or a file store, such as `["src/data"]`. Not the whole project.
+- `data.noPersonalData` (only if it keeps nothing about anyone): a sentence
+  saying why, which a person will read.
 - `data.export` and `data.delete`: how a person downloads their data, and
-  how they delete it.
-- `claims.allowed` (optional): exact sentences the claims check may let
-  through, such as a definition, each with `file`, `text` and `why`. A
+  how they delete it. "Not built yet" isn't an answer: build them.
+- `claims.allowed` and `claims.skip` (optional): exact sentences the claims
+  check may let through, such as a definition, each with `file`, `text`
+  and `why`; and files it doesn't read, each with `file` and `why`. A
   person reads each one.
+
+`COSTS.md`: what each thing costs a month, even when it's nothing, who
+pays, and the maintainer's pay. Ask the person; don't guess.
 
 The schema is at https://our.one/kit/our.one.schema.json.
 
@@ -136,14 +168,17 @@ Build what the person asked for, under the rules in `AGENTS.md`. In
 practice:
 
 - Put every database and file-store call in the boundary folder, behind
-  functions the rest of the code calls. Then the store can be replaced
-  without touching the rest.
+  functions the rest of the code calls. Hand out functions, not the client:
+  a query written outside the boundary fails the check. Then the store can
+  be replaced without touching the rest.
 - Add a kind of data to `data.collects` before the code keeps it, and a
   service to `data.sharedWith` before the code sends it anything.
 - Build export and deletion with the first feature that keeps personal
   data, not at the end.
 - If the person wants to count visits, count them without following
-  anyone. A service that counts goes in `data.sharedWith` too.
+  anyone. A service that counts goes in `data.sharedWith` too. PostHog,
+  Mixpanel and Amplitude can record sessions from their dashboards: keep
+  that off.
 - Keep keys in environment variables. Commit an `.env.example` with the
   names and no values.
 
@@ -157,16 +192,23 @@ Fix every FAIL and run it again, until the result says READY TO PROPOSE.
 Never change the check, the rules block or a test to make it pass. If a
 check is wrong about this project, tell the person, and say why.
 
-Then read the person the four questions at the end of the report. No
-machine can answer them.
+In Claude Code, the stop hook runs the check each time you stop, but only
+when Claude Code was started in the project's folder. If a check fails, it
+sends you back once with what fails. If what's missing is something only
+the person knows, ask them, and stop: the hook then lets you, and tells
+them what still fails.
+
+Then read the person the four questions the report lists under "For a
+person". No machine can answer them.
 
 ## 6. Propose
 
 Fill in `PITCH.md` with the person. It asks what the common agreement asks
 of every proposal: the need, what people would have to change, the price,
 the scope and the budget with the maintainer's pay, what it asks for now,
-and what must happen before work starts. Paste the end of the check's
-report into it, with the commit it ran on.
+and what has to happen first. Copy into it the check's RESULT line and its
+tool sha256 line, with the commit the check ran on. Commit `PITCH.md`
+afterwards: our.one runs its own copy of the check on the commit you name.
 
 Proposals go by email, and a person reads every one. Once proposals open,
 the address is on https://our.one/maintainers. Until then, that page says
@@ -177,18 +219,20 @@ so.
 | Check | What it looks at | How it is held |
 |---|---|---|
 | `manifest` | `our.one.json` is complete | STRUCTURAL |
-| `licence` | an open-source licence, in a licence file, the same as `package.json`'s | CHECKED |
-| `agents` | `AGENTS.md` carries the rules block, word for word | CHECKED |
-| `data` | personal data, export and deletion are declared | STRUCTURAL |
-| `boundary` | only code in `data.boundary` imports a database or file-store client (JavaScript and TypeScript) | CHECKED |
-| `leave` | every outside service the tool knows is named in `data.sharedWith` | CHECKED |
+| `licence` | an open-source licence, its full text in a licence file here or at the repository's root, the same as `package.json`'s | CHECKED |
+| `agents` | `AGENTS.md` carries the rules block once, word for word | CHECKED |
+| `data` | personal data, export and deletion are declared, and agree with the code | STRUCTURAL |
+| `boundary` | only code in `data.boundary` imports a database or file-store client, queries one or writes files (JavaScript and TypeScript) | CHECKED |
+| `leave` | every outside service the tool knows, by package or by the address of its API, is named in `data.sharedWith` | CHECKED |
 | `tracking` | no ad network, pixel, Google Analytics or Tag Manager, session recording or data hub the tool knows | CHECKED |
-| `secrets` | no secret the tool recognises, and no tracked `.env` file | CHECKED |
-| `costs` | the costs file exists and is filled in | CHECKED |
-| `claims` | no phrase presenting it as its users' property, or as approved by our.one | CHECKED |
+| `secrets` | no secret the tool recognises, no environment file with a secret, and no database file in the repository | CHECKED |
+| `costs` | the costs file exists in the project and states each cost | CHECKED |
+| `claims` | no phrase presenting it as its users' property, or as approved, listed or protected by our.one, in the code, its pages, its messages, README.md and `our.one.json` | CHECKED |
 
 CHECKED means a machine reports it, from patterns a determined person could
 get around. So our.one runs its own copy of the check on the commit you
-propose, and a person reads the result. The safeguards that would hold the
+propose, and a person reads the result. The tool reads only JavaScript and
+TypeScript for code; where a project has code in another language, the
+check says so, and a person reads it. The safeguards that would hold the
 line while a service runs, such as no keys for whoever runs it and a log of
 every read, aren't built yet. Every report lists them.

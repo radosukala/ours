@@ -93,6 +93,16 @@
         "packages": [
           "resend"
         ]
+      },
+      {
+        "who": "Vercel",
+        "what": "Everything the site serves and receives, while it runs there.",
+        "why": "To host the site, as D-0013 chose. our.one isn't deployed there yet."
+      },
+      {
+        "who": "Neon",
+        "what": "The database, which holds everything in data.collects, while it is kept there.",
+        "why": "To keep the feed's data, in an EU region, as D-0013 and M-0012 set. No database is set up there yet."
       }
     ],
     "boundary": [
@@ -113,6 +123,12 @@
         "file": "src/app/(public)/agreement/page.tsx",
         "text": "We call a service owned by its users only when all of that holds.",
         "why": "Applies the definition; the page follows it with \"None does yet.\" (D-0017 §B, D-0018 §E)."
+      }
+    ],
+    "skip": [
+      {
+        "file": "src/core/claims.ts",
+        "why": "The repository's own claims scan: its list of the phrases it refuses, with the reasons."
       }
     ]
   }

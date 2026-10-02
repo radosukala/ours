@@ -2494,3 +2494,69 @@ propose, nothing more (D-0019 §E). Every safeguard stays not built.
    on one that keeps it; `init` writes only what it names; the hook; the
    tool imports nothing that reaches a network and never prints a secret;
    the feed passes; the routes serve the files; and the page.
+
+**After the verification (2 October 2026).** Two verifiers (honesty and
+rendering; the tool, adversarially) found 57 defects, and an agent trial
+reported where build.md and the check fall short. All 57 are fixed; the
+verifiers' tests were committed as written before any fix. The tool is now
+0.2.0:
+
+- **It runs by any path.** Run through a link, it used to do nothing and
+  exit 0.
+- **It reads code, not comments,** with a linear parser for imports, and
+  reads `node:`/`bun:` clients.
+- **The boundary check:**
+  - a boundary that holds all the code fails;
+  - so do queries outside it against a client it hands out, a re-exported
+    client, and files written with fs.
+- **The leave check:**
+  - a service is named only by an entry whose `who` names it;
+  - the address of a service's API counts, as do AI providers and
+    gateways.
+- **The tracking check:** session recording from PostHog, Amplitude,
+  Datadog, Mixpanel, rrweb, OpenReplay and Highlight fails, and so do more
+  Google Analytics and Tag Manager modules.
+- **The secrets check:**
+  - more kinds of key;
+  - environment files git doesn't ignore are read for secrets, never
+    printed;
+  - database files fail;
+  - large files are read for secrets.
+- **The costs check:** placeholders, empty cells and a file that states no
+  cost fail.
+- **The claims check:**
+  - it reads all code, message files and `our.one.json`, past tags, with
+    denials let through;
+  - `claims.skip` names files left to a person.
+- **The data check:** an empty `data.collects` beside a database or a named
+  service fails unless `data.noPersonalData` says why.
+- **Other checks:**
+  - the licence must be the full text, here or at the repository's root;
+  - a second rules block fails.
+- **init:**
+  - writes no file through a link or a hard link;
+  - leaves an existing `CLAUDE.md` and unknown settings shapes as they
+    are;
+  - doesn't write a workflow GitHub would never run in a subfolder.
+- **The stop hook** reads its input to the end, and tells the agent to ask
+  the person rather than invent.
+- **No secret is printed,** even in a parse error.
+
+Rule 8 now reads "No secrets or data in the repository". The block says
+which three rules go further than the agreement.
+
+**Pages:**
+
+- `/build`:
+  - names the three stricter rules;
+  - gives the limits of two checks;
+  - describes the hook as it runs;
+  - its "Today" line follows `PROPOSALS_EMAIL`;
+  - drops the unsourced agent names;
+  - keeps "Apache-2.0" and "SHA-256" whole;
+  - gives its links full names.
+- `/projects` says what passing means.
+
+`build.md` covers the trial agent's gaps: what to ask, `.gitignore`,
+Windows, a monorepo, `COSTS.md`, the hook and the proposal's commit. The
+feed's manifest names the hosting and the database D-0013 chose.

@@ -208,7 +208,7 @@ const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
 
 describe("defects (each FAILS on a92bbb5)", () => {
   // T1
-  it("DEFECT (HIGH): run by a path that passes through a symbolic link (on macOS, /tmp and /var are such links; so is any folder a person reaches through one), the tool does nothing and exits 0: check on a failing project prints no report and returns success, init writes nothing, and the stop hook never sends the agent back, because the entry guard compares import.meta.url, which Node resolves through links, with argv[1], which it doesn't", () => {
+  it("fixed (HIGH): run by a path that passes through a symbolic link (on macOS, /tmp and /var are such links; so is any folder a person reaches through one), the tool does nothing and exits 0: check on a failing project prints no report and returns success, init writes nothing, and the stop hook never sends the agent back, because the entry guard compares import.meta.url, which Node resolves through links, with argv[1], which it doesn't", () => {
     const real = project(without(good(), "LICENSE")); // one check fails
     copyTool(real);
     const links = project({}, { git: false });
@@ -236,7 +236,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T2
-  it("DEFECT (MEDIUM): two patterns backtrack catastrophically on crafted text, so one small file stalls the check, the stop hook and our.one's own run on a proposed commit: `import` followed by whitespace is cubic in the import pattern (4 KB took 22 s on this machine, 8 KB 178 s, 20 KB didn't finish in 2 minutes), and the OpenAI key pattern is quadratic on repeated `sk-` (600 KB took 114 s)", () => {
+  it("fixed (MEDIUM): two patterns backtrack catastrophically on crafted text, so one small file stalls the check, the stop hook and our.one's own run on a proposed commit: `import` followed by whitespace is cubic in the import pattern (4 KB took 22 s on this machine, 8 KB 178 s, 20 KB didn't finish in 2 minutes), and the OpenAI key pattern is quadratic on repeated `sk-` (600 KB took 114 s)", () => {
     const spaces = project({ ...good(), "src/app/generated.ts": `import${rep(" ", 5000)}x\n` });
     const keys = project({ ...good(), "src/app/generated.ts": `export const s = "${rep("sk-", 150_000)}";\n` });
     const a = run(spaces, ["check", "--json"], undefined, 10_000);
@@ -246,7 +246,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   }, 60_000);
 
   // T3
-  it.skipIf(isRoot)("DEFECT (MEDIUM): one file the user can't read (a key or a database file a container wrote as root) crashes every mode with exit 2 and the absolute path, so there is no report at all, and the stop hook then blocks again even when stop_hook_active is true: it never lets the agent stop, where D-0019 §D and /build say it sends the agent back once", () => {
+  it.skipIf(isRoot)("fixed (MEDIUM): one file the user can't read (a key or a database file a container wrote as root) crashes every mode with exit 2 and the absolute path, so there is no report at all, and the stop hook then blocks again even when stop_hook_active is true: it never lets the agent stop, where D-0019 §D and /build say it sends the agent back once", () => {
     const dir = project({ ...good(), "certs/privkey.pem": "FICTIONAL, written by a container\n" });
     const path = join(dir, "certs/privkey.pem");
     chmodSync(path, 0o000);
@@ -262,7 +262,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T4
-  it("DEFECT (MEDIUM): when git doesn't ignore node_modules (after `git init` and an install, before any .gitignore; build.md says to run git init and never mentions a .gitignore), the check reads the dependencies' files as the project's: it fails on a private-key example in a package's bundled docs and on a store client inside a package, the hook sends the agent to move that 'secret' to an environment variable, and it slows down (one real package, Next.js 16, took 4.5 s and failed on its own docs)", () => {
+  it("fixed (MEDIUM): when git doesn't ignore node_modules (after `git init` and an install, before any .gitignore; build.md says to run git init and never mentions a .gitignore), the check reads the dependencies' files as the project's: it fails on a private-key example in a package's bundled docs and on a store client inside a package, the hook sends the agent to move that 'secret' to an environment variable, and it slows down (one real package, Next.js 16, took 4.5 s and failed on its own docs)", () => {
     const keyExample = ["-----BEGIN", "PRIVATE KEY-----"].join(" ");
     const dir = project({
       ...good(),
@@ -276,7 +276,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T5
-  it("DEFECT (MEDIUM): a data.boundary that holds all of the project's code (\"src\", or \"src/**\", when everything is in src) passes, so rule 1 says nothing; the tool already refuses \".\" as the whole project, and naming the folder a failing import sits in is the quickest way out of a boundary failure", () => {
+  it("fixed (MEDIUM): a data.boundary that holds all of the project's code (\"src\", or \"src/**\", when everything is in src) passes, so rule 1 says nothing; the tool already refuses \".\" as the whole project, and naming the folder a failing import sits in is the quickest way out of a boundary failure", () => {
     const files = {
       ...good(),
       "src/app/api/people/route.ts": 'import { Pool } from "pg";\nexport async function GET() { return Response.json((await new Pool().query("select email from people")).rows); }\n',
@@ -288,7 +288,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T6
-  it("DEFECT (MEDIUM): a store client made inside the boundary and handed out, a common way to write it (`export const prisma = new PrismaClient()`, then `prisma.user.findMany()` in every route), or a boundary file that re-exports the client (`export { Pool } from \"pg\"`), lets code anywhere query personal data while the boundary check passes", () => {
+  it("fixed (MEDIUM): a store client made inside the boundary and handed out, a common way to write it (`export const prisma = new PrismaClient()`, then `prisma.user.findMany()` in every route), or a boundary file that re-exports the client (`export { Pool } from \"pg\"`), lets code anywhere query personal data while the boundary check passes", () => {
     const prisma = {
       ...good(),
       "package.json": pkg({ "@prisma/client": "6.0.0" }),
@@ -305,7 +305,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T7
-  it("DEFECT (MEDIUM): store clients common in small apps aren't on the list, so code anywhere uses them and the boundary check passes: Bun's and Node's built-in SQLite (bun:sqlite, node:sqlite), lowdb, Convex, Firebase's compat Firestore, Pinecone and Appwrite", () => {
+  it("fixed (MEDIUM): store clients common in small apps aren't on the list, so code anywhere uses them and the boundary check passes: Bun's and Node's built-in SQLite (bun:sqlite, node:sqlite), lowdb, Convex, Firebase's compat Firestore, Pinecone and Appwrite", () => {
     const cases: [string, string][] = [
       ["bun:sqlite", 'import { Database } from "bun:sqlite";\nexport const db = new Database("people.db");\n'],
       ["node:sqlite", 'import { DatabaseSync } from "node:sqlite";\nexport const db = new DatabaseSync("people.db");\n'],
@@ -322,7 +322,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T8
-  it("DEFECT (MEDIUM): AI providers and gateways send what people type to an outside service without being named, and the leave check passes: the AI SDK with a gateway model id (`ai` alone), @ai-sdk/xai, @ai-sdk/amazon-bedrock, OpenRouter's provider, AWS Bedrock's client and fal.ai", () => {
+  it("fixed (MEDIUM): AI providers and gateways send what people type to an outside service without being named, and the leave check passes: the AI SDK with a gateway model id (`ai` alone), @ai-sdk/xai, @ai-sdk/amazon-bedrock, OpenRouter's provider, AWS Bedrock's client and fal.ai", () => {
     const cases: [string, string][] = [
       ["ai (gateway)", 'import { generateText } from "ai";\nexport const answer = (prompt: string) => generateText({ model: "openai/gpt-5", prompt });\n'],
       ["@ai-sdk/xai", 'import { xai } from "@ai-sdk/xai";\nexport const model = xai("grok-4");\n'],
@@ -338,7 +338,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T9
-  it("DEFECT (MEDIUM): a package listed under another service's entry counts as that service named: with only Resend in data.sharedWith, `packages: [\"resend\", \"stripe\", \"openai\"]` passes, and the report says 'Named: Resend, Stripe, OpenAI', which the manifest a person reads doesn't say", () => {
+  it("fixed (MEDIUM): a package listed under another service's entry counts as that service named: with only Resend in data.sharedWith, `packages: [\"resend\", \"stripe\", \"openai\"]` passes, and the report says 'Named: Resend, Stripe, OpenAI', which the manifest a person reads doesn't say", () => {
     const m = manifest({}, { sharedWith: [{ ...RESEND, packages: ["resend", "stripe", "openai"] }] });
     const c = check(project({ ...good(), "our.one.json": m, "src/data/pay.ts": 'import Stripe from "stripe";\nimport OpenAI from "openai";\nexport const s = new Stripe(""), o = new OpenAI();\n' }), "leave");
     expect(c.summary).not.toContain("Stripe");
@@ -346,7 +346,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T10
-  it("DEFECT (MEDIUM): session recording, which rule 4 forbids by name, passes when it comes from a service the tool lets be named (PostHog's startSessionRecording, Amplitude's session-replay plugin, Datadog RUM's replay, Mixpanel's record_sessions_percent) or from a recorder it doesn't know (rrweb, OpenReplay, Highlight)", () => {
+  it("fixed (MEDIUM): session recording, which rule 4 forbids by name, passes when it comes from a service the tool lets be named (PostHog's startSessionRecording, Amplitude's session-replay plugin, Datadog RUM's replay, Mixpanel's record_sessions_percent) or from a recorder it doesn't know (rrweb, OpenReplay, Highlight)", () => {
     const named = (who: string, packages: string[]) => manifest({}, { sharedWith: [RESEND, { who, what: "Visits.", why: "To count visits.", packages }] });
     const cases: [string, Record<string, string>][] = [
       ["PostHog", { "package.json": pkg({ "posthog-js": "1" }), "our.one.json": named("PostHog", ["posthog-js"]), "src/app/ph.ts": 'import posthog from "posthog-js";\nposthog.init("phc_FICTIONAL", { api_host: "https://eu.i.posthog.com", session_recording: { maskAllInputs: false } });\nposthog.startSessionRecording();\n' }],
@@ -364,7 +364,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T11
-  it("DEFECT (MEDIUM): Google Analytics and Tag Manager added as a Nuxt, Vue or Gatsby module configured by an ID (nuxt-gtag, @gtm-support/vue-gtm, gatsby-plugin-google-gtag), Firebase's compat analytics, and Meta's Conversions API SDK (the server-side pixel) all pass rule 4, which names Google Analytics, Tag Manager and pixels", () => {
+  it("fixed (MEDIUM): Google Analytics and Tag Manager added as a Nuxt, Vue or Gatsby module configured by an ID (nuxt-gtag, @gtm-support/vue-gtm, gatsby-plugin-google-gtag), Firebase's compat analytics, and Meta's Conversions API SDK (the server-side pixel) all pass rule 4, which names Google Analytics, Tag Manager and pixels", () => {
     const cases: [string, Record<string, string>][] = [
       ["nuxt-gtag", { "package.json": pkg({ "nuxt-gtag": "3" }), "nuxt.config.ts": 'export default defineNuxtConfig({ modules: ["nuxt-gtag"], gtag: { id: "G-FICTION01" } });\n' }],
       ["@gtm-support/vue-gtm", { "package.json": pkg({ "@gtm-support/vue-gtm": "3" }), "src/main.ts": 'import { createGtm } from "@gtm-support/vue-gtm";\napp.use(createGtm({ id: "GTM-FICT01" }));\n' }],
@@ -379,7 +379,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T12
-  it("DEFECT (MEDIUM): the keys of services the tool's own lists name aren't recognised, so a key pasted into the code passes rule 8: Resend (the feed's own provider), Google AI (Gemini), Groq, Replicate, Hugging Face, a Stripe webhook secret and a Supabase secret key", () => {
+  it("fixed (MEDIUM): the keys of services the tool's own lists name aren't recognised, so a key pasted into the code passes rule 8: Resend (the feed's own provider), Google AI (Gemini), Groq, Replicate, Hugging Face, a Stripe webhook secret and a Supabase secret key", () => {
     const cases: [string, string][] = [
       ["Resend", `export const mail = new Resend("${["re", "_", "Fict1onal", rep("Q", 24)].join("")}");\n`],
       ["Google AI", `export const ai = new GoogleGenerativeAI("${["AI", "za", "Sy", rep("F", 33)].join("")}");\n`],
@@ -397,7 +397,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T13
-  it("DEFECT (MEDIUM): a costs file that states no cost passes rule 7 as 'filled in': init's own table with the TODOs deleted, 'TBD' in every cell, or 'We will fill this in later.' An agent that can't know the costs reaches for exactly these", () => {
+  it("fixed (MEDIUM): a costs file that states no cost passes rule 7 as 'filled in': init's own table with the TODOs deleted, 'TBD' in every cell, or 'We will fill this in later.' An agent that can't know the costs reaches for exactly these", () => {
     const table = (cell: string, pay: string) =>
       `# Costs\n\nWhat it costs to run this project each month, and who pays. Keep it up to date (our.one rule 7).\n\n| What | Provider | A month | Paid by |\n|---|---|---|---|\n| Hosting | ${cell} | ${cell} | ${cell} |\n| Database | ${cell} | ${cell} | ${cell} |\n| Email | ${cell} | ${cell} | ${cell} |\n| Domain | ${cell} | ${cell} | ${cell} |\n\nThe maintainer's pay: ${pay}\n`;
     for (const [what, costs] of [
@@ -411,7 +411,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T14
-  it("DEFECT (MEDIUM): claims rule 9 names in so many words pass: 'Protected by our.one', 'an our.one-protected service', 'Listed on our.one'; and so do 'Owned by users, not investors' (no 'its' or 'the') and 'owned by <strong>its users</strong>' (a tag in the middle)", () => {
+  it("fixed (MEDIUM): claims rule 9 names in so many words pass: 'Protected by our.one', 'an our.one-protected service', 'Listed on our.one'; and so do 'Owned by users, not investors' (no 'its' or 'the') and 'owned by <strong>its users</strong>' (a tag in the middle)", () => {
     for (const phrase of ["Protected by our.one.", "An our.one-protected service.", "Listed on our.one.", "Owned by users, not investors.", "It is owned by <strong>its users</strong>."]) {
       const c = check(project({ ...good(), "src/app/page.tsx": `export default function P() { return <p>${phrase}</p>; }\n` }), "claims");
       expect([phrase, c.outcome]).toEqual([phrase, "fail"]);
@@ -419,20 +419,20 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T15
-  it("DEFECT (MEDIUM): the claims check doesn't read our.one.json, so `purpose: \"A community-owned market for FICTIONAL growers.\"` passes, in the one text our.one is sure to read; the repository's own scan reads the feed's manifest for the same reason (scanManifestText)", () => {
+  it("fixed (MEDIUM): the claims check doesn't read our.one.json, so `purpose: \"A community-owned market for FICTIONAL growers.\"` passes, in the one text our.one is sure to read; the repository's own scan reads the feed's manifest for the same reason (scanManifestText)", () => {
     const c = check(project({ ...good(), "our.one.json": manifest({ purpose: "A community-owned market for FICTIONAL growers." }) }), "claims");
     expect(c.outcome).toBe("fail");
   });
 
   // T16
-  it("DEFECT (MEDIUM): data.collects: [] passes as 'keeps nothing about anyone' while the same manifest says it sends a person's email address to Resend and the code reaches a database; init writes collects: [] as the default, so a field nobody filled in passes (kit.test.ts's own 'keeps nothing' case is this project)", () => {
+  it("fixed (MEDIUM): data.collects: [] passes as 'keeps nothing about anyone' while the same manifest says it sends a person's email address to Resend and the code reaches a database; init writes collects: [] as the default, so a field nobody filled in passes (kit.test.ts's own 'keeps nothing' case is this project)", () => {
     const c = check(project({ ...good(), "our.one.json": manifest({}, { collects: [] }) }), "data");
     expect(c.summary).not.toBe("It declares that it keeps nothing about anyone.");
     expect(c.outcome).toBe("fail");
   });
 
   // T17
-  it("DEFECT (MEDIUM): in a project with a JavaScript front end and a Python back end (for example Next.js and FastAPI), the boundary check passes with 'No database or file-store client found in the code' while the Python it never read connects to Postgres everywhere; a Python-only project is honestly 'not checked'", () => {
+  it("fixed (MEDIUM): in a project with a JavaScript front end and a Python back end (for example Next.js and FastAPI), the boundary check passes with 'No database or file-store client found in the code' while the Python it never read connects to Postgres everywhere; a Python-only project is honestly 'not checked'", () => {
     const c = check(
       project({
         ...good(),
@@ -446,7 +446,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T18
-  it("DEFECT (LOW): an import the pattern can't parse hides a store client from the boundary check: a comment inside a multi-line import's braces, or a dynamic import written with backquotes", () => {
+  it("fixed (LOW): an import the pattern can't parse hides a store client from the boundary check: a comment inside a multi-line import's braces, or a dynamic import written with backquotes", () => {
     for (const code of ['import {\n  Pool, // the connection pool\n  Client,\n} from "pg";\n', 'import { Pool /* pool */ } from "pg";\n', "const pg = await import(`pg`);\n"]) {
       const c = check(project({ ...good(), "src/app/api/route.ts": code }), "boundary");
       expect([code, c.outcome]).toEqual([code, "fail"]);
@@ -454,13 +454,13 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T19
-  it("DEFECT (LOW): a commented-out import (`// import { sql } from \"@vercel/postgres\";`, left after moving the code into the boundary) fails the boundary check as code that reaches a store", () => {
+  it("fixed (LOW): a commented-out import (`// import { sql } from \"@vercel/postgres\";`, left after moving the code into the boundary) fails the boundary check as code that reaches a store", () => {
     const c = check(project({ ...good(), "src/app/page.tsx": '// import { sql } from "@vercel/postgres";\nexport default function Page() { return <p>FICTIONAL tool</p>; }\n' }), "boundary");
     expect(c.outcome).toBe("pass");
   });
 
   // T20
-  it("DEFECT (LOW): test and setup files with common names other than the listed folders count as product code, so a test helper that resets the database fails rule 1: vitest.setup.ts, CRA's src/setupTests.ts, a Cypress component test (*.cy.tsx), __fixtures__", () => {
+  it("fixed (LOW): test and setup files with common names other than the listed folders count as product code, so a test helper that resets the database fails rule 1: vitest.setup.ts, CRA's src/setupTests.ts, a Cypress component test (*.cy.tsx), __fixtures__", () => {
     for (const file of ["vitest.setup.ts", "src/setupTests.ts", "src/components/Button.cy.tsx", "src/__fixtures__/db.ts"]) {
       const c = check(project({ ...good(), [file]: 'import { Pool } from "pg";\nexport const reset = () => new Pool().query("truncate people");\n' }), "boundary");
       expect([file, c.outcome]).toEqual([file, "pass"]);
@@ -468,7 +468,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T21
-  it("DEFECT (LOW): more secrets pass rule 8: an npm token in a tracked .npmrc, a Slack webhook address, a real password to a private-network database host (Railway's .railway.internal), a SQLAlchemy-style address (postgresql+psycopg2://), and environment files by other names (.dev.vars, which Cloudflare's tools use, and .envrc)", () => {
+  it("fixed (LOW): more secrets pass rule 8: an npm token in a tracked .npmrc, a Slack webhook address, a real password to a private-network database host (Railway's .railway.internal), a SQLAlchemy-style address (postgresql+psycopg2://), and environment files by other names (.dev.vars, which Cloudflare's tools use, and .envrc)", () => {
     const cases: [string, Record<string, string>][] = [
       ["npm token", { ".npmrc": `//registry.npmjs.org/:_authToken=${["npm", "_", rep("F", 36)].join("")}\n` }],
       ["Slack webhook", { "src/data/notify.ts": `await fetch("${["https://hooks.", "slack.com/services/", "T0FICTION/", "B0FICTION/", rep("F", 24)].join("")}", { method: "POST" });\n` }],
@@ -484,20 +484,20 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T22
-  it("DEFECT (LOW): a tracked file over 1 MB is never read for secrets, yet the secrets check passes with 'No secret the tool recognises' and the stop hook stays silent; for example a committed build bundle with a key inlined", () => {
+  it("fixed (LOW): a tracked file over 1 MB is never read for secrets, yet the secrets check passes with 'No secret the tool recognises' and the stop hook stays silent; for example a committed build bundle with a key inlined", () => {
     const key = ["sk", "live", "FICT10NAL0000000000000000"].join("_");
     const dir = project({ ...good(), "public/assets/index.js": `${rep("// a line of a large generated bundle\n", 30_000)}const k = "${key}";\n` });
     expect(check(dir, "secrets").outcome).not.toBe("pass");
   });
 
   // T23
-  it("DEFECT (LOW): a tracked .env.test holding only test defaults, which Next.js 16's own docs (dist/docs/01-app/02-guides/environment-variables.md, in the package) say 'should be included in your repository', fails rule 8 unread, with a fix that says to replace every secret in it", () => {
+  it("fixed (LOW): a tracked .env.test holding only test defaults, which Next.js 16's own docs (dist/docs/01-app/02-guides/environment-variables.md, in the package) say 'should be included in your repository', fails rule 8 unread, with a fix that says to replace every secret in it", () => {
     const c = check(project({ ...good(), ".env.test": "NEXT_PUBLIC_SITE_URL=http://localhost:3000\n" }), "secrets");
     expect(c.outcome).toBe("pass");
   });
 
   // T24
-  it("DEFECT (LOW): the check prints part or all of a secret that sits in our.one.json: a JSON parse error quotes the text around it ('sk_live_FI…' for an unquoted value), and the boundary check echoes a pasted database address, password and all, in every output mode", () => {
+  it("fixed (LOW): the check prints part or all of a secret that sits in our.one.json: a JSON parse error quotes the text around it ('sk_live_FI…' for an unquoted value), and the boundary check echoes a pasted database address, password and all, in every output mode", () => {
     const key = ["sk", "live", "FICT10NAL0000000000000000"].join("_");
     const unquoted = project({ ...good(), "our.one.json": `{"name": "FICTIONAL", "deployKey": ${key}}` });
     expect(everyOutput(unquoted)).not.toContain(key.slice(0, 10));
@@ -507,7 +507,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T25
-  it("DEFECT (LOW): the stop hook drops its input when stdin is still open as it reads (reading process.stdin.isTTY makes stdin non-blocking, so readFileSync(0) throws EAGAIN and the input becomes {}), and then blocks again although stop_hook_active is true: written at once and closed 1.5 s later, it exits 2", async () => {
+  it("fixed (LOW): the stop hook drops its input when stdin is still open as it reads (reading process.stdin.isTTY makes stdin non-blocking, so readFileSync(0) throws EAGAIN and the input becomes {}), and then blocks again although stop_hook_active is true: written at once and closed 1.5 s later, it exits 2", async () => {
     const dir = project(without(good(), "LICENSE"));
     const r = await runAsync(dir, ["check", "--hook"], '{"hook_event_name":"Stop","stop_hook_active":true}\n', 1500);
     expect(r.code).toBe(0);
@@ -515,7 +515,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T26
-  it("DEFECT (LOW): check runs whatever program the project's .git/config names as core.fsmonitor (git ls-files runs it), so a project handed over with its .git folder runs code on the checker's machine, our.one's own included, and that code can reach the network; `git -c core.fsmonitor=false` would close it", () => {
+  it("fixed (LOW): check runs whatever program the project's .git/config names as core.fsmonitor (git ls-files runs it), so a project handed over with its .git folder runs code on the checker's machine, our.one's own included, and that code can reach the network; `git -c core.fsmonitor=false` would close it", () => {
     const dir = project(good());
     const elsewhere = project({}, { git: false });
     const marker = join(elsewhere, "fsmonitor-ran");
@@ -528,7 +528,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T27
-  it("DEFECT (LOW): init writes through hard links: an AGENTS.md hard-linked to a file outside the project, or a .claude/settings.json hard-linked to the person's global Claude Code settings, is rewritten in place, so the file outside changes (the global settings gain a stop hook for every project)", () => {
+  it("fixed (LOW): init writes through hard links: an AGENTS.md hard-linked to a file outside the project, or a .claude/settings.json hard-linked to the person's global Claude Code settings, is rewritten in place, so the file outside changes (the global settings gain a stop hook for every project)", () => {
     const outside = project({ "shared-AGENTS.md": "# Shared notes, outside the project\n", "global-settings.json": '{"permissions":{"allow":["Bash(ls)"]}}\n' }, { git: false });
     const dir = project({});
     linkSync(join(outside, "shared-AGENTS.md"), join(dir, "AGENTS.md"));
@@ -540,7 +540,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T28
-  it("DEFECT (LOW): the tool reads files outside the project through links: without git, a costs file named through a linked folder is read and passes; and init reads a linked package.json to fill in the licence", () => {
+  it("fixed (LOW): the tool reads files outside the project through links: without git, a costs file named through a linked folder is read and passes; and init reads a linked package.json to fill in the licence", () => {
     const outside = project({ "COSTS.md": "# Costs\n\nFICTIONAL costs, kept outside the project and filled in.\n", "package.json": JSON.stringify({ license: "ISC" }) }, { git: false });
     const files = without(good(), "COSTS.md");
     const dir = project({ ...files, "our.one.json": manifest({ costs: "docs/COSTS.md" }) }, { git: false });
@@ -553,7 +553,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T29
-  it("DEFECT (LOW): init stops half-way with an error when it can't make a folder (.github is a file; .claude is a dangling link), after writing some files and before the report, instead of noting it and finishing", () => {
+  it("fixed (LOW): init stops half-way with an error when it can't make a folder (.github is a file; .claude is a dangling link), after writing some files and before the report, instead of noting it and finishing", () => {
     const spare = project({}, { git: false });
     for (const make of [(d: string) => writeFileSync(join(d, ".github"), "not a folder\n"), (d: string) => symlinkSync(join(spare, "nowhere"), join(d, ".claude"))]) {
       const dir = project({ "package.json": "{}" });
@@ -565,13 +565,13 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T30
-  it("DEFECT (LOW): a UTF-8 byte-order mark, which some Windows tools write, makes our.one.json 'not valid JSON' (an invisible character in the message, then five more checks fail with it), and makes the tool ignore package.json, so its dependencies drop out of the leave and tracking checks", () => {
+  it("fixed (LOW): a UTF-8 byte-order mark, which some Windows tools write, makes our.one.json 'not valid JSON' (an invisible character in the message, then five more checks fail with it), and makes the tool ignore package.json, so its dependencies drop out of the leave and tracking checks", () => {
     expect(check(project({ ...good(), "our.one.json": `﻿${manifest()}` }), "manifest").outcome).toBe("pass");
     expect(check(project({ ...good(), "package.json": `﻿${pkg({ stripe: "1" })}` }), "leave").outcome).toBe("fail");
   });
 
   // T31
-  it("DEFECT (LOW): honest licences fail: a project in a monorepo whose LICENSE is at the repository's root, a REUSE-style LICENSES/ folder, and an OSI-approved licence the list lacks (LGPL-2.1-only); the last can never pass", () => {
+  it("fixed (LOW): honest licences fail: a project in a monorepo whose LICENSE is at the repository's root, a REUSE-style LICENSES/ folder, and an OSI-approved licence the list lacks (LGPL-2.1-only); the last can never pass", () => {
     const repo = project({ LICENSE: MIT, ...Object.fromEntries(Object.entries(without(good(), "LICENSE")).map(([k, v]) => [`apps/x/${k}`, v])) });
     expect(check(join(repo, "apps/x"), "licence").outcome).toBe("pass");
     expect(check(project({ ...without(good(), "LICENSE"), "LICENSES/MIT.txt": MIT }), "licence").outcome).toBe("pass");
@@ -580,14 +580,14 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T32
-  it("DEFECT (LOW): a licence file that only names the licence passes as its full text, which build.md and the fix both ask for: 'Licensed under the Apache License, Version 2.0. See …' (the feed's licence, and the one the kit suggests), or the MIT licence's first phrase alone", () => {
+  it("fixed (LOW): a licence file that only names the licence passes as its full text, which build.md and the fix both ask for: 'Licensed under the Apache License, Version 2.0. See …' (the feed's licence, and the one the kit suggests), or the MIT licence's first phrase alone", () => {
     const apache = { ...good(), "our.one.json": manifest({ license: "Apache-2.0" }), "package.json": pkg({}, { license: "Apache-2.0" }), LICENSE: "Licensed under the Apache License, Version 2.0. See https://www.apache.org/licenses/LICENSE-2.0\n" };
     expect(check(project(apache), "licence").outcome).toBe("fail");
     expect(check(project({ ...good(), LICENSE: "Permission is hereby granted, free of charge\n" }), "licence").outcome).toBe("fail");
   });
 
   // T33
-  it("DEFECT (LOW): init from a subfolder of a new project (the tool in scripts/, the agent's shell in src/) writes the whole set into src/ and says the tool 'isn't inside this project'; and in a monorepo it writes the workflow under apps/x/.github/workflows, which GitHub never runs, without a word", () => {
+  it("fixed (LOW): init from a subfolder of a new project (the tool in scripts/, the agent's shell in src/) writes the whole set into src/ and says the tool 'isn't inside this project'; and in a monorepo it writes the workflow under apps/x/.github/workflows, which GitHub never runs, without a word", () => {
     const fresh = project({ "package.json": "{}", "src/app/page.tsx": "export default function Page() { return null; }\n" });
     copyTool(fresh);
     spawnSync(process.execPath, [join(fresh, "scripts/our-one.mjs"), "init"], { cwd: join(fresh, "src"), encoding: "utf8" });
@@ -600,7 +600,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T34
-  it("DEFECT (LOW): init's refusal of the home folder is passed by a link to it, and check doesn't refuse the home folder at all: it would read every file there, ~/.ssh included", () => {
+  it("fixed (LOW): init's refusal of the home folder is passed by a link to it, and check doesn't refuse the home folder at all: it would read every file there, ~/.ssh included", () => {
     const home = project({}, { git: false });
     const env = { ...process.env, HOME: home };
     const links = project({}, { git: false });
@@ -612,7 +612,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T35
-  it("DEFECT (LOW): data.export 'Not built yet.' and data.delete 'N/A' pass, and the summary says the project has 'export and deletion'", () => {
+  it("fixed (LOW): data.export 'Not built yet.' and data.delete 'N/A' pass, and the summary says the project has 'export and deletion'", () => {
     for (const data of [{ export: "Not built yet." }, { delete: "N/A" }]) {
       const c = check(project({ ...good(), "our.one.json": manifest({}, data) }), "data");
       expect([data, c.outcome]).toEqual([data, "fail"]);
@@ -620,7 +620,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T36
-  it("DEFECT (LOW): a second, changed copy of the rules block beside an intact one passes the agents check (agents read both), and init leaves a changed copy that comes after the intact block", () => {
+  it("fixed (LOW): a second, changed copy of the rules block beside an intact one passes the agents check (agents read both), and init leaves a changed copy that comes after the intact block", () => {
     const changed = tool.RULES_BLOCK.replace(
       "4. **No ads and no tracking.** No ad networks or pixels, no Google Analytics or Tag Manager, no session recording, no data brokers or data hubs.",
       "4. **Ads are fine.** Use any analytics you like.",
@@ -632,7 +632,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T37
-  it("DEFECT (LOW): init removes what it doesn't understand in .claude/settings.json (a Stop written as an object, hooks written as a list), and leaves alone, as 'not valid JSON', a settings file that only starts with a byte-order mark", () => {
+  it("fixed (LOW): init removes what it doesn't understand in .claude/settings.json (a Stop written as an object, hooks written as a list), and leaves alone, as 'not valid JSON', a settings file that only starts with a byte-order mark", () => {
     for (const settings of [{ hooks: { Stop: { hooks: [{ type: "command", command: "echo FICTIONAL-object" }] } } }, { hooks: [{ Stop: "FICTIONAL-list" }] }]) {
       const dir = project({ ".claude/settings.json": JSON.stringify(settings) });
       run(dir, ["init"]);
@@ -644,14 +644,14 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T38
-  it("DEFECT (LOW): finding each import's line costs a scan from the file's start (lineAt), so a generated file with many imports is quadratic: 20,000 require() lines (520 KB) took 13 s in-process on this machine, past what a stop hook should take", () => {
+  it("fixed (LOW): finding each import's line costs a scan from the file's start (lineAt), so a generated file with many imports is quadratic: 20,000 require() lines (520 KB) took 13 s in-process on this machine, past what a stop hook should take", () => {
     const dir = project({ ...good(), "src/generated/requires.js": rep('require("./x");\n', 35_000) });
     const r = run(dir, ["check", "--json"], undefined, 8_000);
     expect([r.signal, r.status]).toEqual([null, 0]);
   }, 30_000);
 
   // T39
-  it("DEFECT (LOW): the claims check skips templates that render pages (.ejs, though the tracking check reads them) and the message files internationalised apps keep their copy in (messages/en.json), so 'A user-owned market.' passes there", () => {
+  it("fixed (LOW): the claims check skips templates that render pages (.ejs, though the tracking check reads them) and the message files internationalised apps keep their copy in (messages/en.json), so 'A user-owned market.' passes there", () => {
     const cases: [string, string][] = [
       ["views/index.ejs", "<h1>A user-owned market.</h1>\n"],
       ["messages/en.json", JSON.stringify({ hero: "A user-owned market." })],
@@ -663,7 +663,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
   });
 
   // T40
-  it("DEFECT (LOW): when git can't run (not installed, or refusing the folder as of 'dubious ownership'), the tool walks the folder instead without saying why: it tells a git repository that it is 'Not a git repository', and a tracked .env goes unflagged", () => {
+  it("fixed (LOW): when git can't run (not installed, or refusing the folder as of 'dubious ownership'), the tool walks the folder instead without saying why: it tells a git repository that it is 'Not a git repository', and a tracked .env goes unflagged", () => {
     const dir = project({ ...good(), ".env": "SESSION_SECRET=FICTIONAL\n" });
     spawnSync("git", ["add", "-A"], { cwd: dir });
     const r = run(dir, ["check", "--json"], undefined, 60_000, { ...process.env, PATH: "/nonexistent" });

@@ -5,7 +5,11 @@ the rules, and a tool that sets a project up and checks it. Decided by
 [`D-0019`](../decisions/D-0019.md), built under
 [`M-0016`](../mandates/M-0016.md).
 
-| File | What it is | Served at |
+**Not deployed yet.** our.one serves nothing at these addresses until it
+is deployed, and the line below points at nothing until then. The files are
+here, in the repository, in the meantime.
+
+| File | What it is | Served at, once deployed |
 |---|---|---|
 | [`build.md`](./build.md) | The instructions a coding agent follows, step by step | `/build.md` |
 | [`our-one.mjs`](./our-one.mjs) | One file, no dependencies, no network: `init`, `check`, `rules` | `/kit/our-one.mjs` |
@@ -28,6 +32,9 @@ lists what a person must read, and the safeguards our.one hasn't built.
 ## The rules
 
 Rules version 0 put the common agreement's terms into checks (D-0019 §C).
+Three of the ten go further than the agreement's words, and wait for the
+founder's approval: the boundary in rule 1, and no session recording and no
+data hubs in rule 4.
 A change to the rules is a new rules version, by a new decision. `init`
 writes the rules block into a project's `AGENTS.md`; `check` compares it
 word for word.

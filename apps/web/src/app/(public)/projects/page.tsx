@@ -63,7 +63,7 @@ export default function ProjectsPage() {
           </dd>
           <dt>Checked</dt>
           <dd>
-            {"It passes the same check as every project proposed to our.one, rules 0. "}
+            {"It passes the check any project proposed to our.one will go through (rules 0). Passing makes a project ready to propose, nothing more. "}
             <Link href="/build">How it&apos;s checked</Link>
           </dd>
           <dt>Its exception</dt>

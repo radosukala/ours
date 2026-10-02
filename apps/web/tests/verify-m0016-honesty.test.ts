@@ -251,7 +251,7 @@ function good(): Record<string, string> {
 /* ------------------------------------------------------------- defects */
 
 describe("defects (each FAILS on a92bbb5)", () => {
-  it("DEFECT (MEDIUM): the tool runs nothing and exits 0 when it is started by a path that goes through a symbolic link, so `check` and the stop hook 'pass' a project that has no our.one.json at all — a green result from a check that never ran (kit/our-one.mjs:1421-1422 compares import.meta.url, which Node resolves to the real path, with process.argv[1], which it does not; measured: `node /tmp/…/scripts/our-one.mjs check` on macOS, where /tmp is a link, prints nothing and exits 0)", () => {
+  it("fixed (MEDIUM): the tool runs nothing and exits 0 when it is started by a path that goes through a symbolic link, so `check` and the stop hook 'pass' a project that has no our.one.json at all — a green result from a check that never ran (kit/our-one.mjs:1421-1422 compares import.meta.url, which Node resolves to the real path, with process.argv[1], which it does not; measured: `node /tmp/…/scripts/our-one.mjs check` on macOS, where /tmp is a link, prints nothing and exits 0)", () => {
     const real = realpathSync(project({}, { git: false }));
     mkdirSync(join(real, "scripts"));
     copyFileSync(TOOL, join(real, "scripts", "our-one.mjs"));
@@ -277,7 +277,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     });
   });
 
-  it("DEFECT (MEDIUM): Claude Code runs a Stop hook every time the agent ends a response, not only when the work is done, so once init has run, each time the agent stops to ask the person something the hook sends it back with 'still says TODO … Fix: Fill it in.' for the maintainer, the contact and the costs and 'run … check until it passes, then finish', and nothing tells it to ask the person rather than invent what only the person knows (rule 9, 'Say only what is true'); /build describes the hook only as running 'whenever the agent tries to finish' (kit/our-one.mjs:658 and 1070-1079)", () => {
+  it("fixed (MEDIUM): Claude Code runs a Stop hook every time the agent ends a response, not only when the work is done, so once init has run, each time the agent stops to ask the person something the hook sends it back with 'still says TODO … Fix: Fill it in.' for the maintainer, the contact and the costs and 'run … check until it passes, then finish', and nothing tells it to ask the person rather than invent what only the person knows (rule 9, 'Say only what is true'); /build describes the hook only as running 'whenever the agent tries to finish' (kit/our-one.mjs:658 and 1070-1079)", () => {
     const dir = project({ "package.json": JSON.stringify({ name: "fictional-tool", license: "MIT" }), LICENSE: MIT });
     expect(run(dir, ["init"]).status).toBe(0);
     const settings = readFileSync(join(dir, ".claude/settings.json"), "utf8");
@@ -294,7 +294,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(r.stderr).toMatch(/\bask (?:the person|them)\b/i);
   });
 
-  it("DEFECT (MEDIUM): /projects shows the check as a fact about the feed — 'Checked: It passes the same check as every project proposed to our.one, rules 0.' — without saying what passing means; P-0012 adopted 'Every place that shows the check says that passing makes a project ready to propose, nothing more' against the risk of a check read as approval (D-0019 §E), and this is the one place that shows a result without it", () => {
+  it("fixed (MEDIUM): /projects shows the check as a fact about the feed — 'Checked: It passes the same check as every project proposed to our.one, rules 0.' — without saying what passing means; P-0012 adopted 'Every place that shows the check says that passing makes a project ready to propose, nothing more' against the risk of a check read as approval (D-0019 §E), and this is the one place that shows a result without it", () => {
     expect(record("proposals/P-0012.md")).toContain(
       "A check can be read as approval. Every place that shows the check says that passing makes a project ready to propose, nothing more.",
     );
@@ -305,7 +305,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     for (const dd of showing) expect(dd).toMatch(/\bready to propose\b/i);
   });
 
-  it("DEFECT (MEDIUM): the feed's our.one.json names Resend as its one outside service, but M-0012 — amended by D-0019 to deploy this build — runs the feed on Vercel with Neon as its database, and build.md tells every other builder that hosting and the database are outside services to name in data.sharedWith; nothing in M-0012 brings the manifest up to date, so on deploy the reference manifest /build links to leaves out the two services that hold everything", () => {
+  it("fixed (MEDIUM): the feed's our.one.json names Resend as its one outside service, but M-0012 — amended by D-0019 to deploy this build — runs the feed on Vercel with Neon as its database, and build.md tells every other builder that hosting and the database are outside services to name in data.sharedWith; nothing in M-0012 brings the manifest up to date, so on deploy the reference manifest /build links to leaves out the two services that hold everything", () => {
     const m0012 = record("mandates/M-0012.md");
     expect(m0012).toContain("Vercel, with Neon as the database and Resend for email");
     expect(m0012).toContain("D-0019 §I");
@@ -319,7 +319,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(namesBoth || deployUpdatesIt).toBe(true);
   });
 
-  it("DEFECT (MEDIUM): /build says 'Ten rules, from the common agreement' and the rules block written into every project says 'These rules come from the common agreement', but D-0019 §C says three of them go further than the agreement's words and wait for the founder's approval (§K.1) — /agreement says nothing of session recording, data hubs or a boundary in code — so an agent's own reading is presented as the agreement's", () => {
+  it("fixed (MEDIUM): /build says 'Ten rules, from the common agreement' and the rules block written into every project says 'These rules come from the common agreement', but D-0019 §C says three of them go further than the agreement's words and wait for the founder's approval (§K.1) — /agreement says nothing of session recording, data hubs or a boundary in code — so an agent's own reading is presented as the agreement's", () => {
     // record() drops markdown's asterisks, so D-0019's "(*)" reads "()" here.
     const d19 = record("decisions/D-0019.md");
     expect(d19).toContain("The rules are the common agreement's, put in terms an agent can act on. Three of them go further than the agreement's words");
@@ -339,7 +339,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     }
   });
 
-  it("DEFECT (MEDIUM): in a folder inside a larger repository — the case build.md tells agents to handle with --project — init writes .github/workflows/our-one.yml inside that folder, where GitHub never runs a workflow (it reads only the repository's root .github/workflows), and reports it as created; neither init nor build.md says to move it, so 'The check, on every push and pull request' silently never runs", () => {
+  it("fixed (MEDIUM): in a folder inside a larger repository — the case build.md tells agents to handle with --project — init writes .github/workflows/our-one.yml inside that folder, where GitHub never runs a workflow (it reads only the repository's root .github/workflows), and reports it as created; neither init nor build.md says to move it, so 'The check, on every push and pull request' silently never runs", () => {
     expect(flat(BUILD_MD)).toContain("If the project is a folder inside a larger repository, run the tool with `--project <folder>`");
     expect(flat(BUILD_MD)).toContain("| `.github/workflows/our-one.yml` | The check, on every push and pull request |");
 
@@ -359,7 +359,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(runsAtRoot || initSays || buildMdSays).toBe(true);
   });
 
-  it("DEFECT (MEDIUM): rule 4's 'no session recording', one of the three rules D-0019 marks as going further than the agreement, passes Amplitude's session-replay plugin and PostHog's recording turned on in code, because the tool knows both only as services to name: once they are in data.sharedWith the check reports 'No … session recording … the tool knows', while it does catch Sentry's replay by package and by call", () => {
+  it("fixed (MEDIUM): rule 4's 'no session recording', one of the three rules D-0019 marks as going further than the agreement, passes Amplitude's session-replay plugin and PostHog's recording turned on in code, because the tool knows both only as services to name: once they are in data.sharedWith the check reports 'No … session recording … the tool knows', while it does catch Sentry's replay by package and by call", () => {
     // The tool counts Sentry's replay as session recording.
     const sentry = good();
     sentry["package.json"] = JSON.stringify({ name: "fictional-tool", license: "MIT", dependencies: { pg: "8.0.0", resend: "6.0.0", "@sentry/replay": "7.0.0" } });
@@ -399,7 +399,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     });
   });
 
-  it("DEFECT (LOW): 'the same check as every project proposed to our.one' (/projects) and 'the same rules as every project proposed to it' (apps/web/AGENTS.md) speak of proposed projects as if there were some; proposals open at launch and none has been made, and 'every' is a claim that needs a source (AGENTS.md §10)", () => {
+  it("fixed (LOW): 'the same check as every project proposed to our.one' (/projects) and 'the same rules as every project proposed to it' (apps/web/AGENTS.md) speak of proposed projects as if there were some; proposals open at launch and none has been made, and 'every' is a claim that needs a source (AGENTS.md §10)", () => {
     vi.stubEnv("PROPOSALS_EMAIL", "");
     expect(proposalsEmail()).toBeNull();
     expect(textOf(render(MaintainersPage))).toContain("Proposals open at launch.");
@@ -411,7 +411,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(texts.filter(([, t]) => /\bevery project proposed\b/i.test(t)).map(([where]) => where)).toEqual([]);
   });
 
-  it("DEFECT (LOW): build.md tells the agent that init 'overwrites nothing, except the rules block in AGENTS.md … and the stop hook it adds to .claude/settings.json' (the tool's header, SPEC §18.18 and M-0016's acceptance say the same); init also rewrites an existing CLAUDE.md — appends '@AGENTS.md' and trims its end — which none of them names", () => {
+  it("fixed (LOW): build.md tells the agent that init 'overwrites nothing, except the rules block in AGENTS.md … and the stop hook it adds to .claude/settings.json' (the tool's header, SPEC §18.18 and M-0016's acceptance say the same); init also rewrites an existing CLAUDE.md — appends '@AGENTS.md' and trims its end — which none of them names", () => {
     const original = "# FICTIONAL notes\n\nOur own instructions.\n\n\n";
     const dir = project({ "CLAUDE.md": original });
     expect(run(dir, ["init"]).status).toBe(0);
@@ -423,7 +423,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(!changed || claim === "" || /CLAUDE\.md/.test(claim)).toBe(true);
   });
 
-  it("DEFECT (LOW): rule 9 says not to present a project 'as approved, listed or protected by our.one', but the claims check knows only the first: a README saying 'protected by our.one' or 'Listed on our.one' passes, while /build says of rule 9 'The check knows the phrases'", () => {
+  it("fixed (LOW): rule 9 says not to present a project 'as approved, listed or protected by our.one', but the claims check knows only the first: a README saying 'protected by our.one' or 'Listed on our.one' passes, while /build says of rule 9 'The check knows the phrases'", () => {
     expect(tool.RULES_BLOCK).toContain("Don't present it as its users' property, or as approved, listed or protected by our.one.");
     const approved = good();
     approved["README.md"] = "# FICTIONAL tool\n\nApproved by our.one.\n";
@@ -440,7 +440,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     ]);
   });
 
-  it("DEFECT (LOW): /build's 'how it is checked' lines drop the limits D-0019 §C gives two of them — rule 1's 'The check reads the imports.' holds only for JavaScript and TypeScript, and rule 9's 'The check knows the phrases.' only for the phrases the tool knows — where the lines for rules 3, 4 and 8 say 'many' and 'the common'", () => {
+  it("fixed (LOW): /build's 'how it is checked' lines drop the limits D-0019 §C gives two of them — rule 1's 'The check reads the imports.' holds only for JavaScript and TypeScript, and rule 9's 'The check knows the phrases.' only for the phrases the tool knows — where the lines for rules 3, 4 and 8 say 'many' and 'the common'", () => {
     const d19 = record("decisions/D-0019.md");
     expect(d19).toContain("CHECKED for JavaScript and TypeScript, by imports");
     expect(d19).toContain("CHECKED for the phrases the tool knows");
@@ -454,19 +454,19 @@ describe("defects (each FAILS on a92bbb5)", () => {
     }).toEqual({ boundary: true, claims: true });
   });
 
-  it("DEFECT (LOW): build.md's set-up commands are for a POSIX shell only — 'mkdir -p scripts' and 'curl -fsSL …' fail in Windows PowerShell, where -p is ambiguous (-Path or -PipelineVariable) and, in Windows PowerShell 5.1, curl is Invoke-WebRequest — and build.md says nothing about Windows, though /build names agents (Codex, Cursor) that on Windows may run commands in PowerShell (not measured: no Windows machine here)", () => {
+  it("fixed (LOW): build.md's set-up commands are for a POSIX shell only — 'mkdir -p scripts' and 'curl -fsSL …' fail in Windows PowerShell, where -p is ambiguous (-Path or -PipelineVariable) and, in Windows PowerShell 5.1, curl is Invoke-WebRequest — and build.md says nothing about Windows, though /build names agents (Codex, Cursor) that on Windows may run commands in PowerShell (not measured: no Windows machine here)", () => {
     expect(textOf(render(BuildPage))).toMatch(/\bCodex\b|\bCursor\b|\bClaude Code\b/);
     const posixOnly = /mkdir -p|curl -fsSL/.test(BUILD_MD);
     expect(!posixOnly || /\bWindows\b|PowerShell/.test(BUILD_MD)).toBe(true);
   });
 
-  it("DEFECT (LOW): two of /build's links don't say where they go when read out of their sentence, as a screen reader's list of links reads them — 'source' (the kit's folder on GitHub) and 'our.one.json' (the feed's manifest on GitHub, beside 'The schema of our.one.json') — and both open a new tab; M-0015's rendering round fixed the same on /agreement ('Its project page')", () => {
+  it("fixed (LOW): two of /build's links don't say where they go when read out of their sentence, as a screen reader's list of links reads them — 'source' (the kit's folder on GitHub) and 'our.one.json' (the feed's manifest on GitHub, beside 'The schema of our.one.json') — and both open a new tab; M-0015's rendering round fixed the same on /agreement ('Its project page')", () => {
     const names = [...render(BuildPage).matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map((m) => textOf(m[1]!));
     expect(names).toContain("The schema of our.one.json");
     expect(names.filter((n) => /^(?:source|our\.one\.json)$/i.test(n))).toEqual([]);
   });
 
-  it("DEFECT (LOW): 'Apache-2.0' and 'SHA-256' break at their hyphens on a phone — Chrome at 320px sets 'the Apache-' / '2.0 licence.', and at 414px 'Its SHA-' / '256:' (next start, light and dark; both whole at 375px) — where the site keeps such a name whole with .nowrap, as M-0015's round did for 'not-for-profit'", () => {
+  it("fixed (LOW): 'Apache-2.0' and 'SHA-256' break at their hyphens on a phone — Chrome at 320px sets 'the Apache-' / '2.0 licence.', and at 414px 'Its SHA-' / '256:' (next start, light and dark; both whole at 375px) — where the site keeps such a name whole with .nowrap, as M-0015's round did for 'not-for-profit'", () => {
     const html = render(BuildPage);
     const loose = ["Apache-2.0", "SHA-256"].map((word) => {
       const plain = html.split(word).length - 1;
@@ -479,7 +479,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     ]);
   });
 
-  it("DEFECT (LOW): /build says the kit is 'written for coding agents that can read a web page and run commands, such as Claude Code, Codex and Cursor' — a claim about two other companies' products with no source, and no receipt shows the kit tried with either (M-0016's hypothesis is open, and its verification's agent trial has not run)", () => {
+  it("fixed (LOW): /build says the kit is 'written for coding agents that can read a web page and run commands, such as Claude Code, Codex and Cursor' — a claim about two other companies' products with no source, and no receipt shows the kit tried with either (M-0016's hypothesis is open, and its verification's agent trial has not run)", () => {
     expect(record("mandates/M-0016.yaml")).toContain("A coding agent given only the line on /build can set a project up and reach a passing check without other help.");
     const text = textOf(render(BuildPage));
     const receipts = walk(join(ROOT, "receipts"))
@@ -490,7 +490,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(unsourced).toEqual([]);
   });
 
-  it("DEFECT (LOW): /build's 'Today:' line says 'Proposals and needs open at launch' whatever PROPOSALS_EMAIL says; with an address set — as M-0012 requires before the deploy — /maintainers takes proposals and /agreement says 'Today: proposals are read by hand.', while /build still says they open at launch (M-0015's round fixed the same on /agreement)", () => {
+  it("fixed (LOW): /build's 'Today:' line says 'Proposals and needs open at launch' whatever PROPOSALS_EMAIL says; with an address set — as M-0012 requires before the deploy — /maintainers takes proposals and /agreement says 'Today: proposals are read by hand.', while /build still says they open at launch (M-0015's round fixed the same on /agreement)", () => {
     expect(record("mandates/M-0012.md")).toContain("Where proposals go: choose the address and set PROPOSALS_EMAIL");
     vi.stubEnv("PROPOSALS_EMAIL", "proposals@example.test");
     expect(proposalsEmail()).toBe("proposals@example.test");
@@ -500,7 +500,7 @@ describe("defects (each FAILS on a92bbb5)", () => {
     expect(textOf(render(BuildPage))).not.toContain("Proposals and needs open at launch");
   });
 
-  it("DEFECT (LOW): kit/README.md, in the public repository, gives the one line for an agent and says the files are 'Served at' /build.md and /kit/…, with no status; nothing is deployed (M-0016; M-0012 is a draft), so today the line points at a page our.one doesn't serve, and AGENTS.md §6 asks every public statement to carry its state, as apps/web's own package says 'nothing is deployed'", () => {
+  it("fixed (LOW): kit/README.md, in the public repository, gives the one line for an agent and says the files are 'Served at' /build.md and /kit/…, with no status; nothing is deployed (M-0016; M-0012 is a draft), so today the line points at a page our.one doesn't serve, and AGENTS.md §6 asks every public statement to carry its state, as apps/web's own package says 'nothing is deployed'", () => {
     expect(record("mandates/M-0016.md")).toContain("Nothing is deployed.");
     expect(record("mandates/M-0012.md")).toContain("Status: DRAFT");
     expect(read("package.json")).toContain("nothing is deployed");
@@ -744,7 +744,10 @@ describe("closed (each passes on a92bbb5)", () => {
     const known = deps.filter((d) => tool.SERVICES.some((s) => s.packages.some((p) => (p.endsWith("/") ? d.startsWith(p) : d === p))));
     expect(known).toEqual(["resend"]);
     expect(deps.filter((d) => tool.TRACKING.some((t) => (t.packages ?? []).some((p) => (p.endsWith("/") ? d.startsWith(p) : d === p))))).toEqual([]);
-    expect(m.data.sharedWith.map((s) => [s.who, s.packages])).toEqual([["Resend", ["resend"]]]);
+    // Changed after the fix of H4: the manifest also names the hosting and the database D-0013
+    // chose (Vercel and Neon), in words true before the deploy and after it. Resend is still the
+    // one service the code itself reaches, as `known` above shows.
+    expect(m.data.sharedWith.map((s) => [s.who, s.packages])).toEqual([["Resend", ["resend"]], ["Vercel", undefined], ["Neon", undefined]]);
   });
 
   it("closed: 'It passes' is true — the feed passes the check run as apps/web/AGENTS.md says, `node kit/our-one.mjs check --project apps/web` from the repository's root: READY TO PROPOSE, no check skipped, exit 0", () => {

@@ -230,13 +230,15 @@ describe("licence", () => {
   it("fails with no licence file, a licence that isn't open source, a file that holds another licence, or a different package.json", () => {
     const none = good();
     delete none.LICENSE;
+    // Changed after the verification of M-0016 (T31): the repository's root is looked at too.
     expect(check(project(none), "licence").findings[0]!.message).toBe(
-      "There is no licence file (LICENSE, LICENCE or COPYING) at the project's root.",
+      "There is no licence file (LICENSE, LICENCE or COPYING) at the project's root, or at the repository's.",
     );
     const closed = check(project({ ...good(), "our.one.json": manifest({ license: "LicenseRef-Proprietary" }) }), "licence");
     expect(closed.findings[0]!.message).toBe('"LicenseRef-Proprietary" isn\'t on the tool\'s list of open-source licences.');
     const other = check(project({ ...good(), "our.one.json": manifest({ license: "Apache-2.0" }), "package.json": JSON.stringify({ license: "Apache-2.0" }) }), "licence");
-    expect(other.findings.map((f) => f.message)).toEqual(["No licence file holds the text of Apache-2.0."]);
+    // Changed after the verification of M-0016 (T32): the full text, not a line naming it.
+    expect(other.findings.map((f) => f.message)).toEqual(["No licence file holds the full text of Apache-2.0."]);
     const pkg = check(project({ ...good(), "package.json": JSON.stringify({ license: "ISC" }) }), "licence");
     expect(pkg.findings.map((f) => f.message)).toEqual(['package.json says "ISC", our.one.json says "MIT".']);
   });
@@ -246,7 +248,8 @@ describe("licence", () => {
       ...good(),
       "our.one.json": manifest({ license: "MIT OR Apache-2.0" }),
       "package.json": JSON.stringify({ license: "MIT OR Apache-2.0", dependencies: { pg: "1", resend: "1" } }),
-      "LICENSE-APACHE": "Apache License\nVersion 2.0, January 2004\nFICTIONAL test copy.\n",
+      // The header a full Apache-2.0 text starts with (T32 asks for more than the name).
+      "LICENSE-APACHE": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\nFICTIONAL test copy.\n",
     };
     expect(check(project(files), "licence").outcome).toBe("pass");
   });
@@ -279,9 +282,22 @@ describe("data", () => {
     ]);
   });
 
-  it("passes a project that declares it keeps nothing about anyone", () => {
-    const c = check(project({ ...good(), "our.one.json": manifest({}, { collects: [] }) }), "data");
+  // Changed after the verification of M-0016 (T16): good() uses a database and Resend, so an
+  // empty data.collects now fails there unless data.noPersonalData says why.
+  it("passes a project that keeps nothing about anyone, and fails an empty data.collects beside a database or a service", () => {
+    const keepsNothing = {
+      "package.json": JSON.stringify({ name: "fictional-tool", license: "MIT" }),
+      "our.one.json": manifest({}, { collects: [], sharedWith: [], boundary: [] }),
+      "src/app/page.tsx": "export default function Page() { return <p>FICTIONAL tool</p>; }\n",
+    };
+    const c = check(project(keepsNothing), "data");
     expect([c.outcome, c.summary]).toEqual(["pass", "It declares that it keeps nothing about anyone."]);
+    const empty = check(project({ ...good(), "our.one.json": manifest({}, { collects: [] }) }), "data");
+    expect(empty.findings.map((f) => f.message)).toEqual([
+      "data.collects is empty, but the code uses a database or a file store, and data.sharedWith names services that receive something.",
+    ]);
+    const said = check(project({ ...good(), "our.one.json": manifest({}, { collects: [], noPersonalData: "It keeps only FICTIONAL recipes, about no one." }) }), "data");
+    expect(said.outcome).toBe("pass");
   });
 });
 
@@ -330,9 +346,10 @@ describe("boundary (rule 1)", () => {
     const files = good();
     for (const f of Object.keys(files)) if (/\.(tsx?|js)$/.test(f)) delete files[f];
     const c = check(project({ ...files, "app.py": "import psycopg\n" }), "boundary");
+    // Changed after the verification of M-0016 (T17): the summary names the code it didn't read.
     expect([c.outcome, c.summary]).toEqual([
       "not-checked",
-      "No JavaScript or TypeScript found. In rules 0 the tool reads only those, so a person checks this.",
+      "No JavaScript or TypeScript found. In rules 0 the tool reads only those, so a person checks this. The tool doesn't read Python (app.py), so a person checks that code.",
     ]);
     expect(report(project({ ...files, "app.py": "import psycopg\n" })).result).toBe("ready");
   });
@@ -341,9 +358,10 @@ describe("boundary (rule 1)", () => {
 describe("leave (rule 3)", () => {
   it("fails an outside service the manifest doesn't name, by dependency or by import, and passes once it is named", () => {
     const dep = check(project({ ...good(), "package.json": JSON.stringify({ license: "MIT", dependencies: { pg: "1", resend: "1", stripe: "1" } }) }), "leave");
-    expect(dep.findings.map((f) => [f.file, f.message])).toEqual([["package.json", "stripe sends data to Stripe, which data.sharedWith doesn't name."]]);
+    // Changed after the verification of M-0016: the finding says how the service was found.
+    expect(dep.findings.map((f) => [f.file, f.message])).toEqual([["package.json", "It depends on stripe, which sends data to Stripe, and data.sharedWith doesn't name it."]]);
     const imported = check(project({ ...good(), "src/ai.ts": 'import Anthropic from "@anthropic-ai/sdk";\n' }), "leave");
-    expect(imported.findings.map((f) => [f.file, f.line, f.message])).toEqual([["src/ai.ts", 1, "@anthropic-ai/sdk sends data to Anthropic, which data.sharedWith doesn't name."]]);
+    expect(imported.findings.map((f) => [f.file, f.line, f.message])).toEqual([["src/ai.ts", 1, "It imports @anthropic-ai/sdk, which sends data to Anthropic, and data.sharedWith doesn't name it."]]);
     const named = manifest({}, {
       sharedWith: [
         { who: "Resend", what: "Your email address.", why: "To send sign-in links.", packages: ["resend"] },
@@ -417,11 +435,16 @@ describe("secrets (rule 8)", () => {
     }
   });
 
-  it("fails on an environment file git doesn't ignore, and never reads it", () => {
-    const dir = project({ ...good(), ".env": `STRIPE=${fakeStripe}\n` });
+  // Changed after the verification of M-0016 (T21, T23): an environment file git doesn't ignore
+  // is read for secrets (a tracked .env.test of test defaults passes), and never printed.
+  it("fails on an environment file git doesn't ignore when it holds a secret, and never prints it", () => {
+    const dir = project({ ...good(), ".env": `STRIPE=${fakeStripe}\nSESSION_SECRET=FICTIONAL0123456789abcdef\n` });
     const c = check(dir, "secrets");
-    expect(c.findings.map((f) => f.message)).toEqual([".env is an environment file, and git doesn't ignore it."]);
-    expect(run(dir, ["check", "--json"]).stdout).not.toContain(fakeStripe);
+    expect(c.findings.map((f) => f.message)).toEqual([".env holds what looks like a live Stripe key.", ".env sets SESSION_SECRET, and git doesn't ignore the file."]);
+    for (const out of [run(dir, ["check"]).stdout, run(dir, ["check", "--json"]).stdout]) {
+      expect(out).not.toContain(fakeStripe);
+      expect(out).not.toContain("FICTIONAL0123456789abcdef");
+    }
   });
 
   it("passes .env.example, an ignored .env, AWS's documented example key, a local database and a placeholder password", () => {
@@ -468,9 +491,14 @@ describe("claims (rule 9)", () => {
     expect(stale.findings.map((f) => f.message)).toEqual(["claims.allowed lists a sentence that isn't in src/app/page.tsx."]);
   });
 
-  it("reads README.md and the files that render a page; not tests, and not .ts files (a stated limit)", () => {
-    const files = { ...good(), "tests/p.test.tsx": "<p>A user-owned app.</p>\n", "src/copy.ts": 'export const c = "A user-owned app.";\n' };
-    expect(check(project(files), "claims").outcome).toBe("pass");
+  // Changed after the verification of M-0016 (the agent trial; T39): code that writes pages
+  // in .js or .ts is read too, and so are message files; tests are not.
+  it("reads README.md, the code and its message files, not tests; and a file listed in claims.skip, with why, is left to a person", () => {
+    expect(check(project({ ...good(), "tests/p.test.tsx": "<p>A user-owned app.</p>\n" }), "claims").outcome).toBe("pass");
+    expect(check(project({ ...good(), "src/copy.ts": 'export const c = "A user-owned app.";\n' }), "claims").outcome).toBe("fail");
+    const skipped = manifest({ claims: { skip: [{ file: "src/copy.ts", why: "FICTIONAL: the list of phrases a scanner refuses." }] } });
+    const c = check(project({ ...good(), "our.one.json": skipped, "src/copy.ts": 'export const c = "A user-owned app.";\n' }), "claims");
+    expect([c.outcome, c.summary]).toEqual(["pass", "No claim, beyond 1 file skipped by claims.skip, for a person to read."]);
   });
 });
 
@@ -478,11 +506,13 @@ describe("claims (rule 9)", () => {
 
 describe("a folder that isn't a git repository", () => {
   it("is read by walking it, without node_modules or build output, and says the environment files weren't checked", () => {
-    const files = { ...good(), "node_modules/x/index.js": 'import pg from "pg";\n', ".next/server/a.js": 'require("mongoose");\n' };
+    // Changed after the verification of M-0016 (T40): the note is given when there is an
+    // environment file it couldn't judge, and in the words for a folder git doesn't hold.
+    const files = { ...good(), ".env": "SESSION_SECRET=FICTIONAL0123456789abcdef\n", "node_modules/x/index.js": 'import pg from "pg";\n', ".next/server/a.js": 'require("mongoose");\n' };
     const r = report(project(files, { git: false }));
     expect(r.result).toBe("ready");
     expect(r.checks.find((c) => c.id === "secrets")!.summary).toBe(
-      "No secret the tool recognises. (Not a git repository, so environment files weren't checked.)",
+      "No secret the tool recognises. Not a git repository, so environment files weren't checked.",
     );
   });
 });
@@ -523,6 +553,8 @@ describe("init", () => {
     expect(after.checks.find((c) => c.id === "agents")!.outcome).toBe("pass");
   });
 
+  // Changed after the verification of M-0016 (H9): an existing CLAUDE.md is left as it is, with a
+  // note, so that "overwrites nothing except the rules block and the hook" stays true.
   it("keeps every file that exists, puts back a changed rules block word for word, and keeps the rest of AGENTS.md", () => {
     const changed = tool.RULES_BLOCK.replace("No ads and no tracking.", "Some ads.");
     const files = {
@@ -534,12 +566,10 @@ describe("init", () => {
       ".github/workflows/our-one.yml": "# FICTIONAL workflow, kept\n",
     };
     const dir = project(files);
-    run(dir, ["init"]);
-    for (const f of ["our.one.json", "COSTS.md", "PITCH.md", ".github/workflows/our-one.yml"]) expect(readFileSync(join(dir, f), "utf8"), f).toBe(files[f as keyof typeof files]);
+    const r = run(dir, ["init"]);
+    for (const f of ["our.one.json", "COSTS.md", "PITCH.md", ".github/workflows/our-one.yml", "CLAUDE.md"]) expect(readFileSync(join(dir, f), "utf8"), f).toBe(files[f as keyof typeof files]);
     expect(readFileSync(join(dir, "AGENTS.md"), "utf8")).toBe(`# Our agents\n\nOur own rule.\n\n${tool.RULES_BLOCK}\n\nAfter the block.\n`);
-    expect(readFileSync(join(dir, "CLAUDE.md"), "utf8")).toBe("# FICTIONAL notes\n\n@AGENTS.md\n");
-    run(dir, ["init"]);
-    expect(readFileSync(join(dir, "CLAUDE.md"), "utf8")).toBe("# FICTIONAL notes\n\n@AGENTS.md\n");
+    expect(r.stdout.replace(/\s+/g, " ")).toContain("CLAUDE.md doesn't import AGENTS.md. Add a line @AGENTS.md to it, so Claude Code reads the rules.");
   });
 
   it("adds its stop hook to an existing .claude/settings.json without removing anything, once", () => {
@@ -584,7 +614,8 @@ describe("links: the tool reads and writes only the project's own files", () => 
     expect(readFileSync(join(outside, "victim.txt"), "utf8")).toBe("FICTIONAL file outside the project\n");
     expect(filesIn(join(outside, "elsewhere"))).toEqual(["keep.txt"]);
     const said = r.stdout.replace(/\s+/g, " ");
-    expect(said).toContain("AGENTS.md is a link, so it was left alone.");
+    // Changed after the verification of M-0016 (T27): the note names hard links too.
+    expect(said).toContain("AGENTS.md is a link, or a second name for a file elsewhere, so it was left alone.");
     expect(said).toContain("CLAUDE.md is a link, so it was left alone.");
     expect(said).toContain(".github/workflows/our-one.yml would be written outside the project, through a link, so it wasn't created.");
     expect(said).toContain(".claude/settings.json would be written outside the project, through a link, so it wasn't created.");
@@ -599,8 +630,9 @@ describe("links: the tool reads and writes only the project's own files", () => 
     const dir = project(files);
     for (const f of ["our.one.json", "AGENTS.md", "COSTS.md"]) symlinkSync(join(outside, f), join(dir, f));
     const r = report(dir);
+    // Changed after the verification of M-0016: the message is a sentence of its own.
     expect(r.checks.find((c) => c.id === "manifest")!.findings[0]!.message).toBe(
-      "It doesn't parse: it is a link, and the check reads only the project's own files",
+      "It is a link, and the check reads only the project's own files.",
     );
     expect(r.checks.find((c) => c.id === "agents")!.summary).toBe("There is no AGENTS.md.");
   });
@@ -646,14 +678,20 @@ describe("what the tool never does", () => {
 
   it("runs no program but git, and git only to list files and to read the remote's address", () => {
     const calls = [...source().matchAll(/execFileSync\(\s*"([^"]+)",\s*\[([^\]]*)\]/g)].map((m) => `${m[1]} ${m[2]}`);
-    expect(calls).toEqual(['git "ls-files", "-z", "--cached", "--others", "--exclude-standard"', 'git "remote", "get-url", "origin"']);
+    // Changed after the verification of M-0016 (T26): git runs with the project's fsmonitor off,
+    // and ls-files tags each file as tracked or not (T4).
+    expect(calls).toEqual([
+      'git "-c", "core.fsmonitor=false", "ls-files", "-z", "-t", "--cached", "--others", "--exclude-standard"',
+      'git "-c", "core.fsmonitor=false", "remote", "get-url", "origin"',
+    ]);
     const fromChildProcess = /^import \{([^}]*)\} from "node:child_process";$/m.exec(source())![1]!.split(",").map((x) => x.trim());
     expect(fromChildProcess).toEqual(["execFileSync"]);
   });
 
   it("parses the imports it looks for, and names the package each belongs to", () => {
     const found = tool.importsOf('import a, { b } from "x";\nimport "side";\nexport * from "y/z";\nconst c = require("w");\nconst d = await import("@s/p/q");\nimport type { T } from "t";\n');
-    expect(found.map((i) => [i.spec, i.line])).toEqual([["x", 1], ["side", 2], ["y/z", 3], ["@s/p/q", 5], ["w", 4]]);
+    // Changed after the verification of M-0016 (T2, T18): a new parser, which reports in line order.
+    expect(found.map((i) => [i.spec, i.line])).toEqual([["x", 1], ["side", 2], ["y/z", 3], ["w", 4], ["@s/p/q", 5]]);
     expect(["pg", "pg/lib", "@s/p/q", "./x", "@/core/db", "node:fs", "#internal", "https://x.test/y"].map(tool.packageOf)).toEqual(["pg", "pg", "@s/p", null, null, null, null, null]);
   });
 
@@ -676,7 +714,9 @@ describe("the feed carries the same manifest and passes the same check (D-0019 ย
     expect(r.result).toBe("ready");
   });
 
-  it("declares what /privacy says it keeps, word for word, and Resend as the one outside service", async () => {
+  // Changed after the verification of M-0016 (H4): the hosting and the database D-0013 chose are
+  // named too, in words true before the deploy and after it.
+  it("declares what /privacy says it keeps, word for word; Resend, the one service the code reaches; and the hosting and the database D-0013 chose", async () => {
     const { default: PrivacyPage } = await import("@/app/(public)/privacy/page");
     const page = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     const m = JSON.parse(readFileSync(join(WEB_ROOT, "our.one.json"), "utf8")) as {
@@ -690,7 +730,7 @@ describe("the feed carries the same manifest and passes the same check (D-0019 ย
       expect(page, c.kept).toContain(c.kept);
     }
     expect(page).toContain("If you ask for a seat, we keep your email address to send you the join link.");
-    expect(m.data.sharedWith.map((s) => [s.who, s.packages])).toEqual([["Resend", ["resend"]]]);
+    expect(m.data.sharedWith.map((s) => [s.who, s.packages])).toEqual([["Resend", ["resend"]], ["Vercel", undefined], ["Neon", undefined]]);
   });
 });
 
@@ -805,7 +845,8 @@ describe("/build (SPEC ยง18.18)", () => {
     expect(renderToStaticMarkup(createElement(MaintainersPage))).toContain('<a href="/build">Build on our.one</a>');
     const projects = renderToStaticMarkup(createElement(ProjectsPage));
     expect(projects).toContain('href="/build"');
-    expect(textOf(projects)).toContain("Checked It passes the same check as every project proposed to our.one, rules 0. How it's checked");
+    // Changed after the verification of M-0016 (H3, H8): what passing means, and no "every project proposed".
+    expect(textOf(projects)).toContain("Checked It passes the check any project proposed to our.one will go through (rules 0). Passing makes a project ready to propose, nothing more. How it's checked");
   });
 });
 

@@ -10,14 +10,18 @@
  * nothing more (D-0019 §E), and the page says that too.
  *
  * The rules' titles are the rules block's, word for word: tests/kit.test.ts
- * compares them with kit/our-one.mjs. The page reads no setting, so the
- * line for the agent names our.one's own address.
+ * compares them with kit/our-one.mjs. The line for the agent names
+ * our.one's own address; the "Today" line follows PROPOSALS_EMAIL.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
 import styles from "@/components/public/public.module.css";
 import { repositoryUrl } from "@/components/public/repository";
+import { proposalsEmail } from "@/core/config";
 import { AGENT_LINE, KIT_TOOL } from "@/core/kit-info";
+
+/** Rendered per request: the "Today" line follows PROPOSALS_EMAIL, as /agreement's does. */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Build on our.one",
@@ -52,15 +56,15 @@ type Rule = { title: string; checked: string };
 
 /** The rules block's ten titles (D-0019 §C), each with how it is checked. */
 const RULES: readonly Rule[] = [
-  { title: "Keep personal data inside the boundary.", checked: "The check reads the imports." },
+  { title: "Keep personal data inside the boundary.", checked: "The check reads the imports and the queries, in JavaScript and TypeScript." },
   { title: "Declare before you collect.", checked: "The check reads our.one.json. A person reads the code." },
   { title: "Name every service that receives data.", checked: "The check knows many services by their packages." },
   { title: "No ads and no tracking.", checked: "The check knows the common ones, by package and by script address." },
   { title: "Nothing is sold.", checked: "A person reads the proposal." },
   { title: "People can leave.", checked: "The check reads our.one.json. A person tries export and deletion." },
   { title: "Costs are public.", checked: "The check reads the costs file." },
-  { title: "No secrets in the code.", checked: "The check knows the common kinds of key." },
-  { title: "Say only what is true.", checked: "The check knows the phrases." },
+  { title: "No secrets or data in the repository.", checked: "The check knows the common kinds of key, and database files." },
+  { title: "Say only what is true.", checked: "The check knows the common phrases." },
   { title: "Run the check before you finish:", checked: "The check finds the rules block unchanged. The hook and the workflow run it." },
 ];
 
@@ -88,7 +92,9 @@ export default function BuildPage() {
               </ul>
               {way === ON_OUR_ONE ? (
                 <p className={styles.heldBy}>
-                  {"Today: none of this is in force yet. Proposals and needs open at launch, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "}
+                  {proposalsEmail()
+                    ? "Today: none of this is in force yet. Proposals and needs are read by hand, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "
+                    : "Today: none of this is in force yet. Proposals and needs open at launch, our.one takes no money until the holder exists, and the safeguards that keep data out of reach aren't built. "}
                   <Link href="/agreement">The common agreement</Link>
                 </p>
               ) : null}
@@ -104,7 +110,7 @@ export default function BuildPage() {
           <code>{AGENT_LINE}</code>
         </p>
         <p>
-          {"It's written for coding agents that can read a web page and run commands, such as Claude Code, Codex and Cursor."}
+          {"It's written for coding agents that can read a web page and run commands. So far it has been tried once: an agent in Claude Code, given this line and a person's answers, built a small fictional app and passed the check."}
         </p>
       </section>
 
@@ -116,7 +122,7 @@ export default function BuildPage() {
             {"Sets the project up: an our.one.json that says what it keeps and why, who else receives it, and which folders hold the code that touches it; the rules, in AGENTS.md; a costs file; and an open-source licence you choose."}
           </li>
           <li>
-            {"Builds it under the rules, and runs the check before it finishes. In Claude Code, a hook runs the check whenever the agent tries to finish, sends it back once to fix what fails, and then tells you."}
+            {"Builds it under the rules, and runs the check before it finishes. In Claude Code, a hook runs the check each time the agent stops: if a check fails, it sends the agent back once with what fails, and tells it to ask you for anything only you know; then it lets it stop, and tells you."}
           </li>
           <li>Drafts your proposal.</li>
         </ol>
@@ -125,7 +131,7 @@ export default function BuildPage() {
       <section aria-labelledby="build-rules">
         <h2 id="build-rules">The rules</h2>
         <p>
-          {"Ten rules, from the common agreement. Your agent keeps them in the project's AGENTS.md, and the check reads the code for the ones a machine can see."}
+          {"Ten rules. Seven put the common agreement's terms in words an agent can act on; three go further than its words, and wait for the founder's approval: the boundary in rule 1, and no session recording and no data hubs in rule 4. Your agent keeps them in the project's AGENTS.md, and the check reads the code for the ones a machine can see."}
         </p>
         <ol className={styles.promiseList}>
           {RULES.map((rule) => (
@@ -170,7 +176,9 @@ export default function BuildPage() {
           </li>
           <li>
             <a href="/kit/our-one.mjs">our-one.mjs</a>
-            {`: sets a project up and checks it. Version ${KIT_TOOL.version}, rules ${KIT_TOOL.rules}. One file, with no dependencies and no network access. Its SHA-256: `}
+            {`: sets a project up and checks it. Version ${KIT_TOOL.version}, rules ${KIT_TOOL.rules}. One file, with no dependencies and no network access. Its `}
+            <span className={styles.nowrap}>SHA-256</span>
+            {": "}
             <code className={styles.hash}>{KIT_TOOL.sha256}</code>
           </li>
           <li>
@@ -178,18 +186,18 @@ export default function BuildPage() {
             {"."}
           </li>
           <li>
-            {"The feed's own "}
             <a href={repositoryUrl("apps/web/our.one.json")} rel="noopener noreferrer" target="_blank">
-              our.one.json
+              The feed&apos;s own our.one.json
             </a>
             {": it passes the same check."}
           </li>
           <li>
-            {"The kit's "}
             <a href={repositoryUrl("kit", true)} rel="noopener noreferrer" target="_blank">
-              source
+              The kit&apos;s source
             </a>
-            {", under the Apache-2.0 licence."}
+            {", under the "}
+            <span className={styles.nowrap}>Apache-2.0</span>
+            {" licence."}
           </li>
         </ul>
       </section>
