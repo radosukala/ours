@@ -721,8 +721,10 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
       .filter((f) => /\.tsx$/.test(f) && /className=\{styles\.page\}/.test(readFileSync(f, "utf8")))
       .map((f) => f.slice(WEB.length).replace(/\\/g, "/"))
       .sort();
+    // Changed by M-0016 (D-0019 §G): /build is a tenth `.page` page.
     expect(users).toEqual([
       "src/app/(public)/agreement/page.tsx",
+      "src/app/(public)/build/page.tsx",
       "src/app/(public)/contract/page.tsx",
       "src/app/(public)/costs/page.tsx",
       "src/app/(public)/maintainers/page.tsx",
@@ -876,7 +878,8 @@ describe("closed: M-0015's acceptance lines against the shipped code", () => {
 
   it("closed: lines 5 to 7 — every footer links to /agreement, /projects and /maintainers among its nine; /contract keeps its eight promises word for word and gains one paragraph linking /agreement; the front page's headline and lede are the recorded ones", () => {
     for (const html of [render(SiteFooter), render(InAppSiteFooter)]) {
-      for (const href of ["/contract", "/agreement", "/projects", "/maintainers", "/costs", "/power", "/rules", "/privacy"]) {
+      // Changed by M-0016 (D-0019 §G): "Build with us" goes to /build, which links /maintainers.
+      for (const href of ["/contract", "/agreement", "/projects", "/build", "/costs", "/power", "/rules", "/privacy"]) {
         expect(html).toContain(`href="${href}"`);
       }
     }

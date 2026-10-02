@@ -45,6 +45,11 @@ export default function MaintainersPage() {
         improve and run the next ones, paid by the people who choose them,
         under the common agreement.
       </p>
+      <p>
+        {"Start with your coding agent: "}
+        <Link href="/build">Build on our.one</Link>
+        {" has the line to give it, the rules it follows and the check it runs."}
+      </p>
 
       <section aria-labelledby="maintainers-job">
         <h2 id="maintainers-job">What the job is</h2>

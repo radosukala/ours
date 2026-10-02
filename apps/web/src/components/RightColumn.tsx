@@ -30,7 +30,7 @@ export function SiteFooter({ className }: { className?: string }) {
         <span aria-hidden="true">{"\u00a0· "}</span>
         <Link href="/projects">Projects</Link>
         <span aria-hidden="true">{"\u00a0· "}</span>
-        <Link href="/maintainers">Build with us</Link>
+        <Link href="/build">Build with us</Link>
         <span aria-hidden="true">{"\u00a0· "}</span>
         <a href={OPEN_CODE_URL} rel="noopener noreferrer" target="_blank">
           Open code

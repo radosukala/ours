@@ -90,7 +90,8 @@ const FOOTER: [string, string][] = [
   ["Contract", "/contract"],
   ["Agreement", "/agreement"],
   ["Projects", "/projects"],
-  ["Build with us", "/maintainers"],
+  // Changed by M-0016 (D-0019 §G): "Build with us" goes to /build, which links /maintainers.
+  ["Build with us", "/build"],
   ["Open code", OPEN_CODE_URL],
   ["Costs", "/costs"],
   ["Who controls what", "/power"],
@@ -762,7 +763,8 @@ describe("the links on the new pages", () => {
         hrefs.add(href.replace(/[?#].*$/, ""));
       }
     }
-    expect([...hrefs].sort()).toEqual(["/", "/agreement", "/contract", "/costs", "/maintainers", "/power", "/privacy", "/projects", "/rules", "/signin"]);
+    // Changed by M-0016 (D-0019 §G): the footer, /projects and /maintainers also link /build, a route the app has.
+    expect([...hrefs].sort()).toEqual(["/", "/agreement", "/build", "/contract", "/costs", "/maintainers", "/power", "/privacy", "/projects", "/rules", "/signin"]);
     for (const href of hrefs) expect([href, known.some((r) => r.test(href))]).toEqual([href, true]);
   });
 

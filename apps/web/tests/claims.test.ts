@@ -20,6 +20,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AppNotFound from "@/app/(app)/not-found";
 import AgreementPage from "@/app/(public)/agreement/page";
+import BuildPage from "@/app/(public)/build/page";
 import ContractPage from "@/app/(public)/contract/page";
 import CostsPage from "@/app/(public)/costs/page";
 import PublicLayout from "@/app/(public)/layout";
@@ -617,6 +618,8 @@ describe("what people are shown: every public page, the footers and every mail, 
       ["/agreement", renderToStaticMarkup(createElement(AgreementPage)), AGREEMENT_FILE],
       ["/projects", renderToStaticMarkup(createElement(ProjectsPage)), PROJECTS_FILE],
       ["/maintainers", renderToStaticMarkup(createElement(MaintainersPage)), null],
+      // M-0016 (D-0019 §G): /build.
+      ["/build", renderToStaticMarkup(createElement(BuildPage)), null],
       ["/privacy", renderToStaticMarkup(createElement(PrivacyPage)), null],
       ["/power", renderToStaticMarkup(createElement(PowerPage)), null],
       ["/costs", renderToStaticMarkup(createElement(CostsPage)), null],
@@ -656,8 +659,8 @@ describe("what people are shown: every public page, the footers and every mail, 
       vi.unstubAllEnvs();
       for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
       const rendered = await pages();
-      // 14 since M-0015: /agreement, /projects and /maintainers.
-      expect(rendered).toHaveLength(14);
+      // 14 since M-0015: /agreement, /projects and /maintainers. 15 since M-0016: /build.
+      expect(rendered).toHaveLength(15);
       for (const [page, html, file] of rendered) {
         expect(textOf(html).length, `${name}: ${page}`).toBeGreaterThan(0);
         expect(renderedHits(html, file), `${name}: ${page}`).toEqual([]);

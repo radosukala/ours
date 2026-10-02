@@ -780,6 +780,58 @@
   border-left: 3px solid var(--outline-border);
 }
 
+/* /build: the two ways to build, side by side from 640px, one above the
+   other below it (SPEC §18.18). */
+.ways {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .ways {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.way {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.wayList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* The line for a coding agent: set apart, wrapping anywhere at 320px, and
+   selected whole with one tap. */
+.prompt {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--hover);
+}
+
+.prompt code {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* A SHA-256: 64 characters with nowhere to break, so it breaks anywhere. */
+.hash {
+  font-size: 13px;
+  word-break: break-all;
+}
+
 /* A link in a row of two (/agreement, /projects): a 44px target on a touch
    screen, where the row's gap goes (SPEC §9). */
 .pairLink {

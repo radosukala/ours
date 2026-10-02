@@ -201,7 +201,8 @@ describe("the footers, /contract and /privacy", () => {
     for (const markup of [html(SiteFooter), html(InAppSiteFooter)]) {
       expect(markup).toContain('<a href="/agreement">Agreement</a>');
       expect(markup).toContain('<a href="/projects">Projects</a>');
-      expect(markup).toContain('<a href="/maintainers">Build with us</a>');
+      // Changed by M-0016 (D-0019 §G): "Build with us" goes to /build, which links /maintainers.
+      expect(markup).toContain('<a href="/build">Build with us</a>');
     }
   });
 

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://our.one/kit/our.one.schema.json",
+  "title": "our.one.json",
+  "description": "A project's manifest for our.one, rules 0 (D-0019). The check, our-one.mjs, is what decides; this schema helps editors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rules", "name", "purpose", "maintainers", "source", "license", "costs", "data"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "rules": { "const": "0", "description": "The rules version this project follows." },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "purpose": { "type": "string", "minLength": 1, "maxLength": 280, "description": "One sentence on what it does for the people who use it." },
+    "maintainers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "contact"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "contact": { "type": "string", "description": "An email address or an https:// link." }
+        }
+      }
+    },
+    "source": { "type": "string", "pattern": "^https://", "description": "The address of its public repository." },
+    "license": { "type": "string", "minLength": 1, "description": "The SPDX id of its open-source licence, such as Apache-2.0, or two joined by OR." },
+    "costs": { "type": "string", "minLength": 1, "description": "The file, in the project, that shows what it costs to run." },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collects", "sharedWith", "export", "delete"],
+      "properties": {
+        "collects": {
+          "type": "array",
+          "description": "Each kind of personal data it keeps. Empty only if it keeps nothing about anyone.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["what", "why", "kept"],
+            "properties": {
+              "what": { "type": "string", "minLength": 1, "maxLength": 600 },
+              "why": { "type": "string", "minLength": 1, "maxLength": 600 },
+              "kept": { "type": "string", "minLength": 1, "maxLength": 400, "description": "For how long." }
+            }
+          }
+        },
+        "sharedWith": {
+          "type": "array",
+          "description": "Each outside service that receives anything about a person.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["who", "what", "why"],
+            "properties": {
+              "who": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "what": { "type": "string", "minLength": 1, "maxLength": 400 },
+              "why": { "type": "string", "minLength": 1, "maxLength": 600 },
+              "packages": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 214 }, "description": "The npm packages that reach it." }
+            }
+          }
+        },
+        "boundary": { "type": "array", "items": { "type": "string" }, "description": "The folders that hold all the code that uses a database or a file store." },
+        "export": { "type": "string", "minLength": 1, "maxLength": 400, "description": "How a person downloads their data." },
+        "delete": { "type": "string", "minLength": 1, "maxLength": 400, "description": "How a person deletes their data." }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "description": "Exact sentences the claims check lets through, such as a definition. A person reads each one.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "text", "why"],
+            "properties": {
+              "file": { "type": "string", "minLength": 1, "maxLength": 400 },
+              "text": { "type": "string", "minLength": 8, "maxLength": 600 },
+              "why": { "type": "string", "minLength": 8, "maxLength": 600 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

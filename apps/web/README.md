@@ -98,8 +98,9 @@ pnpm --filter @ours/web test        # vitest against a real Postgres
 pnpm --filter @ours/web typecheck
 pnpm --filter @ours/web lint
 pnpm --filter @ours/web build
-pnpm --filter @ours/web claims      # the claims scan over the files SPEC §12 and §17 name; exits 1 on a hit
+pnpm --filter @ours/web claims      # the claims scan over the files SPEC §12 and §17 name, and the build kit's text; exits 1 on a hit
 pnpm --filter @ours/web digest      # run the weekly email once, into the outbox
+node kit/our-one.mjs check --project apps/web   # from the repository root: the build kit's check, which the feed passes (SPEC §18.18)
 ```
 
 The tests create a fresh database (`ours_web_test_<random>`) on the server
@@ -118,6 +119,7 @@ migrate it, and drop it afterwards.
 | `drizzle/` | generated SQL migrations (from `src/core/schema.ts`) |
 | `scripts/` | migrate, seeds, the claims scan, the weekly digest |
 | `transparency/` | the public ledger and who controls what, rendered by `/costs` and `/power`; every change is a commit |
+| `our.one.json`, `AGENTS.md` | the feed's manifest and the build kit's rules block (D-0019 §F); the kit itself is in `../../kit/` |
 
 ## Licence
 

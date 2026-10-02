@@ -2407,3 +2407,90 @@ before any fix.
     switches proposals off.
   - `/privacy`'s suspended-account sentence no longer loses its space in
     Next's production compiler.
+
+### 18.18 The build kit (M-0016, 2 October 2026)
+
+**D-0019:** builders build with coding agents, so our.one gives the agent
+instructions, rules, a check it runs itself, and tools; and the two ways to
+build are shown side by side. Passing the check makes a project ready to
+propose, nothing more (D-0019 §E). Every safeguard stays not built.
+
+1. **The kit, in `kit/` at the repository's root:**
+   - **`build.md`:** the instructions a coding agent follows: what our.one
+     is and how much of it is in force; the lines it never crosses; six
+     steps (ask, get the tool and check its SHA-256, `init`, fill in
+     `our.one.json`, build, check, propose); and what each check looks at,
+     with its class. It carries the tool's SHA-256.
+   - **`our-one.mjs`:** one file, no dependencies, Node 18 or later. It
+     reads the project's files and runs `git` only to list them and to read
+     the remote's address. It makes no network request, and when it finds
+     a secret it prints the file, the line and the kind, never the secret.
+     - `init` creates `our.one.json`, `AGENTS.md`, `CLAUDE.md`, `COSTS.md`,
+       `PITCH.md`, `.claude/settings.json` (a stop hook) and
+       `.github/workflows/our-one.yml`. It overwrites nothing, except the
+       rules block in `AGENTS.md`, which it puts back word for word, and the
+       hook it adds to an existing settings file. It refuses the home folder
+       and the filesystem's root.
+     - `check` runs ten checks, each with its class (D-0019 §C): manifest
+       (`STRUCTURAL`), licence, agents, data (`STRUCTURAL`), boundary,
+       leave, tracking, secrets, costs and claims (`CHECKED`). A check that
+       can't run (no JavaScript or TypeScript, for boundary and leave) says
+       "not checked". Every run also lists the four questions a person
+       answers when a project is proposed, and the five safeguards our.one
+       hasn't built. There is no score. `--json` prints the same as JSON;
+       `--hook` runs as Claude Code's stop hook: it sends the agent back
+       once (exit 2, the failures on stderr), then lets it stop and tells
+       the person (a `systemMessage`).
+     - `rules` prints the rules block.
+   - **`our.one.schema.json`**, the manifest's schema, and a **README**.
+     The kit's licence is Apache-2.0, like the feed's code.
+2. **The feed's own manifest** (`apps/web/our.one.json`): what `/privacy`
+   says it keeps, word for word, plus seat requests; Resend as its one
+   outside service; `src/core` and `scripts` as its boundary; its costs in
+   `transparency/ledger.json`; and two sentences of `/agreement` listed in
+   `claims.allowed`. `apps/web/AGENTS.md` carries the rules block, after a
+   pointer to the repository's own AGENTS.md. A test runs the check on the
+   feed, and it passes.
+3. **The routes:** `/build.md`, `/kit/our-one.mjs` and
+   `/kit/our.one.schema.json` serve the kit's files byte for byte, as
+   Markdown, JavaScript and a JSON schema. They are static: read when the
+   site is built. No other name under `/kit/` is served.
+4. **`/build`, "Build on our.one":** the copy is the page file's, word for
+   word.
+   - **First comes the notice:** *"Being developed. The tools work today.
+     The common agreement they follow is a draft that nobody has signed
+     yet, and none of its collective rights is in force."*
+   - **Two ways to build,** side by side from 640px: "On your own" (four
+     lines) and "On our.one" (five lines, the last *"What it keeps about
+     people is meant to stay out of your reach."*), under which *"Today:
+     none of this is in force yet. …"*.
+   - **Start with your coding agent:** the one line, *"Read
+     https://our.one/build.md and use it to build my app for our.one."*
+   - **What your agent does,** in four steps; the stop hook is described as
+     it works: it sends the agent back once, then tells you.
+   - **The rules:** the block's ten titles, in its order, each with how it
+     is checked.
+   - **What the check can tell, and what it can't:** our.one runs its own
+     copy on the commit proposed, and a person reads the result. *"Passing
+     makes a project ready to propose. Nothing more: it isn't listed,
+     approved or protected. The people who would use it decide."*
+   - **Then propose it:** by email, through `/maintainers`.
+   - **The tools:** `build.md`, the tool with its version and SHA-256 (from
+     `kit-info.ts`, which a test keeps equal to the file's), the schema,
+     the feed's `our.one.json`, and the kit's source.
+5. **Links:** every footer's "Build with us" goes to `/build`. `/maintainers`
+   gains *"Start with your coding agent: Build on our.one has the line to
+   give it, the rules it follows and the check it runs."* `/projects` gains
+   "Checked" in the feed's facts (*"It passes the same check as every
+   project proposed to our.one, rules 0. How it's checked"*), and its "The
+   next one" links to both `/build` and `/maintainers`.
+6. **The claims scan** reads the kit's text with `scanKitText`: the feed's
+   manifest and rules block, and `kit/`'s four text files. The sentences
+   the manifest lists in `claims.allowed` are quotations: each must be one
+   ALLOWLIST already lets through in that file, or it is a hit. The
+   rendered scan includes `/build`.
+7. **Tests:** `tests/kit.test.ts` for every line above, the denial paths
+   first: each check fails on a FICTIONAL project that breaks it and passes
+   on one that keeps it; `init` writes only what it names; the hook; the
+   tool imports nothing that reaches a network and never prints a secret;
+   the feed passes; the routes serve the files; and the page.

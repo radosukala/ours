@@ -3,8 +3,9 @@
  *
  *   pnpm --filter @ours/web claims
  *
- * Reads every public text file SPEC §12 names, prints each prohibited claim
- * it finds, and exits 1 if there is any. The same scan runs in
+ * Reads every public text file SPEC §12 names, and the build kit's text
+ * (M-0016), prints each prohibited claim it finds, and exits 1 if there is
+ * any. The same scan runs in
  * tests/claims.test.ts.
  *
  * It is CHECKED, not ENFORCED: a pattern cannot read polarity, so a hit is
@@ -12,12 +13,16 @@
  * was made in other words.
  */
 import { fileURLToPath } from "node:url";
-import { ALLOWLIST, formatHit, scanRepoPublicText } from "../src/core/claims";
+import { ALLOWLIST, formatHit, scanKitText, scanRepoPublicText } from "../src/core/claims";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 function main(): void {
-  const { files, hits } = scanRepoPublicText(WEB_ROOT);
+  // The public text SPEC §12 names, and the build kit's (M-0016).
+  const pages = scanRepoPublicText(WEB_ROOT);
+  const kit = scanKitText(WEB_ROOT);
+  const files = [...pages.files, ...kit.files];
+  const hits = [...pages.hits, ...kit.hits];
   if (hits.length > 0) {
     console.error(`Claims scan: ${hits.length} prohibited claim(s) in ${files.length} files.`);
     for (const hit of hits) console.error(`  ${formatHit(hit)}`);

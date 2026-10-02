@@ -61,6 +61,11 @@ export default function ProjectsPage() {
             rules. Promised: nobody sells it. Not yet: deciding its rules,
             approving its budget, changing who runs it.
           </dd>
+          <dt>Checked</dt>
+          <dd>
+            {"It passes the same check as every project proposed to our.one, rules 0. "}
+            <Link href="/build">How it&apos;s checked</Link>
+          </dd>
           <dt>Its exception</dt>
           <dd>
             It is the one service that runs before its data safeguards exist.
@@ -83,8 +88,13 @@ export default function ProjectsPage() {
         <p>
           Not chosen yet. Propose a service, or tell us what you need.
         </p>
-        <p>
-          <Link href="/maintainers">Build the next one</Link>
+        <p className={styles.links}>
+          <Link href="/build" className={styles.pairLink}>
+            Build on our.one
+          </Link>
+          <Link href="/maintainers" className={styles.pairLink}>
+            Build the next one
+          </Link>
         </p>
       </section>
     </article>

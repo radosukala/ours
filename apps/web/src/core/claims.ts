@@ -790,6 +790,91 @@ export function scanRepoPublicText(rootDir: string): ScanResult {
   return { files, hits };
 }
 
+/* ------------------------------------------------------ the build kit's text */
+
+/**
+ * The build kit's text (D-0019 §B, M-0016), relative to apps/web: the
+ * feed's manifest and rules block, and the files the site serves from kit/
+ * at the repository's root, with the kit's README. Read by its own
+ * function, so the trees the older tests build for `scanRepoPublicText`
+ * stay as they are. Every file must exist: a scan that silently read
+ * nothing would pass.
+ */
+export const KIT_TEXT = {
+  files: [
+    "our.one.json",
+    "AGENTS.md",
+    "../../kit/build.md",
+    "../../kit/README.md",
+    "../../kit/our-one.mjs",
+    "../../kit/our.one.schema.json",
+  ],
+  /** The feed's manifest, whose claims.allowed sentences are quotations. */
+  manifest: "our.one.json",
+} as const;
+
+/** Scan the kit's text, under `rootDir` (apps/web). */
+export function scanKitText(rootDir: string): ScanResult {
+  const files: string[] = [];
+  const hits: Hit[] = [];
+  for (const file of KIT_TEXT.files) {
+    const path = join(rootDir, file);
+    if (!statSync(path).isFile()) throw new Error(`claims scan: ${file} is not a file`);
+    files.push(file);
+    const text = readFileSync(path, "utf8");
+    if (file === KIT_TEXT.manifest) hits.push(...scanManifestText(text, file));
+    else hits.push(...(file.endsWith(".json") ? scanJsonText(text, file) : scanText(text, file)));
+  }
+  return { files, hits };
+}
+
+/**
+ * The feed's manifest, read as `scanJsonText` reads JSON, except for the
+ * sentences it lists in claims.allowed: the kit's own check lets those
+ * through on /agreement (D-0019 §F). Each must be a sentence ALLOWLIST
+ * already lets through in that same file, and is then a quotation, not a
+ * new claim, so it isn't scanned again; one ALLOWLIST doesn't hold is a hit.
+ */
+export function scanManifestText(text: string, file: string): Hit[] {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(text);
+  } catch {
+    return scanText(text, file);
+  }
+  const name = toPosix(file);
+  const starts = lineStarts(text);
+  const hits: Hit[] = [];
+  const quotations = new Set<string>();
+  const claims = manifest && typeof manifest === "object" ? (manifest as { claims?: unknown }).claims : undefined;
+  const allowed = claims && typeof claims === "object" ? (claims as { allowed?: unknown }).allowed : undefined;
+  if (Array.isArray(allowed)) {
+    for (const entry of allowed as { file?: unknown; text?: unknown }[]) {
+      if (!entry || typeof entry.file !== "string" || typeof entry.text !== "string") continue;
+      const { file: quotedFile, text: quoted } = entry as { file: string; text: string };
+      if (ALLOWLIST.some((a) => a.file === quotedFile && a.sentence === quoted)) {
+        quotations.add(quoted);
+      } else {
+        hits.push({
+          file: name,
+          line: lineOf(starts, Math.max(0, text.indexOf(JSON.stringify(quoted)))),
+          match: quoted,
+          pattern: "claims.allowed",
+          reason:
+            "D-0019 §F: the manifest may let through only a sentence that ALLOWLIST already lets through in that file, word for word.",
+        });
+      }
+    }
+  }
+  for (const literal of text.matchAll(JSON_STRING)) {
+    const value = JSON.parse(literal[0]) as string;
+    if (quotations.has(value)) continue;
+    const line = lineOf(starts, literal.index ?? 0);
+    for (const hit of scanNormalized(value, name, false)) hits.push({ ...hit, line });
+  }
+  return hits;
+}
+
 /** One line per hit, for the CLI and test failures. */
 export function formatHit(hit: Hit): string {
   const where = hit.file ? `${hit.file}:${hit.line}` : `line ${hit.line}`;

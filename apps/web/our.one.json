@@ -1,0 +1,119 @@
+{
+  "$schema": "https://our.one/kit/our.one.schema.json",
+  "rules": "0",
+  "name": "The feed",
+  "purpose": "A social network for your friends and the people you choose to follow: their posts, newest first, no ads and no suggested posts, and it tells you when you've seen them all.",
+  "maintainers": [
+    {
+      "name": "Rado, the founder, through Ctrl AI, Inc.",
+      "contact": "https://our.one/privacy"
+    }
+  ],
+  "source": "https://github.com/radosukala/ours/tree/main/apps/web",
+  "license": "Apache-2.0",
+  "costs": "transparency/ledger.json",
+  "data": {
+    "collects": [
+      {
+        "what": "Your account: Your email address, handle, display name and bio; who invited you; your settings (whether you accept followers, whether you get the weekly email); how many invites you have left; when you joined and when you confirmed you're 18 or older; when you last opened your feed and your notifications; and whether you are an administrator or suspended.",
+        "why": "To sign you in, show your profile to the people you're connected with, and mark where you were caught up.",
+        "kept": "Until you delete your account."
+      },
+      {
+        "what": "Sign-in and join links: Your email address, a scrambled copy of the link's code (never the code itself), and when the link was made, when it expires and when it was used.",
+        "why": "So each link works once, for 15 minutes.",
+        "kept": "They are not removed automatically yet. They are deleted when you delete your account."
+      },
+      {
+        "what": "Joining in progress: Your email address and which invite you're using.",
+        "why": "To hold your place for up to 60 minutes while you choose a handle.",
+        "kept": "They are not removed automatically yet. It is deleted when you delete your account."
+      },
+      {
+        "what": "Sessions: A random code for each browser you're signed in on, and when it started, when it ends and whether you signed out. No IP address and no device details.",
+        "why": "To keep you signed in.",
+        "kept": "A session works for up to 60 days. The records go when you delete your account."
+      },
+      {
+        "what": "Invites: A scrambled copy of each invite's code, your private note (\"for Anna\"), when it was made, used or revoked, and who joined with it.",
+        "why": "So an invite works once, and you can see who joined with yours.",
+        "kept": "Until you delete your account."
+      },
+      {
+        "what": "Connections: Friend requests and their answers, friendships, follows, blocks and mutes, each with a date.",
+        "why": "They decide who sees what.",
+        "kept": "Until you end them, or until either person deletes their account."
+      },
+      {
+        "what": "Posts, replies and likes: What you write, who it's for and when; which posts you like; and, if something was removed, the category and reason.",
+        "why": "To show them to the people you chose.",
+        "kept": "Until you delete them, or your account."
+      },
+      {
+        "what": "Notifications: What happened (a request, a reply, a like, a new follower and so on), who did it, when, and when you read it.",
+        "why": "To tell you.",
+        "kept": "Until you delete your account, or the other person deletes theirs."
+      },
+      {
+        "what": "Reports: Who reported what, the category and any details they gave, and the decision with its reasons and who made it.",
+        "why": "So a person can act on reports and explain each decision.",
+        "kept": "Kept as the record of each decision. They are not removed automatically yet. If the person who reported deletes their account, their name is removed from the report."
+      },
+      {
+        "what": "Limits on repeated actions: Your account's id, or a scrambled code made from your email or network address, and a time. Not the address itself. A limit on one invite link holds that invite's id, and a limit on one join in progress holds that join's id.",
+        "why": "To stop floods of emails, posts, replies, requests, invites and reports.",
+        "kept": "Entries older than 24 hours are removed whenever a new one is counted."
+      },
+      {
+        "what": "Email records: Which kind of email was sent to which account (a sign-in or join link, the weekly email, or a notice such as the reasons for a suspension), whether it went, and when. Not your address.",
+        "why": "To see whether emails arrive.",
+        "kept": "They are not removed automatically yet. When you delete your account, they no longer point to it."
+      },
+      {
+        "what": "Weekly email record: For each week, whether your weekly email was sent, skipped or failed.",
+        "why": "So you get at most one a week.",
+        "kept": "Until you delete your account."
+      },
+      {
+        "what": "Test outbox: Only on a server set to write email to a test outbox instead of sending it: each email's address, subject and text.",
+        "why": "To build and test our.one without emailing anyone.",
+        "kept": "They are not removed automatically yet. What was written to your address is deleted when you delete your account."
+      },
+      {
+        "what": "Seat requests: your email address, and when you asked for a seat.",
+        "why": "To send you the join link, or to keep your place in line until a seat opens and you are invited.",
+        "kept": "Until you join, or ask to be deleted by writing to the controller. Nothing removes it automatically yet."
+      }
+    ],
+    "sharedWith": [
+      {
+        "who": "Resend",
+        "what": "Your email address, and each email's subject and text.",
+        "why": "To deliver the emails our.one sends: sign-in and join links, the weekly email and notices.",
+        "packages": [
+          "resend"
+        ]
+      }
+    ],
+    "boundary": [
+      "src/core",
+      "scripts"
+    ],
+    "export": "In Settings → Export, while your account is active: your profile, posts, replies and connections. For anything else, or if your account is suspended, write to the data controller.",
+    "delete": "In Settings → Delete, while your account is active: your posts, replies, likes, connections and sessions go with it. If your account is suspended, or to remove a seat request, write to the data controller."
+  },
+  "claims": {
+    "allowed": [
+      {
+        "file": "src/app/(public)/agreement/page.tsx",
+        "text": "Owned by its users means: its users, together, decide its essential rules, approve its budget, and can change who runs it while the service keeps going.",
+        "why": "The common agreement's definition of the word, which claims it of nothing (D-0017 §B, D-0018 §E). The page says next that none of it holds yet."
+      },
+      {
+        "file": "src/app/(public)/agreement/page.tsx",
+        "text": "We call a service owned by its users only when all of that holds.",
+        "why": "Applies the definition; the page follows it with \"None does yet.\" (D-0017 §B, D-0018 §E)."
+      }
+    ]
+  }
+}
