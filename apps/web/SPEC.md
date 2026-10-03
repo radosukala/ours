@@ -2830,3 +2830,19 @@ has them):
   refusal list "GET, POST, OPTIONS".
 - **`/privacy`:** Neon keeps "everything this notice says is kept on
   our.one", not an emailed proposal's mailbox.
+
+### 18.21 Where it runs (M-0019, 3 October 2026)
+
+D-0022: our.one runs in North America.
+
+- **`apps/web/vercel.json`** runs the functions in Cleveland (`cle1`),
+  beside the database at Neon in Ohio (us-east-2). This replaces §18.20's
+  Frankfurt.
+- **The deployed pages name both places** from the server's own settings:
+  *"Vercel runs our.one's server, in Cleveland, United States (cle1)"* and
+  *"Neon keeps our.one's database, in Ohio, United States (us-east-2)"*.
+- **The feed's manifest** says its data is kept by Neon in Ohio, in the
+  United States.
+- **For people in the EU,** the data is stored in the United States. The
+  legal basis for that transfer is a question for the legal review of
+  `/privacy` (D-0012 §E).

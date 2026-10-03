@@ -199,6 +199,23 @@ describe("the pages, on Vercel's production deployment (imitated)", () => {
   });
 });
 
+describe("where it runs, North America (D-0022, M-0019)", () => {
+  it("deployed in Cleveland with the database in Ohio, /privacy and /power name both, and nothing says the EU", () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("VERCEL_REGION", "cle1");
+    vi.stubEnv("DATABASE_URL", pg(FICT_USERINFO, "ep-fictional-pond-123456-pooler.us-east-2.aws.neon.tech", "/neondb?sslmode=require"));
+    const privacy = page(PrivacyPage);
+    expect(privacy).toContain("Vercel runs our.one's server, in Cleveland, United States (cle1)");
+    expect(privacy).toContain("Neon keeps our.one's database, in Ohio, United States (us-east-2)");
+    const row = loadControl(null).find((r) => r.asset === "Hosting, database, email sending")!;
+    expect(row.who).toContain("Vercel runs this site, in Cleveland, United States (cle1). Neon keeps its database, in Ohio, United States (us-east-2).");
+    const manifest = read("our.one.json");
+    expect(manifest).toContain("in Ohio, in the United States");
+    for (const text of [privacy, page(PowerPage), manifest]) expect(text).not.toMatch(/\bEU region\b|in the EU\b(?! under)/);
+  });
+});
+
 describe("the administrator, as a rule (D-0021 §I)", () => {
   it("/privacy, /power and the house rules say only the founder can be the administrator, deployed or not", () => {
     for (const deployed of [false, true]) {
@@ -376,12 +393,13 @@ describe("the release itself (against the local test database)", () => {
 });
 
 describe("how Vercel runs it", () => {
-  it("apps/web/vercel.json: the build command, Frankfurt, and the weekly email on Mondays at 08:00 UTC", () => {
+  // Changed under M-0019 (D-0022): Cleveland, beside the database in Ohio.
+  it("apps/web/vercel.json: the build command, Cleveland, and the weekly email on Mondays at 08:00 UTC", () => {
     const config = JSON.parse(read("vercel.json")) as Record<string, unknown>;
     expect(config).toMatchObject({
       framework: "nextjs",
       buildCommand: "pnpm run vercel-build",
-      regions: ["fra1"],
+      regions: ["cle1"],
       crons: [{ path: "/api/cron/weekly-digest", schedule: "0 8 * * 1" }],
     });
     const scripts = (JSON.parse(read("package.json")) as { scripts: Record<string, string> }).scripts;

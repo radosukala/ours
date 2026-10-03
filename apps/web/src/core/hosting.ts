@@ -65,8 +65,13 @@ export type Hosting =
       database: NeonDatabase | null;
     };
 
-/** Vercel's function regions in Europe, and its default (D-0021 §D). Others show their code only. */
+/**
+ * Vercel's function regions whose place the pages name: the one our.one
+ * runs in, Cleveland, beside its database in Ohio (D-0022), Vercel's
+ * default, and Europe's. Others show their code only.
+ */
 const VERCEL_PLACES: Readonly<Record<string, string>> = {
+  cle1: "Cleveland, United States",
   fra1: "Frankfurt, Germany",
   cdg1: "Paris, France",
   arn1: "Stockholm, Sweden",

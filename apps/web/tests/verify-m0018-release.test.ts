@@ -779,7 +779,8 @@ describe("closed: how Vercel builds it (each passes on d26556a)", () => {
       $schema: "https://openapi.vercel.sh/vercel.json",
       framework: "nextjs",
       buildCommand: "pnpm run vercel-build",
-      regions: ["fra1"],
+      // Changed under M-0019 (D-0022): Cleveland.
+      regions: ["cle1"],
       crons: [{ path: "/api/cron/weekly-digest", schedule: "0 8 * * 1" }],
     });
     const [cron] = config.crons as { path: string; schedule: string }[];
@@ -795,7 +796,8 @@ describe("closed: how Vercel builds it (each passes on d26556a)", () => {
     // Changed after the verification of M-0018: M-0012 now says vercel.json
     // sets the build command and the region, and Vercel picks pnpm itself.
     expect(record("mandates/M-0012.md")).toContain(
-      "with root directory apps/web, and no overrides for its build, install or output commands: apps/web/vercel.json sets the build command and the functions' region, Frankfurt, and Vercel picks pnpm from the lockfile (D-0021 §D, §J).",
+      // Changed under M-0019 (D-0022): the functions' region is Cleveland.
+      "with root directory apps/web, and no overrides for its build, install or output commands: apps/web/vercel.json sets the build command and the functions' region, Cleveland, and Vercel picks pnpm from the lockfile (D-0021 §J, D-0022).",
     );
   });
 

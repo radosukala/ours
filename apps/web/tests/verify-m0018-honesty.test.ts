@@ -728,7 +728,8 @@ describe("closed (each passes on bee6e3b)", () => {
       provider: "Neon",
       region: { code: "germanywestcentral", place: "Frankfurt, Germany" },
     });
-    expect((JSON.parse(read("vercel.json")) as { regions: string[] }).regions).toEqual(["fra1"]);
+    // Changed under M-0019 (D-0022): the functions run in Cleveland, beside the database in Ohio.
+    expect((JSON.parse(read("vercel.json")) as { regions: string[] }).regions).toEqual(["cle1"]);
     expect(record("decisions/D-0021.md")).toContain("The functions run in Frankfurt (fra1), beside the database.");
   });
 });

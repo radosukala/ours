@@ -678,10 +678,12 @@ describe("defects (each FAILS on 25ce8f0)", () => {
     // turned false at the deploy; the entries now say only what stays true,
     // and cite M-0012 for the region.
     expect(vercel.why).toBe("To host the site, as D-0013 chose.");
-    expect(neon.why).toBe("To keep the feed's data, in an EU region, as M-0012 sets.");
+    // Changed under M-0019 (D-0022): the data is kept in Ohio, beside the functions in Cleveland.
+    expect(neon.why).toBe("To keep the feed's data, in Ohio, in the United States, beside the site's functions in Cleveland (D-0022).");
     const m12 = record("mandates/M-0012.md");
     expect(m12).toContain("Status: DRAFT");
-    expect(m12).toContain("Neon: a database in an EU region.");
+    // Changed under M-0019 (D-0022): M-0012 names Ohio, not an EU region.
+    expect(m12).toContain("Neon: a database in Ohio (us-east-2), beside the functions in Cleveland (D-0022; it replaces the EU region).");
     const d13 = record("decisions/D-0013.md");
     expect(d13).toContain("Database: Neon.");
     expect(read("tests/kit.test.ts")).toContain("in words true before the deploy and after it");
