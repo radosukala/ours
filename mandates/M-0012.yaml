@@ -82,18 +82,19 @@ requirements:
 
 preconditions:
   - Ctrl AI's written designation of its representative in the EU (GDPR Article 27(1)), signed; D-0014 settles the contact email and the Article 27 choice
-  - the founder's Vercel project linked to github.com/radosukala/ours, root directory apps/web, with no overrides for the build, install or output commands (apps/web/vercel.json sets them, and the region fra1)
-  - a Neon database in an EU region, its URL entered by the founder in Vercel for production only
+  - the founder's Vercel project linked to github.com/radosukala/ours, root directory apps/web, with no overrides for the build, install or output commands (apps/web/vercel.json sets the build command and the region fra1; Vercel picks pnpm from the lockfile), and access to the System Environment Variables on
+  - a Neon database in an EU region, its URL entered by the founder in Vercel for production only, with every variable a Vercel integration adds for production only too
   - Resend with the our.one domain verified (its DNS records added by the founder)
   - "the founder's secrets in Vercel: DATABASE_URL, SESSION_SECRET (32+ random bytes), CRON_SECRET, RESEND_API_KEY, MAIL_FROM, MAIL_TRANSPORT=resend, DATA_CONTROLLER=Ctrl AI, Inc., DATA_CONTROLLER_EMAIL=privacy@ctrlai.com, DATA_CONTROLLER_REPRESENTATIVE=Rado Sukala, CLIENT_IP_HEADER=x-vercel-forwarded-for, APP_URL=https://our.one, OURS_VERSION, FOUNDER_EMAIL, FOUNDER_HANDLE, FOUNDER_NAME, and at the go OURS_RELEASE (the verified commit)"
-  - ONE moved to oneburger.cz, and our.one pointed at Vercel, with the automatic assignment of custom production domains off, so that our.one serves only a deployment the founder promotes (D-0021 §D)
+  - ONE moved to oneburger.cz, and our.one pointed at Vercel, with the automatic assignment of custom production domains off, so that our.one serves only a deployment the founder promotes (D-0021 §D), and the production branch set to release, which only a deploy moves, with Deployment Protection on for previews (D-0021 §J)
   - a human confirms that the court's opinion says what the 7% sentence on the feed's page, /feed, cites (D-0015 §E; D-0020 §B; AGENTS.md §10)
   - the founder approves the exact wording of the common agreement at /agreement (D-0018 §B)
   - PROPOSALS_EMAIL set in Vercel to the address the founder chooses for proposals and needs (D-0018 §D)
   - the founder approves rules version 0 and the exact wording of /build and build.md (D-0019 §I), and of the front door, /feed, /projects and /maintainers, with the new line for a coding agent (D-0020 §G)
   - the Vercel project keeps files outside the root directory available to the build, because /build.md and /kit/ are read from kit/ at build time (D-0019 §I)
   - the hosting lines on /privacy and /power, and the control record behind /power, say what is true once the build runs, by a BUILD change before the deploy (D-0020 §G); M-0018 is that change, and this holds once it is verified (D-0021 §C)
-  - the Vercel plan is one whose terms the founder has checked for a service run by a company; its price goes in the ledger at the release (D-0021 §G)
+  - the Vercel plan is one whose terms the founder has checked for a service run by a company; its price goes in the ledger in a later commit, verified the same way, before the public launch (D-0021 §J)
+  - apps/web/.env.local holds no real key (D-0021 §F, §J)
 
 acceptance:
   tests:
