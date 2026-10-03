@@ -1,0 +1,61 @@
+schema: ours.decision/v0.1
+decision_id: D-0023
+title: One our.one, signed in or not — one identity, one header, the front door for members, the feed as the first project
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0023.md
+
+proposal: P-0016
+prerequisite_decisions: [D-0011, D-0020]
+
+outcome: >
+  Every page, signed in or not, has our.one's own look (the public pages'
+  paper, ink, rust and acid, wordmark and type); the feed keeps a familiar
+  shape but not X's colours, left navigation or Post pill; the pictures of
+  the app on /feed show its real look. Members get the header every
+  visitor gets, with the four places, and on its right their feed,
+  notifications and pages; on a phone the bottom bar stays. The front door
+  no longer sends members to /home, and where a visitor is asked to join, a
+  member is shown their feed. The feed is called the feed, and beside it a
+  panel says what our.one is and that the feed is its first project, with
+  the ways to name a need or bring an idea. Replaces D-0020's "the
+  signed-in app keeps its look" and decides M-0017's RC8. Authorizes
+  M-0020 (BUILD); nothing is pushed before the founder has seen
+  screenshots and said go.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0020]
+
+prohibits:
+  - X's colours, its left navigation or its Post pill
+  - a signed-in page with none of the network's places
+  - sending a member away from the front door
+  - changing what the feed does, or the feed's verified words, under M-0020
+
+effective_from: 2026-10-03T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending. §A
+  reads "familiar" as kept and "the copy" as dropped; §C keeps the feed as
+  where a member lands after signing in.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

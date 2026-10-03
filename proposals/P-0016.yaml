@@ -1,0 +1,41 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0016
+title: One our.one, signed in or not — one identity, one header, the front door for members, the feed as the first project
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0023
+
+human_source:
+  path: proposals/P-0016.md
+evidence:
+  - path: proposals/P-0016.evidence-conversation-2026-10-03.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - members, who would see our.one's identity, its message and its projects once signed in
+  - visitors, whose pictures of the app on /feed would show its real look
+
+unresolved:
+  - where a member lands after signing in (the feed, as before, unless the founder decides otherwise)
+
+cost:
+  proposer_hours: 0.5
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-03
+    actor: { id: founder, kind: human }
+    position: the signed-in feed is a 100% copy of X and inconsistent with the rest; signed-in members feel our.one is only the feed; the message and the mission should coexist on the home page and for members too
+  - date: 2026-10-03
+    actor: { id: claude, kind: agent }
+    position: one identity (the public pages' look, in the app too, with a familiar feed shape), one header with the four places for members, the front door open to members, and a panel beside the feed saying what our.one is and that the feed is its first project; screenshots before anything is pushed

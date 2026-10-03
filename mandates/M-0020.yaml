@@ -1,0 +1,124 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0020
+title: One our.one, signed in or not — one identity, one header, the front door for members, the feed as the first project
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0023
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-03T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0011, D-0020, D-0023]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0020.md
+
+objective: >
+  Build D-0023 in apps/web: our.one's identity as the whole site's tokens,
+  so every signed-in page takes the public pages' paper, ink, rust and
+  acid, wordmark and type, and the pictures of the app on /feed follow; the
+  public header on every signed-in page, its right side holding a member's
+  feed, notifications and pages, the bottom bar kept on phones, with no
+  left navigation or Post pill; the front door for members, with "Your
+  feed" where a visitor sees Sign in or is asked to join, and nothing
+  sending a member away from /; the feed called the feed, with a panel
+  beside it saying what our.one is and that the feed is its first project,
+  and offering to name a need or bring an idea. SPEC §18.22.
+
+human_outcome: >
+  A member sees one our.one: the same look and header as every visitor, the
+  network's places on every page, and the feed as its first project.
+
+adopted_constraints:
+  - What the feed does, its verified words, and every rule and gate behind the pages are unchanged.
+  - No signed-in page lacks the network's places; nothing sends a member away from /.
+  - The public pages still never depend on the database being up.
+  - No X colour, left navigation or Post pill remains.
+  - Fictional data only; nothing loads from anywhere but the site.
+
+hypotheses:
+  - A member who signs in can see that our.one is more than the feed, and find its projects, the builders' invitation and what is open.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - kit/**
+      - vercel.json
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+  external_systems: []
+
+risk:
+  class: MEDIUM
+  reversibility: REVERSIBLE
+  affected_groups: [members, visitors]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+  security: [no-secret-exposure, nothing-loaded-from-elsewhere]
+  privacy: [no-real-person-data-under-this-mandate]
+
+acceptance:
+  tests:
+    - Every signed-in page renders the public header with the four places and the member's feed, notifications and pages; no left navigation or Post pill remains; phones keep the bottom bar.
+    - The site's tokens are our.one's; none of X's colours (#1d9bf0, #f91880, #0f1419, #536471, #eff3f4) remains in the stylesheet or the pictures of the app.
+    - / renders the front door for a member, with "Your feed" in the header and in place of the join form; nothing redirects a member away from /.
+    - The feed is labelled "Feed"; beside it, the panel says what our.one is and that the feed is its first project, with drafts of a need and an idea.
+    - The public pages still render with the database down.
+    - Typecheck, lint, tests, the claims scan, a production build, and pnpm ours check M-0020 --changed.
+  evidence:
+    - a build receipt with screenshots, desktop and phone, light and dark
+    - an independent verification in receipts/conformance/, with the verifiers' tests committed as written before any fix
+
+limits:
+  stop_conditions:
+    - the feed's behaviour or its verified words would have to change
+    - a public page would have to depend on the database being up
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0020 commits; no data, schema or provider is touched
+  irreversible_residue: none
+
+human_approvals:
+  adoption: the founder's "Whole message and mission should coexist on homepage and then for logged users too!" (D-0023)
+  deploy: the founder's go, after screenshots (D-0023 §E)
