@@ -1,0 +1,44 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0015
+title: Where our.one runs — North America, the functions in Cleveland beside the database in Ohio
+status: ADOPTED
+
+requests:
+  decision_class: OPERATIONAL
+  decision_id: D-0022
+
+human_source:
+  path: proposals/P-0015.md
+evidence:
+  - path: proposals/P-0015.evidence-conversation-2026-10-03.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - everyone who uses our.one, whose data is stored in the United States
+  - people in Europe, whose pages come from further away
+
+unresolved:
+  - the legal basis for storing the data of people in the EU in the United States, for the legal review of /privacy (D-0012 §E)
+
+cost:
+  proposer_hours: 0.5
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-03
+    actor: { id: founder, kind: human }
+    position: set Vercel to North America too; most users aren't expected from Europe; can Vercel and Neon stay in North America?
+  - date: 2026-10-03
+    actor: { id: claude, kind: agent }
+    position: yes — no law requires the EU; the functions and the database must sit together; recommended Cleveland (cle1) beside the existing Ohio database (us-east-2); said what it costs people in Europe, and that /privacy must name the transfer for the legal review
+  - date: 2026-10-03
+    actor: { id: founder, kind: human }
+    position: yes, Cleveland next to Ohio, go

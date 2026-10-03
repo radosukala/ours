@@ -1,0 +1,52 @@
+schema: ours.decision/v0.1
+decision_id: D-0022
+title: Where our.one runs — North America, the functions in Cleveland beside the database in Ohio
+status: ADOPTED
+class: OPERATIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0022.md
+
+proposal: P-0015
+prerequisite_decisions: [D-0013, D-0021]
+
+outcome: >
+  our.one runs in North America: its functions in Cleveland (cle1), beside
+  its database at Neon in Ohio (us-east-2). This replaces D-0021 §D's
+  Frankfurt and M-0012's EU region. The site names the places from its own
+  settings; people in Europe wait longer per page, and their data is
+  stored in the United States, whose legal basis is for the legal review of
+  /privacy. Authorizes M-0019 (BUILD) and amends the draft M-0012. The
+  founder's go covers pushing main once M-0019 is built and checked.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0019]
+
+prohibits:
+  - a page that names a region its server doesn't run in
+  - a sentence that says the data is kept in the EU
+  - deploying under M-0019 by anything but the founder's go
+
+effective_from: 2026-10-03T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

@@ -1,0 +1,110 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0019
+title: Where our.one runs — the functions in Cleveland, beside the database in Ohio
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0022
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-03T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0013, D-0021, D-0022]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0019.md
+
+objective: >
+  Build D-0022: apps/web/vercel.json runs the functions in Cleveland (cle1);
+  src/core/hosting.ts names Cleveland; the feed's manifest says its data is
+  kept by Neon in Ohio, in the United States; SPEC §18.21 and the tests
+  that named Frankfurt follow.
+
+human_outcome: >
+  The deployed site runs beside its database, and says truthfully where
+  both are.
+
+adopted_constraints:
+  - No page or manifest says the data is kept in the EU.
+  - A page names a region only where its server runs (D-0021 §C).
+  - Fictional data only; no provider, domain or key is touched.
+
+hypotheses:
+  - With the functions beside the database, a page waits on no Atlantic crossing.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+    deny:
+      - kit/**
+      - vercel.json
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+  external_systems: []
+
+risk:
+  class: LOW
+  reversibility: REVERSIBLE
+  affected_groups: [everyone who uses our.one]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+  security: [no-secret-exposure]
+  privacy: [no-real-person-data-under-this-mandate]
+
+acceptance:
+  tests:
+    - With Vercel's production settings imitated (VERCEL_REGION=cle1, a FICTIONAL Neon address in us-east-2), /privacy and /power name Cleveland, United States (cle1) and Ohio, United States (us-east-2).
+    - apps/web/vercel.json sets the region cle1; no page or manifest says the data is kept in the EU.
+    - The feed passes the kit's check; typecheck, lint, tests and the claims scan pass; pnpm ours check M-0019 --changed authorises the change.
+  evidence:
+    - a build receipt in receipts/builds/ naming the commit, every check and its result, and what was not checked
+
+limits:
+  stop_conditions:
+    - a page would have to name a region its server doesn't run in
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0019 commit; the region is one setting
+  irreversible_residue: none
+
+human_approvals:
+  adoption: the founder's "yes, Cleveland next to Ohio, go" (D-0022)
+  deploy: the founder's go (D-0022 §D)
