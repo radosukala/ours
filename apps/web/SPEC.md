@@ -2592,10 +2592,10 @@ it.
      again there). The other two are labelled *"A possibility · no project
      announced"*, each with a card marked *"Concept only"*. Then the first
      maintainer, *"unpaid, by choice"*, and what the founder holds today.
-   - **`#ours`:** the three rights, marked *Proposed*, with *"Proposed, in a
-     draft nobody has signed yet. None of it is in force: today, the
-     founder decides."*; and the illustration, which says it is one and
-     that our.one can't do it today.
+   - **`#ours`:** the three rights, marked *Proposed*, with the status under
+     them (`OURS_STATUS`: none of the agreement's collective rights is in
+     force, and what already holds on the feed); and the illustration,
+     which says it is one and that our.one can't do it today.
    - **`#build`** (the dark band): the invitation, pay only *"when people
      choose a service and fund it"*, three terms from `/maintainers`, *"Draft
      an idea first"*, the line for a coding agent with a button that copies
@@ -2643,8 +2643,9 @@ it.
    *"3. Then propose it"* and the tools. The *"On your own"* column is
    gone (D-0020 §D).
 6. **`build.md`** starts with the idea: a ninth question in step 1 (how to
-   find out whether people want it), and a new step 2 that drafts
-   `PITCH.md`'s first four parts before any code and asks the person
+   find out whether people want it), and a new step 2 that drafts four of
+   `PITCH.md`'s seven parts (the need, what it offers, what it asks for
+   now, and what has to happen first) before any code, and asks the person
    whether to find out first or to build now. The steps after it are
    renumbered; step 7 finishes `PITCH.md`. **The line for a coding agent**
    is *"Read https://our.one/build.md and follow it to help me bring my
@@ -2670,11 +2671,19 @@ all fixed; `receipts/conformance/2026-10-03-M-0017.verification.md`):
 - **The claims scan** has rules for user control, the holder or a
   safeguard told as existing, and for "protected by our.one", and its "it's
   ours" rule catches a word between and anything named.
-- **In use:** the acid focus ring on the builders' band; placeholders in
-  the muted ink; the "recorded" badge in the text colour; the tab's ring
-  inside it; each tab panel takes focus; before hydration a browser that
-  will run scripts shows the first panel alone and keeps the tabs' room;
-  44px targets on touch screens, and the footer's links spaced to tap.
+- **In use:** the acid focus ring on the builders' band, and the paper's
+  rust in the dialog opened from it; placeholders in the muted ink; the
+  "recorded" badge in the text colour; the tab's ring inside it; each tab
+  panel takes focus; every panel shows until the tabs are drawn, and then
+  the page goes back to the section its address names; the illustration
+  keeps its button's room before hydration; 44px targets on touch screens,
+  and the footer's links spaced to tap.
+- **The claims scan, after the re-check:** "User control exists.", "The
+  data safeguards exist.", "The holder holds your data.", "The holder has
+  been formed." and "The feed is controlled by its users." are caught;
+  "protected by our.one" passes only after a denial in its clause, or in a
+  sentence that names the claim to forbid it; "yours" and "theirs" are
+  caught as "ours" is; "OURS", the working name, isn't the word "ours".
 - **`build.md`** asks the project's name, the repository's address, how a
   person downloads and deletes their data, who can see it including
   whoever runs the service, and which companies (the person chooses); its

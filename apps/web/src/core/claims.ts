@@ -47,6 +47,11 @@ export type Prohibited = {
    * is a denial ("not …", "won't be …") and is not reported.
    */
   unlessPrecededBy?: RegExp;
+  /**
+   * How many characters before a hit `unlessPrecededBy` reads: 40 unless
+   * the rule says more (a denial at the start of its clause).
+   */
+  lookback?: number;
 };
 
 const OWNERSHIP =
@@ -163,7 +168,9 @@ export const PROHIBITED: readonly Prohibited[] = [
     // ours.", "It is now ours.") and anything named ("The feed is ours.",
     // "our.one is ours."). A denial ("is not ours") is not a claim, and the
     // message's own words, "should be ours" and "make it ours", aren't caught.
-    pattern: new RegExp(`(?<![\\w.])[\\w.]+(?:${APOS}s| is| are) (?:(?!not\\b|never\\b)\\w+ )?ours\\b`, "i"),
+    // Its re-check made it read case: "OURS", the repository's working name
+    // (AGENTS.md §11), is not the word "ours" ("What is OURS?").
+    pattern: new RegExp(`(?<![\\w.])[\\w.]+(?:${APOS}s| [Ii]s| [Aa]re) (?:(?!not\\b|never\\b)\\w+ )?[Oo]urs\\b`),
     reason: "D-0012: a members' body gives control, not ownership; \"it's ours\" was dropped.",
   },
   {
@@ -171,18 +178,36 @@ export const PROHIBITED: readonly Prohibited[] = [
     // the holder or a safeguard told as existing. A denial ("isn't built",
     // "none of the data safeguards is built", "until the holder exists")
     // passes.
+    // Its re-check added D-0020's own word ("User control exists.", "The data
+    // safeguards exist."), the plain forms ("The holder holds your data.",
+    // "The holder has been formed.") and the passive ("The feed is controlled
+    // by its users."), and "a", "an" and "any" before a denied subject.
     pattern:
-      /\buser control (?:is|was|has been) (?:now |already )?(?:built|here|in force|in place|live|working|ready)\b|\bholder (?:now|already) (?:holds?|has|keeps|owns)\b|\bholder (?:exists|is (?:now )?(?:formed|founded|set up|in place))\b|\bsafeguards? (?:is|are|was|were|has been|have been) (?:now |already )?(?:built|in place|working|live|in force)\b/i,
+      /\buser control (?:(?:is|was|has been) (?:now |already )?(?:built|here|in force|in place|live|working|ready)|(?:now |already )?exists)\b|\bholder (?:now |already )?(?:holds?|has|keeps|owns) (?:your|their|our|its users|its members|people|the people|members)\b|\bholder (?:exists|(?:is|was|has been) (?:now )?(?:formed|founded|set up|in place))\b|\bsafeguards? (?:(?:is|are|was|were|has been|have been) (?:now |already )?(?:built|in place|working|live|in force)|(?:now |already )?exists?)\b|\b(?:is|are) (?:now |already )?controlled by (?:its |the |our )?(?:users|members|people)\b/i,
     reason: "D-0020: nothing may say that user control, the holder or a safeguard exists before it does.",
-    unlessPrecededBy: /\b(?:none of (?:the|its)|no|not|until|before|once|when|if|unless)\s+(?:(?:the|its|data|seven|our)\s+){0,3}$/i,
+    unlessPrecededBy: /\b(?:none of (?:the|its)|no|not|until|before|once|when|if|unless)\s+(?:(?:the|its|data|seven|our|a|an|any)\s+){0,3}$/i,
   },
   {
     // The verification of M-0017: the kit's own check knows the phrase; the
-    // site's scan didn't. The rules' denial ("or as approved, listed or
-    // protected by our.one") passes.
+    // site's scan didn't. Its re-check: only a denial earlier in the same
+    // clause lets it through ("isn't", "won't be", "not", "never", "no",
+    // "nor"), as the kit's check reads it, so rule 9's own words ("Don't
+    // present it … as approved, listed or protected by our.one.") pass and
+    // "As a member, you're protected by our.one." doesn't.
     pattern: /\bprotected by our\.one\b/i,
     reason: "D-0019 rule 9 and D-0020: nothing is protected by our.one; no safeguard is built.",
-    unlessPrecededBy: /\b(?:as|not|n't|never|nor|or)\b[^.]{0,60}$/i,
+    // A sentence that names the claim to forbid it ("presents it as …
+    // protected by our.one", the kit's own messages) passes too.
+    unlessPrecededBy: /(?:\bnot\b|n['’]t\b|\bnever\b|\bno\b|\bnor\b|\bnone\b|\bpresent(?:s|ed|ing)?\b[^.;:!?]*\bas\b)[^.;:!?]*$/i,
+    lookback: 200,
+  },
+  {
+    // The re-check of M-0017: "ours" was widened, and its twin wasn't. A
+    // service told as "yours" or "theirs", with a word between or anything
+    // named; what a maintainer decides ("ordinary product decisions are
+    // yours", the agreement's terms) is not a claim of ownership.
+    pattern: new RegExp(`(?<![\\w.])(?!decisions?\\b|choices?\\b)[\\w.]+(?:${APOS}s| is| are) (?:(?!not\\b|never\\b)\\w+ )?(?:yours|theirs)\\b`, "i"),
+    reason: "D-0012: no claim of ownership, in the present or as done; \"it's yours\" is the same claim as \"it's ours\".",
   },
   {
     // "hand it to" since M-0013: the front page's signed promise handed
@@ -665,7 +690,7 @@ function scanNormalized(text: string, name: string | null, jsEscapes: boolean): 
       for (const found of scanned.matchAll(global)) {
         const index = found.index ?? 0;
         if (rule.unlessPrecededBy) {
-          const before = scanned.slice(Math.max(0, index - 40), index);
+          const before = scanned.slice(Math.max(0, index - (rule.lookback ?? 40)), index);
           if (rule.unlessPrecededBy.test(before)) continue;
         }
         const offset = normalized.origin[index] ?? 0;

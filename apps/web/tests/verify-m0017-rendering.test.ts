@@ -539,7 +539,10 @@ function phoneHeight(selectors: string[], fallbackFont: number, rules: CssRule[]
 
 describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
   it("fixed (MEDIUM): in the builders' dark band the focus ring is rust on forest, 2.52:1, under the 3:1 a focus indicator needs against what is next to it (WCAG 1.4.11, for 2.4.7's visible focus) — measured in headless Chrome 154 by Tab at 320, 375 and 1280px, light: 'Draft an idea first', 'The maintainer's deal', 'Copy the line', 'Read build.md' and 'How building on our.one works.' each drew a 3px #bf411d ring on #253328 (dark: #ec8d66 on #0b110c, 7.8:1); globals.css gives every public :focus-visible var(--rust), and door.module.css gives .builders no ring of its own", () => {
-    const own = ALL_RULES.flatMap((r) => r.selectors).filter((s) => /builders/.test(s) && /focus-visible/.test(s));
+    // Changed after the re-check (RC1): the draft dialog opened from the band
+    // sits on the paper, with the paper's rust ring; the band's own ring is
+    // what's measured on the forest here.
+    const own = ALL_RULES.flatMap((r) => r.selectors).filter((s) => /builders/.test(s) && /focus-visible/.test(s) && !/\.draft\b/.test(s));
     const band = ring(own);
     for (const scheme of SCHEMES) {
       const forest = resolve("var(--forest)", scheme);
@@ -646,14 +649,14 @@ describe("findings (each FAILS on e4e5637, and passes once fixed)", () => {
     const hydrated = door({}, true);
     const hidden = (t: El) => panels(t).map((p) => p.attrs.hidden !== undefined);
     expect(hidden(hydrated)).toEqual([false, true, true]);
-    const markup = renderToStaticMarkup(createElement(FrontDoor, { joining: true, email: null }));
-    // Either the server hides what the hydrated page hides, with a <noscript> for a browser without scripts,
-    // or the stylesheet hides the later panels only where scripts run (@media (scripting: enabled)).
-    const sameAsHydrated = JSON.stringify(hidden(server)) === JSON.stringify(hidden(hydrated)) && /<noscript>/.test(markup);
-    const byScripting = D_RULES.some(
-      (r) => r.media !== null && /scripting:\s*enabled/.test(r.media) && /\.panel/.test(r.selectors.join(",")) && /display:\s*none/.test(r.body),
-    );
-    expect(sameAsHydrated || byScripting, `server panels hidden: ${JSON.stringify(hidden(server))}`).toBe(true);
+    // Changed after the re-check (RC2): hiding the later panels before hydration
+    // hid them for good where the page's scripts never run. The server shows
+    // every panel, and once hydrated the page goes back to the section its
+    // address names (ServiceTabs.tsx), so a deep link lands where it points.
+    expect(hidden(server)).toEqual([false, false, false]);
+    const tabs = read("src/components/public/ServiceTabs.tsx");
+    expect(tabs).toMatch(/window\.location\.hash/);
+    expect(tabs).toContain("target.scrollIntoView()");
   });
 
   it("fixed (LOW): on a phone the footer's links are 15px targets in rows 19.5px apart, so their 24px circles meet (WCAG 2.5.8) on every public page — measured in Chrome 154 with touch at 320 and 375px: 'Contract' and 'Open code', 'Agreement' and 'Costs', 'Open code' and 'Privacy'; and at 320px on /power 'The public ledger' beside the wrapped 'Founding authority, section 4: no bank account' (13px at /power's line-height 1.6, 20.8px rows). The footer's type predates M-0017; nothing gives these links a taller box", () => {

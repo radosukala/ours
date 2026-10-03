@@ -11,6 +11,8 @@ out first; build now; the person's last answers. The project is in
   https://our.one/build.md and follow it to help me bring my idea to
   our.one.") and a FICTIONAL person's answers (a tool-lending library for
   one street), against a local production build of `e4e5637` on port 3412.
+  It ran in Claude Code, as a subagent the architect started on this
+  machine, with no context but its brief.
 - **Result:** it read build.md, drafted `PITCH.md` with build.md's headings
   in the tool's order (four parts filled in, three TODO), asked "find out
   first, or build now?", and stopped when the person chose to find out
@@ -91,4 +93,8 @@ numbering is said to be the rules block's.
   "not chosen yet" would pass it. The tool is out of M-0017's scope.
 - **The stop hook** never ran: the trial's session started in the OURS
   repository, not the project's folder. It was not observed here either.
+- **The example files are on GitHub,** not served by our.one: `build.md`
+  links the feed's `our.one.json` and `AGENTS.md` in the public repository,
+  which an agent can read there. Serving them from our.one is for the next
+  kit change.
 

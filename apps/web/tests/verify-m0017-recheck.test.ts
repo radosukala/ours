@@ -528,7 +528,7 @@ function runTool(dir: string, args: string[]) {
 /* =============================================================== findings */
 
 describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
-  it("DEFECT (MEDIUM): R1's fix put the acid focus ring on everything inside the builders' band, and the draft dialog that 'Draft an idea first' opens is inside it in the DOM, on the light paper: in the light theme its fields and buttons are ringed in the acid on the paper, 1.09:1, where a focus indicator needs 3:1 (WCAG 2.4.7 with 1.4.11) — measured in headless Chrome 154 against next start of 8337d52 at 1280px, light, on both servers: the dialog opens with focus in its first field, ringed 3px rgb(225, 242, 139) on the dialog's rgb(245, 243, 235), 1.09:1, and Tab to 'Copy my draft' draws the same; the dialogs opened from 'Your part', /build and /maintainers draw the rust, 4.74:1; dark, the acid on the dark paper is 14.56:1", () => {
+  it("fixed (MEDIUM): R1's fix put the acid focus ring on everything inside the builders' band, and the draft dialog that 'Draft an idea first' opens is inside it in the DOM, on the light paper: in the light theme its fields and buttons are ringed in the acid on the paper, 1.09:1, where a focus indicator needs 3:1 (WCAG 2.4.7 with 1.4.11) — measured in headless Chrome 154 against next start of 8337d52 at 1280px, light, on both servers: the dialog opens with focus in its first field, ringed 3px rgb(225, 242, 139) on the dialog's rgb(245, 243, 235), 1.09:1, and Tab to 'Copy my draft' draws the same; the dialogs opened from 'Your part', /build and /maintainers draw the rust, 4.74:1; dark, the acid on the dark paper is 14.56:1", () => {
     const tree = door({ email: EMAIL }, true);
     const fromBuild = findAll(tree, (e) => e.tag === "section" && e.attrs.id === "build").flatMap(dialogs);
     expect(fromBuild).toHaveLength(1);
@@ -554,7 +554,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(problems).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): R10's fix hides 'Your work' and 'Your audience' wherever scripting is on and the page hasn't hydrated, so a browser that keeps scripting on and never runs the page's scripts (a blocker that refuses them by content policy, a chunk that fails to load) never shows the two labelled possibilities D-0020 §A puts on the front door, and draws an empty bar where tabs never come: content hidden, for that minority of browsers, and the feed's panel still shows — measured in headless Chrome 154 with the page's .js chunks blocked (matchMedia('(scripting: enabled)') stays true), at 320, 375, 768, 1280 and 1440px, light and dark: the first panel shows, the second and third stay display:none under a 52px bar with a bottom rule, and no tab is drawn; with scripting off (Emulation.setScriptExecutionDisabled) all three show. Before the fix, that browser showed all three", () => {
+  it("fixed (MEDIUM): R10's fix hides 'Your work' and 'Your audience' wherever scripting is on and the page hasn't hydrated, so a browser that keeps scripting on and never runs the page's scripts (a blocker that refuses them by content policy, a chunk that fails to load) never shows the two labelled possibilities D-0020 §A puts on the front door, and draws an empty bar where tabs never come: content hidden, for that minority of browsers, and the feed's panel still shows — measured in headless Chrome 154 with the page's .js chunks blocked (matchMedia('(scripting: enabled)') stays true), at 320, 375, 768, 1280 and 1440px, light and dark: the first panel shows, the second and third stay display:none under a 52px bar with a bottom rule, and no tab is drawn; with scripting off (Emulation.setScriptExecutionDisabled) all three show. Before the fix, that browser showed all three", () => {
     const server = door({}, false);
     const box = findAll(server, (e) => hasClass(e, "tabsBox"))[0]!;
     expect(box.attrs["data-ready"]).toBeUndefined();
@@ -574,12 +574,16 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(hidden).toEqual([[], [], []]);
   });
 
-  it("DEFECT (LOW): a fresh load of /#build still lands 50–72px low, /#open 23–24px low from 768px, and /#ours 2–7px low: R10's fix keeps the tabs' room as 52px, but the tab list is 54.1px on a phone and 59.3px from 768px, and the illustration's button arrives with hydration above #build and #open, with nothing kept for it — measured in headless Chrome 154 against :3532, scripts blocked and then hydrated, 1.2s after load, each section's top (16px is its scroll margin): #ours 16 → 18 at 320 and 375, 16 → 23 at 768 and 1280; #build 16 → 88 at 320, 70 at 375, 66 at 1280 (on the mark at 768); #open 16 → 40 at 768, 39 at 1280; #idea, #projects and #part on the mark. R10 named /#open (23px) and /#build (54px) beside /#ours", () => {
+  it("fixed (LOW): a fresh load of /#build still lands 50–72px low, /#open 23–24px low from 768px, and /#ours 2–7px low: R10's fix keeps the tabs' room as 52px, but the tab list is 54.1px on a phone and 59.3px from 768px, and the illustration's button arrives with hydration above #build and #open, with nothing kept for it — measured in headless Chrome 154 against :3532, scripts blocked and then hydrated, 1.2s after load, each section's top (16px is its scroll margin): #ours 16 → 18 at 320 and 375, 16 → 23 at 768 and 1280; #build 16 → 88 at 320, 70 at 375, 66 at 1280 (on the mark at 768); #open 16 → 40 at 768, 39 at 1280; #idea, #projects and #part on the mark. R10 named /#open (23px) and /#build (54px) beside /#ours", () => {
     // The tab list's height, from the stylesheet, at each width it changes: the tab's line box, padding and
     // bottom border (or its min-height), its negative margin, and the list's own bottom border.
     const lh = parseFloat(value([".public"], "line-height", (m) => m === null, G_RULES) ?? "0");
     expect(lh).toBe(1.55);
-    expect(D_RULES.find((r) => r.selectors.includes(".tabsBox:not([data-ready])::before"))?.media).toBe("(scripting: enabled)");
+    // Changed after the fix (RC2): the reserved bar is gone with the rule that hid
+    // the panels; once hydrated, ServiceTabs takes the visitor back to the section
+    // the address names, so the tabs' arrival can't leave a deep link low.
+    expect(D_RULES.find((r) => r.selectors.includes(".tabsBox:not([data-ready])::before"))).toBeUndefined();
+    expect(read("src/components/public/ServiceTabs.tsx")).toContain("target.scrollIntoView()");
     expect(GLOBALS).toMatch(/\*,\s*\*::before,\s*\*::after\s*\{\s*box-sizing: border-box;/); // the bar's own rule is inside its height
     const widths: [string, (m: string | null) => boolean][] = [
       ["from 761px", (m) => m === null],
@@ -615,7 +619,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect({ tabs: off, illustration: kept }).toEqual({ tabs: [], illustration: true });
   });
 
-  it("DEFECT (MEDIUM): H5's rule doesn't see D-0020's first prohibition in its own word — 'Saying that user control, the holder or any safeguard exists' — for two of its three subjects: 'User control exists.' and 'The data safeguards exist.' pass, while 'The holder exists.' is caught; and the plainest forms pass too, because the rule wants 'now' or 'already' before the holder's verb and 'is' before its state: 'The holder holds your data.', 'The holder has been formed.', and the passive of 'users control', 'The feed is controlled by its users.'", () => {
+  it("fixed (MEDIUM): H5's rule doesn't see D-0020's first prohibition in its own word — 'Saying that user control, the holder or any safeguard exists' — for two of its three subjects: 'User control exists.' and 'The data safeguards exist.' pass, while 'The holder exists.' is caught; and the plainest forms pass too, because the rule wants 'now' or 'already' before the holder's verb and 'is' before its state: 'The holder holds your data.', 'The holder has been formed.', and the passive of 'users control', 'The feed is controlled by its users.'", () => {
     expect(record("decisions/D-0020.md")).toContain("Saying that user control, the holder or any safeguard exists before it does.");
     expect(scanText("The holder exists.", null).map((h) => h.match)).toEqual(["holder exists"]);
     // The pages' own denials pass, now and after any fix.
@@ -643,7 +647,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(claims.filter((c) => scanText(c, null).length === 0)).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): H5's 'protected by our.one' rule is wrong both ways: it lets the phrase through whenever 'as', 'or', 'not', 'never' or 'nor' stands anywhere in the 40 characters before it, so 'As a member, you're protected by our.one.', 'Your data is never sold: it is protected by our.one.' and 'Whether you build or use it, it's protected by our.one.' pass; and its 'n't' can never match after a letter, so the plain denials 'It isn't protected by our.one.', 'Your project won't be protected by our.one.' and 'It hasn't been protected by our.one.' are refused. The kit's own check, which round one named as knowing the phrase, does the opposite on all six (run here on a FICTIONAL folder)", () => {
+  it("fixed (MEDIUM): H5's 'protected by our.one' rule is wrong both ways: it lets the phrase through whenever 'as', 'or', 'not', 'never' or 'nor' stands anywhere in the 40 characters before it, so 'As a member, you're protected by our.one.', 'Your data is never sold: it is protected by our.one.' and 'Whether you build or use it, it's protected by our.one.' pass; and its 'n't' can never match after a letter, so the plain denials 'It isn't protected by our.one.', 'Your project won't be protected by our.one.' and 'It hasn't been protected by our.one.' are refused. The kit's own check, which round one named as knowing the phrase, does the opposite on all six (run here on a FICTIONAL folder)", () => {
     const sentences = [
       "As a member, you're protected by our.one.",
       "Your data is never sold: it is protected by our.one.",
@@ -663,7 +667,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(sentences.map((s) => scanText(s, null).length > 0)).toEqual([true, true, true, false, false, false]);
   });
 
-  it("DEFECT (LOW): H6 widened the 'it's ours' rule, and left its twin narrow: 'It's yours' and 'It is yours' are caught, but 'The feed is yours.', 'It's already yours.', 'our.one is yours.' and 'This service is theirs.' pass, while 'It's already ours.' is caught — ownership in the second and third person is the same claim D-0012 dropped (the rule beside it lists 'it's yours' and 'it's theirs'). Two true sentences any widening must keep: /maintainers' 'ordinary product decisions are yours' and /agreement's '… are theirs'", () => {
+  it("fixed (LOW): H6 widened the 'it's ours' rule, and left its twin narrow: 'It's yours' and 'It is yours' are caught, but 'The feed is yours.', 'It's already yours.', 'our.one is yours.' and 'This service is theirs.' pass, while 'It's already ours.' is caught — ownership in the second and third person is the same claim D-0012 dropped (the rule beside it lists 'it's yours' and 'it's theirs'). Two true sentences any widening must keep: /maintainers' 'ordinary product decisions are yours' and /agreement's '… are theirs'", () => {
     expect(scanText("It's yours.", null)).toHaveLength(1);
     expect(scanText("It's already ours.", null)).toHaveLength(1);
     for (const [file, words] of [
@@ -679,7 +683,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(claims.filter((c) => scanText(c, null).length === 0)).toEqual([]);
   });
 
-  it("DEFECT (LOW): the new rules refuse true sentences in the repository's records — H5's denial list knows 'the' and not 'a', so D-0017's own 'No money moves through our.one until a holder exists.' and 'Taking money through our.one before a holder exists.' are refused (the pages pass only because they say 'until the holder exists'); and H6's widened rule, blind to case, refuses sentences about OURS, the repository's working name (AGENTS.md §11): 'The first user is OURS itself.' (foundation/FIRST-PRODUCT.md) and 'What is OURS?' (P-0004, P-0005). None is on a page or in the kit today (the scan of the site's and the kit's text finds nothing); each is refused the day it is quoted", () => {
+  it("fixed (LOW): the new rules refuse true sentences in the repository's records — H5's denial list knows 'the' and not 'a', so D-0017's own 'No money moves through our.one until a holder exists.' and 'Taking money through our.one before a holder exists.' are refused (the pages pass only because they say 'until the holder exists'); and H6's widened rule, blind to case, refuses sentences about OURS, the repository's working name (AGENTS.md §11): 'The first user is OURS itself.' (foundation/FIRST-PRODUCT.md) and 'What is OURS?' (P-0004, P-0005). None is on a page or in the kit today (the scan of the site's and the kit's text finds nothing); each is refused the day it is quoted", () => {
     const d17 = record("decisions/D-0017.md");
     expect(d17).toContain("No money moves through our.one until a holder exists.");
     expect(d17).toContain("Taking money through our.one before a holder exists.");
@@ -697,7 +701,11 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(truths.filter((t) => scanText(t, null).length > 0)).toEqual([]);
   });
 
-  it("DEFECT (LOW): for a signed-in visitor, two of the header's four places don't reach what they name — 'The idea' (/#idea) and 'In the open' (/#open) go to the front door, which sends a signed-in visitor to /home as M-0017 keeps it ('as before'), so a member can't reach the idea or what's built, a draft and not built from the header on any public page — measured in headless Chrome 154 against :3532, signed in as the FICTIONAL administrator from `pnpm seed:fictional`: from /build, 'The idea' and 'In the open' landed on /home (its heading 'Home'), and a fresh load of /#open on /home#open. D-0020 §B puts both places in the header 'on every public page'; which gives way is the founder's call", async () => {
+  // Recorded, not fixed (the verification receipt, round two): M-0017 keeps the
+  // redirect for signed-in visitors "as before", and D-0020 §B puts the four
+  // places in the header; which gives way is the founder's call. The test stays
+  // as written, and skipped, until that decision.
+  it.skip("recorded, not fixed (LOW): for a signed-in visitor, two of the header's four places don't reach what they name — 'The idea' (/#idea) and 'In the open' (/#open) go to the front door, which sends a signed-in visitor to /home as M-0017 keeps it ('as before'), so a member can't reach the idea or what's built, a draft and not built from the header on any public page — measured in headless Chrome 154 against :3532, signed in as the FICTIONAL administrator from `pnpm seed:fictional`: from /build, 'The idea' and 'In the open' landed on /home (its heading 'Home'), and a fresh load of /#open on /home#open. D-0020 §B puts both places in the header 'on every public page'; which gives way is the founder's call", async () => {
     expect(read("src/app/(public)/page.tsx")).toContain('if (await signedIn()) redirect("/home");');
     const intoDoor = PLACES.filter((p) => p.href.startsWith("/#"));
     auth.signedIn = true;
@@ -710,7 +718,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(intoDoor.length === 0 || outcome === "renders", `${intoDoor.map((p) => `${p.label} (${p.href})`).join(", ")}: ${outcome}`).toBe(true);
   });
 
-  it("DEFECT (LOW): /build's new sentence on the trial says the line 'has been tried once, in Claude Code'; nothing in the records of M-0017's trial says which agent or which harness ran it — its REPORT says 'a fresh agent' and the verification receipt 'a fresh agent' (AGENTS.md §10: a sentence with a number carries a source, and a person confirms the source says it; M-0016's trial report did say Claude Code, so round one's H15 then could source it)", () => {
+  it("fixed (LOW): /build's new sentence on the trial says the line 'has been tried once, in Claude Code'; nothing in the records of M-0017's trial says which agent or which harness ran it — its REPORT says 'a fresh agent' and the verification receipt 'a fresh agent' (AGENTS.md §10: a sentence with a number carries a source, and a person confirms the source says it; M-0016's trial report did say Claude Code, so round one's H15 then could source it)", () => {
     const build = textOf(render(BuildPage));
     const sentence = /It has been tried once[^.]*\./.exec(build)?.[0] ?? "";
     expect(sentence.length).toBeGreaterThan(0);
@@ -722,7 +730,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(!/\bin Claude Code\b/.test(sentence) || /Claude Code/.test(report) || /Claude Code/.test(receipt)).toBe(true);
   });
 
-  it("DEFECT (LOW): the trial's sixth gap in build.md — 'the example files live on GitHub, not on our.one' — is neither fixed nor recorded: build.md still sends an agent to GitHub for the feed's our.one.json and AGENTS.md, and neither the trial's 'Recorded, not changed' nor the receipt's lists it, while the stopping rule ends with 'every finding is fixed or recorded'", () => {
+  it("fixed (LOW): the trial's sixth gap in build.md — 'the example files live on GitHub, not on our.one' — is neither fixed nor recorded: build.md still sends an agent to GitHub for the feed's our.one.json and AGENTS.md, and neither the trial's 'Recorded, not changed' nor the receipt's lists it, while the stopping rule ends with 'every finding is fixed or recorded'", () => {
     const report = readRoot(TRIAL_REPORT);
     expect(flat(report)).toContain("the example files live on GitHub, not on our.one;");
     expect(flat(readRoot(RECEIPT))).toContain("Then every finding is fixed or recorded here. There is no further round.");
@@ -737,7 +745,7 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect({ fixed: servedHere, recorded: mentions(recordedInReport) || mentions(recordedInReceipt) }).not.toEqual({ fixed: false, recorded: false });
   });
 
-  it("DEFECT (LOW): SPEC §18.19 says 'The words below are the files', word for word', and still quotes the rights' status the fix replaced ('None of it is in force: today, the founder decides.', now OURS_STATUS's 'None of its collective rights is in force …'), and says build.md's step 2 drafts 'PITCH.md's first four parts', where it fills in the first, second, fifth and sixth of seven", () => {
+  it("fixed (LOW): SPEC §18.19 says 'The words below are the files', word for word', and still quotes the rights' status the fix replaced ('None of it is in force: today, the founder decides.', now OURS_STATUS's 'None of its collective rights is in force …'), and says build.md's step 2 drafts 'PITCH.md's first four parts', where it fills in the first, second, fifth and sixth of seven", () => {
     const spec = read("SPEC.md");
     const section = flat(spec.slice(spec.indexOf("### 18.19"), spec.indexOf("**After the verification**", spec.indexOf("### 18.19"))));
     expect(section).toContain("The words below are the files', word for word");
@@ -798,7 +806,8 @@ describe("closed checks (each held, and passes)", () => {
     // Nothing outside `(scripting: enabled)` hides a panel; the bar is drawn only there.
     const noScripts = (m: string | null) => m === null || /max-width|pointer/.test(m);
     expect(panels.map((p) => hiddenBy(p, D_RULES, noScripts))).toEqual([[], [], []]);
-    expect(D_RULES.filter((r) => r.selectors.some((s) => /tabsBox[^,]*::before/.test(s))).map((r) => r.media)).toEqual(["(scripting: enabled)"]);
+    // Changed after the fix (RC2): no bar is drawn anywhere now.
+    expect(D_RULES.filter((r) => r.selectors.some((s) => /tabsBox[^,]*::before/.test(s))).map((r) => r.media)).toEqual([]);
     // The rule between stacked panels, and only between panels that aren't tab panels.
     const between = D_RULES.filter((r) => r.media === null && r.selectors.some((s) => selectorMatches(panels[1]!, s)) && /border-top/.test(r.body));
     expect(between.flatMap((r) => r.selectors)).toEqual(['.panel:not([role="tabpanel"]) + .panel:not([role="tabpanel"])']);
@@ -986,11 +995,14 @@ describe("closed checks (each held, and passes)", () => {
   });
 
   it("closed: the adapted tests kept their force — R10's test still fails without the rule it accepts (the stylesheet without its `(scripting: enabled)` block leaves the server's panels unhidden and no such rule); H17's two adaptations still find no draft on /projects, before or after hydration, and both kinds on /maintainers once hydrated and none before; the invite link's four adapted tests name /feed#front-runs, which /feed draws; M-0015's re-check counts no button-drawn link on its eight pages, and the one /build draws without scripts keeps the button's colours by `.page a:global(.btn)`; and the illustration's adapted check asks for the still words without scripts and the button's words with them", async () => {
-    // R10's predicate, on the stylesheet as it is and without the rule the fix added.
-    const r10 = (css: string) => cssRules(css, 100_000).some((r) => r.media !== null && /scripting:\s*enabled/.test(r.media) && /\.panel/.test(r.selectors.join(",")) && /display:\s*none/.test(r.body));
-    const withoutRule = DOOR_CSS.replace(/@media \(scripting: enabled\) \{[\s\S]*?\n\}\n/, "");
-    expect(withoutRule.length).toBeLessThan(DOOR_CSS.length);
-    expect([r10(DOOR_CSS), r10(withoutRule)]).toEqual([true, false]);
+    // Changed after the fix (RC2): R10's rule hid the panels for good where the
+    // page's scripts never run, so it is gone; R10's test now asks for the
+    // panels unhidden before hydration and for the scroll back to the section the
+    // address names once hydrated, and fails without that scroll.
+    const r10 = (tabs: string) => /window\.location\.hash/.test(tabs) && /scrollIntoView\(\)/.test(tabs);
+    const tabs = read("src/components/public/ServiceTabs.tsx");
+    expect([r10(tabs), r10(tabs.replace("target.scrollIntoView()", "void target"))]).toEqual([true, false]);
+    expect(DOOR_CSS).not.toMatch(/\.panel \+ \.panel\s*\{\s*display:\s*none/);
     // H17 and R9.
     for (const hydrated of [false, true]) {
       expect(findAll(pageTree(ProjectsPage, hydrated), (e) => (e.tag === "a" || e.tag === "button") && /^Draft /.test(text(e)))).toEqual([]);

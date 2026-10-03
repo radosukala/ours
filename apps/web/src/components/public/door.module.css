@@ -462,22 +462,11 @@
   border-top: 1px solid var(--line);
 }
 
-/* Before the page's JavaScript runs, a browser that will run it shows the
-   first panel alone, and keeps the tabs' room, so nothing below jumps when
-   the tabs arrive (the verification of M-0017). A browser without
-   JavaScript shows every panel. */
-@media (scripting: enabled) {
-  .tabsBox:not([data-ready]) .panel + .panel {
-    display: none;
-  }
-
-  .tabsBox:not([data-ready])::before {
-    content: "";
-    display: block;
-    height: 52px;
-    border-bottom: 1px solid var(--line);
-  }
-}
+/* Every panel shows until the page's JavaScript draws the tabs, so a
+   browser that never runs it hides nothing; once the tabs are drawn, the
+   page goes back to the section its address names (ServiceTabs.tsx; the
+   re-check of M-0017 found that hiding the panels before then hid them for
+   good where the scripts never run). */
 
 .possibility {
   display: grid;
@@ -619,25 +608,11 @@
   font-size: 14px;
 }
 
+/* The app's own caught-up marker (Marker.tsx), drawn by its own classes;
+   this only places it in the slip (the verification of M-0017). */
 .caughtUp {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 26px;
-  padding-top: 23px;
-  border-top: 1px solid var(--line);
-  color: var(--sub);
+  margin-top: 18px;
   font-size: 12px;
-}
-
-.caughtUp span {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--acid);
-  color: var(--on-acid);
 }
 
 .workRows {
@@ -896,6 +871,16 @@
   line-height: 1.5;
 }
 
+/* Before the page's JavaScript runs, the illustration keeps its button's
+   room (36px), so what's below doesn't move when the button arrives. A
+   browser that never runs it keeps an empty line there, and hides nothing
+   (the re-check of M-0017). */
+@media (scripting: enabled) {
+  .continuity:not([data-ready]) .result {
+    margin-top: 53px;
+  }
+}
+
 /* Builders: the dark band. */
 .builders {
   border-top: 0;
@@ -911,6 +896,13 @@
    under the 3:1 a focus ring needs (the verification of M-0017). */
 .builders :focus-visible {
   outline: 3px solid var(--acid);
+  outline-offset: 3px;
+}
+
+/* The draft dialog opened from the band sits in it, on the paper: its ring
+   is the paper's rust, not the band's acid (the re-check of M-0017). */
+.builders :global(.draft) :focus-visible {
+  outline: 3px solid var(--rust);
   outline-offset: 3px;
 }
 

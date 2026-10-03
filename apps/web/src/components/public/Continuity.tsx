@@ -20,7 +20,7 @@ export function Continuity() {
   const [changed, setChanged] = useState(false);
 
   return (
-    <figure className={styles.continuity} aria-labelledby="continuity-label">
+    <figure className={styles.continuity} aria-labelledby="continuity-label" data-ready={ready ? "" : undefined}>
       <p id="continuity-label" className={styles.eyebrowSmall}>
         {ILLUSTRATION.label}
       </p>

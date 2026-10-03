@@ -2,10 +2,10 @@
  * The front door's words (D-0020 §A; SPEC §18.19), in one place, so the
  * page, the layout's footer and the tests read the same sentences.
  *
- * Every sentence here is held to D-0020 §F: nothing says user control, the
- * holder or a safeguard exists; the agreement's rights are proposed; each
- * possibility is labelled; no pay or audience is promised; and every status
- * is as true on the deployed site as off it.
+ * Every sentence here is held to D-0020 §F: no sentence claims user control,
+ * the holder or any safeguard before it is there; the agreement's rights are
+ * proposed; each possibility is labelled; no pay or audience is promised;
+ * and every status is as true on the deployed site as off it.
  */
 
 /** The line under the wordmark in every public footer, and the headline's words. */

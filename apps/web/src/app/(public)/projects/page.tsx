@@ -2,8 +2,9 @@
  * /projects (SPEC §18.17, M-0015, D-0018 §C): every service on our.one is
  * a project with a page that says who runs it, what it costs and what its
  * users control. The feed is the first, under the same common agreement as
- * every one after it, with its exception stated (D-0017 §D): it runs before
- * its data safeguards exist, held by the founder as the contract says.
+ * every one after it, with its exception stated (D-0017 §D): it runs
+ * although none of its data safeguards is built, held by the founder as the
+ * contract says.
  * Whether it moves to the holder before the contract's count is open
  * (D-0017 §K.4), and the page says so (the re-check of M-0015).
  *

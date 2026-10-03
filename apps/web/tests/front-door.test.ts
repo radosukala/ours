@@ -301,6 +301,17 @@ describe("the front door's copy (D-0020 §A)", () => {
     expect(html).not.toContain(ILLUSTRATION.change);
   });
 
+  it("the feed's picture ends as the app draws it: the app's own marker, above a post from before the last visit, restyled by nothing of the slip's (found in the architect's screenshot after the verification's fixes: a leftover rule drew each of the marker's spans as a 22px circle)", () => {
+    const projects = section(render(), "projects");
+    expect(projects).toContain('class="marker');
+    expect(textOf(projects)).toContain("You've seen everything from before your last visit, 2 days ago.");
+    expect(textOf(projects).indexOf("You're caught up")).toBeLessThan(textOf(projects).indexOf("Pavel"));
+    const css = read("src/components/public/door.module.css");
+    // No descendant rule under .caughtUp (".caughtUp span {" drew the circles).
+    expect(css).not.toMatch(/\.caughtUp\s+[^\s{,][^{,]*\{/);
+    expect(".caughtUp span {").toMatch(/\.caughtUp\s+[^\s{,][^{,]*\{/);
+  });
+
   it("the builders: the invitation, the deal's terms, the line for a coding agent, the three steps and what passing means", () => {
     const html = section(render(), "build");
     const text = textOf(html);

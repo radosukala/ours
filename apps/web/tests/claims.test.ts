@@ -196,14 +196,22 @@ const SAMPLES: Record<string, string[]> = {
   // Changed after the verification of M-0017: the rule was widened ("It's
   // already ours.", "The feed is ours."), and two rules joined it for D-0020's
   // first prohibition and "protected by our.one".
-  "(?<![\\w.])[\\w.]+(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is| are) (?:(?!not\\b|never\\b)\\w+ )?ours\\b": ["It's ours.", "it is ours", "It's already ours.", "It is now ours.", "The feed is ours.", "our.one is ours."],
-  "\\buser control (?:is|was|has been) (?:now |already )?(?:built|here|in force|in place|live|working|ready)\\b|\\bholder (?:now|already) (?:holds?|has|keeps|owns)\\b|\\bholder (?:exists|is (?:now )?(?:formed|founded|set up|in place))\\b|\\bsafeguards? (?:is|are|was|were|has been|have been) (?:now |already )?(?:built|in place|working|live|in force)\\b": [
+  "(?<![\\w.])[\\w.]+(?:(?:'|’|&apos;|&#39;|&rsquo;)s| [Ii]s| [Aa]re) (?:(?!not\\b|never\\b)\\w+ )?[Oo]urs\\b": ["It's ours.", "it is ours", "It's already ours.", "It is now ours.", "The feed is ours.", "our.one is ours."],
+  "\\buser control (?:(?:is|was|has been) (?:now |already )?(?:built|here|in force|in place|live|working|ready)|(?:now |already )?exists)\\b|\\bholder (?:now |already )?(?:holds?|has|keeps|owns) (?:your|their|our|its users|its members|people|the people|members)\\b|\\bholder (?:exists|(?:is|was|has been) (?:now )?(?:formed|founded|set up|in place))\\b|\\bsafeguards? (?:(?:is|are|was|were|has been|have been) (?:now |already )?(?:built|in place|working|live|in force)|(?:now |already )?exists?)\\b|\\b(?:is|are) (?:now |already )?controlled by (?:its |the |our )?(?:users|members|people)\\b": [
     "User control is built.",
     "The holder now holds your data.",
     "The holder exists.",
     "The data safeguards are built.",
     "Every safeguard is now in place.",
+    // The re-check of M-0017: D-0020's own word, the plain forms, the passive.
+    "User control exists.",
+    "The data safeguards exist.",
+    "The holder holds your data.",
+    "The holder has been formed.",
+    "The feed is controlled by its users.",
   ],
+  // The re-check of M-0017: the twin of the widened "ours" rule.
+  "(?<![\\w.])(?!decisions?\\b|choices?\\b)[\\w.]+(?:(?:'|’|&apos;|&#39;|&rsquo;)s| is| are) (?:(?!not\\b|never\\b)\\w+ )?(?:yours|theirs)\\b": ["The feed is yours.", "It's already yours.", "our.one is yours.", "This service is theirs."],
   "\\bprotected by our\\.one\\b": ["Your data is protected by our.one.", "Protected by our.one"],
   // "hand it to" since M-0013 (D-0015 §C): the rule could not see the signed promise's form. The
   // verification of M-0013 added the past tense and our.one by name.

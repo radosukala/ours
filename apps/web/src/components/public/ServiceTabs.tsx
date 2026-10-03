@@ -8,7 +8,7 @@
  * tabs aren't drawn. With it, the tabs take their place, with the arrow
  * keys, Home and End, as WAI-ARIA's tabs pattern describes.
  */
-import { type ReactNode, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { useHydrated } from "./useHydrated";
 import styles from "./door.module.css";
 
@@ -19,6 +19,18 @@ export function ServiceTabs({ tabs, label }: { tabs: readonly Tab[]; label: stri
   const [current, setCurrent] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const base = useId();
+
+  // Drawing the tabs hides two panels, and what's below them moves up; a
+  // visitor who came for a section further down (/#build, /#open) is taken
+  // back to it, once (the re-check of M-0017).
+  useEffect(() => {
+    if (!ready) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = id ? document.getElementById(id) : null;
+    if (target === null) return;
+    const frame = window.requestAnimationFrame(() => target.scrollIntoView());
+    return () => window.cancelAnimationFrame(frame);
+  }, [ready]);
 
   function move(to: number) {
     const next = (to + tabs.length) % tabs.length;
