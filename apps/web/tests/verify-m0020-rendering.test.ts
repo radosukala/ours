@@ -797,8 +797,9 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
   });
 
   // Recorded, not fixed (the verification of M-0020): whether a member's links stay in view as a page
-  // scrolls (a sticky header) or the bottom bar shows wider is a design choice, which the verifier named
-  // the founder's. It is put to the founder; the test stays as written, and skipped, until that decision.
+  // scrolls (a sticky header) or the bottom bar shows at more widths is a design choice. The architect
+  // recorded it for the founder; the test stays as written, and skipped, until that decision.
+  // Changed after the re-check of M-0020 (RC6): this comment no longer says who named it so.
   it.skip("recorded, not fixed (LOW): from 700px, once a page scrolls, a member has nothing to reach the feed, notifications, people or the menu — measured in Chromium 153 on /home after 1500px of scroll at 820, 1000 and 1440px: none of the member's links in view, where at 375px the bottom bar carries them. The header isn't sticky and the bar hides from 700px ('the header carries everything', says globals.css); the left navigation it replaced stayed in view (.nav__inner was sticky)", () => {
     const header = memberHeader();
     const links = byClass(header, "member__links")[0]!;

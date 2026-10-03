@@ -505,7 +505,8 @@ hr {
   padding: 0 5px;
   border-radius: 9999px;
   background: var(--accent);
-  /* The paper on the rust, the ink on the dark rust: 4.74:1 and 7.22:1. */
+  /* The paper on the rust, light and dark (the dark paper on the dark
+     rust): 4.74:1 and 7.22:1. */
   color: var(--primary-text);
   font-size: 11px;
   font-weight: 700;
@@ -714,19 +715,25 @@ hr {
   color: var(--forest-ink, #f5f3eb);
 }
 
-.public .card--ours .btn--outline {
+/* The card's own two draft buttons, in the acid. Not the dialogs they
+   open, which stand on the paper inside the card (the re-check of M-0020,
+   RC1): there the buttons and the ring are the public pages' own. */
+.public .card--ours .card__draft {
   border-color: var(--acid, #e1f28b);
   background: var(--acid, #e1f28b);
   color: var(--on-acid, #222b24);
 }
 
-.card--ours .btn--outline:hover {
+.public .card--ours .card__draft:hover {
   opacity: 0.88;
 }
 
-/* The ring in the acid: rust on the forest is 2.52:1. Prefixed with
-   .public so it wins over `.public :focus-visible`, later in this file. */
-.public .card--ours :focus-visible {
+/* The ring on the card's own targets in the acid: rust on the forest is
+   2.52:1. Prefixed with .public so it wins over `.public :focus-visible`,
+   later in this file; the dialogs keep that rust ring, 4.74:1 on their
+   paper. */
+.public .card--ours .card__draft:focus-visible,
+.public .card--ours .card__links a:focus-visible {
   outline-color: var(--acid, #e1f28b);
 }
 
@@ -960,8 +967,10 @@ html:has(.app-shell) {
 
   /* Sticky, and never taller than the window: on a short screen the
      panel scrolls on its own, so the status line stays in reach. Its 8px
-     each side, taken back by the margins, keep the focus rings uncut; the
-     content stays 320px. */
+     each side, taken back by the margins, keep the focus rings uncut. Where
+     scrollbars overlay the page (a Mac, a phone) its content is 320px;
+     where a scrollbar takes room (Windows, most Linux desktops), the panel
+     narrows by it while it scrolls. */
   .aside {
     flex: 0 0 336px;
     position: sticky;
@@ -1252,7 +1261,7 @@ html:has(.app-shell) {
   margin-top: 8px;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 4px;
   color: var(--muted);
   font-size: 14px;
 }

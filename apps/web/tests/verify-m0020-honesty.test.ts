@@ -1004,7 +1004,7 @@ describe("closed (each passes on 4e04af5)", () => {
     expect(header).not.toMatch(/Notifications|People|<details/);
   });
 
-  it("closed: M-0020 stayed in its scope — dc12ea0 and b5cf968 change only apps/web/**, 80e4300 only receipts/builds/**, 4e04af5 only receipts/conformance/**; none touches a denied path (the kit, vercel.json, the records, the foundation, packages, apps/proof); the records 533d5b8 adds are P-0016, D-0023 and M-0020 alone; and the receipt's statuses are the true ones: TESTED locally, nothing pushed or deployed, the verification not yet run, only R-SCOPE ENFORCED (its numbers held here too: 1,602 tests pass and 2 are skipped in 63 files before this one, the claims scan, the kit's check, and a production build)", () => {
+  it("closed: M-0020 stayed in its scope — dc12ea0 and b5cf968 change only apps/web/**, 80e4300 only receipts/builds/**, 4e04af5 only receipts/conformance/**; none touches a denied path (the kit, vercel.json, the records, the foundation, packages, apps/proof); the records 533d5b8 adds are P-0016, D-0023 and M-0020 alone; and the receipt's statuses are the true ones: TESTED locally, nothing pushed or deployed, the verification's progress as it stands, only R-SCOPE ENFORCED (its numbers held here too: 1,602 tests pass and 2 are skipped in 63 files before this one, the claims scan, the kit's check, and a production build)", () => {
     const paths = (commit: string) => git(["show", "--name-only", "--format=", commit]).trim().split("\n");
     expect(paths("dc12ea0").every((p) => p.startsWith("apps/web/"))).toBe(true);
     expect(paths("b5cf968").every((p) => p.startsWith("apps/web/"))).toBe(true);

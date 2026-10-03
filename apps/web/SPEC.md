@@ -676,9 +676,11 @@ is unaffected.
 ## 9. Design
 
 *Replaced in part by §18.22 (M-0020, D-0023): the app now has our.one's
-own look. The token table below (X's colours), the left navigation with its
-Post pill, "Home" in the bottom bar and the pill-shaped buttons are
-history; §18.22 says what replaced them.*
+own look. The token table below (X's colours), the system fonts at 15px /
+1.35, the layout's 600px centre and 350px right columns, the left
+navigation with its Post pill, the top bar with the wordmark on `/home`,
+"Home" in the bottom bar and the pill-shaped buttons are history; §18.22
+says what replaced them.*
 
 **The brief, from the founder:** *very system-like fonts, look like X,
 Instagram — super simple in design and layout, something people know.*
@@ -2873,6 +2875,8 @@ token table (X's colours), the left navigation with its *Post* pill,
     the wordmark's rust dot, the four places and the feed's own bar,
     *Feed*, and a square compose tab; the illustration's our.one side names
     its feed *Feed*;
+  - every page takes the public pages' type: their sans (Helvetica Neue,
+    Helvetica, Arial) at 16px / 1.55, which `:root`'s `--font` follows;
   - buttons, cards and the compose tab are square-cornered, as the public
     pages' are.
 - **One header** (§B):
@@ -2922,10 +2926,12 @@ token table (X's colours), the left navigation with its *Post* pill,
   - the manifest and the pages without a description of their own describe
     our.one as the front door does, not the feed.
 - **After the verification, for rendering and use:**
-  - the counts are the paper on the rust, and the ink on the dark rust:
-    4.74:1 and 7.22:1;
-  - in our.one's panel the focus ring and the buttons' edges are the acid,
-    over the public pages' rust and ink;
+  - the counts are the paper on the rust, light and dark (the dark paper
+    on the dark rust): 4.74:1 and 7.22:1;
+  - in our.one's panel its own two buttons are the acid, and they and its
+    links take the acid ring, over the public pages' rust and ink; the
+    draft dialogs they open, on their paper inside the card, keep the
+    public pages' rust ring and buttons (the re-check);
   - when a focused element scrolls into view, the page keeps room for the
     sticky page header and, on a phone, the bottom bar (`scroll-padding`);
   - from 1000px the panel is never taller than the window and scrolls on
@@ -2934,7 +2940,12 @@ token table (X's colours), the left navigation with its *Post* pill,
     tall, and the footer's links, in the panel as in the public footer,
     sit in rows apart;
   - a field's edge is `--sub`, 3:1 or more on its paper (5.79:1 light,
-    7.93:1 dark);
+    7.93:1 dark), the composer's audience too, with a field's corners (the
+    re-check);
+  - the app's boxes are square-cornered too: a quoted post on `/report`
+    and in moderation, the moderation's decision panel, a new invite
+    link, a notification's statement of reasons and a removed post's note
+    (the re-check);
   - a hovered post takes the card's paper, so the rust links on it stay
     4.5:1 or more;
   - the member's menu closes on Escape and on a tap outside it, as the

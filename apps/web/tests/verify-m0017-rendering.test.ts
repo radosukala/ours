@@ -78,6 +78,9 @@ vi.mock("@/web/session", async (importOriginal) => ({
 vi.mock("@/web/viewer", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getViewer: async () => (auth.signedIn ? { id: "FICTIONAL-viewer" } : null),
+  // Changed after the re-check of M-0020 (RC4): the routes ask isMemberHere, which calls viewer.ts's own
+  // getViewer, so the member this file fakes must reach it too.
+  isMemberHere: async () => auth.signedIn,
 }));
 vi.mock("@/core/seats", () => ({
   memberCount: vi.fn(async () => 10),

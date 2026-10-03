@@ -414,13 +414,16 @@ describe("the signed card's small text in both themes (SPEC §9 tokens)", () => 
     }
   });
 
-  it("accepted (SPEC §18.15, after the verification): the site's link blue gave way to the rust under M-0020 (D-0023 §A, 4.74:1 on the paper), which colours 'Privacy' under the form, as on every page that uses the shared .link; D-0023 is the decision on the tokens this waited for", () => {
+  it("accepted (SPEC §18.15, after the verification): the site's link blue gave way to the rust under M-0020 (D-0023 §A): the shared .link is the rust, 4.74:1 on the paper, and 'Privacy' under the form is a .link, which the public pages (every page, since M-0020) draw in their text colour, underlined; D-0023 is the decision on the tokens this waited for", () => {
     // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
+    // Retitled again after the re-check of M-0020 (RC3): 'Privacy' is drawn in the public pages' text
+    // colour, not the rust; the last assertion checks that rule.
     expect(GLOBALS).toMatch(/\n\.link,\n[^{]*\{\s*color: var\(--accent\);/);
     const light = tokens("light");
     // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root: the accent is rust, 4.74:1 on the paper.
     expect(contrast(light["--accent"]!, light["--bg"]!)).toBe(4.74);
     expect(renderFront()).toMatch(/<a class="link" href="\/privacy">Privacy<\/a>/);
+    expect(GLOBALS).toMatch(/\.public \.link,\n\.public \.notice a \{\s*color: var\(--text\);\s*text-decoration: underline;/);
   });
 });
 

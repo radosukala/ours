@@ -64,8 +64,8 @@ export function OursCard({ email }: { email: string | null }) {
       </h2>
       <p className="card__text">{MEMBER_PANEL.text}</p>
       <div className="card__actions">
-        <DraftButton kind="need" label={MEMBER_PANEL.need} email={email} className="btn btn--outline btn--small" />
-        <DraftButton kind="idea" label={MEMBER_PANEL.idea} email={email} className="btn btn--outline btn--small" />
+        <DraftButton kind="need" label={MEMBER_PANEL.need} email={email} className="btn btn--outline btn--small card__draft" />
+        <DraftButton kind="idea" label={MEMBER_PANEL.idea} email={email} className="btn btn--outline btn--small card__draft" />
       </div>
       <p className="card__links">
         <Link href="/#idea">The idea</Link>

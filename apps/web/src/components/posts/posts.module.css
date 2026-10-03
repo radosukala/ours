@@ -51,8 +51,8 @@
   padding-top: 6px;
   padding-bottom: 6px;
   padding-left: 12px;
-  border-radius: 9999px;
-  border-color: var(--outline-border);
+  border-radius: 4px;
+  border-color: var(--field-border, var(--outline-border));
   color: var(--accent);
   font-size: 14px;
   font-weight: 700;
