@@ -2689,3 +2689,68 @@ all fixed; `receipts/conformance/2026-10-03-M-0017.verification.md`):
   whoever runs the service, and which companies (the person chooses); its
   step 2 has the agent write the people a note; `/build` says what the
   trial found.
+
+### 18.20 Ready for the first deploy (M-0018, 3 October 2026)
+
+D-0021 §C to §E and §I. Nothing here is deployed: it makes the build that
+M-0012 can publish say what is true where it runs, and lets a release
+reach the database without any agent holding its address.
+
+**Where the site runs** (`src/core/hosting.ts`):
+
+- **Deployed** means Vercel's production deployment: `VERCEL=1` and
+  `VERCEL_ENV=production`. Anywhere else (development, a preview, a test)
+  is a copy that isn't the deployed site.
+- **Its region** is `VERCEL_REGION`; a known code shows its place:
+  *"Frankfurt, Germany (fra1)"*.
+- **Its database** is named from the host of `DATABASE_URL` only: a host
+  ending in `.neon.tech` is Neon, with the region before `aws` or
+  `azure`. No other part of the address is read, and none is shown.
+- **`/power`'s hosting row** (`withHosting`):
+  - deployed: *"Vercel runs this site, in Frankfurt, Germany (fra1). Neon
+    keeps its database, in Frankfurt, Germany (eu-central-1)."*, then what
+    it does with email, then *"The accounts are the founder's."*; STATED,
+    as stated in this server's configuration;
+  - otherwise the file's record, *"None: this copy of our.one isn't the
+    deployed site."*, with what it does with email; RECORDED, except a
+    copy that sends through Resend, which says so as stated in its
+    configuration.
+- **`/privacy`:**
+  - deployed: no notice at the top; the hosting line names Vercel (every
+    request passes through it, with the visitor's IP address) and Neon
+    (everything in the table is stored there), with their regions;
+  - otherwise the notice *"This copy of our.one isn't the deployed site.
+    This notice describes what our.one keeps when it runs."* and the
+    file's hosting words.
+- **The administrator** (D-0021 §I): *"Only the founder can be the
+  administrator."* on `/privacy` and in the house rules, and *"The
+  founder: only the founder can be the administrator."* in `/power`'s
+  Moderation row. It is a rule, true before the deploy and after it.
+
+**The release step** (`scripts/release.ts`), which Vercel's production
+build runs before `next build` (`apps/web/vercel.json`: `pnpm run
+vercel-build`, which is `tsx scripts/release.ts && next build`):
+
+- **It runs only in Vercel's production build of the commit the founder
+  names in `OURS_RELEASE`**: 7 to 40 hexadecimal characters that begin the
+  build's `VERCEL_GIT_COMMIT_SHA`. Any other build does nothing, and its
+  log says why.
+- **Without `DATABASE_URL` it fails the build.** With it, it applies the
+  migrations.
+- **Then the founder's account,** from `FOUNDER_EMAIL`, `FOUNDER_HANDLE`
+  and `FOUNDER_NAME`:
+  - only while no account exists, under the founder script's lock
+    (`createFirstAccount` in `src/core/founder.ts`);
+  - as the administrator, with no inviter and the default invites;
+  - with none of the three set, nothing is made; with some, with a value
+    that isn't valid, or with no data controller named, the build fails.
+- **Its log** names no address, link, key or part of the database's
+  address; a database error is printed with the address's host, user and
+  password taken out. It reads no `.env` file.
+- **The founder script stays fictional-only;** it and the release share
+  `createFirstAccount`.
+
+**The weekly email:** `GET` is the same handler as `POST`, with the same
+secret, because Vercel's scheduler calls with GET and sends `CRON_SECRET`
+as a bearer token. `apps/web/vercel.json` schedules it at `0 8 * * 1`
+(Mondays, 08:00 UTC) and sets the functions' region, `fra1`.

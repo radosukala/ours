@@ -1,11 +1,15 @@
 /**
- * POST /api/cron/weekly-digest (SPEC §8): runs the weekly email once.
+ * GET or POST /api/cron/weekly-digest (SPEC §8, §18.20): runs the weekly
+ * email once.
  *
  * Requires `Authorization: Bearer ${CRON_SECRET}`. With CRON_SECRET unset
  * the route refuses every request: a missing setting switches the feature
- * off, it is never defaulted. Only POST is exported, so any other method is
- * refused by the framework. The answer carries counts, never a message
- * from an error.
+ * off, it is never defaulted. Vercel's scheduler calls with GET, sending
+ * CRON_SECRET as that header (D-0021 §E; apps/web/vercel.json schedules it
+ * on Mondays at 08:00 UTC); a person or a script can POST. Both methods are
+ * the same handler, and any other method is refused by the framework. The
+ * answer carries counts, never a message from an error. A second call in
+ * the same week sends nothing new: each person gets at most one a week.
  */
 import { cronSecret } from "@/core/config";
 import { getDb } from "@/core/db";
@@ -40,3 +44,6 @@ export async function POST(request: Request): Promise<Response> {
     return refuse(500, "The weekly email run failed.");
   }
 }
+
+/** Vercel's scheduler calls with GET (D-0021 §E): the same handler, the same secret. */
+export const GET = POST;

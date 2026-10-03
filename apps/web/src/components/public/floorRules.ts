@@ -125,7 +125,9 @@ export const FLOOR_RULES: RuleGroup[] = [
       {
         id: "reports",
         text: "Anyone can report a post, a reply or a person. A person reads every report and decides what happens.",
-        more: "No administrator exists until our.one is deployed; then it will be the founder, the only one. If you think a decision is wrong, write to the data controller, whose address is on the privacy page once one is named.",
+        // A rule, true before the deploy and after it (D-0021 §I); /privacy
+        // and /power say the same.
+        more: "Only the founder can be the administrator. If you think a decision is wrong, write to the data controller, whose address is on the privacy page once one is named.",
         cls: "INTERPRETED",
       },
       {

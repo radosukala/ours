@@ -17,17 +17,19 @@
  * /rules says every account except the founder's is invited by a person
  * (the second verification's honesty defect 9). The check and the insert
  * share one transaction under an advisory lock, so two runs at once cannot
- * both pass it.
+ * both pass it (`createFirstAccount`, which the release step shares).
+ *
+ * The deployed site's founder account is not made here: Vercel's
+ * production build makes it from the founder's own settings (D-0021 §D,
+ * scripts/release.ts). This script stays fictional-only.
  */
 import { parseArgs } from "node:util";
 import { config } from "dotenv";
-import { sql } from "drizzle-orm";
 import { createEmailToken } from "../src/core/auth";
 import { accountCreationOpen, appUrl, DEFAULT_INVITES } from "../src/core/config";
-import { closeDb, getDb, withTx } from "../src/core/db";
+import { closeDb, getDb } from "../src/core/db";
 import { isCoreError } from "../src/core/errors";
-import { newId } from "../src/core/ids";
-import { accounts } from "../src/core/schema";
+import { createFirstAccount } from "../src/core/founder";
 import { normEmail, validDisplayName, validHandle } from "../src/core/validate";
 
 function fail(message: string): never {
@@ -90,23 +92,7 @@ async function main(): Promise<void> {
 
   const db = getDb();
   const now = new Date();
-  const created = await withTx(db, async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended('seed:founder', 0))`);
-    const existing = await tx.select({ id: accounts.id }).from(accounts).limit(1);
-    if (existing.length) return false;
-    await tx.insert(accounts).values({
-      id: newId(),
-      email,
-      handle,
-      displayName: name,
-      invitedBy: null,
-      invitesRemaining: invites,
-      isAdmin: true,
-      adultConfirmedAt: now,
-      createdAt: now,
-    });
-    return true;
-  });
+  const created = await createFirstAccount(db, { email, handle, displayName: name, invites, now });
   if (!created) {
     fail(
       "Refused: an account already exists. The founder's account is the first one; every other account is invited by a person.",

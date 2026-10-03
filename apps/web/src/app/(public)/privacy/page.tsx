@@ -31,6 +31,13 @@
  * D-0014, SPEC §18.14) is named under "Who is responsible" and in Contact,
  * from the configuration, and only while a controller is named. It is
  * reached at the controller's address.
+ *
+ * Where it runs (D-0021 §C, SPEC §18.20) comes from the running server
+ * (`hosting`), the same source /power reads: on Vercel's production
+ * deployment it names Vercel and Neon, with their regions, among those who
+ * receive data; anywhere else it says this copy isn't the deployed site.
+ * Who can be the administrator is a rule, true before the deploy and after
+ * it (D-0021 §I).
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -43,7 +50,8 @@ import {
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
 } from "@/core/config";
-import { EMAIL_PROVIDER_WORDS, emailSending } from "@/core/transparency";
+import { ADMINISTRATOR_RULE, type Hosting, hosting, NOT_DEPLOYED, regionWords } from "@/core/hosting";
+import { EMAIL_PROVIDER_WORDS, emailSending, HOSTING_FILE } from "@/core/transparency";
 
 export const dynamic = "force-dynamic";
 
@@ -146,8 +154,26 @@ function emailProvider(): string {
   return EMAIL_PROVIDER_WORDS[emailSending()];
 }
 
+/**
+ * Who hosts the site and keeps the database, from where this server runs
+ * (D-0021 §C), the same source as /power's hosting row.
+ */
+function hostingWords(where: Hosting): string {
+  if (!where.deployed) return HOSTING_FILE;
+  const server = where.region
+    ? `Vercel runs our.one's server, in ${regionWords(where.region)}: every request to the site passes through it, with your IP address.`
+    : "Vercel runs our.one's server: every request to the site passes through it, with your IP address.";
+  const database = where.database
+    ? where.database.region
+      ? `Neon keeps our.one's database, in ${regionWords(where.database.region)}: everything in the table above is stored there.`
+      : "Neon keeps our.one's database: everything in the table above is stored there."
+    : "This server's configuration doesn't name its database's provider.";
+  return `${server} ${database} Both as stated in this server's configuration.`;
+}
+
 export default function PrivacyPage() {
   const named = controller();
+  const where = hosting();
   const representative = controllerRepresentative();
   const proposals = proposalsEmail();
 
@@ -158,10 +184,9 @@ export default function PrivacyPage() {
         What our.one keeps about you, why, for how long, and who else receives
         it.
       </p>
-      <p className="notice">
-        our.one is not deployed yet. This notice describes what it keeps when
-        it runs.
-      </p>
+      {where.deployed ? null : (
+        <p className="notice">{`${NOT_DEPLOYED} This notice describes what our.one keeps when it runs.`}</p>
+      )}
 
       <section aria-labelledby="privacy-who">
         <h2 id="privacy-who">Who is responsible</h2>
@@ -246,8 +271,7 @@ export default function PrivacyPage() {
           <dd>
             Reads what is reported — a post, a reply or a profile — whoever
             it was shared with, sees who reported it, and decides what
-            happens. No administrator exists until our.one is deployed; the
-            founder will be the only one.
+            happens. {ADMINISTRATOR_RULE}
           </dd>
           <dt>Whoever holds an invite link</dt>
           <dd>
@@ -257,7 +281,7 @@ export default function PrivacyPage() {
           <dt>Email provider</dt>
           <dd>{emailProvider()}</dd>
           <dt>Hosting</dt>
-          <dd>none yet — our.one is not deployed.</dd>
+          <dd>{hostingWords(where)}</dd>
         </dl>
       </section>
 

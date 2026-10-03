@@ -341,9 +341,11 @@ describe("/power and /privacy", () => {
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     const power = textOf(renderToStaticMarkup(createElement(PowerPage)));
     const privacyNamesResend = privacy.includes("Resend delivers the emails our.one sends");
-    const powerSaysNone = power.includes("Hosting, database, email sending recorded None yet. our.one is not deployed.");
+    // Changed under M-0018 (D-0021 §C): a copy that isn't the deployed site
+    // says so, instead of "our.one is not deployed"; the check is the same.
+    const powerSaysNone = power.includes("Hosting, database, email sending recorded None: this copy of our.one isn't the deployed site.");
     expect(privacyNamesResend).toBe(true);
-    expect(privacy).toContain("Hosting none yet — our.one is not deployed.");
+    expect(privacy).toContain("Hosting None: this copy of our.one isn't the deployed site.");
     expect(
       privacyNamesResend && powerSaysNone,
       "/privacy and /power, on one server, disagree about who sends email",

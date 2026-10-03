@@ -36,6 +36,7 @@ import {
   type EmailSending,
   emailSending,
   HOSTING_ASSET,
+  HOSTING_FILE,
   ledgerStatusWords,
   ledgerSummary,
   loadControl,
@@ -44,7 +45,7 @@ import {
   parseLedger,
   TransparencyError,
   withConfiguredController,
-  withEmailSending,
+  withHosting,
 } from "@/core/transparency";
 import { at, befriend, db, makeAccount, plus, post, reset } from "./helpers";
 
@@ -428,9 +429,10 @@ describe("control", () => {
       ["If the founder stops", "NOT_YET_RECORDED"],
     ]);
     const by = Object.fromEntries(rows.map((r) => [r.asset, r]));
-    expect(by["Moderation"]?.who).toBe(
-      "No administrator exists until something is deployed; the founder will be the only one.",
-    );
+    // Changed under M-0018 (D-0021 §I): the Moderation row states a rule,
+    // true before the deploy and after it, instead of "No administrator
+    // exists until something is deployed".
+    expect(by["Moderation"]?.who).toBe("The founder: only the founder can be the administrator.");
     expect(by["The code"]?.who).toMatch(/^Apache-2\.0, and public: anyone can read it, run it or copy it\./);
     // Nothing in the file is STATED on the configuration's word.
     expect(rows.every((r) => r.statedBy === undefined)).toBe(true);
@@ -852,35 +854,40 @@ describe("email sending: /privacy, /power and sendMail say the same thing (final
       expect(privacy).toContain(`Email provider ${EMAIL_PROVIDER_WORDS[sending]}`);
       expect(privacy.includes("Resend"), "/privacy names Resend").toBe(sending === "resend");
       // Hosting stays what the records say, whatever sends the email.
-      expect(privacy).toContain("Hosting none yet — our.one is not deployed.");
+      // Changed under M-0018 (D-0021 §C): a copy that isn't the deployed
+      // site says so, in these words, instead of "our.one is not deployed".
+      expect(privacy).toContain("Hosting None: this copy of our.one isn't the deployed site.");
 
       const row = hostingRow();
       expect(row.includes("Resend"), "/power names Resend").toBe(sending === "resend");
+      const record =
+        "Record: Decision D-0021 §C: where the site runs, said by the server that runs it";
       expect(row).toBe(
         {
-          outbox:
-            "Hosting, database, email sending recorded None yet. our.one is not deployed. This server sends no email: each message is written to a test outbox instead. Record: Build record M-0010: nothing deployed",
-          refused:
-            "Hosting, database, email sending recorded None yet. our.one is not deployed. No email is sent: this server's email setup is incomplete. Record: Build record M-0010: nothing deployed",
-          resend:
-            "Hosting, database, email sending stated in this server's configuration Email: Resend delivers the emails this server sends. Hosting and database: none yet; our.one is not deployed. Record: Build record M-0010: nothing deployed",
+          outbox: `Hosting, database, email sending recorded None: this copy of our.one isn't the deployed site. This server sends no email: each message is written to a test outbox instead. ${record}`,
+          refused: `Hosting, database, email sending recorded None: this copy of our.one isn't the deployed site. No email is sent: this server's email setup is incomplete. ${record}`,
+          resend: `Hosting, database, email sending stated in this server's configuration Email: Resend delivers the emails this server sends. Hosting and database: none. This copy of our.one isn't the deployed site. ${record}`,
         }[sending],
       );
     });
   }
 
+  // Changed under M-0018 (D-0021 §C): withEmailSending became withHosting,
+  // which also takes where the server runs; the file's row says that this
+  // copy isn't the deployed site, instead of "our.one is not deployed".
   it("refuses a control file whose hosting row is missing, doubled, or says anything but that nothing is hosted", () => {
     const file = parseControl({
       rows: [
-        { asset: HOSTING_ASSET, who: "None yet. our.one is not deployed.", status: "RECORDED", evidence: [{ path: "mandates/M-0010.md", label: "x" }] },
+        { asset: HOSTING_ASSET, who: HOSTING_FILE, status: "RECORDED", evidence: [{ path: "decisions/D-0021.md", label: "x" }] },
       ],
     });
-    expect(withEmailSending(file, "outbox")[0]?.status).toBe("RECORDED");
-    expect(withEmailSending(file, "resend")[0]).toMatchObject({ status: "STATED", statedBy: "configuration" });
-    expect(() => withEmailSending([], "outbox")).toThrow(/no "Hosting, database, email sending" row/);
-    expect(() => withEmailSending([...file, file[0]!], "outbox")).toThrow(/appears twice/);
-    expect(() => withEmailSending([{ ...file[0]!, who: "FICTIONAL Host, Inc." }], "outbox")).toThrow(TransparencyError);
-    expect(() => withEmailSending([{ ...file[0]!, status: "STATED" }], "outbox")).toThrow(TransparencyError);
+    const here = { deployed: false } as const;
+    expect(withHosting(file, "outbox", here)[0]?.status).toBe("RECORDED");
+    expect(withHosting(file, "resend", here)[0]).toMatchObject({ status: "STATED", statedBy: "configuration" });
+    expect(() => withHosting([], "outbox", here)).toThrow(/no "Hosting, database, email sending" row/);
+    expect(() => withHosting([...file, file[0]!], "outbox", here)).toThrow(/appears twice/);
+    expect(() => withHosting([{ ...file[0]!, who: "FICTIONAL Host, Inc." }], "outbox", here)).toThrow(TransparencyError);
+    expect(() => withHosting([{ ...file[0]!, status: "STATED" }], "outbox", here)).toThrow(TransparencyError);
   });
 });
 

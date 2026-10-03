@@ -1,5 +1,5 @@
 {
-  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4, D-0011, D-0012 and apps/web/SPEC.md §17 and §18. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root; the records they name are published with each release. Two rows are filled in by a running server, so /power and /privacy never disagree: when its configuration names a data controller, /power shows that name as stated in this server's configuration (SPEC §17 item 18); and the Hosting row says what this server does with email, by the same test that sends it (outbox, Resend, or nothing sent because the setup is incomplete).",
+  "note": "Who controls what, from authority/FOUNDING-AUTHORITY.md §4, D-0011, D-0012 and apps/web/SPEC.md §17 and §18. Status is RECORDED (a record in this repository says so), STATED (the founder's statement, not verified) or NOT_YET_RECORDED. Evidence paths are relative to the repository root; the records they name are published with each release. Two rows are filled in by the running server, so /power and /privacy never disagree (D-0021 §C): when its configuration names a data controller, /power shows that name as stated in this server's configuration (SPEC §17 item 18); and the Hosting row says where this server runs, read from the platform's own settings and from the database address's host, which is never shown, and what it does with email, by the same test that sends it. A copy that isn't Vercel's production deployment says so.",
   "rows": [
     {
       "asset": "The rules of our.one",
@@ -47,12 +47,12 @@
     },
     {
       "asset": "Hosting, database, email sending",
-      "who": "None yet. our.one is not deployed.",
+      "who": "None: this copy of our.one isn't the deployed site.",
       "status": "RECORDED",
       "evidence": [
         {
-          "path": "mandates/M-0010.md",
-          "label": "Build record M-0010: nothing deployed"
+          "path": "decisions/D-0021.md",
+          "label": "Decision D-0021 §C: where the site runs, said by the server that runs it"
         }
       ]
     },
@@ -69,12 +69,12 @@
     },
     {
       "asset": "Moderation",
-      "who": "No administrator exists until something is deployed; the founder will be the only one.",
+      "who": "The founder: only the founder can be the administrator.",
       "status": "STATED",
       "evidence": [
         {
-          "path": "mandates/M-0010.md",
-          "label": "Build record M-0010: nothing deployed"
+          "path": "decisions/D-0021.md",
+          "label": "Decision D-0021 §I: who can be the administrator, as a rule true before the deploy and after it"
         }
       ]
     },

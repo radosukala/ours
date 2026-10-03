@@ -572,7 +572,9 @@ describe("closed (each passes on 185bb67)", () => {
     expect(textOf(render(ContractPage))).toContain(`Until ${THRESHOLD} members I also hold the domain, the data and the keys`);
     const power = textOf(render(PowerPage));
     expect(power).toContain("The founder, through the founder's registrar account");
-    expect(power).toContain("None yet. our.one is not deployed.");
+    // Changed under M-0018 (D-0021 §C): a copy that isn't the deployed site
+    // says so, instead of "our.one is not deployed".
+    expect(power).toContain("None: this copy of our.one isn't the deployed site.");
     expect(power).toContain("No account and nothing received");
     expect(agreement).toContain("our.one takes no money for anyone until the holder exists.");
     expect(record("decisions/D-0017.md")).toContain("No money moves through our.one until a holder exists.");

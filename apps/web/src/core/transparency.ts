@@ -26,11 +26,11 @@
  * A refused entry refuses the whole ledger: a page that silently dropped
  * one entry would show sums that are not the ledger's.
  *
- * Two rows of the control map are filled in from this server's
- * configuration, so /privacy and /power never disagree: the data
- * controller (SPEC §17 item 18) and the email-sending part of "Hosting,
- * database, email sending" (the final verification's honesty-6/7), which
- * comes from `emailSending`, the same test `sendMail` makes. See
+ * Two rows of the control map are filled in by the running server, so
+ * /privacy and /power never disagree: the data controller, from this
+ * server's configuration (SPEC §17 item 18); and "Hosting, database, email
+ * sending", from where this server runs (`hosting`, D-0021 §C) and what it
+ * does with email (`emailSending`, the same test `sendMail` makes). See
  * `loadControl`.
  */
 import {
@@ -39,6 +39,7 @@ import {
   mailTransport,
   resendSettings,
 } from "./config";
+import { type Hosting, hosting as currentHosting, NOT_DEPLOYED, runsOnWords } from "./hosting";
 import controlFile from "../../transparency/control.json";
 import ledgerFile from "../../transparency/ledger.json";
 
@@ -349,7 +350,7 @@ export type ControlRow = {
   /**
    * Where a STATED row's statement comes from: the founder (in the file),
    * or this server's configuration (the data controller, SPEC §17 item 18;
-   * email sent through Resend, see `withEmailSending`).
+   * where it runs and what it does with email, see `withHosting`).
    */
   statedBy?: "founder" | "configuration";
 };
@@ -477,25 +478,37 @@ export const EMAIL_PROVIDER_WORDS: Readonly<Record<EmailSending, string>> = {
   refused: "None. No email is sent: this server's email setup is incomplete.",
 };
 
-/** The asset name of the row whose email-sending part this server fills in. */
+/** The asset name of the row this server fills in from where it runs and what it does with email. */
 export const HOSTING_ASSET = "Hosting, database, email sending";
 
-/** What the file says of hosting, which only a record changes. */
-const HOSTING_NONE = "None yet. our.one is not deployed.";
+/**
+ * What the file says of hosting, which only a record changes: the words of
+ * a copy that isn't the deployed site (D-0021 §C).
+ */
+export const HOSTING_FILE = "None: this copy of our.one isn't the deployed site.";
+
+/** What this server does with email, as the hosting row's last sentence. */
+const EMAIL_SENTENCE: Readonly<Record<EmailSending, string>> = {
+  outbox: "This server sends no email: each message is written to a test outbox instead.",
+  resend: "Resend delivers the emails this server sends.",
+  refused: "No email is sent: this server's email setup is incomplete.",
+};
 
 /**
- * The hosting row as this server shows it: the file's record that nothing
- * is hosted, with the email-sending part from `emailSending`.
+ * The hosting row as this server shows it (D-0021 §C):
  *
- * - "outbox" and "refused": still RECORDED, with what happens to email;
- * - "resend": STATED, as "stated in this server's configuration", like a
- *   configured data controller: no record names Resend, only this server's
- *   settings do. The hosting part and its record stay as the file has them.
+ * - on Vercel's production deployment: what runs it, from the platform and
+ *   the database's host (`runsOnWords`), what it does with email, and whose
+ *   accounts they are; STATED, as "stated in this server's configuration";
+ * - anywhere else: the file's record that this copy isn't the deployed
+ *   site, with what it does with email; RECORDED, except that a copy which
+ *   sends through Resend says so as stated in its configuration, because no
+ *   record names Resend.
  *
- * The file's row must say exactly that nothing is hosted, RECORDED: the
- * words here are written for that row and no other.
+ * The file's row must say exactly `HOSTING_FILE`, RECORDED: the words here
+ * are written for that row and no other.
  */
-export function withEmailSending(rows: ControlRow[], sending: EmailSending): ControlRow[] {
+export function withHosting(rows: ControlRow[], sending: EmailSending, where: Hosting): ControlRow[] {
   const at = rows.findIndex((r) => r.asset === HOSTING_ASSET);
   if (at === -1) {
     throw new TransparencyError(`control: there is no "${HOSTING_ASSET}" row.`);
@@ -504,41 +517,45 @@ export function withEmailSending(rows: ControlRow[], sending: EmailSending): Con
     throw new TransparencyError(`control: "${HOSTING_ASSET}" appears twice.`);
   }
   const fileRow = rows[at]!;
-  if (fileRow.status !== "RECORDED" || fileRow.who !== HOSTING_NONE) {
+  if (fileRow.status !== "RECORDED" || fileRow.who !== HOSTING_FILE) {
     throw new TransparencyError(
-      `control row "${HOSTING_ASSET}": the file must say "${HOSTING_NONE}" (RECORDED); email sending comes from this server's configuration.`,
+      `control row "${HOSTING_ASSET}": the file must say "${HOSTING_FILE}" (RECORDED); where this server runs, and its email, come from the server itself.`,
     );
   }
-  const shown: ControlRow =
-    sending === "resend"
-      ? {
-          ...fileRow,
-          who: "Email: Resend delivers the emails this server sends. Hosting and database: none yet; our.one is not deployed.",
-          status: "STATED",
-          statedBy: "configuration",
-        }
-      : {
-          ...fileRow,
-          who:
-            sending === "outbox"
-              ? `${HOSTING_NONE} This server sends no email: each message is written to a test outbox instead.`
-              : `${HOSTING_NONE} No email is sent: this server's email setup is incomplete.`,
-        };
+  let shown: ControlRow;
+  if (where.deployed) {
+    shown = {
+      ...fileRow,
+      who: `${runsOnWords(where)} ${EMAIL_SENTENCE[sending]} The accounts are the founder's.`,
+      status: "STATED",
+      statedBy: "configuration",
+    };
+  } else if (sending === "resend") {
+    shown = {
+      ...fileRow,
+      who: `Email: ${EMAIL_SENTENCE.resend} Hosting and database: none. ${NOT_DEPLOYED}`,
+      status: "STATED",
+      statedBy: "configuration",
+    };
+  } else {
+    shown = { ...fileRow, who: `${HOSTING_FILE} ${EMAIL_SENTENCE[sending]}` };
+  }
   return rows.map((r, i) => (i === at ? shown : r));
 }
 
 /**
  * The rows /power shows: apps/web/transparency/control.json, validated,
  * with the data-controller row from this server's configuration (see
- * `withConfiguredController`) and the email-sending part of the hosting
- * row (see `withEmailSending`). Pass `configured` or `sending` to show
- * another configuration; by default each is read now, not at import.
+ * `withConfiguredController`) and the hosting row from where this server
+ * runs and what it does with email (see `withHosting`). Pass any of them to
+ * show another server; by default each is read now, not at import.
  */
 export function loadControl(
   configured: { name: string; email: string } | null = configuredController(),
   sending: EmailSending = emailSending(),
+  where: Hosting = currentHosting(),
 ): ControlRow[] {
-  return withEmailSending(withConfiguredController(parseControl(controlFile), configured), sending);
+  return withHosting(withConfiguredController(parseControl(controlFile), configured), sending, where);
 }
 
 /** A control status in words, for the page. */

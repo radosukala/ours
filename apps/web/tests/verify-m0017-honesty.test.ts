@@ -738,7 +738,10 @@ describe("closed (each passes on cb1aadd)", () => {
     vi.stubEnv("PROPOSALS_EMAIL", "ideas@example.test");
     const withAddress = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     expect(withAddress).toContain("unless you copy it or open it in your own email app and send it yourself.");
-    expect(without).toContain("our.one is not deployed yet. This notice describes what it keeps when it runs.");
+    // Changed under M-0018 (D-0021 §C): M-0012's precondition 11 is now
+    // built. A copy that isn't the deployed site says so, in these words;
+    // M-0016's final words stay the reference for what the line was.
+    expect(without).toContain("This copy of our.one isn't the deployed site. This notice describes what our.one keeps when it runs.");
     expect(gitShow(M0016_FINAL, "apps/web/src/app/(public)/privacy/page.tsx")).toContain("our.one is not deployed yet. This notice describes what it keeps when");
   });
 

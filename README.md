@@ -1,5 +1,29 @@
 # OURS
 
+> **Coming from our.one?** This is its code and its records, in one public
+> repository.
+>
+> - **our.one** is a friends feed, and the first project of a network its
+>   founder is starting, to bring people and builders together to create
+>   services their users can control. Today the founder decides, under
+>   bootstrap authority. The common agreement those services would sign is
+>   a draft, and no member ownership has been issued.
+> - **The site and the feed:** [`apps/web`](./apps/web). Whether it is
+>   deployed, and where, the site itself says on its *Who controls what*
+>   page.
+> - **The builder kit:** [`kit`](./kit), the instructions a coding agent
+>   follows, the rules and the check.
+> - **The records:** a change is proposed ([`proposals`](./proposals)),
+>   decided ([`decisions`](./decisions)), handed to an agent as a bounded
+>   task ([`mandates`](./mandates)), and receipted
+>   ([`receipts`](./receipts)). The receipts include independent
+>   verifications, by agents that didn't build what they checked.
+> - **The history is kept on purpose,** first drafts and mistakes included.
+>   The receipts cite its commits, so anyone can check how each change was
+>   made.
+>
+> The rest of this page is about OURS, the institution behind it.
+
 **The enduring institution people belong to.** `oursorg.com` · communities'
 tools at `our.one`
 

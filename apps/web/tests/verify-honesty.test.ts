@@ -558,8 +558,12 @@ describe("/rules", () => {
     expect(rule("invite-only").cls).toBe("ENFORCED");
     expect(rule("invite-only").text).not.toContain("Every account is invited by a person.");
     expect(rule("invite-only").text).toContain("Every account except the founder's is invited by a person.");
+    // Changed under M-0018 (D-0021 §D): the insert moved to
+    // src/core/founder.ts, which the founder script and the release step
+    // share; the script calls it.
     const script = read("scripts/seed-founder.ts");
-    expect(script, "the founder's account is the one inserted with invitedBy: null").toMatch(/invitedBy:\s*null/);
+    expect(script).toMatch(/createFirstAccount\(/);
+    expect(read("src/core/founder.ts"), "the founder's account is the one inserted with invitedBy: null").toMatch(/invitedBy:\s*null/);
   });
 });
 
@@ -812,7 +816,9 @@ describe("the records about this build", () => {
     const row = loadControl().find((r) => r.asset === "Moderation")!;
     // SPEC §17 item 18: STATED, in the decision's words, and not on this script.
     expect(row.status).toBe("STATED");
-    expect(row.who).toBe("No administrator exists until something is deployed; the founder will be the only one.");
+    // Changed under M-0018 (D-0021 §I): the row states a rule, true before
+    // the deploy and after it.
+    expect(row.who).toBe("The founder: only the founder can be the administrator.");
     expect(row.evidence?.map((e) => e.path) ?? []).not.toContain("apps/web/scripts/seed-founder.ts");
     expect(admins.every((a) => a.email.endsWith("@example.test"))).toBe(true);
     // The script now makes at most one administrator; the row stays STATED
