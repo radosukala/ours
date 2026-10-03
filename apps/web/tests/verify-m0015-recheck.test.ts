@@ -52,7 +52,6 @@ import RulesPage from "@/app/(public)/rules/page";
 import NotFound from "@/app/not-found";
 import { HEADLINE } from "@/components/public/FrontPage";
 import { MAINTAINER, NOTICE_DAYS, THRESHOLD } from "@/components/public/handover";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { LEDE } from "@/components/public/lede";
 import { RightColumn, SiteFooter } from "@/components/RightColumn";
 import { ALLOWLIST, formatHit, PROHIBITED, scanRepoPublicText, scanText } from "@/core/claims";
@@ -574,11 +573,14 @@ describe("closed: the 29 fixes, where the verifiers' own assertions no longer re
     expect([(honesty.match(/it\("DEFECT/g) ?? []).length, (rendering.match(/it\("DEFECT/g) ?? []).length]).toEqual([0, 0]);
     expect([(honesty.match(/it\("fixed: /g) ?? []).length, (rendering.match(/it\("fixed \(/g) ?? []).length]).toEqual([17, 12]);
     // Changed after the re-check's fixes: two more of the honesty file's checks follow the new wording.
-    expect((honesty.match(/\/\/ (?:Changed|Fixed) after/g) ?? []).length).toBe(6);
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone: two more there, each with its reason.
+    expect((honesty.match(/\/\/ (?:Changed|Fixed) after/g) ?? []).length).toBe(8);
     // Changed after D-0020 (M-0017): six more of the rendering file's checks
     // follow the front door's layout and pages, each with its reason; the
     // round's own three are counted apart from them.
-    expect((rendering.match(/\/\/ Changed after (?!D-0020)/g) ?? []).length).toBe(3);
+    // Changed after the verification of M-0020 (H11, H4): the in-app footer is gone, and the not-found
+    // page has the header every page has: two more there, each with its reason.
+    expect((rendering.match(/\/\/ Changed after (?!D-0020)/g) ?? []).length).toBe(5);
     expect((rendering.match(/\/\/ Changed after D-0020 \(M-0017\)/g) ?? []).length).toBe(6);
   });
 
@@ -745,7 +747,8 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
     expect(rule(".source a")).toMatchObject({ color: "var(--muted)", "text-decoration": "underline" });
   });
 
-  it("closed: every link inside `.page` on the eight server-rendered pages takes its colour from `.page a` (inherit) and its underline from it — no earlier rule (.link, .prose a, .notice a) wins, none is doubly coloured — and is 4.5:1 or more on its background in both themes (the faint underline, 1.44:1 light and 1.65:1 dark, is the one M-0014 accepted for the card and the story); /unsubscribe's `.link` in its muted line is overridden the same way: muted and underlined, 6.12:1 and 4.58:1. Served so: the global sheet's chunk loads first and the module's second on all nine `.page` pages under all three configurations (27 responses from next start, 328f3c0)", () => {
+  it("closed: every link inside `.page` on the eight server-rendered pages takes its colour from `.page a` (inherit) and its underline from it — no earlier rule (.link, .prose a, .notice a) wins, none is doubly coloured — and is 4.5:1 or more on its background in both themes (the faint underline, 1.69:1 light and 2.38:1 dark in our.one's tokens since M-0020, is the kind M-0014 accepted for the card and the story); /unsubscribe's `.link` in its muted line is overridden the same way: muted and underlined, 5.79:1 and 7.93:1. Served so: the global sheet's chunk loads first and the module's second on all nine `.page` pages under all three configurations (27 responses from next start, 328f3c0)", () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     // Changed after D-0020 (M-0017): a draft's button, before the page's
     // JavaScript runs, is a link drawn as a button (.btn, on its own
     // background), and keeps the button's colours and no underline
@@ -781,12 +784,12 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
     expect([underline("light"), underline("dark")]).toEqual([1.69, 2.38]);
   });
 
-  it("closed: the footer's no-break separators: in the public layout, the not-found page, the in-app footer and the right column each of the eight is exactly '\\u00a0· ' and hidden from screen readers; every text projection the tests use collapses it to ' · ' (contract.test's footer line still reads 'Contract · Agreement · … · Privacy'); no mail template carries a '·'", () => {
+  it("closed: the footer's no-break separators: in the public layout, the not-found page and the right column each of the eight is exactly '\\u00a0· ' and hidden from screen readers; every text projection the tests use collapses it to ' · ' (contract.test's footer line still reads 'Contract · Agreement · … · Privacy'); no mail template carries a '·'", () => {
     const BODY = createElement("p", null, "FICTIONAL page body");
     for (const [place, html] of [
       ["the public layout", renderToStaticMarkup(createElement(PublicLayout, null, BODY))],
       ["the not-found page", render(NotFound)],
-      ["the in-app footer", render(InAppSiteFooter)],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the right column", renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 }))],
     ] as const) {
       // Changed after D-0020 (M-0017): the public layout's header has a
@@ -894,7 +897,8 @@ describe("closed: M-0015's acceptance lines against the shipped code", () => {
   });
 
   it("closed: lines 5 to 7 — every footer links to /agreement, /projects and /maintainers among its nine; /contract keeps its eight promises word for word and gains one paragraph linking /agreement; the front page's headline and lede are the recorded ones", () => {
-    for (const html of [render(SiteFooter), render(InAppSiteFooter)]) {
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
+    for (const html of [render(SiteFooter)]) {
       // Changed by M-0016 (D-0019 §G): "Build with us" goes to /build, which links /maintainers.
       for (const href of ["/contract", "/agreement", "/projects", "/build", "/costs", "/power", "/rules", "/privacy"]) {
         expect(html).toContain(`href="${href}"`);

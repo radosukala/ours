@@ -32,6 +32,7 @@
 import Link from "next/link";
 import { OPEN_CODE_URL } from "@/components/RightColumn";
 import { DEFAULT_INVITES } from "@/core/config";
+import { MEMBER_JOIN } from "./door";
 import { FeedContrast } from "./FeedContrast";
 import { FeedPreview } from "./FeedPreview";
 import { GetInForm } from "./GetInForm";
@@ -186,7 +187,7 @@ export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null, memb
 
         <section className={styles.getIn} aria-labelledby="front-get-in">
           <h2 id="front-get-in" className="visually-hidden">
-            {JOIN_LABEL}
+            {member ? MEMBER_JOIN.heading : JOIN_LABEL}
           </h2>
           {member ? (
             <MemberJoin />

@@ -237,13 +237,15 @@ export function partFoot(emailSet: boolean): string {
  */
 export const MEMBER_PANEL = {
   kicker: "our.one",
-  text: "This feed is our.one's first project. What should we make ours?",
+  text: "The feed is our.one's first project. What should we make ours?",
   need: "Name a need",
   idea: "Bring an idea",
 } as const;
 
 /** Where a visitor is asked to join, a member is shown their feed (D-0023 §C). */
 export const MEMBER_JOIN = {
+  /** The name of the section that holds the two, for a screen reader. */
+  heading: "Your feed",
   line: "You're in.",
   link: "Open your feed",
 } as const;

@@ -117,7 +117,6 @@ import NotFound from "@/app/not-found";
 import { FrontPage, type FrontPageProps } from "@/components/public/FrontPage";
 import { CHECK_YOUR_EMAIL } from "@/components/public/GetInForm";
 import { MAINTAINER, NOTICE_DAYS } from "@/components/public/handover";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { JOIN_LABEL, joinLabel, WAITING_LIST_LABEL } from "@/components/public/join";
 import { RightColumn, SiteFooter, STATUS_LINE } from "@/components/RightColumn";
 import { deleteAccount } from "@/core/accounts";
@@ -919,7 +918,7 @@ describe("the claims scan's new rule (D-0016 §N item 7; CHECKED, not ENFORCED)"
       ["not-found", rendered(NotFound), null],
       ["not-found in the app", rendered(AppNotFound), null],
       ["the footer", rendered(SiteFooter), null],
-      ["the in-app footer", rendered(InAppSiteFooter), null],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the right column", renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 })), null],
     );
     const url = "http://localhost:3000/auth#FICTIONAL";
@@ -1068,7 +1067,8 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
 
   const promiseLink = (tree: El) => findAll(tree, (e) => e.tag === "a" && text(e) === "The promise behind our.one")[0]!;
 
-  it("closed (item 9, contrast): the link is the card's (pledgeLink): the text colour and underlined — 18.51:1 on the page in light and 17.24:1 in dark, and 3.02:1 and 3.76:1 against 'Free to join.' beside it, told apart by luminance and by the underline (measured the same in Chrome 154 at 320, 390, 768 and 1280px in both themes; the underline itself is faint, #cfd9de at 1.44:1 in light and #2f3336 at 1.65:1 in dark, as on the front page's own links)", async () => {
+  it("closed (item 9, contrast): the link is the card's (pledgeLink): the text colour and underlined — 13.14:1 on the page in light and 15.07:1 in dark, in our.one's tokens since M-0020, and 2.27:1 and 1.9:1 against 'Free to join.' beside it, told apart by its underline, as item 9 allows", async () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     const link = promiseLink(await inviteTree());
     expect(moduleClass(link)).toBe("pledgeLink");
     const words = link.parent!;
@@ -1145,7 +1145,7 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
   it("fixed (D-0016 §O, after the re-check; was DEFECT (LOW)) (item 10): on /costs and /rules the status line is a plain muted paragraph that no text-wrap rule reached, though SPEC §18.16 puts 'text-wrap: pretty' on 'the status line' and D-0016 §N says lone last words are avoided where the browser can: Chrome 154 leaves 'members.' alone on its last line on both pages at 408–432px (4 lines) and 598–622px (3 lines), measured every 2px from 320 to 1480px; never on /, /power, /privacy or the not-found page", () => {
     const places: [string, string][] = [
       ["the footer", rendered(SiteFooter)],
-      ["the in-app footer", rendered(InAppSiteFooter)],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the right column", renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 }))],
       ["the not-found page", rendered(NotFound)],
       ["/power", rendered(PowerPage)],
@@ -1162,7 +1162,7 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
     expect(readRecord("apps/web/SPEC.md")).toContain("text-wrap: pretty on the lede, the card, the seat line, the reason, the close's line, every .lede and the status line");
     expect(wraps).toEqual({
       "the footer": "site-footer__status: pretty",
-      "the in-app footer": "site-footer__status: pretty",
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone.
       "the right column": "site-footer__status: pretty",
       "the not-found page": "site-footer__status: pretty",
       "/power": "lede: pretty",
@@ -1171,14 +1171,15 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
     });
   });
 
-  it("closed (item 10): the not-found page's footer is at most 40em, which at the body's 15px is 600px, the site's centre column (--center-w) — measured in Chrome 154 at 1024, 1280, 1366, 1440, 1600, 1920 and 2560px in both themes: 600px wide and centred, the status line on two lines, no sideways scroll; the other parts of the page are at most 281px wide", () => {
+  it("closed (item 10): the not-found page's footer is at most 40em, which in the public pages' 16px is 640px since M-0020 put the page under the header every page has (600px at the body's 15px before, the site's centre column, --center-w) — measured before M-0020 in Chrome 154 at 1024, 1280, 1366, 1440, 1600, 1920 and 2560px in both themes: 600px wide and centred, the status line on two lines, no sideways scroll; the other parts of the page are at most 281px wide", () => {
     const tree = parse(rendered(NotFound));
     const main = findAll(tree, (e) => e.tag === "main")[0]!;
     const footer = main.children.find((c): c is El => typeof c !== "string" && c.tag === "footer")!;
     expect(hasClass(main, "plain-page")).toBe(true);
     expect(declared(footer, "max-width")).toBe("40em");
     const fontSize = parseFloat(inherited(footer, "font-size") ?? BODY["font-size"]!);
-    expect(fontSize * parseFloat(declared(footer, "max-width")!)).toBe(600);
+    // Changed after the verification of M-0020 (H4): the page is drawn inside .public, whose type is 16px.
+    expect(fontSize * parseFloat(declared(footer, "max-width")!)).toBe(640);
     expect(tokens("light")["--center-w"]).toBe("600px");
     expect(findAll(footer, (e) => e.tag === "p" && text(e) === STATUS_LINE)).toHaveLength(1);
   });

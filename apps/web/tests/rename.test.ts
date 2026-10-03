@@ -47,7 +47,6 @@ import { metadata as rootMetadata } from "@/app/layout";
 import manifest from "@/app/manifest";
 import RootNotFound from "@/app/not-found";
 import { SHARE_TEXT } from "@/components/people/InviteCreator";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { RightColumn, SiteFooter } from "@/components/RightColumn";
 import { publicTextFiles } from "@/core/claims";
 import { closed } from "@/core/errors";
@@ -106,7 +105,7 @@ describe("no rendered public page, footer, email subject or body says OURS (SPEC
       ["the error page", html(createElement(ErrorPage, { error: new Error("FICTIONAL"), reset: () => {} }))],
       ["the public layout", html(createElement(PublicLayout, null, "FICTIONAL page"))],
       ["the footer", html(createElement(SiteFooter))],
-      ["the in-app footer", html(createElement(InAppSiteFooter))],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the right column", html(createElement(RightColumn, { invitesRemaining: 3 }))],
     ];
   }
@@ -116,7 +115,8 @@ describe("no rendered public page, footer, email subject or body says OURS (SPEC
       vi.unstubAllEnvs();
       for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
       const pages = await rendered();
-      expect(pages).toHaveLength(19);
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone: 18.
+      expect(pages).toHaveLength(18);
       for (const [page, markup] of pages) {
         expect(textOf(markup).length, page).toBeGreaterThan(0);
         expect(markup, `${page}: ${JSON.stringify(env)}`).not.toMatch(OLD_NAME);

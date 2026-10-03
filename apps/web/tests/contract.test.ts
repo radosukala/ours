@@ -41,8 +41,7 @@ import PowerPage from "@/app/(public)/power/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
 import RulesPage from "@/app/(public)/rules/page";
 import { FrontPage } from "@/components/public/FrontPage";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
-import { OPEN_CODE_URL, SiteFooter, STATUS_LINE } from "@/components/RightColumn";
+import { OPEN_CODE_URL, RightColumn, SiteFooter, STATUS_LINE } from "@/components/RightColumn";
 import { HANDOVER_THRESHOLD } from "@/core/config";
 
 const THRESHOLD = HANDOVER_THRESHOLD.toLocaleString("en-US");
@@ -153,10 +152,11 @@ describe("/contract, word for word (SPEC §18.3)", () => {
     );
   });
 
-  it("is linked from the footer of every public page, and from the in-app footer", () => {
+  it("is linked from the footer of every public page, and from the app's, in its panel", () => {
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
     for (const html of [
       renderToStaticMarkup(createElement(SiteFooter)),
-      renderToStaticMarkup(createElement(InAppSiteFooter)),
+      renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 })),
     ]) {
       expect(html).toMatch(/<a href="\/contract">Contract<\/a>/);
       // Changed under M-0015 (SPEC §18.17): the footer also links to the

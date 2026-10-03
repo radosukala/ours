@@ -108,7 +108,6 @@ import {
   REASON,
   REASON_LEAD,
 } from "@/components/public/FrontPage";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { JOIN_LABEL, WAITING_LIST_LABEL } from "@/components/public/join";
 import { LEDE } from "@/components/public/lede";
 import { RightColumn, STATUS_LINE } from "@/components/RightColumn";
@@ -548,11 +547,13 @@ describe("what a screen reader and a keyboard get", () => {
         roots.map((e) => `${e.tag}.${moduleClass(e).split(" ")[0]} ${text(e).slice(0, 12).trim()}`),
         `joining: ${joining}`,
       ).toEqual([
-        "div.phone our.one M Ma",
+        // Changed after the verification of M-0020 (H2): the phone shows the app as it is: the header (the wordmark, its dot a span of its own, and the four places), then the feed's own bar.
+        "div.phone our. one The",
         "span.pledgeFace R",
         "p.stat 7%",
         "div.mini Home Sponsor",
-        "div.mini Home M Mara",
+        // Changed after the verification of M-0020 (H2): the illustration's our.one side names its feed Feed.
+        "div.mini Feed M Mara",
         "span.stepNumber 1",
         "span.stepNumber 2",
         "span.stepNumber 3",
@@ -603,7 +604,8 @@ describe("what a screen reader and a keyboard get", () => {
 /* =========================================================== new text, both themes */
 
 describe("the new text in both themes (SPEC §9 tokens, read through the cascade)", () => {
-  it("closed: the reason's two lines, the close's line and question, the seat line and the card's longer words are drawn in --text on the page (or on the card), 18.51:1 in light and 17.24:1 in dark (14.59:1 on the dark card); measured the same in Chrome", () => {
+  it("closed: the reason's two lines, the close's line and question, the seat line and the card's longer words are drawn in --text on the page (or on the card), 13.14:1 in light and 15.07:1 in dark (13.86:1 on the dark card), in our.one's tokens since M-0020", () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     const tree = parse(renderFront({ seatsOpen: 0 }));
     const pick = (name: string) => findAll(tree, (e) => hasClass(e, name))[0]!;
     const close = findAll(tree, (e) => e.attrs.id === "front-close")[0]!;
@@ -638,14 +640,15 @@ describe("the status line wherever it stands (D-0016 §J; SPEC §18.16 item 8)",
   const places: [string, () => string][] = [
     ["the public footer", () => renderToStaticMarkup(createElement(PublicLayout, null, BODY))],
     ["the not-found page", () => renderToStaticMarkup(createElement(NotFound))],
-    ["the in-app footer below 1000px", () => renderToStaticMarkup(createElement(InAppSiteFooter))],
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
     ["the app's right column", () => renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 }))],
     ["/power", () => renderToStaticMarkup(createElement(PowerPage))],
     ["/costs", () => renderToStaticMarkup(createElement(CostsPage))],
     ["/rules", () => renderToStaticMarkup(createElement(RulesPage))],
   ];
 
-  it("closed: it renders once in each place as a paragraph of its own, and nothing between it and the page can clip it: no nowrap, ellipsis, line clamp, hidden overflow or fixed height on it or any box around it, and words break when they must (measured in Chrome at every width from 320 to 1480px on /, /power, /costs and /rules in both themes, and on /privacy: never wider than its box, never cut, no sideways scroll; 3 lines at 390px in the footer, 2 from 768px; /power's lede 3 lines at 600px; in the right column, laid out in the server's stylesheets, 5 lines in 258px at 1000–1099px and 4 in 318px from 1100px, the whole column 348px tall)", () => {
+  it("closed: it renders once in each place as a paragraph of its own, and nothing between it and the page can clip it: no nowrap, ellipsis, line clamp, hidden overflow or fixed height on it or any box around it, and words break when they must (measured in Chrome at every width from 320 to 1480px on /, /power, /costs and /rules in both themes, and on /privacy: never wider than its box, never cut, no sideways scroll; 3 lines at 390px in the footer, 2 from 768px; /power's lede 3 lines at 600px); since M-0020 the app's panel is 320px wide beside the column from 1000px and follows it below that, its footer's text box the panel's less 4px each side", () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     // Every rule at any width that reaches the line or a box around it, not only the one that wins.
     const clipping = (body: string) =>
       Object.entries(declarations(body))
@@ -682,7 +685,10 @@ describe("the status line wherever it stands (D-0016 §J; SPEC §18.16 item 8)",
     // column from 1000px, and follows it below that; the footer's text box
     // is the panel's less 4px each side.
     const at = (query: string) => RULES.find((r) => r.media === query && r.selectors.includes(".aside"))!;
-    expect(declarations(at("(min-width: 1000px)").body).flex).toBe("0 0 320px");
+    // Changed after the verification of M-0020 (R11): the panel scrolls on its own on a short screen; its
+    // 8px each side, taken back by its margins, keep the focus rings uncut, and its content stays 320px.
+    const panel = declarations(at("(min-width: 1000px)").body);
+    expect([panel.flex, panel.padding, panel["margin-inline"]]).toEqual(["0 0 336px", "0 8px 32px", "-8px"]);
     expect(declarations(BASE.find((r) => r.selectors.includes(".site-footer"))!.body).padding).toBe("0 4px");
   });
 });
@@ -763,7 +769,8 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     }
   });
 
-  it("closed: the new line's words, 'Free to join.', are --muted on the page: 6.12:1 in light and 4.58:1 in dark, at 13px", async () => {
+  it("closed: the new line's words, 'Free to join.', are --muted on the page: 5.79:1 in light and 7.93:1 in dark, in our.one's tokens since M-0020, at 13px", async () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     const line = closest(promiseLink(await invitePage())[0]!, (e) => e.tag === "p")!;
     expect(declared(line, "font-size")).toBe("13px");
     const ratios = (["light", "dark"] as const).map((scheme) => contrast(colourOf(line, scheme), backgroundOf(line, scheme)));

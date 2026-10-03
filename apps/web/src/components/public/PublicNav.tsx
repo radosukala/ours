@@ -1,19 +1,16 @@
 "use client";
 
 /**
- * The public header's four places (D-0020 §B): the idea and what's in the
- * open are sections of the front door; projects and building are pages.
- * The page you are on is marked for screen readers and underlined.
+ * The public header's four places (D-0020 §B; the list is in places.ts):
+ * the idea and what's in the open are sections of the front door; projects
+ * and building are pages. The page you are on is marked for screen readers
+ * and underlined.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PLACES } from "./places";
 
-export const PLACES: readonly { href: string; label: string; page: string | null }[] = [
-  { href: "/#idea", label: "The idea", page: null },
-  { href: "/projects", label: "Projects", page: "/projects" },
-  { href: "/build", label: "Build with us", page: "/build" },
-  { href: "/#open", label: "In the open", page: null },
-];
+export { PLACES };
 
 export function PublicNav() {
   const path = usePathname();

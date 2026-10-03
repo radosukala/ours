@@ -64,7 +64,7 @@ export default async function InvitePage({
         <h1 className="headline">{INVITE_UNUSABLE}</h1>
         <div>
           <LinkButton href={viewer ? "/home" : "/"} kind="outline">
-            {viewer ? "Go home" : "About our.one"}
+            {viewer ? "Open your feed" : "About our.one"}
           </LinkButton>
         </div>
       </section>

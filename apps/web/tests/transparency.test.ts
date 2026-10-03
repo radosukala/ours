@@ -20,10 +20,9 @@ import RulesPage from "@/app/(public)/rules/page";
 import * as RootNotFound from "@/app/not-found";
 import { ControlList } from "@/components/public/ControlList";
 import { FLOOR_RULES, NO_ALGORITHM_SENTENCE } from "@/components/public/floorRules";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { LedgerView } from "@/components/public/LedgerView";
 import { ENFORCEMENT_WORDS } from "@/components/public/RuleList";
-import { STATUS_LINE } from "@/components/RightColumn";
+import { RightColumn, STATUS_LINE } from "@/components/RightColumn";
 import { DEFAULT_INVITES } from "@/core/config";
 import { counts, health } from "@/core/health";
 import { sendMail } from "@/core/mail";
@@ -752,11 +751,12 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     expect(RootNotFound.dynamic).toBe("force-dynamic");
   });
 
-  it("the not-found page and the in-app footer show the version and the five links", () => {
+  it("the not-found page and the app's panel show the version and the five links", () => {
     vi.stubEnv("OURS_VERSION", "v0-FICTIONAL-footer");
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
     for (const html of [
       renderToStaticMarkup(createElement(RootNotFound.default)),
-      renderToStaticMarkup(createElement(InAppSiteFooter)),
+      renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 })),
     ]) {
       const text = textOf(html);
       expect(text).toContain("Version: v0-FICTIONAL-footer");
@@ -769,15 +769,16 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     }
   });
 
-  it("on phones, the bottom of /settings and the in-app not-found page carry the footer", () => {
+  it("on phones, the panel after the page carries the footer, on /settings and the in-app not-found page as on every page of the app", () => {
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width. Since D-0023 the
+    // panel follows the page below 1000px, so a phone reaches its footer on every page of the app.
+    const layout = readFileSync(join(WEB_ROOT, "src/app/(app)/layout.tsx"), "utf8");
+    expect(layout).toMatch(/<\/main>\s*<RightColumn /);
     for (const file of ["src/app/(app)/settings/page.tsx", "src/app/(app)/not-found.tsx"]) {
-      const source = readFileSync(join(WEB_ROOT, file), "utf8");
-      expect(source, file).toMatch(/import \{ InAppSiteFooter \} from "@\/components\/public\/InAppSiteFooter";/);
-      expect(source, file).toMatch(/<InAppSiteFooter \/>\s*<\/>\s*\);\s*\}\s*$/);
+      expect(readFileSync(join(WEB_ROOT, file), "utf8"), file).not.toContain("InAppSiteFooter");
     }
-    // It hides only where the right column shows the same footer.
-    const css = readFileSync(join(WEB_ROOT, "src/components/public/public.module.css"), "utf8");
-    expect(css).toMatch(/@media \(min-width: 1000px\) \{\s*\.inAppFooter \{\s*display: none;/);
+    const css = readFileSync(join(WEB_ROOT, "src/app/globals.css"), "utf8");
+    expect(css).not.toMatch(/\.aside \{[^}]*display: none/);
   });
 });
 

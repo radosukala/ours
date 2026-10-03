@@ -3,9 +3,10 @@
  * item 2): a ranked feed that keeps going, next to an our.one feed that
  * ends. It is a drawing, not a screenshot of any product, and its caption
  * says so. The people are the front page's fictional three. The our.one
- * side ends where the app's feed ends when it has nothing older, on the
- * app's own end-marker words (`EndMarker`, SPEC §18.15's decisions after
- * the verification).
+ * side names its feed as the app does, the feed (D-0023 §D), and ends where
+ * the app's feed ends when it has nothing older, on the app's own
+ * end-marker words (`EndMarker`, SPEC §18.15's decisions after the
+ * verification).
  */
 import { FEED_WINDOW_DAYS } from "@/core/config";
 import styles from "./public.module.css";
@@ -78,7 +79,7 @@ export function FeedContrast() {
         <div className={styles.contrastColumn}>
           <p className={styles.contrastLabel}>{CONTRAST_LABELS[1]}</p>
           <div className={styles.mini} aria-hidden="true">
-            <div className={styles.miniBar}>Home</div>
+            <div className={styles.miniBar}>Feed</div>
             {FRIENDS.map((friend) => (
               <MiniPost key={friend.name} {...friend} />
             ))}

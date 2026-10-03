@@ -25,31 +25,12 @@ import { LEDE } from "@/components/public/lede";
 import { accountCreationOpen, clientIpHeader } from "@/core/config";
 import { getDb } from "@/core/db";
 import { memberCount, seatState } from "@/core/seats";
-import { readSessionCookie } from "@/web/session";
-import { getViewer } from "@/web/viewer";
+import { isMemberHere } from "@/web/viewer";
 
 export const metadata: Metadata = {
   title: { absolute: FRONT_PAGE_TITLE },
   description: LEDE,
 };
-
-/**
- * Whether this request is signed in. Without a session cookie the database
- * is not touched for it; if the check fails, the visitor sees the front
- * page rather than an error.
- */
-async function signedIn(): Promise<boolean> {
-  if (!(await readSessionCookie())) return false;
-  try {
-    return (await getViewer()) !== null;
-  } catch (error) {
-    console.error(
-      "[ours] front page: the session could not be checked:",
-      error instanceof Error ? error.name : "unknown error",
-    );
-    return false;
-  }
-}
 
 /** A number of people or seats, or null if it can't be shown as one. */
 function asCount(value: unknown): number | null {
@@ -84,8 +65,9 @@ async function readSeats(): Promise<{ open: number | null; waiting: number | nul
 }
 
 export default async function FeedPageRoute() {
-  // A member stays, and is shown their feed where a visitor is asked to join (D-0023 §C).
-  const member = await signedIn();
+  // A member stays, and is shown their feed where a visitor is asked to join
+  // (D-0023 §C). The header asks the same (isMemberHere), so the two agree.
+  const member = await isMemberHere();
 
   const joining = accountCreationOpen() && clientIpHeader() !== null;
   const [count, seats] = await Promise.all([

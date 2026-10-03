@@ -4,7 +4,10 @@
  * draws it on a phone. It is built from the app's own parts, so it cannot
  * drift from them:
  *
- * - the top bar with the our.one wordmark (PageHeader on /home);
+ * - the header every page has, as a phone draws it (SiteHeader, D-0023
+ *   §B): the wordmark with its rust dot (`Wordmark`) and the member's
+ *   menu, then the four places (`PLACES`) on their own row;
+ * - the feed's own bar, "Feed" (PageHeader on /home, D-0023 §D);
  * - post rows in the app's classes, with the app's Avatar and icons
  *   (PostRow: audience, the ⋯ menu, reply and like), and only what the app
  *   shows a reader: a reply count, and no like count on another person's
@@ -23,6 +26,8 @@ import { Avatar } from "@/components/Avatar";
 import { Icon, type IconName } from "@/components/Icon";
 import { CaughtUpMarker, EndMarker } from "@/components/Marker";
 import { relativeTime } from "@/components/RelativeTime";
+import { Wordmark } from "@/components/SiteHeader";
+import { PLACES } from "./places";
 import styles from "./public.module.css";
 
 const HOUR = 60 * 60 * 1000;
@@ -110,9 +115,18 @@ export function FeedPreview() {
   return (
     <figure className={styles.preview} aria-label="What our.one looks like">
       <div className={styles.phone} aria-hidden="true">
-        <div className={styles.phoneBar}>
-          <span className="wordmark">our.one</span>
+        <div className={styles.phoneHead}>
+          <span className={styles.phoneWordmark}>
+            <Wordmark />
+          </span>
+          <span className={styles.phoneMe} />
         </div>
+        <div className={styles.phonePlaces}>
+          {PLACES.map((place) => (
+            <span key={place.href}>{place.label}</span>
+          ))}
+        </div>
+        <div className={styles.phoneBar}>Feed</div>
         <div className={styles.phoneFeed}>
           <div>
             {NEW_POSTS.map((post) => (

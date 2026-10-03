@@ -186,7 +186,7 @@ describe("claims scan: the text as a reader sees it", () => {
       "src/app/(public)/join/confirm/page.tsx",
       "src/app/(public)/join/confirm/ConfirmForms.tsx",
       "src/app/(public)/join/confirm/actions.ts",
-      "src/components/public/InAppSiteFooter.tsx",
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       "src/app/not-found.tsx",
       "src/app/(app)/not-found.tsx",
       "src/app/(app)/settings/page.tsx",

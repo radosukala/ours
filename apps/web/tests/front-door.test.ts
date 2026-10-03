@@ -446,7 +446,8 @@ describe("the routes", () => {
   it("both routes keep a signed-in visitor, and show them their feed where a visitor is asked to join", () => {
     for (const file of ["src/app/(public)/page.tsx", "src/app/(public)/feed/page.tsx"]) {
       expect(read(file), file).not.toContain('redirect("/home")');
-      expect(read(file), file).toContain("const member = await signedIn();");
+      // Changed after the verification of M-0020 (H5): both routes ask what the header asks.
+      expect(read(file), file).toContain("const member = await isMemberHere();");
       expect(read(file), file).toContain("member={member}");
     }
   });

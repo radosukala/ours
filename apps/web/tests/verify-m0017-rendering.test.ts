@@ -932,7 +932,8 @@ describe("closed checks (each held, and passes)", () => {
     }
   });
 
-  it("closed: signed in, / and /feed send the visitor to /home, which keeps the app's look — in Chrome 154 as a FICTIONAL administrator from `pnpm seed:fictional` on a scratch database, both landed on /home, white (#fff) and black in the dark, the blue accent (#1d9bf0) and the system font; public pages kept the identity while signed in", async () => {
+  it("closed: signed in, / and /feed send no one away (since M-0020, D-0023 §C, both routes render for a member), and the app has our.one's look: the paper (#f5f3eb) and the rust (#bf411d) at the root, and the identity's own tokens defined on .public alone", async () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     auth.signedIn = true;
     // Changed under M-0020 (D-0023 §A, §C): signed in, both routes stay, and
     // the app has our.one's look: the paper and the rust at the root.

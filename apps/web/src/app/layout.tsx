@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { DOOR_LEDE } from "@/components/public/door";
 import "./globals.css";
 
+/** A page with no description of its own takes the front door's (D-0023). */
 export const metadata: Metadata = {
   title: { default: "our.one", template: "%s · our.one" },
-  description: "A home for friends and people you choose to follow.",
+  description: DOOR_LEDE,
   referrer: "no-referrer",
   formatDetection: { telephone: false, email: false, address: false },
 };

@@ -8,9 +8,10 @@
  * - The footer: the wordmark and the line, then the site footer: its
  *   links, the running version and the status line.
  *
- * It reads the session only to choose between Sign in and Your feed, in a
- * Suspense boundary of its own, and never depends on the database being up
- * for it (`isMemberHere`). Until it knows, the header offers Sign in.
+ * It reads the session only to choose between Sign in and Your feed
+ * (`Account`, in PublicAccount.tsx), in a Suspense boundary of its own, and
+ * never depends on the database being up for it (`isMemberHere`). Until it
+ * knows, the header offers Sign in.
  *
  * Every page under it renders per request (SPEC §17 item 20), so the
  * footer's running version, the configured controller on /power and the
@@ -18,12 +19,11 @@
  * app happened to be built with.
  */
 import type { Viewport } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
+import { Account, SignIn } from "@/components/PublicAccount";
 import { SiteFooter } from "@/components/RightColumn";
 import { SiteHeader, Wordmark } from "@/components/SiteHeader";
 import { TAGLINE } from "@/components/public/door";
-import { isMemberHere } from "@/web/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -34,24 +34,6 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#131a15" },
   ],
 };
-
-function SignIn() {
-  return (
-    <Link href="/signin" className="public-header__signin">
-      Sign in
-    </Link>
-  );
-}
-
-/** Sign in for a visitor; Your feed for a member (D-0023 §B, §C). */
-async function Account() {
-  if (!(await isMemberHere())) return <SignIn />;
-  return (
-    <Link href="/home" className="public-header__signin">
-      Your feed
-    </Link>
-  );
-}
 
 export default function PublicLayout({
   children,

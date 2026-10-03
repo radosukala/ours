@@ -1,7 +1,9 @@
 /**
  * The sticky page header (SPEC §9): 53px, a blurred background, the page's
- * one h1. On phones (<700px) it is the top bar; on /home pass `wordmark`
- * and phones show the our.one wordmark in place of the title.
+ * one h1. On phones (<700px) it is the top bar under the header every page
+ * has (SiteHeader). `wordmark` shows the our.one wordmark in place of the
+ * title on phones; since D-0023 no page passes it, as the header carries
+ * the wordmark.
  *
  * `back` adds an arrow back to that address. `actions` sit on the right.
  * `children` render under the title row, inside the sticky area — use it

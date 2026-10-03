@@ -46,7 +46,6 @@ import PrivacyPage from "@/app/(public)/privacy/page";
 import ProjectsPage from "@/app/(public)/projects/page";
 import { HEADLINE } from "@/components/public/FrontPage";
 import { MAINTAINER, THRESHOLD } from "@/components/public/handover";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { LEDE } from "@/components/public/lede";
 import { SiteFooter } from "@/components/RightColumn";
 import { deleteAccount } from "@/core/accounts";
@@ -471,7 +470,8 @@ describe("closed (each passes on 185bb67)", () => {
 
   it("closed: 'the public records' are the repository D-0013 §F made public, and every footer's Open code link points into it", () => {
     expect(record("decisions/D-0013.md")).toContain("This makes the records, the code (Apache-2.0) and the receipts public");
-    for (const markup of [render(SiteFooter), render(InAppSiteFooter)]) {
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
+    for (const markup of [render(SiteFooter)]) {
       expect(markup).toContain('href="https://github.com/radosukala/ours/tree/main/apps/web"');
     }
   });
@@ -591,7 +591,7 @@ describe("closed (each passes on 185bb67)", () => {
         ["/contract", render(ContractPage), CONTRACT_FILE],
         ["/privacy", render(PrivacyPage), null],
         ["the footer", render(SiteFooter), null],
-        ["the in-app footer", render(InAppSiteFooter), null],
+        // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ];
       for (const [page, markup, file] of rendered) {
         expect(renderedHits(markup, file), `${address || "(none)"}: ${page}`).toEqual([]);

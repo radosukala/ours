@@ -675,6 +675,11 @@ is unaffected.
 
 ## 9. Design
 
+*Replaced in part by §18.22 (M-0020, D-0023): the app now has our.one's
+own look. The token table below (X's colours), the left navigation with its
+Post pill, "Home" in the bottom bar and the pill-shaped buttons are
+history; §18.22 says what replaced them.*
+
 **The brief, from the founder:** *very system-like fonts, look like X,
 Instagram — super simple in design and layout, something people know.*
 Familiar, quiet, dense, fast.
@@ -2851,7 +2856,9 @@ D-0022: our.one runs in North America.
 
 D-0023. Every page has our.one's own look, members get the header every
 visitor gets, the front door is for members too, and the feed is our.one's
-first project. What the feed does is unchanged.
+first project. What the feed does is unchanged. It replaces, in §9, the
+token table (X's colours), the left navigation with its *Post* pill,
+*Home* in the bottom bar and the pill-shaped buttons.
 
 - **One identity** (§A):
   - the root tokens in `globals.css` are our.one's: paper `#f5f3eb`, ink
@@ -2859,15 +2866,25 @@ first project. What the feed does is unchanged.
     and the like, and their dark values;
   - X's colours are gone, from the stylesheet, the pictures of the app on
     `/feed` (which restate no token now), the icon, the manifest and the
-    browser bar;
+    browser bar; after the verification, X's yellow (the composer's
+    counter as the limit nears, now the accent) and X's green (`/feed`'s
+    count dot, now rust) went too;
+  - the pictures of the app on `/feed` show it as it is: the header with
+    the wordmark's rust dot, the four places and the feed's own bar,
+    *Feed*, and a square compose tab; the illustration's our.one side names
+    its feed *Feed*;
   - buttons, cards and the compose tab are square-cornered, as the public
     pages' are.
 - **One header** (§B):
   - `SiteHeader` (the wordmark, which goes to `/`, and the four places) is
     on every page;
+  - the not-found and error pages have it too: the not-found page with
+    *Sign in* or *Your feed* on its right, the error page with nothing
+    there, as who is reading can't be known while the database is down;
   - in the app, its right side is `MemberLinks`: Feed, Notifications and
     People with their counts, and a menu (a `<details>`) with Your
-    profile, Settings and, for administrators, Moderation;
+    profile, Settings and, for administrators, Moderation; the menu's name
+    says what it holds;
   - on a phone the bottom bar carries the feed, people, writing,
     notifications and the profile, and the header keeps the menu;
   - from 761 to 999px the app's header (`public-header--member`), which
@@ -2877,21 +2894,48 @@ first project. What the feed does is unchanged.
     borders, as on a wide screen, and below 1000px the panel follows it;
   - the left navigation and its Post pill are gone.
 - **The public layout** shows *Sign in*, or *Your feed* for a member
-  (`isMemberHere`: the session cookie, then the cached viewer; with the
-  database down, the cookie is trusted). The link sits in a Suspense
+  (`isMemberHere`, which the front door and `/feed` ask too, so a page and
+  its header agree: the session cookie, then the cached viewer; with the
+  database down, nobody is shown as a member). The link sits in a Suspense
   boundary of its own, so the layout never waits on the database; until it
   knows, it offers Sign in.
 - **The front door for members** (§C):
   - `/` and `/feed` no longer redirect a member;
   - where a visitor is asked to join, a member is shown *"You're in."* and
     *"Open your feed"* (`MemberJoin`), the count without a rank (*"12
-    people are in."*), and no closing invitation to join.
+    people are in."*), and no closing invitation to join;
+  - in the front door's *your part*, a member's button is *Open your feed*,
+    where a visitor's is *Join the feed*; on `/feed` the section that
+    holds a member's two lines is named *Your feed*.
 - **The feed, as the first project** (§D):
   - the feed is called *Feed* (the bar's title, the browser's title, the
-    header and the bottom bar);
+    header and the bottom bar), and the buttons that lead to it say *Open
+    your feed* (the in-app not-found page, `/report` on one's own post,
+    `/join/confirm`, and an unusable invite link to a member);
   - beside it, or after it below 1000px, the panel holds our.one's card
-    (forest, with acid buttons): *"The software we live in should be
-    ours."*, *"This feed is our.one's first project. What should we make
-    ours?"*, *Name a need* and *Bring an idea* (the front door's drafts),
-    and the four places;
-  - then the invite card, and the footer with the version.
+    (forest, with acid buttons; its kicker, the name, in lowercase): *"The
+    software we live in should be ours."*, *"The feed is our.one's first
+    project. What should we make ours?"*, *Name a need* and *Bring an
+    idea* (the front door's drafts), and the four places;
+  - then the invite card, and the footer with the version: the app's one
+    footer, at every width;
+  - the manifest and the pages without a description of their own describe
+    our.one as the front door does, not the feed.
+- **After the verification, for rendering and use:**
+  - the counts are the paper on the rust, and the ink on the dark rust:
+    4.74:1 and 7.22:1;
+  - in our.one's panel the focus ring and the buttons' edges are the acid,
+    over the public pages' rust and ink;
+  - when a focused element scrolls into view, the page keeps room for the
+    sticky page header and, on a phone, the bottom bar (`scroll-padding`);
+  - from 1000px the panel is never taller than the window and scrolls on
+    its own, its 8px each side keeping the focus rings uncut;
+  - on a touch screen the member's links and the panel's places are 44px
+    tall, and the footer's links, in the panel as in the public footer,
+    sit in rows apart;
+  - a field's edge is `--sub`, 3:1 or more on its paper (5.79:1 light,
+    7.93:1 dark);
+  - a hovered post takes the card's paper, so the rust links on it stay
+    4.5:1 or more;
+  - the member's menu closes on Escape and on a tap outside it, as the
+    app's other menus do (`useDismissableMenu`).

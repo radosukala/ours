@@ -103,8 +103,12 @@ describe("one header (D-0023 §B)", () => {
     expect(textOf(html)).toContain("Sign in");
     const layout = read("src/app/(public)/layout.tsx");
     expect(layout).toContain("<Suspense fallback={<SignIn />}>");
-    expect(layout).toContain("Your feed");
-    expect(read("src/web/viewer.ts")).toMatch(/export async function isMemberHere\(\)[\s\S]*catch \{\s*return true;/);
+    // Changed after the verification of M-0020 (H4, H5): the link is PublicAccount's, which the
+    // not-found page draws too; with the database unreadable, nobody is shown as a member.
+    expect(read("src/components/PublicAccount.tsx")).toContain("Your feed");
+    expect(read("src/web/viewer.ts")).toMatch(
+      /export const isMemberHere = cache\(async \(\): Promise<boolean> => \{[\s\S]*?catch \(error\) \{[\s\S]*?return false;\s*\}\s*\}\);/,
+    );
   });
 });
 

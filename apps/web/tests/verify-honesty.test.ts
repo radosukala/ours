@@ -593,11 +593,15 @@ describe("the running version", () => {
     // version, follows the page's column below 1000px, so it is shown at
     // every width; the old check was that it hid at the base.
     const asideShownAtBase = !/\.aside\s*\{[^}]*display:\s*none;/.test(base) && /\.aside\s*\{/.test(base);
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the panel the (app) layout
+    // draws (RightColumn) carries the footer and its version at every width.
+    expect(read("src/app/(app)/layout.tsx")).toContain("<RightColumn ");
     const appShell = [
       ...filesUnder("src/app/(app)"),
       "src/components/Nav.tsx",
       "src/components/TabBar.tsx",
       "src/components/PageHeader.tsx",
+      "src/components/RightColumn.tsx",
     ].filter((f) => /\.tsx?$/.test(f));
     const elsewhere = appShell.filter((f) => /runningVersion|SiteFooter/.test(read(f)));
     expect(asideShownAtBase).toBe(true);

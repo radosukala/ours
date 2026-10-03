@@ -633,7 +633,7 @@ function linkBox(a: El, ctx: Ctx): { height: number; pitch: number; display: str
 /* =============================================================== findings */
 
 describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
-  it("DEFECT (MEDIUM): in the dark theme the counts are white on the dark accent, 2.45:1, under WCAG 1.4.3's 4.5:1 for 11px bold text — measured in Chromium 153 on every signed-in page: the header's Notifications and People counts (from 700px), the phone bar's counts, and the Requests count in People's tabs, #ffffff on #ec8d66 (light: 5.26:1 on #bf411d; before M-0020 they were white on the blue, 3.00:1). globals.css's .badge keeps `color: #ffffff` over `background: var(--accent)`, and SPEC §18.22 makes the accent the rust, whose dark value is a light salmon", () => {
+  it("fixed (MEDIUM): in the dark theme the counts are white on the dark accent, 2.45:1, under WCAG 1.4.3's 4.5:1 for 11px bold text — measured in Chromium 153 on every signed-in page: the header's Notifications and People counts (from 700px), the phone bar's counts, and the Requests count in People's tabs, #ffffff on #ec8d66 (light: 5.26:1 on #bf411d; before M-0020 they were white on the blue, 3.00:1). globals.css's .badge keeps `color: #ffffff` over `background: var(--accent)`, and SPEC §18.22 makes the accent the rust, whose dark value is a light salmon", () => {
     const parts = [
       ...byClass(memberHeader(), "badge"),
       ...byClass(render(inShell(createElement(TabBar, { viewer: VIEWER, counts: COUNTS }), "main")), "badge"),
@@ -651,7 +651,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect(measured.filter((m) => m.ratio < 4.5)).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): in the light theme the focus ring in our.one's panel is rust on its forest, 2.52:1, under the 3:1 a focus indicator needs against what is next to it (WCAG 1.4.11, for 2.4.7) — measured in Chromium 153 by Tab on /home: 'Name a need' and 'Bring an idea' at 1440, 820, 375 and 320px, and the four places at 1440px, each drew a 3px #bf411d ring on #253328 (dark: 7.79:1). globals.css gives `.card--ours :focus-visible` the acid, but `.public :focus-visible` (equal specificity, later in the file) sets the whole outline to rust, so the panel's own rule never applies; the acid buttons' acid border loses to `.public .btn--outline`'s ink the same way. M-0017's R1 fixed this very contrast on the front door's builders band", () => {
+  it("fixed (MEDIUM): in the light theme the focus ring in our.one's panel is rust on its forest, 2.52:1, under the 3:1 a focus indicator needs against what is next to it (WCAG 1.4.11, for 2.4.7) — measured in Chromium 153 by Tab on /home: 'Name a need' and 'Bring an idea' at 1440, 820, 375 and 320px, and the four places at 1440px, each drew a 3px #bf411d ring on #253328 (dark: 7.79:1). globals.css gives `.card--ours :focus-visible` the acid, but `.public :focus-visible` (equal specificity, later in the file) sets the whole outline to rust, so the panel's own rule never applies; the acid buttons' acid border loses to `.public .btn--outline`'s ink the same way. M-0017's R1 fixed this very contrast on the front door's builders band", () => {
     const card = render(inShell(createElement(OursCard, { email: null }), "aside"), true);
     const panel = byClass(card, "card--ours")[0]!;
     const targets = tabbable(panel);
@@ -667,7 +667,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect(measured.filter((m) => m.ratio < 3)).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): near the limit the composer's counter turns #ffd400, 1.29:1 on the paper, under WCAG 1.4.3's 4.5:1 for its 13px — measured in Chromium 153 on /home at 375px: 1,985 FICTIONAL characters, the counter '15' (aria-label '15 characters left') drawn rgb(255, 212, 0) on #f5f3eb (dark: 12.4:1 on #131a15). globals.css's .counter--warn keeps a yellow from the old shell that none of our.one's tokens names, where D-0023 §A and SPEC §18.22 give every signed-in page the paper, ink, rust and acid", () => {
+  it("fixed (MEDIUM): near the limit the composer's counter turns #ffd400, 1.29:1 on the paper, under WCAG 1.4.3's 4.5:1 for its 13px — measured in Chromium 153 on /home at 375px: 1,985 FICTIONAL characters, the counter '15' (aria-label '15 characters left') drawn rgb(255, 212, 0) on #f5f3eb (dark: 12.4:1 on #131a15). globals.css's .counter--warn keeps a yellow from the old shell that none of our.one's tokens names, where D-0023 §A and SPEC §18.22 give every signed-in page the paper, ink, rust and acid", () => {
     const tree = render(
       inShell(
         createElement("form", { className: "composer" }, createElement("div", { className: "composer__bar" }, createElement("span", { className: "counter counter--warn" }, "15"))),
@@ -682,7 +682,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect(measured.filter((m) => m.ratio < 4.5)).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): keyboard focus lands where it can't be seen — under the phone's bottom bar going forward, and under the sticky page header going back (WCAG 2.2 SC 2.4.11, Focus Not Obscured, AA) — measured in Chromium 153: on /home at 375×812, Tab put focus on 'Reply, 1 reply' at y 769–803, entirely under the bar (760–812), 7 of 60 stops wholly hidden ('Name a need' and 'Bring an idea' on /notifications; the panel's footer links at 320×640, 8 of 60); Shift+Tab hid up to 5 of 40 under the page header at 375px (its bottom at 54px, 107px on People), and 6 of 60 at 820 and 1440px. Chromium scrolls a focused element just into the viewport, and nothing tells it about the fixed bar or the sticky header: no scroll-padding anywhere. Inherited from the old shell, which had the same bar and header; M-0020 rebuilt the shell and kept both", () => {
+  it("fixed (MEDIUM): keyboard focus lands where it can't be seen — under the phone's bottom bar going forward, and under the sticky page header going back (WCAG 2.2 SC 2.4.11, Focus Not Obscured, AA) — measured in Chromium 153: on /home at 375×812, Tab put focus on 'Reply, 1 reply' at y 769–803, entirely under the bar (760–812), 7 of 60 stops wholly hidden ('Name a need' and 'Bring an idea' on /notifications; the panel's footer links at 320×640, 8 of 60); Shift+Tab hid up to 5 of 40 under the page header at 375px (its bottom at 54px, 107px on People), and 6 of 60 at 820 and 1440px. Chromium scrolls a focused element just into the viewport, and nothing tells it about the fixed bar or the sticky header: no scroll-padding anywhere. Inherited from the old shell, which had the same bar and header; M-0020 rebuilt the shell and kept both", () => {
     // The page's scroller, with the app's shell in it (so `html:has(…)` can be read).
     const html = findAll(render(createElement("html", null, createElement("body", null, inShell(createElement("p", null, "FICTIONAL"), "main")))), (e) => e.tag === "html")[0]!;
     const pad = (side: "top" | "bottom", ctx: Ctx) => {
@@ -703,7 +703,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     });
   });
 
-  it("DEFECT (MEDIUM): the pictures of the app on /feed still draw the old app — seen in Chromium 153 beside the app at 375px: the phone's top bar is 'our.one' centred in place of the title (which M-0020 took out of the app: /home's bar now says 'Feed', and the wordmark is in the site header), the wordmark has no rust dot, the ＋ is a circle where the app's compose tab is now square, and the 'our.one' drawing's bar says 'Home'. D-0023 §A: 'The pictures of the app on /feed show its real look' and 'the wordmark with its rust dot'; §D: the feed is called the feed, 'not Home'; SPEC §18.22: the compose tab is square-cornered. FeedPreview.tsx says it is built from the app's parts 'so it cannot drift from them'", () => {
+  it("fixed (MEDIUM): the pictures of the app on /feed still draw the old app — seen in Chromium 153 beside the app at 375px: the phone's top bar is 'our.one' centred in place of the title (which M-0020 took out of the app: /home's bar now says 'Feed', and the wordmark is in the site header), the wordmark has no rust dot, the ＋ is a circle where the app's compose tab is now square, and the 'our.one' drawing's bar says 'Home'. D-0023 §A: 'The pictures of the app on /feed show its real look' and 'the wordmark with its rust dot'; §D: the feed is called the feed, 'not Home'; SPEC §18.22: the compose tab is square-cornered. FeedPreview.tsx says it is built from the app's parts 'so it cannot drift from them'", () => {
     const preview = render(createElement(FeedPreview));
     const contrastPicture = render(createElement(FeedContrast));
     const bars = byClass(contrastPicture, "miniBar").map(text);
@@ -716,7 +716,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect(drift).toEqual({ wordmarkDot: true, ourBarSaysHome: false, composeCorner: true });
   });
 
-  it("DEFECT (LOW): below 1000px /settings and the app's not-found page (/admin for a member who isn't one) show the site footer twice — the links, the version and the status line, with two 'About our.one' navigation landmarks — and the first copy's words sit 4px from a phone's edge — measured in Chromium 153 at 375 and 820px (two status lines at y 1819 and 2460 on /settings at 375). InAppSiteFooter exists 'for widths where the right column (and its footer) is hidden' and hides from 1000px; since M-0020 the panel, with its footer, follows the column at every width (SPEC §18.22), and .site-footer's side padding went from 16px to 4px", () => {
+  it("fixed (LOW): below 1000px /settings and the app's not-found page (/admin for a member who isn't one) show the site footer twice — the links, the version and the status line, with two 'About our.one' navigation landmarks — and the first copy's words sit 4px from a phone's edge — measured in Chromium 153 at 375 and 820px (two status lines at y 1819 and 2460 on /settings at 375). InAppSiteFooter exists 'for widths where the right column (and its footer) is hidden' and hides from 1000px; since M-0020 the panel, with its footer, follows the column at every width (SPEC §18.22), and .site-footer's side padding went from 16px to 4px", () => {
     expect(read("src/app/(app)/layout.tsx")).toContain("<RightColumn");
     const panel = byClass(render(inShell(createElement(RightColumn, { invitesRemaining: 8 }), "aside"), true), "site-footer");
     expect(panel).toHaveLength(1);
@@ -736,7 +736,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect({ inAppShown, inset: inAppShown ? inset : 16 }).toEqual({ inAppShown, inset: expect.toSatisfy((v: number) => v >= 16) });
   });
 
-  it("DEFECT (LOW): the member's menu stays open, over the page, on Escape, on a click or tap outside it, and when Tab leaves it — measured in Chromium 153 at 1440, 820, 375 and 320px: after Escape and after a click elsewhere `details.open` was still true, and at 375px its list (y 62–212) covered part of the places' row and the page's title; it closes only from its own summary or when one of its links is followed. Every other menu in the app closes on Escape and a click outside (PostMenu.tsx's useDismissableMenu, people/ActionMenu.tsx); MemberLinks.tsx listens for neither", () => {
+  it("fixed (LOW): the member's menu stays open, over the page, on Escape, on a click or tap outside it, and when Tab leaves it — measured in Chromium 153 at 1440, 820, 375 and 320px: after Escape and after a click elsewhere `details.open` was still true, and at 375px its list (y 62–212) covered part of the places' row and the page's title; it closes only from its own summary or when one of its links is followed. Every other menu in the app closes on Escape and a click outside (PostMenu.tsx's useDismissableMenu, people/ActionMenu.tsx); MemberLinks.tsx listens for neither", () => {
     const source = read("src/components/MemberLinks.tsx");
     expect(read("src/components/posts/PostMenu.tsx")).toMatch(/export function useDismissableMenu/);
     expect({
@@ -745,14 +745,14 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     }).toEqual({ escape: true, outside: true });
   });
 
-  it("DEFECT (LOW): on a touch screen the header's Feed, Notifications and People are 40px tall, under SPEC §9's 44px — measured in Chromium 153 with touch at 820px (and they show from 700px): each a.member__link 40px. M-0017's R13 gave the public header's places and Sign in 44px under `@media (pointer: coarse)`; the member's links, new under M-0020, have no such rule", () => {
+  it("fixed (LOW): on a touch screen the header's Feed, Notifications and People are 40px tall, under SPEC §9's 44px — measured in Chromium 153 with touch at 820px (and they show from 700px): each a.member__link 40px. M-0017's R13 gave the public header's places and Sign in 44px under `@media (pointer: coarse)`; the member's links, new under M-0020, have no such rule", () => {
     const links = byClass(memberHeader(), "member__link");
     expect(links.map((a) => text(a).replace(/\s*\d+$/, ""))).toEqual(["Feed", "Notifications", "People"]);
     const heights = links.map((a) => px(cascade(a, ["min-height"], at(820, false, true))?.value));
     expect(heights.filter((h) => h < 44)).toEqual([]);
   });
 
-  it("DEFECT (LOW): on a phone the panel's links are small and close — measured in Chromium 153 with touch at 320 and 375px on every signed-in page: the panel's four places are 17px inline links in rows 21.7px apart, under SPEC §9's 44px; its footer's nine links are 15px in rows 19.5px apart, so their 24px targets meet (WCAG 2.5.8). Before M-0020 the panel never showed below 1000px; M-0017's R11 gave the public footer's links 29.5px on touch screens, under `.public-footer`, which the panel's copy of the footer isn't in", () => {
+  it("fixed (LOW): on a phone the panel's links are small and close — measured in Chromium 153 with touch at 320 and 375px on every signed-in page: the panel's four places are 17px inline links in rows 21.7px apart, under SPEC §9's 44px; its footer's nine links are 15px in rows 19.5px apart, so their 24px targets meet (WCAG 2.5.8). Before M-0020 the panel never showed below 1000px; M-0017's R11 gave the public footer's links 29.5px on touch screens, under `.public-footer`, which the panel's copy of the footer isn't in", () => {
     const tree = render(inShell(createElement(RightColumn, { invitesRemaining: 8 }), "aside"), true);
     const places = findAll(byClass(tree, "card__links")[0]!, (e) => e.tag === "a");
     const footer = findAll(byClass(tree, "site-footer__links")[0]!, (e) => e.tag === "a");
@@ -765,21 +765,28 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect(short).toEqual([]);
   });
 
-  it("DEFECT (LOW): with the database down, a member's front door and /feed say 'Your feed' in the header and still ask them to join below — measured in Chromium 153 on a second server whose DATABASE_URL is a closed port, with a FICTIONAL member's cookie, at 375 and 1440px: the header 'Your feed', and below it the visitor's form ('Your email', 'Join our.one'). The layout trusts the cookie when the database can't be read (isMemberHere, SPEC §18.22: 'with the database down, the cookie is trusted'); the pages' own signedIn() treats the same failure as a visitor, where SPEC §18.22 shows a member 'You're in.'", async () => {
+  it("fixed (LOW): with the database down, a member's front door and /feed say 'Your feed' in the header and still ask them to join below — measured in Chromium 153 on a second server whose DATABASE_URL is a closed port, with a FICTIONAL member's cookie, at 375 and 1440px: the header 'Your feed', and below it the visitor's form ('Your email', 'Join our.one'). The layout trusts the cookie when the database can't be read (isMemberHere, SPEC §18.22: 'with the database down, the cookie is trusted'); the pages' own signedIn() treats the same failure as a visitor, where SPEC §18.22 shows a member 'You're in.'", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
+    // Changed after the verification of M-0020 (R10, with the honesty lens's H5): the finding allows
+    // either reading, and the fix took the other one. With the database unreadable nobody is shown as a
+    // member, by the header (isMemberHere) and by the pages, which now ask it too; so a member's cookie
+    // gets the visitor's front door and /feed, and the header's Sign in.
     req.cookie = "FICTIONAL-session.FICTIONAL-hmac";
     req.dbDown = true;
-    expect(await isMemberHere()).toBe(true);
+    expect(await isMemberHere()).toBe(false);
     const door = render(await FrontDoorRoute(), true);
     const feed = render(await FeedPageRoute(), true);
     const seen = [door, feed].map((tree) => ({ youreIn: text(tree).includes(MEMBER_JOIN.line), forms: findAll(tree, (e) => e.tag === "form").length }));
-    expect(seen).toEqual([
-      { youreIn: true, forms: 0 },
-      { youreIn: true, forms: 0 },
-    ]);
+    req.cookie = null;
+    const visitor = [render(await FrontDoorRoute(), true), render(await FeedPageRoute(), true)].map((tree) => ({
+      youreIn: text(tree).includes(MEMBER_JOIN.line),
+      forms: findAll(tree, (e) => e.tag === "form").length,
+    }));
+    expect(seen).toEqual(visitor);
+    expect(seen.map((s) => s.youreIn)).toEqual([false, false]);
   });
 
-  it("DEFECT (LOW): from 1000px the panel is sticky and 728px tall with no scroll of its own, so on a laptop screen its last lines are out of reach until the feed ends — measured in Chromium 153 on /home scrolled 1500px: at 1366×657 (a 1366×768 screen) the status line stops mid-sentence at '…its domain, its data and the right', at 1280×600 the version and the status line are gone. The status line is D-0016 §J's, shown 'wherever control is described'; the right column before M-0020 kept it in reach (max-height: 100dvh; overflow-y: auto)", () => {
+  it("fixed (LOW): from 1000px the panel is sticky and 728px tall with no scroll of its own, so on a laptop screen its last lines are out of reach until the feed ends — measured in Chromium 153 on /home scrolled 1500px: at 1366×657 (a 1366×768 screen) the status line stops mid-sentence at '…its domain, its data and the right', at 1280×600 the version and the status line are gone. The status line is D-0016 §J's, shown 'wherever control is described'; the right column before M-0020 kept it in reach (max-height: 100dvh; overflow-y: auto)", () => {
     const aside = findAll(render(inShell(createElement("div"), "aside")), (e) => e.tag === "aside")[0]!;
     const ctx = at(1366);
     const position = cascade(aside, ["position"], ctx)?.value;
@@ -789,7 +796,10 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect({ inReach: position !== "sticky" || (!!maxHeight && /auto|scroll/.test(scroll ?? "")) }).toEqual({ inReach: true });
   });
 
-  it("DEFECT (LOW): from 700px, once a page scrolls, a member has nothing to reach the feed, notifications, people or the menu — measured in Chromium 153 on /home after 1500px of scroll at 820, 1000 and 1440px: none of the member's links in view, where at 375px the bottom bar carries them. The header isn't sticky and the bar hides from 700px ('the header carries everything', says globals.css); the left navigation it replaced stayed in view (.nav__inner was sticky)", () => {
+  // Recorded, not fixed (the verification of M-0020): whether a member's links stay in view as a page
+  // scrolls (a sticky header) or the bottom bar shows wider is a design choice, which the verifier named
+  // the founder's. It is put to the founder; the test stays as written, and skipped, until that decision.
+  it.skip("recorded, not fixed (LOW): from 700px, once a page scrolls, a member has nothing to reach the feed, notifications, people or the menu — measured in Chromium 153 on /home after 1500px of scroll at 820, 1000 and 1440px: none of the member's links in view, where at 375px the bottom bar carries them. The header isn't sticky and the bar hides from 700px ('the header carries everything', says globals.css); the left navigation it replaced stayed in view (.nav__inner was sticky)", () => {
     const header = memberHeader();
     const links = byClass(header, "member__links")[0]!;
     const chain: El[] = [];
@@ -801,7 +811,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     ]);
   });
 
-  it("DEFECT (LOW): the text fields' edges are 1.69:1 on the paper (2.38:1 dark), and their fill 1.1:1, under the 3:1 WCAG 1.4.11 asks of what identifies a control — measured in Chromium 153 at 1440px: the composer's audience, /settings' Name and Bio, /people/invites' note, /admin's two fields, /report's details and /settings/delete's confirmation, each a #b9c0ac border (#4a594b dark). The app's --outline-border is now the public pages' --line-strong; each field has a visible label, and before M-0020 the app's fields were #cfd9de on white, 1.44:1", () => {
+  it("fixed (LOW): the text fields' edges are 1.69:1 on the paper (2.38:1 dark), and their fill 1.1:1, under the 3:1 WCAG 1.4.11 asks of what identifies a control — measured in Chromium 153 at 1440px: the composer's audience, /settings' Name and Bio, /people/invites' note, /admin's two fields, /report's details and /settings/delete's confirmation, each a #b9c0ac border (#4a594b dark). The app's --outline-border is now the public pages' --line-strong; each field has a visible label, and before M-0020 the app's fields were #cfd9de on white, 1.44:1", () => {
     const tree = render(inShell(createElement("input", { className: "input", "aria-label": "FICTIONAL" }), "main"));
     const field = findAll(tree, (e) => e.tag === "input")[0]!;
     const measured = SCHEMES.map((scheme) => {
@@ -811,7 +821,7 @@ describe("findings (each FAILS on 4e04af5, and passes once fixed)", () => {
     expect(measured.filter((m) => m.ratio < 3)).toEqual([]);
   });
 
-  it("DEFECT (LOW): in the light theme a link in a hovered post, and the reply and like counts as they're hovered, are rust on the hover tint, 4.35:1, under WCAG 1.4.3's 4.5:1 — measured in Chromium 153 on /home at 1440px with the pointer on a FICTIONAL post with a link: #bf411d on #ebeadf (16px; the counts 13px). Dark: 6.64:1. globals.css draws .post__body a in var(--accent) and .post--link:hover in var(--hover)", () => {
+  it("fixed (LOW): in the light theme a link in a hovered post, and the reply and like counts as they're hovered, are rust on the hover tint, 4.35:1, under WCAG 1.4.3's 4.5:1 — measured in Chromium 153 on /home at 1440px with the pointer on a FICTIONAL post with a link: #bf411d on #ebeadf (16px; the counts 13px). Dark: 6.64:1. globals.css draws .post__body a in var(--accent) and .post--link:hover in var(--hover)", () => {
     const tree = render(
       inShell(
         createElement(
@@ -883,7 +893,8 @@ describe("closed checks (each held, and passes)", () => {
   it("closed: the column and the panel — side by side from 1000px (the column 544px at 1000px and 680px at 1440px, the panel 320px under the member's links), the panel after the column below that, the column 680px under the wordmark at 820px (x 48) and the full width on a phone (Chromium 153)", () => {
     expect(value([".app"], "flex-direction", at(820))).toBe("column");
     expect(value([".app"], "flex-direction", at(1000))).toBe("row");
-    expect(value([".aside"], "flex", at(1000))).toBe("0 0 320px");
+    // Changed after the verification of M-0020 (R11): 336px less its 8px each side, taken back by its margins: 320px.
+    expect([value([".aside"], "flex", at(1000)), value([".aside"], "padding", at(1000)), value([".aside"], "margin-inline", at(1000))]).toEqual(["0 0 336px", "0 8px 32px", "-8px"]);
     expect(value([".app-main"], "max-width", at(820))).toBe("680px");
     expect(value([".app"], "padding", at(820))).toBe("0 var(--gutter)");
     expect(value([".app"], "padding", at(375))).toBeUndefined();
@@ -897,6 +908,7 @@ describe("closed checks (each held, and passes)", () => {
     expect(value([".tabbar"], "position", at(375))).toBe("fixed");
   });
 
+  // Changed after the verification of M-0020 (H8): the menu's name says what it holds; this viewer is an administrator.
   it("closed: the header by keyboard — in Chromium 153 at 1440, 820 and 375px the skip link comes first and sends the next Tab into the composer; then the wordmark, the four places, Feed, Notifications, People (from 700px) and the menu, each ringed 3px in rust 3px out, 4.74:1 on the paper (7.22:1 dark); the current page is marked (aria-current) and underlined. Below 1000px the places, on the second row, come before the links on the first, as the public header's do on a phone (M-0017 held that order)", () => {
     nav.path = "/notifications";
     const header = memberHeader();
@@ -906,7 +918,7 @@ describe("closed checks (each held, and passes)", () => {
       "Feed",
       "Notifications, 3 unread",
       "People, 1 request",
-      `${VIEWER.displayName}: your profile and settings`,
+      `${VIEWER.displayName}: your profile, settings and moderation`,
     ]);
     expect(findAll(header, (e) => e.attrs["aria-current"] === "page").map((e) => e.attrs["aria-label"] ?? text(e))).toEqual(["Notifications, 3 unread"]);
     const wordmark = findAll(header, (e) => e.tag === "a")[0]!;
@@ -919,16 +931,18 @@ describe("closed checks (each held, and passes)", () => {
     expect(value([".member__link[aria-current=\"page\"]"], "text-decoration")).toBe("underline");
   });
 
+  // Changed after the verification of M-0020 (H8): the menu's name says what it holds; this viewer is an administrator.
   it("closed: the member's menu by keyboard — in Chromium 153 at 1440, 820, 375 and 320px Enter on the summary opens it on top of the page and within the screen, Tab reaches Your profile, Settings and Moderation (47px each, ringed), Enter on Settings goes to /settings and closes it, Enter on the summary closes it; a member who isn't an administrator has no Moderation", () => {
     const header = memberHeader();
     const menu = findAll(header, (e) => e.tag === "details")[0]!;
-    expect(findAll(menu, (e) => e.tag === "summary")[0]!.attrs["aria-label"]).toBe(`${VIEWER.displayName}: your profile and settings`);
+    expect(findAll(menu, (e) => e.tag === "summary")[0]!.attrs["aria-label"]).toBe(`${VIEWER.displayName}: your profile, settings and moderation`);
     expect(findAll(menu, (e) => e.tag === "a").map((a) => [text(a), a.attrs.href])).toEqual([
       ["Your profile", `/u/${VIEWER.handle}`],
       ["Settings", "/settings"],
       ["Moderation", "/admin"],
     ]);
-    expect(read("src/components/MemberLinks.tsx")).toContain("onClick={close}");
+    // Changed after the verification of M-0020 (R7): the menu closes as the app's other menus do.
+    expect(read("src/components/MemberLinks.tsx")).toContain("onClick={dismiss.close}");
     expect(value([".menu__list"], "z-index")).toBe("30");
     expect(value([".member__me"], "min-height")).toBe("44px");
     const plain = findAll(memberHeader({ ...VIEWER, isAdmin: false }), (e) => e.tag === "details")[0]!;
@@ -999,7 +1013,8 @@ describe("closed checks (each held, and passes)", () => {
       expect(text(tree)).toContain("10 people are in.");
       expect(text(tree)).not.toContain("You'd be #");
     }
-    expect(read("src/app/(public)/layout.tsx")).toMatch(/<Link href="\/home" className="public-header__signin">\s*Your feed\s*<\/Link>/);
+    // Changed after the verification of M-0020 (H4): the link is PublicAccount's, which the not-found page draws too.
+    expect(read("src/components/PublicAccount.tsx")).toMatch(/<Link href="\/home" className="public-header__signin">\s*Your feed\s*<\/Link>/);
     req.cookie = null;
     req.member = false;
     expect(await isMemberHere()).toBe(false);
@@ -1016,8 +1031,9 @@ describe("closed checks (each held, and passes)", () => {
       const tree = render(await route(), true);
       expect(text(tree)).not.toMatch(/people are in|person is in/);
     }
+    // Changed after the verification of M-0020 (H5, R10): with the database down nobody is shown as a member.
     req.cookie = "FICTIONAL-session.FICTIONAL-hmac";
-    expect(await isMemberHere()).toBe(true);
+    expect(await isMemberHere()).toBe(false);
   });
 
   it("closed: nothing loads from another origin and the console stays quiet — every request in the sweeps went to the server itself, and no page logged an error or a warning but the 404 a member who isn't an administrator gets on /admin; the stylesheets import and fetch nothing", () => {

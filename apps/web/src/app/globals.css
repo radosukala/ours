@@ -56,7 +56,7 @@
   --primary-bg: #222b24;
   --primary-text: #f5f3eb;
 
-  /* Derived (not in SPEC's table, built from it). */
+  /* Derived, from the values above. */
   --outline-border: #b9c0ac;
   --header-bg: rgba(245, 243, 235, 0.92);
   --accent-soft: rgba(191, 65, 29, 0.1);
@@ -420,7 +420,7 @@ hr {
   display: block;
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--outline-border);
+  border: 1px solid var(--field-border, var(--outline-border));
   border-radius: 4px;
   background: var(--bg);
   color: var(--text);
@@ -505,7 +505,8 @@ hr {
   padding: 0 5px;
   border-radius: 9999px;
   background: var(--accent);
-  color: #ffffff;
+  /* The paper on the rust, the ink on the dark rust: 4.74:1 and 7.22:1. */
+  color: var(--primary-text);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
@@ -697,8 +698,11 @@ hr {
   color: var(--forest-ink, #f5f3eb);
 }
 
+/* The kicker is the name, so it stays lowercase (AGENTS.md §11). */
 .card--ours .card__kicker {
   color: var(--acid, #e1f28b);
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .card--ours .card__text,
@@ -710,7 +714,7 @@ hr {
   color: var(--forest-ink, #f5f3eb);
 }
 
-.card--ours .btn--outline {
+.public .card--ours .btn--outline {
   border-color: var(--acid, #e1f28b);
   background: var(--acid, #e1f28b);
   color: var(--on-acid, #222b24);
@@ -720,7 +724,9 @@ hr {
   opacity: 0.88;
 }
 
-.card--ours :focus-visible {
+/* The ring in the acid: rust on the forest is 2.52:1. Prefixed with
+   .public so it wins over `.public :focus-visible`, later in this file. */
+.public .card--ours :focus-visible {
   outline-color: var(--acid, #e1f28b);
 }
 
@@ -896,6 +902,20 @@ hr {
   }
 }
 
+/* Keyboard focus never lands under the sticky page header or, on a phone,
+   the bottom bar (WCAG 2.4.11): the page keeps room for them when it
+   scrolls a focused element into view. People's header, with its tabs, is
+   about twice the bar's height. */
+html:has(.app-shell) {
+  scroll-padding-top: calc(var(--header-h) * 2 + 8px);
+}
+
+@media (max-width: 699px) {
+  html:has(.app-shell) {
+    scroll-padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
+  }
+}
+
 /* ≥700px: no bottom bar; the header carries everything. The page's column
    sits inside the header's gutter, under the wordmark and with its borders,
    as on a wide screen; below 1000px the panel follows it. */
@@ -938,11 +958,18 @@ hr {
     flex: 1 1 auto;
   }
 
+  /* Sticky, and never taller than the window: on a short screen the
+     panel scrolls on its own, so the status line stays in reach. Its 8px
+     each side, taken back by the margins, keep the focus rings uncut; the
+     content stays 320px. */
   .aside {
-    flex: 0 0 320px;
+    flex: 0 0 336px;
     position: sticky;
     top: 0;
-    padding-bottom: 32px;
+    max-height: 100dvh;
+    overflow-y: auto;
+    margin-inline: -8px;
+    padding: 0 8px 32px;
   }
 
   .aside__inner {
@@ -1094,8 +1121,9 @@ hr {
   transition: background-color 0.15s;
 }
 
+/* The card's paper, not the hover tint: rust stays 4.5:1 or more on it. */
 .post--link:hover {
-  background: var(--hover);
+  background: var(--card, var(--hover));
 }
 
 .post__avatar {
@@ -1291,8 +1319,10 @@ hr {
   font-variant-numeric: tabular-nums;
 }
 
+/* As the limit nears, the counter takes the accent (4.74:1 on the paper);
+   past it, the danger colour. */
 .counter--warn {
-  color: #ffd400;
+  color: var(--accent);
 }
 
 .counter--over {
@@ -1494,9 +1524,9 @@ hr {
  *
  * The app's tokens are re-pointed inside .public, so the shared classes
  * (buttons, fields, notices, the footer) take the identity with no rules of
- * their own. The signed-in app (.app) keeps its look, and so does the
- * picture of it on the feed's page (public.module.css, .phone and .mini).
- * The dark version follows the device's setting.
+ * their own. Since D-0023 the signed-in app (.app) has the same identity,
+ * and so do the pictures of it on the feed's page (public.module.css,
+ * .phone and .mini). The dark version follows the device's setting.
  */
 
 .public {
@@ -1528,6 +1558,8 @@ hr {
   --border: var(--line);
   --hover: var(--paper-deep);
   --outline-border: var(--line-strong);
+  /* A field's edge, 3:1 or more on its paper (WCAG 1.4.11): 5.79:1 light, 7.93:1 dark. */
+  --field-border: var(--sub);
   --accent: var(--rust);
   --accent-soft: rgba(191, 65, 29, 0.1);
   --primary-bg: var(--ink);
@@ -1779,9 +1811,11 @@ body:has(.public) {
   color: var(--ink);
 }
 
-/* 44px to tap on a touch screen (SPEC §9): the header's places, Sign in
-   and the wordmark; and the footer's links, in rows far enough apart that
-   their targets don't meet (the verification of M-0017). */
+/* 44px to tap on a touch screen (SPEC §9): the header's places, Sign in,
+   the wordmark and the member's links, and the panel's places; and the
+   footer's links, in the public footer and the panel alike, in rows far
+   enough apart that their targets don't meet (the verifications of M-0017
+   and M-0020). */
 @media (pointer: coarse) {
   .public-nav a,
   .public-wordmark {
@@ -1790,11 +1824,18 @@ body:has(.public) {
     min-height: 44px;
   }
 
-  .public-header__signin {
+  .public-header__signin,
+  .member__link {
     min-height: 44px;
   }
 
-  .public-footer .site-footer__links a {
+  .card--ours .card__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .site-footer__links a {
     display: inline-block;
     padding-block: 5px;
   }
@@ -2089,6 +2130,12 @@ body:has(.public) {
    line would otherwise run as one line across a wide window. */
 .plain-page footer {
   max-width: 40em;
+}
+
+/* Under the header every page has, the column fills what is left. */
+.public > .plain-page {
+  flex: 1;
+  min-height: 0;
 }
 
 /* ---------------------------------------------------------------- motion */

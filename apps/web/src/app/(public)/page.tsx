@@ -26,8 +26,7 @@ import { DOOR_LEDE, DOOR_TITLE } from "@/components/public/door";
 import { accountCreationOpen, clientIpHeader, proposalsEmail } from "@/core/config";
 import { getDb } from "@/core/db";
 import { memberCount, seatState } from "@/core/seats";
-import { readSessionCookie } from "@/web/session";
-import { getViewer } from "@/web/viewer";
+import { isMemberHere } from "@/web/viewer";
 
 export const metadata: Metadata = {
   title: { absolute: DOOR_TITLE },
@@ -38,21 +37,6 @@ export const metadata: Metadata = {
 function logged(what: string, error: unknown): null {
   console.error(`[ours] front door: ${what}:`, error instanceof Error ? error.name : "unknown error");
   return null;
-}
-
-/**
- * Whether this request is signed in. Without a session cookie the database
- * is not touched for it; if the check fails, the visitor sees the front
- * door rather than an error.
- */
-async function signedIn(): Promise<boolean> {
-  if (!(await readSessionCookie())) return false;
-  try {
-    return (await getViewer()) !== null;
-  } catch (error) {
-    logged("the session could not be checked", error);
-    return false;
-  }
 }
 
 /** A number of people or seats, or null if it can't be shown as one. */
@@ -79,7 +63,8 @@ async function readSeats(): Promise<{ open: number | null; waiting: number | nul
 }
 
 export default async function FrontDoorRoute() {
-  const member = await signedIn();
+  // The header asks the same (isMemberHere), so the page and its header agree (D-0023 §C).
+  const member = await isMemberHere();
 
   const joining = accountCreationOpen() && clientIpHeader() !== null;
   const [count, seats] = await Promise.all([readCount(), joining ? readSeats() : Promise.resolve(null)]);

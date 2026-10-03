@@ -51,6 +51,7 @@ import {
   IDEA_CLOSE,
   IDEA_HEADING,
   IDEA_TEXT,
+  MEMBER_JOIN,
   OPEN_FOOT,
   OPEN_HEADING,
   OPEN_INTRO,
@@ -529,14 +530,15 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
               <h3>{PART_OPTIONS.feed.title}</h3>
               <p>{PART_OPTIONS.feed.text}</p>
               <div className={styles.partAction}>
-                <Link href="/feed" className={`${styles.btn} ${styles.btnSolid}`}>
-                  {joining ? "Join the feed" : "See the feed"}
+                {/* A member is shown their feed where a visitor is asked to join (D-0023 §C). */}
+                <Link href={member ? "/home" : "/feed"} className={`${styles.btn} ${styles.btnSolid}`}>
+                  {member ? MEMBER_JOIN.link : joining ? "Join the feed" : "See the feed"}
                   <span aria-hidden="true" className={styles.arrow}>
                     ↗
                   </span>
                 </Link>
               </div>
-              {joining ? null : <p className={styles.partNote}>Joining opens soon.</p>}
+              {joining || member ? null : <p className={styles.partNote}>Joining opens soon.</p>}
             </div>
             <div className={styles.partOption}>
               <p className={styles.eyebrowSmall}>{PART_OPTIONS.need.eyebrow}</p>

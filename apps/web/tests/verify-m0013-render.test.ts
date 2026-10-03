@@ -74,6 +74,8 @@ vi.mock("@/components/posts/actions", () => ({
 
 import { CaughtUpMarker } from "@/components/Marker";
 import { PageHeader } from "@/components/PageHeader";
+// Changed after the verification of M-0020 (H2): the phone's top is the header's wordmark.
+import { Wordmark } from "@/components/SiteHeader";
 import { FeedList } from "@/components/posts/FeedList";
 import { PostRow } from "@/components/posts/PostRow";
 import { CONTRAST_CAPTION, FeedContrast } from "@/components/public/FeedContrast";
@@ -330,7 +332,8 @@ describe("the phone looks like the app (SPEC §18.15 item 1.5: 'the app's caught
     expect(app.endsWith("That's everything from the last 14 days.")).toBe(true);
   });
 
-  it("fixed (SPEC §18.15, after the verification; was DEFECT (LOW)): the phone's top bar shows the our.one wordmark, as the app's /home does on a phone (SPEC §9 '<700px: a sticky top bar … (on /home: the wordmark)'; PageHeader.tsx; globals.css)", () => {
+  it("fixed (SPEC §18.15, after the verification; was DEFECT (LOW)): the phone's top bar shows the our.one wordmark, with its rust dot, as the app shows it on a phone since M-0020: in the header every page has, above the feed's own bar (D-0023 §B; SiteHeader.tsx; PageHeader.tsx)", () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     // Changed under M-0020 (D-0023 §B): on a phone the app's wordmark is in
     // the header every page has (SiteHeader), above the feed's own bar. The
     // app's header is marked `member` (its layout between widths).
@@ -341,8 +344,12 @@ describe("the phone looks like the app (SPEC §18.15 item 1.5: 'the app's caught
     const onPhone = findAll(header, (e) => (e.attrs.class ?? "").includes("page-header__wordmark")).map(text);
     expect(onPhone).toEqual(["our.one"]);
 
+    // Changed after the verification of M-0020 (H2): the phone shows the app as it is: the header (the wordmark, its dot a span of its own, and the four places), then the feed's own bar. Its top is the
+    // header's wordmark, with the dot SiteHeader gives it.
     const phoneBar = PHONE_SCREEN.children.find((c): c is El => typeof c !== "string")!;
-    expect(text(phoneBar), "the phone's top bar").toBe(onPhone[0]);
+    const wordmark = parse(renderToStaticMarkup(createElement(Wordmark)));
+    expect(findAll(phoneBar, (e) => (e.attrs.class ?? "").includes("public-wordmark__dot"))).toHaveLength(1);
+    expect(text(phoneBar), "the phone's top bar").toBe(text(wordmark));
   });
 
   it("fixed (SPEC §18.15, after the verification; was DEFECT (LOW)): each of the phone's posts has the app's four post-row icons — audience, the ⋯ menu, reply and like (SPEC §9 Post row; PostRow.tsx)", () => {
@@ -407,7 +414,8 @@ describe("the signed card's small text in both themes (SPEC §9 tokens)", () => 
     }
   });
 
-  it("accepted (SPEC §18.15, after the verification): the site's link blue (SPEC §9 --accent, 3.0:1 on white) still colours 'Privacy' under the form, as on every page that uses the shared .link; it is a §9 token matter, older than this build, left to a decision on the tokens", () => {
+  it("accepted (SPEC §18.15, after the verification): the site's link blue gave way to the rust under M-0020 (D-0023 §A, 4.74:1 on the paper), which colours 'Privacy' under the form, as on every page that uses the shared .link; D-0023 is the decision on the tokens this waited for", () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     expect(GLOBALS).toMatch(/\n\.link,\n[^{]*\{\s*color: var\(--accent\);/);
     const light = tokens("light");
     // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root: the accent is rust, 4.74:1 on the paper.
@@ -485,11 +493,13 @@ describe("what a screen reader and a keyboard get", () => {
         roots.map((e) => `${e.tag}.${moduleClass(e).split(" ")[0]} ${text(e).slice(0, 24)}`),
         `joining: ${joining}`,
       ).toEqual([
-        "div.phone our.one M Mara @mara · 2",
+        // Changed after the verification of M-0020 (H2): the phone shows the app as it is: the header (the wordmark, its dot a span of its own, and the four places), then the feed's own bar.
+        "div.phone our. one The idea Projec",
         "span.pledgeFace R",
         "p.stat 7%",
         "div.mini Home Sponsored Suggested",
-        "div.mini Home M Mara Made it to t",
+        // Changed after the verification of M-0020 (H2): the illustration's our.one side names its feed Feed.
+        "div.mini Feed M Mara Made it to t",
         "span.stepNumber 1",
         "span.stepNumber 2",
         "span.stepNumber 3",
@@ -553,7 +563,7 @@ describe("what a screen reader and a keyboard get", () => {
 });
 
 describe("both themes (SPEC §9 tokens; SPEC §18.15 'the only colours are §9's tokens, plus the caught-up green')", () => {
-  it("closed: every colour on the front page is a token with a dark value, or one of the constants kept the same in both themes on purpose: the white avatar initials and the caught-up green", () => {
+  it("closed: every colour on the front page is a token with a dark value, or the one constant kept the same in both themes on purpose: the white avatar initials (the caught-up green, X's, gave way to the accent after the verification of M-0020)", () => {
     const light = tokens("light");
     const dark = tokens("dark");
     const used = [...new Set([...FRONT_CSS.matchAll(/var\((--[\w-]+)\)/g)].map((m) => m[1]!))];
@@ -590,11 +600,13 @@ describe("both themes (SPEC §9 tokens; SPEC §18.15 'the only colours are §9's
       const shown = restated(scheme);
       // Changed under M-0020 (D-0023 §A): the pictures show the app as it is,
       // so they restate no token; whatever they would, it would be :root's.
-      expect(Object.keys(shown).length, scheme).toBeGreaterThanOrEqual(0);
+      // Changed after the verification of M-0020 (H13): an assertion that could not fail; the pictures restate no token.
+      expect(Object.keys(shown).length, scheme).toBe(0);
       for (const [token, value] of Object.entries(shown)) expect([scheme, token, value]).toEqual([scheme, token, own[token]]);
     }
+    // Changed after the verification of M-0020 (H1): the caught-up green was X's; the count's dot takes the accent.
     expect(literals.filter((l) => !/^(?:@media \(prefers-color-scheme: dark\) \{\s*)?\.phone,\s*\.mini /.test(l)).sort()).toEqual(
-      [".miniAvatar #ffffff", ".count::before #00ba7c", ".count::before rgba(0, 186, 124, 0.16)"].sort(),
+      [".miniAvatar #ffffff"].sort(),
     );
     // The initials are the app's own: .avatar is white on its hue in both themes.
     expect(rule(GLOBALS, ".avatar")).toMatch(/color: #ffffff;/);

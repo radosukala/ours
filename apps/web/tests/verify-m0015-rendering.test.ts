@@ -60,7 +60,6 @@ import PrivacyPage, { dynamic as privacyDynamic } from "@/app/(public)/privacy/p
 import * as projectsModule from "@/app/(public)/projects/page";
 import { metadata as rootMetadata } from "@/app/layout";
 import NotFound from "@/app/not-found";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { OPEN_CODE_URL, RightColumn, SiteFooter } from "@/components/RightColumn";
 import { proposalsEmail } from "@/core/config";
 
@@ -848,20 +847,21 @@ describe("the links on the new pages", () => {
 /* ======================================================= 5. the footer */
 
 describe("the footer's nine links (SPEC §18.17 item 4)", () => {
-  it("closed: in the public layout, the not-found page, the in-app footer and the app's right column, the footer is one navigation, 'About our.one', with the nine links in SPEC's order and the eight separators hidden from screen readers; only Open code opens a new tab (next start: the same nine on every public page)", () => {
+  it("closed: in the public layout, the not-found page and the app's right column, the footer is one navigation, 'About our.one', with the nine links in SPEC's order and the eight separators hidden from screen readers; only Open code opens a new tab (next start: the same nine on every public page)", () => {
     const BODY = createElement("p", null, "FICTIONAL page body");
     const places: [string, string][] = [
       ["the public layout", renderToStaticMarkup(createElement(PublicLayout, null, BODY))],
       ["the not-found page", render(NotFound)],
-      ["the in-app footer", render(InAppSiteFooter)],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the right column", renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 }))],
     ];
     for (const [place, html] of places) {
       const navs = findAll(parse(html), (e) => e.tag === "nav");
       // Changed after D-0020 (M-0017): in the public layout the header's places
       // come first, in a navigation of their own, "our.one".
+      // Changed after the verification of M-0020 (H4): the not-found page has the header every page has, too.
       expect(navs.map((n) => n.attrs["aria-label"]), place).toEqual(
-        place === "the public layout" ? ["our.one", "About our.one"] : ["About our.one"],
+        place === "the public layout" || place === "the not-found page" ? ["our.one", "About our.one"] : ["About our.one"],
       );
       const nav = navs.find((n) => n.attrs["aria-label"] === "About our.one")!;
       expect(anchors(nav).map((a) => [text(a), a.attrs.href]), place).toEqual(FOOTER);

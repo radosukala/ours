@@ -96,7 +96,7 @@ export default async function ReportPage({
         <PageHeader title="Report" back="/home" />
         <EmptyState
           text={found.message}
-          action={{ href: "/home", label: "Go home" }}
+          action={{ href: "/home", label: "Open your feed" }}
         />
       </>
     );

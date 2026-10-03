@@ -77,7 +77,6 @@ import {
 } from "@/components/public/FrontPage";
 import { CHECK_YOUR_EMAIL } from "@/components/public/GetInForm";
 import { MAINTAINER, NOTICE_DAYS } from "@/components/public/handover";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { JOIN_LABEL, WAITING_LIST_LABEL } from "@/components/public/join";
 import { LEDE } from "@/components/public/lede";
 import { RightColumn, SiteFooter, STATUS_LINE } from "@/components/RightColumn";
@@ -261,7 +260,10 @@ function expectedText({ joining, count, seatsOpen }: FrontPageProps): string {
           "We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in Privacy.",
         ]
       : ["Joining opens soon.", "Have an invite? It can't be used until joining opens."]),
-    "our.one",
+    // Changed after the verification of M-0020 (H2): the phone shows the app as it is: the header (the wordmark, its dot a span of its own, and the four places), then the feed's own bar.
+    "our. one",
+    "The idea Projects Build with us In the open",
+    "Feed",
     "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2",
     "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4",
     "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1",
@@ -278,7 +280,8 @@ function expectedText({ joining, count, seatsOpen }: FrontPageProps): string {
     "Source: the court's opinion in FTC v. Meta, pages 8 and 9, citing Meta's own figures.",
     "On our.one, your feed is only the people you chose, and then it ends.",
     "A ranked feed Home Sponsored Suggested for you M Mara Made it to the top before the rain. Suggested for you Sponsored Suggested for you and it keeps going",
-    "our.one Home M Mara Made it to the top before the rain. T Tomas Soup's on tonight. Door's open from 7. J Jana Finished the book you lent me. That's everything from the last 14 days.",
+    // Changed after the verification of M-0020 (H2): the illustration's our.one side names its feed Feed.
+    "our.one Feed M Mara Made it to the top before the rain. T Tomas Soup's on tonight. Door's open from 7. J Jana Finished the book you lent me. That's everything from the last 14 days.",
     "Illustration.",
     "How it works",
     "1 Join Your email, a name and a username. It's free, and you need to be 18 or older.",
@@ -796,11 +799,11 @@ describe("the friends answer and the close (D-0016 §B, §H)", () => {
 /* ====================================================================== */
 
 describe("the status line (D-0016 §J), wherever it renders", () => {
-  it("closed: D-0016 §J's words, with the threshold from its constant, in the public footer, the in-app footer, the right column, the public layout, the lede of /power, /costs and /rules; no page says 'Handed to its members'; it names the card's and the contract's three things and recipient, and says 'Promised:'", () => {
+  it("closed: D-0016 §J's words, with the threshold from its constant, in the public footer, the right column, the public layout, the lede of /power, /costs and /rules; no page says 'Handed to its members'; it names the card's and the contract's three things and recipient, and says 'Promised:'", () => {
     expect(readRecord("decisions/D-0016.md")).toContain(`"${withPlaceholders(STATUS_LINE)}"`);
     const places: [string, string][] = [
       ["the public footer", rendered(SiteFooter)],
-      ["the in-app footer", rendered(InAppSiteFooter)],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the right column", renderToStaticMarkup(createElement(RightColumn, { invitesRemaining: 3 }))],
       ["the public layout", renderToStaticMarkup(createElement(PublicLayout, null, "FICTIONAL page"))],
       ["/power", rendered(PowerPage)],

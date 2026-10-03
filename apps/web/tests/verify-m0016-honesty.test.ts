@@ -581,7 +581,8 @@ describe("closed (each passes on a92bbb5)", () => {
     expect(html).toMatch(new RegExp(`<code class="[^"]*hash[^"]*">${KIT_TOOL.sha256}</code>`));
   });
 
-  it("closed: contrast — every new class's text against its own background meets WCAG 1.4.3 in both themes (from globals.css, as Chrome measured it: text 18.51:1 light and 17.24:1 dark; the agent line on its tint 17.52:1 and 14.59:1; the muted 'Today:' and rules lines, 14px, 6.12:1 and 4.58:1). The boxes' borders (1.12:1 light, 1.65:1 dark) and the prompt's tint (1.06:1, 1.18:1) are decorative — each box is named by its own heading or holds its own text — so 1.4.11 asks nothing of them", () => {
+  it("closed: contrast — every new class's text against its own background meets WCAG 1.4.3 in both themes (from globals.css, in our.one's tokens since M-0020: text 13.14:1 light and 15.07:1 dark; the agent line on its tint 12.07:1 and 13.86:1; the muted 'Today:' and rules lines, 14px, 5.79:1 and 7.93:1). The boxes' borders (1.28:1 light, 1.44:1 dark) are decorative — each box is named by its own heading or holds its own text — so 1.4.11 asks nothing of them", () => {
+    // Retitled after the verification of M-0020 (H13): the title says what the body checks now.
     const css = read("src/app/globals.css");
     const vars = (block: string) =>
       Object.fromEntries([...block.matchAll(/--([a-z-]+):\s*(#[0-9a-f]{6});/gi)].map((m) => [m[1]!, m[2]!.toLowerCase()]));

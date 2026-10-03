@@ -41,13 +41,16 @@ export async function requireViewer(): Promise<Viewer> {
 
 /**
  * Whether this request is a member's, for the public pages' header and
- * their join forms (D-0023 §B, §C). Without a session cookie the database
- * isn't touched, and outside a request (a test) there is no cookie. If the
- * database can't be read, the cookie is trusted: the link it brings only
- * leads to /home, which checks again. So the public pages never depend on
- * the database being up.
+ * their join forms (D-0023 §B, §C): the header, the front door and /feed
+ * all ask here, so a page never tells one reader two things. Without a
+ * session cookie the database isn't touched, and outside a request (a
+ * test) there is no cookie. If the database can't be read, nobody is shown
+ * as a member: the header offers Sign in, and the page its visitor's view
+ * (the verification of M-0020, H5). So the public pages never depend on
+ * the database being up. Cached per request, so it is asked, and an error
+ * logged, once.
  */
-export async function isMemberHere(): Promise<boolean> {
+export const isMemberHere = cache(async (): Promise<boolean> => {
   let raw: string | null;
   try {
     raw = await readSessionCookie();
@@ -57,7 +60,11 @@ export async function isMemberHere(): Promise<boolean> {
   if (!raw) return false;
   try {
     return (await getViewer()) !== null;
-  } catch {
-    return true;
+  } catch (error) {
+    console.error(
+      "[ours] the session could not be checked:",
+      error instanceof Error ? error.name : "unknown error",
+    );
+    return false;
   }
-}
+});

@@ -34,7 +34,6 @@ import PrivacyPage from "@/app/(public)/privacy/page";
 import ProjectsPage from "@/app/(public)/projects/page";
 import RulesPage from "@/app/(public)/rules/page";
 import RootNotFound from "@/app/not-found";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { SiteFooter } from "@/components/RightColumn";
 import {
   ALLOWLIST,
@@ -668,7 +667,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       ["not-found", renderToStaticMarkup(createElement(RootNotFound)), null],
       ["not-found in the app", renderToStaticMarkup(createElement(AppNotFound)), null],
       ["the footer", renderToStaticMarkup(createElement(SiteFooter)), null],
-      ["the in-app footer", renderToStaticMarkup(createElement(InAppSiteFooter)), null],
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
       ["the public layout", renderToStaticMarkup(createElement(PublicLayout, null, "FICTIONAL page")), null],
     ];
   }
@@ -703,7 +702,8 @@ describe("what people are shown: every public page, the footers and every mail, 
       const rendered = await pages();
       // 14 since M-0015: /agreement, /projects and /maintainers. 15 since M-0016: /build.
       // 16 since M-0017: the front door at /, and the feed's page at /feed.
-      expect(rendered).toHaveLength(16);
+      // Changed after the verification of M-0020 (H11): the in-app footer is gone: 15.
+      expect(rendered).toHaveLength(15);
       for (const [page, html, file] of rendered) {
         expect(textOf(html).length, `${name}: ${page}`).toBeGreaterThan(0);
         expect(renderedHits(html, file), `${name}: ${page}`).toEqual([]);

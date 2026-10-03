@@ -701,12 +701,14 @@ describe("findings (each FAILS on 8337d52, and passes once fixed)", () => {
     expect(truths.filter((t) => scanText(t, null).length > 0)).toEqual([]);
   });
 
-  // Recorded, not fixed (the verification receipt, round two): M-0017 keeps the
+  // Recorded, not fixed (the verification receipt, round two): M-0017 kept the
   // redirect for signed-in visitors "as before", and D-0020 §B puts the four
-  // places in the header; which gives way is the founder's call. The test stays
-  // as written, and skipped, until that decision.
-  it.skip("recorded, not fixed (LOW): for a signed-in visitor, two of the header's four places don't reach what they name — 'The idea' (/#idea) and 'In the open' (/#open) go to the front door, which sends a signed-in visitor to /home as M-0017 keeps it ('as before'), so a member can't reach the idea or what's built, a draft and not built from the header on any public page — measured in headless Chrome 154 against :3532, signed in as the FICTIONAL administrator from `pnpm seed:fictional`: from /build, 'The idea' and 'In the open' landed on /home (its heading 'Home'), and a fresh load of /#open on /home#open. D-0020 §B puts both places in the header 'on every public page'; which gives way is the founder's call", async () => {
-    expect(read("src/app/(public)/page.tsx")).toContain('if (await signedIn()) redirect("/home");');
+  // places in the header; which gives way was the founder's call. D-0023 made
+  // it: a member stays on the front door (§C), and M-0020 built it. Unskipped
+  // and renamed after the verification of M-0020 (H14).
+  it("fixed (LOW; decided by D-0023 §C, built under M-0020): for a signed-in visitor, two of the header's four places don't reach what they name — 'The idea' (/#idea) and 'In the open' (/#open) go to the front door, which sends a signed-in visitor to /home as M-0017 keeps it ('as before'), so a member can't reach the idea or what's built, a draft and not built from the header on any public page — measured in headless Chrome 154 against :3532, signed in as the FICTIONAL administrator from `pnpm seed:fictional`: from /build, 'The idea' and 'In the open' landed on /home (its heading 'Home'), and a fresh load of /#open on /home#open. D-0020 §B puts both places in the header 'on every public page'; which gives way is the founder's call", async () => {
+    // Changed after the verification of M-0020 (H14): the redirect is gone, and so is the line that pinned it.
+    expect(read("src/app/(public)/page.tsx")).not.toContain('redirect("/home")');
     const intoDoor = PLACES.filter((p) => p.href.startsWith("/#"));
     auth.signedIn = true;
     const outcome = await FrontDoorRoute().then(
@@ -853,7 +855,8 @@ describe("closed checks (each held, and passes)", () => {
     const coarse = (sel: string, rules: CssRule[]) => value([sel], "min-height", (m) => m !== null && /pointer:\s*coarse/.test(m), rules);
     for (const sel of [".public-nav a", ".public-wordmark", ".public-header__signin"]) expect(coarse(sel, G_RULES), sel).toBe("44px");
     for (const sel of [".btnSmall", ".textLink", ".proofLinks .textLink", ".values a", ".agentActions a", ".openFoot a"]) expect(coarse(sel, D_RULES), sel).toBe("44px");
-    expect(value([".public-footer .site-footer__links a"], "padding-block", (m) => m !== null && /pointer:\s*coarse/.test(m), G_RULES)).toBe("5px");
+    // Changed after the verification of M-0020 (R9): the rule holds for the footer wherever it is, the app's panel too.
+    expect(value([".site-footer__links a"], "padding-block", (m) => m !== null && /pointer:\s*coarse/.test(m), G_RULES)).toBe("5px");
     for (const sel of [".orbitKicker", ".orbitFirstKicker"]) expect(value([sel], "font-size", (m) => m === null || /max-width/.test(m ?? ""), D_RULES), sel).toBe("16px");
     const maintainers = pageTree(MaintainersPage, false);
     expect(findAll(maintainers, (e) => (e.tag === "a" || e.tag === "button") && /^Draft /.test(text(e)))).toEqual([]);

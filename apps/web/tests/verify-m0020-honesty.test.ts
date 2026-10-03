@@ -405,7 +405,7 @@ afterEach(() => {
 /* ------------------------------------------------------------- defects */
 
 describe("defects (each FAILS on 4e04af5)", () => {
-  it("DEFECT (MEDIUM): two of X's own colours remain where a person sees them. X's yellow, #ffd400, colours the composer's counter once 20 characters are left (globals.css .counter--warn, beside .counter--over, which was X's red #f4212e, SPEC §9's --danger), as X's composer does, and at 1.29:1 on the new paper. X's green, #00ba7c, with its rgba(0, 186, 124, 0.16) halo, is the count's dot on /feed, which a member now reaches (public.module.css .count::before), where the front door's dot is rust. M-0020 adopts 'No X colour, left navigation or Post pill remains.' and D-0023 prohibits 'X's colours'; SPEC §18.22 says 'X's colours are gone, from the stylesheet', and the build receipt 'None of X's colours … remains in the stylesheets'. The acceptance criterion's list of five passes, and the build checked only those five (X's palette as the verifier knows it, with no network: blue #1d9bf0, yellow #ffd400, pink #f91880, purple #7856ff, orange #ff7a00, green #00ba7c). Served so on 3731: the built stylesheets hold .counter--warn{color:#ffd400}, and /feed's dot #00ba7c with its halo as #00ba7c29", () => {
+  it("fixed (MEDIUM): two of X's own colours remain where a person sees them. X's yellow, #ffd400, colours the composer's counter once 20 characters are left (globals.css .counter--warn, beside .counter--over, which was X's red #f4212e, SPEC §9's --danger), as X's composer does, and at 1.29:1 on the new paper. X's green, #00ba7c, with its rgba(0, 186, 124, 0.16) halo, is the count's dot on /feed, which a member now reaches (public.module.css .count::before), where the front door's dot is rust. M-0020 adopts 'No X colour, left navigation or Post pill remains.' and D-0023 prohibits 'X's colours'; SPEC §18.22 says 'X's colours are gone, from the stylesheet', and the build receipt 'None of X's colours … remains in the stylesheets'. The acceptance criterion's list of five passes, and the build checked only those five (X's palette as the verifier knows it, with no network: blue #1d9bf0, yellow #ffd400, pink #f91880, purple #7856ff, orange #ff7a00, green #00ba7c). Served so on 3731: the built stylesheets hold .counter--warn{color:#ffd400}, and /feed's dot #00ba7c with its halo as #00ba7c29", () => {
     // What the records say.
     expect(flat(readRoot("mandates/M-0020.yaml"))).toContain("No X colour, left navigation or Post pill remains.");
     expect(record("decisions/D-0023.md")).toContain('X\'s colours, its left navigation or its "Post" pill;');
@@ -432,7 +432,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect({ found, warn, dot }).toEqual({ found: [], warn: expect.not.stringMatching(/#ffd400/i), dot: expect.not.stringMatching(/#00ba7c/i) });
   });
 
-  it("DEFECT (MEDIUM): the pictures of the app on /feed don't show its real look (D-0023 §A: 'The pictures of the app on /feed show its real look.'; M-0020: they 'follow'). M-0020 changed only their colours. The illustration beside the 7% finding titles our.one's feed 'Home' (FeedContrast; D-0023 §D: 'the feed is called the feed, not Home'); the phone, in a figure named 'What our.one looks like', has the old /home bar, a centred wordmark without its rust dot, where /home's own bar now says Feed under the header's wordmark (FeedPreview), and a round compose tab, where the app's is square-cornered (public.module.css .phoneCompose 50%; SPEC §18.22: 'the compose tab' is square-cornered). FeedPreview's comment still says it 'is built from the app's own parts, so it cannot drift from them: the top bar with the our.one wordmark (PageHeader on /home)', and public.module.css 'The app's top bar on a phone, on /home: the wordmark (PageHeader)' (served the same on 3731)", () => {
+  it("fixed (MEDIUM): the pictures of the app on /feed don't show its real look (D-0023 §A: 'The pictures of the app on /feed show its real look.'; M-0020: they 'follow'). M-0020 changed only their colours. The illustration beside the 7% finding titles our.one's feed 'Home' (FeedContrast; D-0023 §D: 'the feed is called the feed, not Home'); the phone, in a figure named 'What our.one looks like', has the old /home bar, a centred wordmark without its rust dot, where /home's own bar now says Feed under the header's wordmark (FeedPreview), and a round compose tab, where the app's is square-cornered (public.module.css .phoneCompose 50%; SPEC §18.22: 'the compose tab' is square-cornered). FeedPreview's comment still says it 'is built from the app's own parts, so it cannot drift from them: the top bar with the our.one wordmark (PageHeader on /home)', and public.module.css 'The app's top bar on a phone, on /home: the wordmark (PageHeader)' (served the same on 3731)", () => {
     const d0023 = record("decisions/D-0023.md");
     expect(d0023).toContain("The pictures of the app on /feed show its real look.");
     expect(d0023).toContain('In the app, the feed is called the feed, not "Home".');
@@ -463,7 +463,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     }).toEqual({ illustrationCallsTheFeedHome: false, composeTabUnlikeTheApp: false, barWithoutTheAppsWordmarkOrTitle: false });
   });
 
-  it("DEFECT (MEDIUM): on the front door a member is still asked to join. With joining open, 'your part' offers 'Start with the feed.' and a button 'Join the feed', on the same page whose feed panel tells the member 'You're in.' (and with joining closed, 'Joining opens soon.' under 'See the feed'). M-0020: 'where a visitor is asked to join, a member is shown their feed'; its objective: '\"Your feed\" where a visitor sees Sign in or is asked to join'; SPEC §18.22 and the build receipt say it is so. (D-0023 §C's parenthesis names only the feed's panel and /feed). Served so on 3731, to the FICTIONAL member", async () => {
+  it("fixed (MEDIUM): on the front door a member is still asked to join. With joining open, 'your part' offers 'Start with the feed.' and a button 'Join the feed', on the same page whose feed panel tells the member 'You're in.' (and with joining closed, 'Joining opens soon.' under 'See the feed'). M-0020: 'where a visitor is asked to join, a member is shown their feed'; its objective: '\"Your feed\" where a visitor sees Sign in or is asked to join'; SPEC §18.22 and the build receipt say it is so. (D-0023 §C's parenthesis names only the feed's panel and /feed). Served so on 3731, to the FICTIONAL member", async () => {
     expect(record("mandates/M-0020.md")).toContain("where a visitor is asked to join, a member is shown their feed;");
     expect(flat(readRoot("mandates/M-0020.yaml"))).toContain('with "Your feed" where a visitor sees Sign in or is asked to join');
     expect(spec()).toContain("where a visitor is asked to join, a member is shown \"You're in.\" and \"Open your feed\" (MemberJoin)");
@@ -485,7 +485,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(member).not.toContain("Join the feed");
   });
 
-  it("DEFECT (MEDIUM): two pages have neither the header nor the wordmark with its rust dot. The not-found page, what any address that matches no route shows, signed in or not, and the error page, what a page shows when it fails (every signed-in page, while the database is down), draw the old plain 'our.one' (class wordmark, the dot in ink) and no header: the not-found page keeps only the footer's links, and the error page has no link but the wordmark. D-0023 §A: 'Every page, signed in or not, has our.one's own look: … the wordmark with its rust dot'; SPEC §18.22: 'SiteHeader … is on every page'; the receipt: 'SiteHeader on every page'. Served so on 3731: as the FICTIONAL member, an address with no route came back 404 with neither; with the database's port closed, /home came back 500 with no header, its error page left to the browser's script", () => {
+  it("fixed (MEDIUM): two pages have neither the header nor the wordmark with its rust dot. The not-found page, what any address that matches no route shows, signed in or not, and the error page, what a page shows when it fails (every signed-in page, while the database is down), draw the old plain 'our.one' (class wordmark, the dot in ink) and no header: the not-found page keeps only the footer's links, and the error page has no link but the wordmark. D-0023 §A: 'Every page, signed in or not, has our.one's own look: … the wordmark with its rust dot'; SPEC §18.22: 'SiteHeader … is on every page'; the receipt: 'SiteHeader on every page'. Served so on 3731: as the FICTIONAL member, an address with no route came back 404 with neither; with the database's port closed, /home came back 500 with no header, its error page left to the browser's script", () => {
     expect(record("decisions/D-0023.md")).toContain(
       "Every page, signed in or not, has our.one's own look: the paper, the ink, the rust and the acid, the wordmark with its rust dot, and the type of the public pages.",
     );
@@ -498,7 +498,8 @@ describe("defects (each FAILS on 4e04af5)", () => {
       notFound: render(NotFound),
       error: render(ErrorPage, { error: new Error("FICTIONAL"), reset: () => {} }),
     };
-    for (const html of Object.values(pages)) expect(html).toMatch(/<a class="wordmark" aria-label="our\.one, home" href="\/">our\.one<\/a>/);
+    // Changed after the verification of M-0020 (H4): the old plain wordmark gave way to the header every page has.
+    for (const html of Object.values(pages)) expect(html).not.toMatch(/<a class="wordmark" aria-label="our\.one, home" href="\/">our\.one<\/a>/);
 
     // The defect: the wordmark with its dot, and the header the SPEC says is on every page (or the SPEC says otherwise).
     const claims = spec().includes("is on every page");
@@ -506,17 +507,19 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect({ notFound: holds(pages.notFound), error: holds(pages.error) }).toEqual({ notFound: true, error: true });
   });
 
-  it("DEFECT (LOW): with the database unreadable, one page tells a reader two things. The header trusts the session cookie (isMemberHere: 'If the database can't be read, the cookie is trusted') and offers 'Your feed'; the front door's and /feed's own signedIn() count an error as no, so the same page shows that reader the visitor's join form, and /feed its closing 'Join, then send them an invite.' viewer.ts says isMemberHere decides 'for the public pages' header and their join forms'; neither route uses it. And where the database can't be reached by its settings (getDb() throws before the cookie's signature is checked), any cookie of that name, signed or not, gets 'Your feed'. Served so on 3731 with the database's port closed: the member's / and /feed said 'Your feed' over the join form, /feed with its closing invitation (an unsigned cookie got 'Sign in' there: with a database configured, the signature is checked first)", async () => {
-    expect(spec()).toContain("with the database down, the cookie is trusted");
+  it("fixed (LOW): with the database unreadable, one page tells a reader two things. The header trusts the session cookie (isMemberHere: 'If the database can't be read, the cookie is trusted') and offers 'Your feed'; the front door's and /feed's own signedIn() count an error as no, so the same page shows that reader the visitor's join form, and /feed its closing 'Join, then send them an invite.' viewer.ts says isMemberHere decides 'for the public pages' header and their join forms'; neither route uses it. And where the database can't be reached by its settings (getDb() throws before the cookie's signature is checked), any cookie of that name, signed or not, gets 'Your feed'. Served so on 3731 with the database's port closed: the member's / and /feed said 'Your feed' over the join form, /feed with its closing invitation (an unsigned cookie got 'Sign in' there: with a database configured, the signature is checked first)", async () => {
+    // Changed after the verification of M-0020 (H5): one rule for the header and the pages. With the
+    // database unreadable nobody is shown as a member, and both routes ask isMemberHere, as the header does.
+    expect(spec()).toContain("with the database down, nobody is shown as a member");
     expect(prose("src/web/viewer.ts")).toContain("for the public pages' header and their join forms (D-0023 §B, §C)");
     for (const file of ["src/app/(public)/page.tsx", "src/app/(public)/feed/page.tsx"]) {
-      expect(read(file), file).toMatch(/async function signedIn\(\): Promise<boolean> \{[\s\S]*?\} catch \(error\) \{[\s\S]*?return false;/);
+      expect(read(file), file).toContain("const member = await isMemberHere();");
     }
-    // A cookie that isn't signed is refused once there is a database to ask; with getDb() throwing, it isn't asked.
+    // A cookie that isn't signed is refused once there is a database to ask; with getDb() throwing, no cookie makes a member.
     expect(sessionIdFromCookie("FICTIONAL-not-signed")).toBeNull();
     state.cookie = "FICTIONAL-not-signed";
     state.db = "unset";
-    expect(await isMemberHere()).toBe(true);
+    expect(await isMemberHere()).toBe(false);
 
     // A member's cookie, and a database that can't be reached.
     state.cookie = "FICTIONAL-cookie";
@@ -534,7 +537,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(new Set(Object.values(says)).size, JSON.stringify(says)).toBe(1);
   });
 
-  it("DEFECT (LOW): the panel says 'This feed is our.one's first project.' on every signed-in page, where no feed is beside it: /settings, /people, /notifications, a profile, a post, moderation and the in-app not-found page all carry it, because the (app) layout draws the panel for every page (D-0023 §D: 'Beside it, a panel says what our.one is'). Served so on 3731: /settings carries it", () => {
+  it("fixed (LOW): the panel says 'This feed is our.one's first project.' on every signed-in page, where no feed is beside it: /settings, /people, /notifications, a profile, a post, moderation and the in-app not-found page all carry it, because the (app) layout draws the panel for every page (D-0023 §D: 'Beside it, a panel says what our.one is'). Served so on 3731: /settings carries it", () => {
     expect(record("decisions/D-0023.md")).toContain("Beside it, a panel says what our.one is:");
     const pages = filesUnder("src/app/(app)").filter((f) => f.endsWith("/page.tsx"));
     expect(pages).toEqual(expect.arrayContaining(["src/app/(app)/settings/page.tsx", "src/app/(app)/people/page.tsx", "src/app/(app)/notifications/page.tsx"]));
@@ -550,7 +553,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(everywhere && /\bthis feed\b/i.test(card)).toBe(false);
   });
 
-  it("DEFECT (LOW): the panel's kicker is drawn 'OUR.ONE': the source says our.one, and .card__kicker sets text-transform: uppercase, so a person reads the name in capitals, where the header, the footers and the front door draw it lowercase (served so on 3731: .card__kicker{… text-transform:uppercase …}). AGENTS.md §11: write our.one 'wherever a person using the product reads a name, always lowercase and with the dot'", () => {
+  it("fixed (LOW): the panel's kicker is drawn 'OUR.ONE': the source says our.one, and .card__kicker sets text-transform: uppercase, so a person reads the name in capitals, where the header, the footers and the front door draw it lowercase (served so on 3731: .card__kicker{… text-transform:uppercase …}). AGENTS.md §11: write our.one 'wherever a person using the product reads a name, always lowercase and with the dot'", () => {
     expect(flat(readRoot("AGENTS.md"))).toContain("wherever a person using the product reads a name, always lowercase and with the dot.");
     const html = render(OursCard, { email: null });
     const kicker = /<p class="card__kicker">([^<]*)<\/p>/.exec(html)?.[1] ?? "";
@@ -562,7 +565,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(transform === "uppercase" && /our\.one/i.test(kicker), `${kicker}: ${transform}`).toBe(false);
   });
 
-  it("DEFECT (LOW): for an administrator the member's menu holds Your profile, Settings and Moderation, while its name, read by a screen reader on the button that opens it, is '<name>: your profile and settings' (served so on 3731: 'Ada Quillon: your profile and settings')", () => {
+  it("fixed (LOW): for an administrator the member's menu holds Your profile, Settings and Moderation, while its name, read by a screen reader on the button that opens it, is '<name>: your profile and settings' (served so on 3731: 'Ada Quillon: your profile and settings')", () => {
     const html = render(MemberLinks, { viewer: { handle: "ada_fict", displayName: "Ada Fictional", isAdmin: true }, counts: { unread: 0, pending: 0 } });
     const menu = textOf(html.slice(html.indexOf('<ul class="menu__list"')));
     expect(menu).toBe("Your profile Settings Moderation");
@@ -572,7 +575,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(/profile and settings/i.test(name) && !/moderation/i.test(name), name).toBe(false);
   });
 
-  it("DEFECT (LOW): 'home' still names the feed. Five buttons a member meets say 'Go home' and lead to /home, the feed: the in-app not-found page, /report on one's own post, /join/confirm twice, and an unusable invite link while signed in; and the bottom bar's Feed tab is still the house. Meanwhile the wordmark is named 'our.one, home' and leads to the front door. D-0023 §D: 'In the app, the feed is called the feed, not \"Home\".'", () => {
+  it("fixed (LOW): 'home' still names the feed. Five buttons a member meets say 'Go home' and lead to /home, the feed: the in-app not-found page, /report on one's own post, /join/confirm twice, and an unusable invite link while signed in; and the bottom bar's Feed tab is still the house. Meanwhile the wordmark is named 'our.one, home' and leads to the front door. D-0023 §D: 'In the app, the feed is called the feed, not \"Home\".'", () => {
     expect(record("decisions/D-0023.md")).toContain('In the app, the feed is called the feed, not "Home".');
     const header = render(SiteHeader, { children: "FICTIONAL" });
     expect(header).toMatch(/<a class="public-wordmark" aria-label="our\.one, home" href="\/">/);
@@ -585,7 +588,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(goHome).toEqual([]);
   });
 
-  it("DEFECT (LOW): on /feed a member's 'You're in.' and 'Open your feed' sit in a section whose name, its visually hidden heading, is still 'Join our.one' (FrontPage: <h2 id=\"front-get-in\">{JOIN_LABEL}</h2>, the section aria-labelledby it); a screen reader announces the place a member is told they are in as the place to join (served so on 3731)", () => {
+  it("fixed (LOW): on /feed a member's 'You're in.' and 'Open your feed' sit in a section whose name, its visually hidden heading, is still 'Join our.one' (FrontPage: <h2 id=\"front-get-in\">{JOIN_LABEL}</h2>, the section aria-labelledby it); a screen reader announces the place a member is told they are in as the place to join (served so on 3731)", () => {
     const html = renderToStaticMarkup(createElement(FrontPage, { count: 12, joining: true, seatsOpen: 3, seatsWaiting: 0, member: true }));
     const section = /<section[^>]*aria-labelledby="front-get-in"[^>]*>([\s\S]*?)<\/section>/.exec(html)?.[1] ?? "";
     expect(textOf(section)).toContain(MEMBER_JOIN.line);
@@ -596,12 +599,14 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(decode(name)).not.toBe(JOIN_LABEL);
   });
 
-  it("DEFECT (LOW): below 1000px, /settings and the in-app not-found page show the site footer twice, its links, the version and the status line: their own InAppSiteFooter, hidden only from 1000px, and the panel's, which M-0020 now shows at every width, after the column. InAppSiteFooter.tsx still says it is 'for widths where the right column (and its footer) is hidden', and public.module.css 'Below 1000px the right column is hidden' (served so on 3731: /settings carries the status line twice)", () => {
-    expect(prose("src/components/public/InAppSiteFooter.tsx")).toContain("for widths where the right column (and its footer) is hidden");
-    expect(prose("src/components/public/public.module.css")).toContain("Below 1000px the right column is hidden");
+  it("fixed (LOW): below 1000px, /settings and the in-app not-found page show the site footer twice, its links, the version and the status line: their own InAppSiteFooter, hidden only from 1000px, and the panel's, which M-0020 now shows at every width, after the column. InAppSiteFooter.tsx still says it is 'for widths where the right column (and its footer) is hidden', and public.module.css 'Below 1000px the right column is hidden' (served so on 3731: /settings carries the status line twice)", () => {
+    // Changed after the verification of M-0020 (H11): the in-app footer, and the sentences that said the
+    // right column is hidden, are gone; the page and the panel carry the status line once.
+    expect(filesUnder("src/components/public")).not.toContain("src/components/public/InAppSiteFooter.tsx");
+    expect(prose("src/components/public/public.module.css")).not.toContain("Below 1000px the right column is hidden");
     // Drawn as the (app) layout draws them: the page, then the panel.
     const html = renderToStaticMarkup(createElement(Fragment, null, createElement(AppNotFound), createElement(RightColumn, { invitesRemaining: 3 })));
-    expect(html.split(STATUS_LINE).length - 1).toBe(2);
+    expect(html.split(STATUS_LINE).length - 1).toBe(1);
 
     // Which of the two a phone shows: a rule hiding it at the base or under a max-width hides it there.
     const hiddenOnPhones = (rules: Rule[], selector: string) =>
@@ -615,7 +620,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(onAPhone).toBe(1);
   });
 
-  it("DEFECT (LOW): sentences M-0020 made false still stand. globals.css: 'The signed-in app (.app) keeps its look, and so does the picture of it on the feed's page' (D-0023 replaces D-0020's 'the signed-in app keeps its look'), and 'Derived (not in SPEC's table, built from it)' over our.one's values, while SPEC's table is X's; PageHeader.tsx: 'on /home pass `wordmark` and phones show the our.one wordmark in place of the title', which /home no longer does; and SPEC §9 still specifies X's tokens, the left navigation with its Post pill, 'Home' in the bottom bar and pill buttons, with nothing in §18.22 saying it replaces them", () => {
+  it("fixed (LOW): sentences M-0020 made false still stand. globals.css: 'The signed-in app (.app) keeps its look, and so does the picture of it on the feed's page' (D-0023 replaces D-0020's 'the signed-in app keeps its look'), and 'Derived (not in SPEC's table, built from it)' over our.one's values, while SPEC's table is X's; PageHeader.tsx: 'on /home pass `wordmark` and phones show the our.one wordmark in place of the title', which /home no longer does; and SPEC §9 still specifies X's tokens, the left navigation with its Post pill, 'Home' in the bottom bar and pill buttons, with nothing in §18.22 saying it replaces them", () => {
     expect(record("decisions/D-0023.md")).toContain('It replaces D-0020\'s "the signed-in app keeps its look"');
     const stale: string[] = [];
     const css = prose("src/app/globals.css");
@@ -638,7 +643,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(stale).toEqual([]);
   });
 
-  it("DEFECT (LOW): the titles of nine adapted older tests still say what their bodies no longer check — verify-m0017-rendering 'send the visitor to /home … the blue accent (#1d9bf0)'; verify-m0013-render 'as the app's /home does on a phone' and 'the site's link blue … 3.0:1 on white'; verify-m0014-recheck '18.51:1 … 3.02:1 and 3.76:1 … told apart by luminance … #2f3336'; verify-m0014-render '18.51:1 … (14.59:1 on the dark card)', '6.12:1 in light and 4.58:1 in dark' and '258px at 1000–1099px and 4 in 318px from 1100px'; verify-m0015-recheck '1.44:1 light and 1.65:1 dark … 6.12:1 and 4.58:1'; verify-m0016-honesty '18.51:1 … (1.12:1 light, 1.65:1 dark)' — and one adapted assertion can't fail: verify-m0013-render now expects a count to be toBeGreaterThanOrEqual(0). A run and a receipt show the titles; the M-0018 verification's H13 found the same", () => {
+  it("fixed (LOW): the titles of nine adapted older tests still say what their bodies no longer check — verify-m0017-rendering 'send the visitor to /home … the blue accent (#1d9bf0)'; verify-m0013-render 'as the app's /home does on a phone' and 'the site's link blue … 3.0:1 on white'; verify-m0014-recheck '18.51:1 … 3.02:1 and 3.76:1 … told apart by luminance … #2f3336'; verify-m0014-render '18.51:1 … (14.59:1 on the dark card)', '6.12:1 in light and 4.58:1 in dark' and '258px at 1000–1099px and 4 in 318px from 1100px'; verify-m0015-recheck '1.44:1 light and 1.65:1 dark … 6.12:1 and 4.58:1'; verify-m0016-honesty '18.51:1 … (1.12:1 light, 1.65:1 dark)' — and one adapted assertion can't fail: verify-m0013-render now expects a count to be toBeGreaterThanOrEqual(0). A run and a receipt show the titles; the M-0018 verification's H13 found the same", () => {
     for (const t of ADAPTED_TITLES) {
       expect(titleOf(t.file, t.starts), t.starts).not.toBe("");
       expect(bodyOf(t.file, t.starts), t.starts).toContain("Changed under M-0020");
@@ -652,7 +657,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect([...stale, ...vacuous]).toEqual([]);
   });
 
-  it("DEFECT (LOW): the M-0017 re-check's RC8 test is still skipped and titled 'recorded, not fixed', with its comment 'The test stays as written, and skipped, until that decision.' D-0023 is that decision ('decides M-0017's open question on members and the front door (its re-check's RC8)'), and M-0020 builds it: a member stays on the front door, so 'The idea' and 'In the open' reach what they name. The receipt's '2 skipped' doesn't say one of them is now decided", async () => {
+  it("fixed (LOW): the M-0017 re-check's RC8 test is still skipped and titled 'recorded, not fixed', with its comment 'The test stays as written, and skipped, until that decision.' D-0023 is that decision ('decides M-0017's open question on members and the front door (its re-check's RC8)'), and M-0020 builds it: a member stays on the front door, so 'The idea' and 'In the open' reach what they name. The receipt's '2 skipped' doesn't say one of them is now decided", async () => {
     expect(record("decisions/D-0023.md")).toContain("decides M-0017's open question on members and the front door (its re-check's RC8)");
     state.cookie = "FICTIONAL-cookie";
     state.member = true;
@@ -668,7 +673,7 @@ describe("defects (each FAILS on 4e04af5)", () => {
     expect(/it\.skip\(|recorded, not fixed/.test(head), head.trim()).toBe(false);
   });
 
-  it("DEFECT (LOW): the manifest M-0020 changed, and the root metadata beside the theme colours it changed, still describe our.one as 'A home for friends and people you choose to follow.': the feed, named home. It is the description of every page with none of its own (the app's pages, /contract, /signin, /join and an invite link) and of the installed app. D-0023's first reason: 'our.one is the network, and the feed its first project (D-0017, D-0020). A member who sees only the feed sees a feed app.'; the M-0018 verification's H7 corrected the README's 'our.one is a friends feed' for the same reason (served so on 3731: /home and /settings carry it as their description)", () => {
+  it("fixed (LOW): the manifest M-0020 changed, and the root metadata beside the theme colours it changed, still describe our.one as 'A home for friends and people you choose to follow.': the feed, named home. It is the description of every page with none of its own (the app's pages, /contract, /signin, /join and an invite link) and of the installed app. D-0023's first reason: 'our.one is the network, and the feed its first project (D-0017, D-0020). A member who sees only the feed sees a feed app.'; the M-0018 verification's H7 corrected the README's 'our.one is a friends feed' for the same reason (served so on 3731: /home and /settings carry it as their description)", () => {
     expect(record("decisions/D-0023.md")).toContain("our.one is the network, and the feed its first project (D-0017, D-0020). A member who sees only the feed sees a feed app.");
     expect(git(["diff", "--name-only", "184865b", "4e04af5", "--", "apps/web/src/app/manifest.ts", "apps/web/src/app/layout.tsx"]).trim().split("\n").sort()).toEqual([
       "apps/web/src/app/layout.tsx",
@@ -802,7 +807,9 @@ describe("closed (each passes on 4e04af5)", () => {
     const layout = read("src/app/(public)/layout.tsx");
     expect(layout).toContain("<Suspense fallback={<SignIn />}>");
     expect(layout).not.toMatch(/getDb|getViewer\(/);
-    expect(read("src/web/viewer.ts")).toMatch(/export async function isMemberHere\(\): Promise<boolean> \{\s*let raw: string \| null;\s*try \{\s*raw = await readSessionCookie\(\);\s*\} catch \{\s*return false;\s*\}\s*if \(!raw\) return false;\s*try \{\s*return \(await getViewer\(\)\) !== null;\s*\} catch \{\s*return true;\s*\}\s*\}/);
+    // Changed after the verification of M-0020 (H5): isMemberHere still catches every error, and answers
+    // no when the database can't be read; it is cached per request.
+    expect(read("src/web/viewer.ts")).toMatch(/export const isMemberHere = cache\(async \(\): Promise<boolean> => \{\s*let raw: string \| null;\s*try \{\s*raw = await readSessionCookie\(\);\s*\} catch \{\s*return false;\s*\}\s*if \(!raw\) return false;\s*try \{\s*return \(await getViewer\(\)\) !== null;\s*\} catch \(error\) \{[\s\S]*?return false;\s*\}\s*\}\);/);
 
     const pages: [string, () => Promise<ReactElement>][] = [
       ["/", async () => (await FrontDoorRoute()) as ReactElement],
@@ -826,7 +833,8 @@ describe("closed (each passes on 4e04af5)", () => {
         const html = await full(createElement(PublicLayout, null, await page()));
         const text = textOf(html);
         expect(text, `${where}, cookie ${String(cookie)}`).not.toMatch(/\d people are in|1 person is in/);
-        expect(html.includes('<a class="public-header__signin" href="/signin">Sign in</a>'), where).toBe(cookie === null);
+        // Changed after the verification of M-0020 (H5): with the database down nobody is shown as a member.
+        expect(html.includes('<a class="public-header__signin" href="/signin">Sign in</a>'), where).toBe(true);
       }
     }
   });
@@ -908,12 +916,13 @@ describe("closed (each passes on 4e04af5)", () => {
     }
   });
 
-  it("closed: the panel claims nothing that isn't so — its line is D-0020 §A's message, a 'should'; 'This feed is our.one's first project.' is D-0017 §A and D-0023 §D; 'What should we make ours?' is the front door's own question, asked, not answered; 'Name a need' and 'Bring an idea' are D-0020 §A's words and open the front door's drafts (without JavaScript, /maintainers), whose dialog says 'Nothing is saved, sent or counted.'; its places are the header's four; the panel ends with the status line, 'Maintained by its founder. Promised: …'. No word a person reads in the panel, the member's links and menu, MemberJoin, the bottom bar or a member's header says member, owner, control, holder, safeguard or protected; the claims scan finds nothing in any of them, nor in / and /feed as a member", async () => {
+  it("closed: the panel claims nothing that isn't so — its line is D-0020 §A's message, a 'should'; 'The feed is our.one's first project.' is D-0017 §A and D-0023 §D; 'What should we make ours?' is the front door's own question, asked, not answered; 'Name a need' and 'Bring an idea' are D-0020 §A's words and open the front door's drafts (without JavaScript, /maintainers), whose dialog says 'Nothing is saved, sent or counted.'; its places are the header's four; the panel ends with the status line, 'Maintained by its founder. Promised: …'. No word a person reads in the panel, the member's links and menu, MemberJoin, the bottom bar or a member's header says member, owner, control, holder, safeguard or protected; the claims scan finds nothing in any of them, nor in / and /feed as a member", async () => {
     expect(record("decisions/D-0020.md")).toContain("The message: \"The software we live in should be ours.\"");
     expect(TAGLINE).toBe("The software we live in should be ours.");
     expect(record("decisions/D-0017.md")).toContain("The feed is the first project, under the same framework.");
     expect(record("decisions/D-0023.md")).toContain("Beside it, a panel says what our.one is: the line, that the feed is its first project, and the ways to name a need or bring an idea, as the front door has them.");
-    expect(MEMBER_PANEL.text).toBe(`This feed is our.one's first project. ${PART_HEADING[0]} ${PART_HEADING[1]}`);
+    // Changed after the verification of M-0020 (H6): the panel names the feed, wherever it stands.
+    expect(MEMBER_PANEL.text).toBe(`The feed is our.one's first project. ${PART_HEADING[0]} ${PART_HEADING[1]}`);
     expect(record("decisions/D-0020.md")).toContain("Find your part: start with the feed, name a need, or bring an idea.");
     const card = render(OursCard, { email: null });
     expect(card).toContain(`href="${DRAFT_FALLBACK.need}"`);
@@ -950,7 +959,7 @@ describe("closed (each passes on 4e04af5)", () => {
     }
   });
 
-  it("closed: the claims scan and the kit's check pass, as the receipt says, and the scan reads every source file M-0020 added or changed (MemberLinks, SiteHeader, MemberJoin, RightColumn, Nav, TabBar, FrontDoor, FrontPage, door.ts, join.ts, viewer.ts, the root and both group layouts, the two routes, /home and the manifest): no prohibited claim in 177 files with 17 allowlisted sentences, and READY TO PROPOSE", () => {
+  it("closed: the claims scan and the kit's check pass, as the receipt says, and the scan reads every source file M-0020 added or changed (MemberLinks, SiteHeader, MemberJoin, RightColumn, Nav, TabBar, FrontDoor, FrontPage, door.ts, join.ts, viewer.ts, the root and both group layouts, the two routes, /home and the manifest): no prohibited claim in 177 files on 4e04af5 (178 after the verification's fixes) with 17 allowlisted sentences, and READY TO PROPOSE", () => {
     const changed = git(["diff", "--name-only", "184865b", "4e04af5", "--", "apps/web/src"])
       .trim()
       .split("\n")
@@ -962,7 +971,8 @@ describe("closed (each passes on 4e04af5)", () => {
     const pages = scanRepoPublicText(WEB);
     const kit = scanKitText(WEB);
     expect([...pages.hits, ...kit.hits]).toEqual([]);
-    expect(pages.files.length + kit.files.length).toBe(177);
+    // Changed after the verification of M-0020 (H2, H4, H11): places.ts and PublicAccount.tsx added, InAppSiteFooter.tsx gone.
+    expect(pages.files.length + kit.files.length).toBe(178);
     expect(ALLOWLIST.length).toBe(17);
     expect(record("receipts/builds/2026-10-03-M-0020.md")).toContain("| Claims scan | CHECKED | no prohibited claim in 177 files; 17 sentences listed |");
 

@@ -76,7 +76,7 @@ export default async function ConfirmInvitePage() {
         </h1>
         <div>
           <LinkButton href="/home" kind="outline">
-            Go home
+            Open your feed
           </LinkButton>
         </div>
       </section>
@@ -88,7 +88,7 @@ export default async function ConfirmInvitePage() {
       <h1 className="headline">{INVITE_UNUSABLE}</h1>
       <div>
         <LinkButton href="/home" kind="outline">
-          Go home
+          Open your feed
         </LinkButton>
       </div>
     </section>

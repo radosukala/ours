@@ -15,7 +15,6 @@ import MaintainersPage, { metadata as maintainersMeta } from "@/app/(public)/mai
 import PrivacyPage from "@/app/(public)/privacy/page";
 import ProjectsPage, { metadata as projectsMeta } from "@/app/(public)/projects/page";
 import { MAINTAINER, THRESHOLD } from "@/components/public/handover";
-import { InAppSiteFooter } from "@/components/public/InAppSiteFooter";
 import { LEDE } from "@/components/public/lede";
 import { SiteFooter } from "@/components/RightColumn";
 import { scanText } from "@/core/claims";
@@ -198,7 +197,8 @@ describe("/maintainers: 'Build the next one'", () => {
 
 describe("the footers, /contract and /privacy", () => {
   it("every footer links to the agreement, the projects and 'Build with us'", () => {
-    for (const markup of [html(SiteFooter), html(InAppSiteFooter)]) {
+    // Changed after the verification of M-0020 (H11): the in-app footer is gone; the app's panel (RightColumn) carries its one footer, at every width.
+    for (const markup of [html(SiteFooter)]) {
       expect(markup).toContain('<a href="/agreement">Agreement</a>');
       expect(markup).toContain('<a href="/projects">Projects</a>');
       // Changed by M-0016 (D-0019 §G): "Build with us" goes to /build, which links /maintainers.

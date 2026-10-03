@@ -132,7 +132,10 @@ function specText({ joining, count, seatsOpen }: FrontPageProps): string {
           "We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in Privacy.",
         ]
       : ["Joining opens soon.", "Have an invite? It can't be used until joining opens."]),
-    "our.one",
+    // Changed after the verification of M-0020 (H2): the phone shows the app as it is: the header (the wordmark, its dot a span of its own, and the four places), then the feed's own bar.
+    "our. one",
+    "The idea Projects Build with us In the open",
+    "Feed",
     "M Mara @mara · 2h Made it to the top before the rain. Legs are gone. Worth it. 2",
     "T Tomas @tomas · 5h Soup's on tonight. Door's open from 7, bring whoever. 4",
     "J Jana @jana · 1d Finished the book you lent me. The last chapter. Wow. 1",
@@ -149,7 +152,8 @@ function specText({ joining, count, seatsOpen }: FrontPageProps): string {
     "Source: the court's opinion in FTC v. Meta, pages 8 and 9, citing Meta's own figures.",
     "On our.one, your feed is only the people you chose, and then it ends.",
     "A ranked feed Home Sponsored Suggested for you M Mara Made it to the top before the rain. Suggested for you Sponsored Suggested for you and it keeps going",
-    "our.one Home M Mara Made it to the top before the rain. T Tomas Soup's on tonight. Door's open from 7. J Jana Finished the book you lent me. That's everything from the last 14 days.",
+    // Changed after the verification of M-0020 (H2): the illustration's our.one side names its feed Feed.
+    "our.one Feed M Mara Made it to the top before the rain. T Tomas Soup's on tonight. Door's open from 7. J Jana Finished the book you lent me. That's everything from the last 14 days.",
     "Illustration.",
     "How it works",
     "1 Join Your email, a name and a username. It's free, and you need to be 18 or older.",

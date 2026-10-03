@@ -523,7 +523,7 @@ describe("defects (each FAILS on cb1aadd)", () => {
 /* ------------------------------------------------------------- closed */
 
 describe("closed (each passes on cb1aadd)", () => {
-  it("closed: /feed is the verified front page, word for word — FrontPage.tsx from the court's finding to its end is 25ce8f0's, character for character; the four definitions moved to join.ts (the count, free, closed and seat lines) are 25ce8f0's; FeedPreview, FeedContrast, GetInForm, lede.ts and handover.ts are unchanged; and the route differs from 25ce8f0's `/` only in its comment, its name and its description", async () => {
+  it("closed: /feed is the verified front page, word for word — FrontPage.tsx from the court's finding to its end is 25ce8f0's, character for character; the four definitions moved to join.ts (the count, free, closed and seat lines) are 25ce8f0's; GetInForm, lede.ts and handover.ts are unchanged, and the two pictures' people, posts and words (redrawn after the verification of M-0020); and the route differs from 25ce8f0's `/` only in its comment, its name, its description and how it asks who is reading", async () => {
     const before = gitShow(FRONT_PAGE_VERIFIED, "apps/web/src/components/public/FrontPage.tsx");
     const now = read("src/components/public/FrontPage.tsx");
     const tail = (s: string) => s.slice(s.indexOf("/** The court's finding (D-0015 §E)"));
@@ -534,6 +534,8 @@ describe("closed (each passes on cb1aadd)", () => {
       s
         .replace("{member ? memberCountLine(count) : countLine(count)}", "{countLine(count)}")
         .replace("{joining && !member ? (", "{joining ? (")
+        // Changed after the verification of M-0020 (H10): a member's section is named for what it holds.
+        .replace("{member ? MEMBER_JOIN.heading : JOIN_LABEL}", "{JOIN_LABEL}")
         .replace("{member ? (\n            <MemberJoin />\n          ) : joining ? (", "{joining ? (")
         .replace("export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null, member = false }: FrontPageProps) {", "export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: FrontPageProps) {");
     expect(asVerified(tail(now))).toBe(tail(before));
@@ -552,19 +554,38 @@ describe("closed (each passes on cb1aadd)", () => {
       expect(join, start).toContain(block);
     }
 
-    for (const file of ["FeedPreview.tsx", "FeedContrast.tsx", "GetInForm.tsx", "lede.ts", "handover.ts"]) {
+    // Changed after the verification of M-0020 (H2): the two pictures were redrawn to show the app as it is
+    // (D-0023 §A, §D); their people, posts and words are still 25ce8f0's.
+    for (const file of ["GetInForm.tsx", "lede.ts", "handover.ts"]) {
       expect(read(`src/components/public/${file}`), file).toBe(gitShow(FRONT_PAGE_VERIFIED, `apps/web/src/components/public/${file}`));
+    }
+    const between = (s: string, from: string, to: string) => s.slice(s.indexOf(from), s.indexOf(to));
+    for (const [file, from, to] of [
+      ["FeedPreview.tsx", "/** Posted after the last visit", "/** One post row"],
+      ["FeedContrast.tsx", "const FRIENDS", "export const CONTRAST_CAPTION"],
+    ] as const) {
+      const was = gitShow(FRONT_PAGE_VERIFIED, `apps/web/src/components/public/${file}`);
+      expect(between(was, from, to).length, file).toBeGreaterThan(200);
+      expect(between(read(`src/components/public/${file}`), from, to), file).toBe(between(was, from, to));
     }
 
     // Changed under M-0020 (D-0023 §C): the route keeps a member, and passes
     // them to the page, where it once sent them to /home; the rest is the same.
+    // Changed after the verification of M-0020 (H5): it asks isMemberHere, as
+    // the header does, in place of a check of its own, so the session check is
+    // set aside on both sides.
     const strip = (s: string) =>
       s
         .replace(/^\/\*\*[\s\S]*?\*\/\n/, "")
         .replace('import { LEDE } from "@/components/public/lede";\n', "")
         .replace("  description: LEDE,\n", "")
         .replace('import { redirect } from "next/navigation";\n', "")
-        .replace('  // A member stays, and is shown their feed where a visitor is asked to join (D-0023 §C).\n  const member = await signedIn();\n', '  if (await signedIn()) redirect("/home");\n')
+        .replace('import { readSessionCookie } from "@/web/session";\n', "")
+        .replace('import { getViewer } from "@/web/viewer";\n', "")
+        .replace('import { isMemberHere } from "@/web/viewer";\n', "")
+        .replace(/\/\*\*\n \* Whether this request is signed in\.[\s\S]*?\n\}\n\n/, "")
+        .replace('  if (await signedIn()) redirect("/home");\n', "  WHO IS READING\n")
+        .replace("  // A member stays, and is shown their feed where a visitor is asked to join\n  // (D-0023 §C). The header asks the same (isMemberHere), so the two agree.\n  const member = await isMemberHere();\n", "  WHO IS READING\n")
         .replace("      member={member}\n", "")
         .replace(/\bFeedPageRoute\b|\bFrontPageRoute\b/g, "Route");
     expect(strip(read("src/app/(public)/feed/page.tsx"))).toBe(strip(gitShow(FRONT_PAGE_VERIFIED, "apps/web/src/app/(public)/page.tsx")));
