@@ -52,11 +52,24 @@ describe("one identity (D-0023 §A)", () => {
 
   it("there is no left navigation and no Post pill: the app's layout draws the header every page has", () => {
     const layout = read("src/app/(app)/layout.tsx");
-    expect(layout).toContain("<SiteHeader>");
+    expect(layout).toContain("<SiteHeader member>");
     expect(layout).toContain("<MemberLinks");
     expect(layout).not.toMatch(/<Nav\b/);
     expect(read("src/components/Nav.tsx")).not.toMatch(/export function Nav\b/);
     expect(read("src/app/globals.css")).not.toMatch(/\.nav__post|\.nav__item|\.nav__inner/);
+  });
+
+  it("between a phone and a wide screen the app's header gives the places a row of their own, and the column sits under the wordmark", () => {
+    const css = read("src/app/globals.css");
+    expect(read("src/components/SiteHeader.tsx")).toContain('member ? "public-header public-header--member" : "public-header"');
+    const tablet = css.slice(css.indexOf("@media (min-width: 761px) and (max-width: 999px) {"));
+    const block = tablet.slice(0, tablet.indexOf("\n}\n"));
+    expect(block).toMatch(/\.public-header--member \.public-header__account \{\s*margin-left: auto;/);
+    expect(block).toMatch(/\.public-header--member \.public-nav \{\s*order: 3;\s*width: 100%;\s*margin-left: 0;/);
+    const wide = css.slice(css.indexOf("@media (min-width: 700px) {"));
+    const columns = wide.slice(0, wide.indexOf("\n}\n"));
+    expect(columns).toMatch(/\.app \{\s*padding: 0 var\(--gutter\);/);
+    expect(columns).toMatch(/\.app-main \{\s*max-width: 680px;\s*border-left: 1px solid var\(--border\);\s*border-right: 1px solid var\(--border\);/);
   });
 });
 

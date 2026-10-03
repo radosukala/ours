@@ -2870,6 +2870,11 @@ first project. What the feed does is unchanged.
     profile, Settings and, for administrators, Moderation;
   - on a phone the bottom bar carries the feed, people, writing,
     notifications and the profile, and the header keeps the menu;
+  - from 761 to 999px the app's header (`public-header--member`), which
+    needs about 944px on one row, puts the four places on a row of their
+    own, as a phone does, with the member's links beside the wordmark; from
+    700px the page's column sits inside the header's gutter, with its
+    borders, as on a wide screen, and below 1000px the panel follows it;
   - the left navigation and its Post pill are gone.
 - **The public layout** shows *Sign in*, or *Your feed* for a member
   (`isMemberHere`: the session cookie, then the cached viewer; with the

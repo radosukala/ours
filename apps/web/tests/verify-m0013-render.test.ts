@@ -332,9 +332,10 @@ describe("the phone looks like the app (SPEC §18.15 item 1.5: 'the app's caught
 
   it("fixed (SPEC §18.15, after the verification; was DEFECT (LOW)): the phone's top bar shows the our.one wordmark, as the app's /home does on a phone (SPEC §9 '<700px: a sticky top bar … (on /home: the wordmark)'; PageHeader.tsx; globals.css)", () => {
     // Changed under M-0020 (D-0023 §B): on a phone the app's wordmark is in
-    // the header every page has (SiteHeader), above the feed's own bar.
+    // the header every page has (SiteHeader), above the feed's own bar. The
+    // app's header is marked `member` (its layout between widths).
     expect(read("src/app/(app)/home/page.tsx")).toContain('<PageHeader title="Feed" />');
-    expect(read("src/app/(app)/layout.tsx")).toContain("<SiteHeader>");
+    expect(read("src/app/(app)/layout.tsx")).toMatch(/<SiteHeader( member)?>/);
     expect(read("src/components/SiteHeader.tsx")).toContain('our<span className="public-wordmark__dot">.</span>one');
     const header = parse(renderToStaticMarkup(createElement(PageHeader, { title: "Home", wordmark: true })));
     const onPhone = findAll(header, (e) => (e.attrs.class ?? "").includes("page-header__wordmark")).map(text);

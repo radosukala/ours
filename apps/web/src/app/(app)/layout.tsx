@@ -7,8 +7,9 @@
  *   <700px      the header, the page (its <PageHeader> the sticky bar), the
  *               panel after it, and the bottom tab bar (52px plus the
  *               safe-area inset)
- *   700–999px   the header carries the member's links; the panel follows
- *               the page
+ *   700–999px   the header carries the member's links beside the wordmark
+ *               and the places on a row of their own; the page's column
+ *               sits under the wordmark, and the panel follows it
  *   ≥1000px     the page's column and the panel side by side
  *
  * It requires a viewer and redirects to /signin otherwise. A layout is not
@@ -46,7 +47,7 @@ export default async function AppLayout({
 
   return (
     <div className="public app-shell">
-      <SiteHeader>
+      <SiteHeader member>
         <MemberLinks viewer={navViewer} counts={counts} />
       </SiteHeader>
       <div className="app">

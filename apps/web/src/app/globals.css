@@ -874,18 +874,53 @@ hr {
   }
 }
 
-/* ≥700px: no bottom bar; the header carries everything. */
+/* The app's header carries more on its right than a public page's: on one
+   row it needs about 944px. Narrower than 1000px, the four places take a
+   row of their own, as they do on a phone (the rules at 760px), and the
+   member's links stay beside the wordmark. */
+@media (min-width: 761px) and (max-width: 999px) {
+  .public-header--member .public-header__bar {
+    min-height: 0;
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+
+  .public-header--member .public-header__account {
+    margin-left: auto;
+  }
+
+  .public-header--member .public-nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+/* ≥700px: no bottom bar; the header carries everything. The page's column
+   sits inside the header's gutter, under the wordmark and with its borders,
+   as on a wide screen; below 1000px the panel follows it. */
 @media (min-width: 700px) {
   .tabbar {
     display: none;
   }
 
+  .app {
+    padding: 0 var(--gutter);
+  }
+
+  .app-main {
+    max-width: 680px;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
   .aside {
+    max-width: 680px;
     padding-bottom: 48px;
   }
 
   .aside__inner {
-    padding-inline: var(--gutter);
+    padding-inline: 0;
   }
 }
 
@@ -897,14 +932,10 @@ hr {
     align-items: flex-start;
     justify-content: space-between;
     gap: 40px;
-    padding: 0 var(--gutter);
   }
 
   .app-main {
     flex: 1 1 auto;
-    max-width: 680px;
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
   }
 
   .aside {
