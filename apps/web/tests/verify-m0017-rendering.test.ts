@@ -934,12 +934,14 @@ describe("closed checks (each held, and passes)", () => {
 
   it("closed: signed in, / and /feed send the visitor to /home, which keeps the app's look — in Chrome 154 as a FICTIONAL administrator from `pnpm seed:fictional` on a scratch database, both landed on /home, white (#fff) and black in the dark, the blue accent (#1d9bf0) and the system font; public pages kept the identity while signed in", async () => {
     auth.signedIn = true;
-    await expect(FrontDoorRoute()).rejects.toThrow("redirect /home");
-    await expect(FeedPageRoute()).rejects.toThrow("redirect /home");
+    // Changed under M-0020 (D-0023 §A, §C): signed in, both routes stay, and
+    // the app has our.one's look: the paper and the rust at the root.
+    await expect(FrontDoorRoute()).resolves.toBeTruthy();
+    await expect(FeedPageRoute()).resolves.toBeTruthy();
     auth.signedIn = false;
     await expect(FrontDoorRoute()).resolves.toBeTruthy();
     const root = G_RULES.find((r) => r.media === null && r.selectors.length === 1 && r.selectors[0] === ":root")!;
-    expect(declarations(root.body)).toMatchObject({ "--bg": "#ffffff", "--accent": "#1d9bf0" });
+    expect(declarations(root.body)).toMatchObject({ "--bg": "#f5f3eb", "--accent": "#bf411d" });
     // The identity's tokens are defined on .public alone (light, then dark), never on :root.
     expect(G_RULES.filter((r) => /--paper\s*:/.test(r.body)).flatMap((r) => r.selectors)).toEqual([".public", ".public"]);
   });

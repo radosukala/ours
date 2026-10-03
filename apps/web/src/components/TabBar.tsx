@@ -2,8 +2,8 @@
 
 /**
  * The bottom tab bar on phones (<700px, SPEC §9): 52px plus the safe-area
- * inset. Home, People, ＋ (compose), Notifications, Profile. Every target
- * is at least 44px.
+ * inset. Feed, People, ＋ (compose), Notifications, Profile (D-0023 §B, §D:
+ * the feed is named the feed). Every target is at least 44px.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,7 +13,7 @@ import { countLabel, isCurrent, type NavCounts, type NavViewer } from "./Nav";
 export function TabBar({ viewer, counts }: { viewer: NavViewer; counts: NavCounts }) {
   const pathname = usePathname() ?? "";
   const items = [
-    { href: "/home", label: "Home", icon: "home" as const, count: 0 },
+    { href: "/home", label: "Feed", icon: "home" as const, count: 0 },
     { href: "/people", label: "People", icon: "people" as const, count: counts.pending },
     { href: "/home#compose", label: "New post", icon: "plus" as const, count: 0, compose: true },
     { href: "/notifications", label: "Notifications", icon: "bell" as const, count: counts.unread },

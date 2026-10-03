@@ -38,3 +38,26 @@ export async function requireViewer(): Promise<Viewer> {
   if (!viewer) redirect("/signin");
   return viewer;
 }
+
+/**
+ * Whether this request is a member's, for the public pages' header and
+ * their join forms (D-0023 §B, §C). Without a session cookie the database
+ * isn't touched, and outside a request (a test) there is no cookie. If the
+ * database can't be read, the cookie is trusted: the link it brings only
+ * leads to /home, which checks again. So the public pages never depend on
+ * the database being up.
+ */
+export async function isMemberHere(): Promise<boolean> {
+  let raw: string | null;
+  try {
+    raw = await readSessionCookie();
+  } catch {
+    return false;
+  }
+  if (!raw) return false;
+  try {
+    return (await getViewer()) !== null;
+  } catch {
+    return true;
+  }
+}

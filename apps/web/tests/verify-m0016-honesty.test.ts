@@ -599,15 +599,17 @@ describe("closed (each passes on a92bbb5)", () => {
       return Math.round(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)) * 100) / 100;
     };
     const measured = [light, dark].map((t) => [ratio(t.text!, t.bg!), ratio(t.text!, t.hover!), ratio(t.muted!, t.bg!)]);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root.
     expect(measured).toEqual([
-      [18.51, 17.52, 6.12],
-      [17.24, 14.59, 4.58],
+      [13.14, 12.07, 5.79],
+      [15.07, 13.86, 7.93],
     ]);
     for (const row of measured) for (const r of row) expect(r).toBeGreaterThanOrEqual(4.5);
     const pub = read("src/components/public/public.module.css");
     expect(cssRule(pub, ".heldBy")).toMatch(/color:\s*var\(--muted\)/);
     expect(cssRule(pub, ".way")).toMatch(/border:\s*1px solid var\(--border\)/);
-    expect([ratio(light.border!, light.bg!), ratio(dark.border!, dark.bg!)]).toEqual([1.12, 1.65]);
+    // Changed under M-0020 (D-0023 §A): our.one's line on its paper (a border, not text).
+    expect([ratio(light.border!, light.bg!), ratio(dark.border!, dark.bg!)]).toEqual([1.28, 1.44]);
   });
 
   it("closed: links and touch — the two links outside the tools list sit inside sentences (WCAG 2.5.8's inline exception), and the tools list's five, one to an item, are 35px or more apart (Chrome at 375px with a coarse pointer: 17–18px tall, so 24px circles centred on them never meet, 2.5.8's spacing exception); each internal link goes to a route the app has, and the two that leave the site open a new tab with rel=\"noopener noreferrer\"; /projects' two new paired links are 46.5px tall on a touch screen", () => {

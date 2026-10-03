@@ -1,6 +1,7 @@
 /**
- * The front door, `/` (D-0020 §A; SPEC §18.19). Signed-in people go
- * straight to /home, as they did from the front page before it.
+ * The front door, `/` (D-0020 §A; SPEC §18.19), for everyone: a member
+ * stays, and is shown their feed where a visitor is asked to join (D-0023
+ * §C). Nothing sends a member away from it.
  *
  * This file reads, on the server, what the page shows, and
  * `components/public/FrontDoor` renders it:
@@ -20,7 +21,6 @@
  * and no number.
  */
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { FrontDoor } from "@/components/public/FrontDoor";
 import { DOOR_LEDE, DOOR_TITLE } from "@/components/public/door";
 import { accountCreationOpen, clientIpHeader, proposalsEmail } from "@/core/config";
@@ -79,7 +79,7 @@ async function readSeats(): Promise<{ open: number | null; waiting: number | nul
 }
 
 export default async function FrontDoorRoute() {
-  if (await signedIn()) redirect("/home");
+  const member = await signedIn();
 
   const joining = accountCreationOpen() && clientIpHeader() !== null;
   const [count, seats] = await Promise.all([readCount(), joining ? readSeats() : Promise.resolve(null)]);
@@ -91,6 +91,7 @@ export default async function FrontDoorRoute() {
       count={count}
       seatsOpen={seats?.open ?? null}
       seatsWaiting={seats?.waiting ?? null}
+      member={member}
     />
   );
 }

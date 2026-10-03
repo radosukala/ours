@@ -1080,9 +1080,11 @@ describe("the invite page's link, and the polish (D-0016 §N items 9 and 10)", (
         underlined: underlined(link),
       };
     }
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root. The link is still told from
+    // the muted words beside it by its underline, as item 9 allows.
     expect(seen).toEqual({
-      light: { onPage: 18.51, besideWords: 3.02, underlined: true },
-      dark: { onPage: 17.24, besideWords: 3.76, underlined: true },
+      light: { onPage: 13.14, besideWords: 2.27, underlined: true },
+      dark: { onPage: 15.07, besideWords: 1.9, underlined: true },
     });
   });
 

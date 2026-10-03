@@ -1,8 +1,8 @@
 /**
  * The feed's page, `/feed` (SPEC §18.2, M-0011; D-0020 §B). Until D-0020 it
  * was the front page; its words, its form and its promises moved here
- * unchanged, and `/` became the front door. Signed-in people go straight
- * to /home, as before.
+ * unchanged, and `/` became the front door. A member stays, and is shown
+ * their feed where a visitor is asked to join (D-0023 §C).
  *
  * This file reads, on the server, what the page shows, and
  * `components/public/FrontPage` renders it:
@@ -20,7 +20,6 @@
  * and no number.
  */
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { FRONT_PAGE_TITLE, FrontPage } from "@/components/public/FrontPage";
 import { LEDE } from "@/components/public/lede";
 import { accountCreationOpen, clientIpHeader } from "@/core/config";
@@ -85,7 +84,8 @@ async function readSeats(): Promise<{ open: number | null; waiting: number | nul
 }
 
 export default async function FeedPageRoute() {
-  if (await signedIn()) redirect("/home");
+  // A member stays, and is shown their feed where a visitor is asked to join (D-0023 §C).
+  const member = await signedIn();
 
   const joining = accountCreationOpen() && clientIpHeader() !== null;
   const [count, seats] = await Promise.all([
@@ -99,6 +99,7 @@ export default async function FeedPageRoute() {
       joining={joining}
       seatsOpen={seats?.open ?? null}
       seatsWaiting={seats?.waiting ?? null}
+      member={member}
     />
   );
 }

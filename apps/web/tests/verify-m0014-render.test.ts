@@ -624,9 +624,10 @@ describe("the new text in both themes (SPEC §9 tokens, read through the cascade
         expect([scheme, name, ratio >= 4.5]).toEqual([scheme, name, true]);
       }
     }
-    expect(seen["light reasonText"]).toBe(18.51);
-    expect(seen["dark reasonText"]).toBe(17.24);
-    expect(seen["dark card"]).toBe(14.59);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root.
+    expect(seen["light reasonText"]).toBe(13.14);
+    expect(seen["dark reasonText"]).toBe(15.07);
+    expect(seen["dark card"]).toBe(13.86);
   });
 });
 
@@ -677,11 +678,12 @@ describe("the status line wherever it stands (D-0016 §J; SPEC §18.16 item 8)",
       }
     }
     expect(declarations(BASE.find((r) => r.selectors.includes("body"))!.body)["overflow-wrap"]).toBe("break-word");
-    // The right column's text box: 290px less the footer's 16px each side until 1100px, then 350px.
+    // Changed under M-0020 (D-0023 §B, §D): the panel is 320px beside the
+    // column from 1000px, and follows it below that; the footer's text box
+    // is the panel's less 4px each side.
     const at = (query: string) => RULES.find((r) => r.media === query && r.selectors.includes(".aside"))!;
-    expect(declarations(at("(min-width: 1000px)").body).flex).toBe("0 0 290px");
-    expect(declarations(at("(min-width: 1100px)").body)["flex-basis"]).toBe("350px");
-    expect(declarations(BASE.find((r) => r.selectors.includes(".site-footer"))!.body).padding).toBe("0 16px");
+    expect(declarations(at("(min-width: 1000px)").body).flex).toBe("0 0 320px");
+    expect(declarations(BASE.find((r) => r.selectors.includes(".site-footer"))!.body).padding).toBe("0 4px");
   });
 });
 
@@ -765,7 +767,8 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     const line = closest(promiseLink(await invitePage())[0]!, (e) => e.tag === "p")!;
     expect(declared(line, "font-size")).toBe("13px");
     const ratios = (["light", "dark"] as const).map((scheme) => contrast(colourOf(line, scheme), backgroundOf(line, scheme)));
-    expect(ratios).toEqual([6.12, 4.58]);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root.
+    expect(ratios).toEqual([5.79, 7.93]);
   });
 
   it("fixed (D-0016 §N, after the verification; was DEFECT (MEDIUM)): the invite page's new link 'The promise behind our.one' should meet 4.5:1 against the page, and be told from the muted words beside it by more than colour (an underline, or 3:1 against them) — it is the shared link blue, --accent, with no underline: 3.00:1 on white at 13px, and 2.04:1 (light) and 1.53:1 (dark) against 'Free to join.' (WCAG 1.4.3 and 1.4.1; measured the same in Chrome). The front page's own links are drawn in the text colour and underlined for this reason (.more, .pledgeLink); the prior round accepted this blue only for 'Privacy', older than its build, and this link is new in this one", async () => {
@@ -774,9 +777,10 @@ describe("the invite page, signed out (D-0016 §I; SPEC §18.16 item 7)", () => 
     const front = parse(renderFront());
     const byText = (words: string) => findAll(front, (e) => e.tag === "a" && text(e) === words)[0]!;
     for (const words of ["How that works", "Read the contract"]) {
-      expect([words, colourOf(byText(words), "light"), underlined(byText(words))]).toEqual([words, "#0f1419", true]);
+      // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root.
+      expect([words, colourOf(byText(words), "light"), underlined(byText(words))]).toEqual([words, "#222b24", true]);
     }
-    expect(contrast(colourOf(byText("Privacy"), "light"), backgroundOf(byText("Privacy"), "light"))).toBe(3);
+    expect(contrast(colourOf(byText("Privacy"), "light"), backgroundOf(byText("Privacy"), "light"))).toBe(4.74);
 
     const link = promiseLink(await invitePage())[0]!;
     const around = link.parent!;

@@ -441,9 +441,13 @@ describe("the routes", () => {
     expect(feedMetadata.title).toEqual({ absolute: FRONT_PAGE_TITLE });
   });
 
-  it("both routes send a signed-in visitor to /home, as the front page did", () => {
+  // Changed under M-0020 (D-0023 §C): a member stays on both routes, and is
+  // shown their feed where a visitor is asked to join.
+  it("both routes keep a signed-in visitor, and show them their feed where a visitor is asked to join", () => {
     for (const file of ["src/app/(public)/page.tsx", "src/app/(public)/feed/page.tsx"]) {
-      expect(read(file), file).toContain('if (await signedIn()) redirect("/home");');
+      expect(read(file), file).not.toContain('redirect("/home")');
+      expect(read(file), file).toContain("const member = await signedIn();");
+      expect(read(file), file).toContain("member={member}");
     }
   });
 });

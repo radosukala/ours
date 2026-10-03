@@ -790,7 +790,8 @@ describe("the links on the new pages", () => {
     // The reading is sound: it finds the muted 'Today:' line's colour, and white and black behind the page.
     const muted = elements(parse('<article class="page"><p class="heldBy">Today: words</p></article>'))[0]!;
     expect(colourOf(elements(muted)[0]!, "light")).toBe(tokens("light")["--muted"]);
-    expect([backgroundOf(muted, "light"), backgroundOf(muted, "dark")]).toEqual(["#ffffff", "#000000"]);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root: the paper behind the page.
+    expect([backgroundOf(muted, "light"), backgroundOf(muted, "dark")]).toEqual(["#f5f3eb", "#131a15"]);
     const contract = parse(render(ContractPage));
     const privacy = parse(render(PrivacyPage));
     const links: [string, El][] = [

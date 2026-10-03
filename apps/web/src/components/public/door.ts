@@ -228,3 +228,22 @@ export function partFoot(emailSet: boolean): string {
     ? "A draft stays in your browser until you copy it, or send it from your own email. A person reads every one you send."
     : "A draft stays in your browser until you copy it. Needs and ideas open at launch: until then, keep yours.";
 }
+
+/* --------------------------------------------------------------- members */
+
+/**
+ * The panel beside a member's feed (D-0023 §D): what our.one is, that the
+ * feed is its first project, and the two drafts the front door offers.
+ */
+export const MEMBER_PANEL = {
+  kicker: "our.one",
+  text: "This feed is our.one's first project. What should we make ours?",
+  need: "Name a need",
+  idea: "Bring an idea",
+} as const;
+
+/** Where a visitor is asked to join, a member is shown their feed (D-0023 §C). */
+export const MEMBER_JOIN = {
+  line: "You're in.",
+  link: "Open your feed",
+} as const;

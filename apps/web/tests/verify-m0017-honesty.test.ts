@@ -528,7 +528,15 @@ describe("closed (each passes on cb1aadd)", () => {
     const now = read("src/components/public/FrontPage.tsx");
     const tail = (s: string) => s.slice(s.indexOf("/** The court's finding (D-0015 §E)"));
     expect(tail(now).length).toBeGreaterThan(5000);
-    expect(tail(now)).toBe(tail(before));
+    // Changed under M-0020 (D-0023 §C): the words are unchanged; a member is
+    // shown the count without a rank and no closing invitation to join.
+    const asVerified = (s: string) =>
+      s
+        .replace("{member ? memberCountLine(count) : countLine(count)}", "{countLine(count)}")
+        .replace("{joining && !member ? (", "{joining ? (")
+        .replace("{member ? (\n            <MemberJoin />\n          ) : joining ? (", "{joining ? (")
+        .replace("export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null, member = false }: FrontPageProps) {", "export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: FrontPageProps) {");
+    expect(asVerified(tail(now))).toBe(tail(before));
 
     const join = read("src/components/public/join.ts");
     for (const start of [
@@ -548,11 +556,16 @@ describe("closed (each passes on cb1aadd)", () => {
       expect(read(`src/components/public/${file}`), file).toBe(gitShow(FRONT_PAGE_VERIFIED, `apps/web/src/components/public/${file}`));
     }
 
+    // Changed under M-0020 (D-0023 §C): the route keeps a member, and passes
+    // them to the page, where it once sent them to /home; the rest is the same.
     const strip = (s: string) =>
       s
         .replace(/^\/\*\*[\s\S]*?\*\/\n/, "")
         .replace('import { LEDE } from "@/components/public/lede";\n', "")
         .replace("  description: LEDE,\n", "")
+        .replace('import { redirect } from "next/navigation";\n', "")
+        .replace('  // A member stays, and is shown their feed where a visitor is asked to join (D-0023 §C).\n  const member = await signedIn();\n', '  if (await signedIn()) redirect("/home");\n')
+        .replace("      member={member}\n", "")
         .replace(/\bFeedPageRoute\b|\bFrontPageRoute\b/g, "Route");
     expect(strip(read("src/app/(public)/feed/page.tsx"))).toBe(strip(gitShow(FRONT_PAGE_VERIFIED, "apps/web/src/app/(public)/page.tsx")));
 
@@ -594,7 +607,9 @@ describe("closed (each passes on cb1aadd)", () => {
     }
 
     for (const file of ["src/app/(public)/page.tsx", "src/app/(public)/feed/page.tsx"]) {
-      expect(read(file), file).toContain('if (await signedIn()) redirect("/home");');
+      // Changed under M-0020 (D-0023 §C): a member stays, and is shown their feed where a visitor is asked to join.
+      expect(read(file), file).not.toContain('redirect("/home")');
+      expect(read(file), file).toContain("member={member}");
       expect(read(file), file).toContain("const joining = accountCreationOpen() && clientIpHeader() !== null;");
     }
     seats.memberCount.mockRejectedValue(new Error("FICTIONAL outage"));

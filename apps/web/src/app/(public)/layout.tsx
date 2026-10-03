@@ -2,13 +2,15 @@
  * The public pages (SPEC §9; D-0020 §B): the front door, the feed's page,
  * the framework and the records, signing in, joining and unsubscribing.
  *
- * - The header: the wordmark, the four places (the idea, projects, building
- *   and what's in the open) and Sign in, on every public page.
+ * - The header (`SiteHeader`): the wordmark, the four places (the idea,
+ *   projects, building and what's in the open), and Sign in, or, for a
+ *   member, Your feed (D-0023 §B, §C).
  * - The footer: the wordmark and the line, then the site footer: its
  *   links, the running version and the status line.
  *
- * It does not read the session, so these pages never depend on the
- * database being up.
+ * It reads the session only to choose between Sign in and Your feed, in a
+ * Suspense boundary of its own, and never depends on the database being up
+ * for it (`isMemberHere`). Until it knows, the header offers Sign in.
  *
  * Every page under it renders per request (SPEC §17 item 20), so the
  * footer's running version, the configured controller on /power and the
@@ -17,9 +19,11 @@
  */
 import type { Viewport } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { SiteFooter } from "@/components/RightColumn";
-import { PublicNav } from "@/components/public/PublicNav";
+import { SiteHeader, Wordmark } from "@/components/SiteHeader";
 import { TAGLINE } from "@/components/public/door";
+import { isMemberHere } from "@/web/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +35,21 @@ export const viewport: Viewport = {
   ],
 };
 
-/** "our.one", with its dot in the accent. */
-function Wordmark() {
+function SignIn() {
   return (
-    <>
-      our<span className="public-wordmark__dot">.</span>one
-    </>
+    <Link href="/signin" className="public-header__signin">
+      Sign in
+    </Link>
+  );
+}
+
+/** Sign in for a visitor; Your feed for a member (D-0023 §B, §C). */
+async function Account() {
+  if (!(await isMemberHere())) return <SignIn />;
+  return (
+    <Link href="/home" className="public-header__signin">
+      Your feed
+    </Link>
   );
 }
 
@@ -47,17 +60,11 @@ export default function PublicLayout({
 }) {
   return (
     <div className="public">
-      <header className="public-header">
-        <div className="public-header__bar">
-          <Link href="/" className="public-wordmark" aria-label="our.one, home">
-            <Wordmark />
-          </Link>
-          <PublicNav />
-          <Link href="/signin" className="public-header__signin">
-            Sign in
-          </Link>
-        </div>
-      </header>
+      <SiteHeader>
+        <Suspense fallback={<SignIn />}>
+          <Account />
+        </Suspense>
+      </SiteHeader>
       <main id="main" className="public-main">
         {children}
       </main>

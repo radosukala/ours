@@ -2846,3 +2846,47 @@ D-0022: our.one runs in North America.
 - **For people in the EU,** the data is stored in the United States. The
   legal basis for that transfer is a question for the legal review of
   `/privacy` (D-0012 §E).
+
+### 18.22 One our.one, signed in or not (M-0020, 3 October 2026)
+
+D-0023. Every page has our.one's own look, members get the header every
+visitor gets, the front door is for members too, and the feed is our.one's
+first project. What the feed does is unchanged.
+
+- **One identity** (§A):
+  - the root tokens in `globals.css` are our.one's: paper `#f5f3eb`, ink
+    `#222b24`, sub `#586157`, line `#d7dace`, rust `#bf411d` as the accent
+    and the like, and their dark values;
+  - X's colours are gone, from the stylesheet, the pictures of the app on
+    `/feed` (which restate no token now), the icon, the manifest and the
+    browser bar;
+  - buttons, cards and the compose tab are square-cornered, as the public
+    pages' are.
+- **One header** (§B):
+  - `SiteHeader` (the wordmark, which goes to `/`, and the four places) is
+    on every page;
+  - in the app, its right side is `MemberLinks`: Feed, Notifications and
+    People with their counts, and a menu (a `<details>`) with Your
+    profile, Settings and, for administrators, Moderation;
+  - on a phone the bottom bar carries the feed, people, writing,
+    notifications and the profile, and the header keeps the menu;
+  - the left navigation and its Post pill are gone.
+- **The public layout** shows *Sign in*, or *Your feed* for a member
+  (`isMemberHere`: the session cookie, then the cached viewer; with the
+  database down, the cookie is trusted). The link sits in a Suspense
+  boundary of its own, so the layout never waits on the database; until it
+  knows, it offers Sign in.
+- **The front door for members** (§C):
+  - `/` and `/feed` no longer redirect a member;
+  - where a visitor is asked to join, a member is shown *"You're in."* and
+    *"Open your feed"* (`MemberJoin`), the count without a rank (*"12
+    people are in."*), and no closing invitation to join.
+- **The feed, as the first project** (§D):
+  - the feed is called *Feed* (the bar's title, the browser's title, the
+    header and the bottom bar);
+  - beside it, or after it below 1000px, the panel holds our.one's card
+    (forest, with acid buttons): *"The software we live in should be
+    ours."*, *"This feed is our.one's first project. What should we make
+    ours?"*, *Name a need* and *Bring an idea* (the front door's drafts),
+    and the four places;
+  - then the invite card, and the footer with the version.

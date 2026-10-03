@@ -677,9 +677,12 @@ describe("the rest of the page, word for word (SPEC §18.15)", () => {
     expect(heading(render({ joining: false }))).toEqual(common);
   });
 
-  it("a signed-in visitor goes to /home", async () => {
+  // Changed under M-0020 (D-0023 §C): a signed-in visitor stays, and is
+  // shown their feed where a visitor is asked to join.
+  it("a signed-in visitor stays on the front door", async () => {
     const source = readFileSync(join(WEB_ROOT, "src/app/(public)/page.tsx"), "utf8");
-    expect(source).toMatch(/if \(await signedIn\(\)\) redirect\("\/home"\);/);
+    expect(source).not.toMatch(/redirect\("\/home"\)/);
+    expect(source).toContain("member={member}");
   });
 });
 

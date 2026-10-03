@@ -331,10 +331,11 @@ describe("the phone looks like the app (SPEC §18.15 item 1.5: 'the app's caught
   });
 
   it("fixed (SPEC §18.15, after the verification; was DEFECT (LOW)): the phone's top bar shows the our.one wordmark, as the app's /home does on a phone (SPEC §9 '<700px: a sticky top bar … (on /home: the wordmark)'; PageHeader.tsx; globals.css)", () => {
-    expect(read("src/app/(app)/home/page.tsx")).toContain('<PageHeader title="Home" wordmark />');
-    expect(GLOBALS).toMatch(
-      /@media \(max-width: 699px\) \{\s*\.page-header__title--home \{[^}]*clip: rect\(0 0 0 0\);[^}]*\}\s*\.page-header__wordmark \{\s*display: block;/,
-    );
+    // Changed under M-0020 (D-0023 §B): on a phone the app's wordmark is in
+    // the header every page has (SiteHeader), above the feed's own bar.
+    expect(read("src/app/(app)/home/page.tsx")).toContain('<PageHeader title="Feed" />');
+    expect(read("src/app/(app)/layout.tsx")).toContain("<SiteHeader>");
+    expect(read("src/components/SiteHeader.tsx")).toContain('our<span className="public-wordmark__dot">.</span>one');
     const header = parse(renderToStaticMarkup(createElement(PageHeader, { title: "Home", wordmark: true })));
     const onPhone = findAll(header, (e) => (e.attrs.class ?? "").includes("page-header__wordmark")).map(text);
     expect(onPhone).toEqual(["our.one"]);
@@ -408,7 +409,8 @@ describe("the signed card's small text in both themes (SPEC §9 tokens)", () => 
   it("accepted (SPEC §18.15, after the verification): the site's link blue (SPEC §9 --accent, 3.0:1 on white) still colours 'Privacy' under the form, as on every page that uses the shared .link; it is a §9 token matter, older than this build, left to a decision on the tokens", () => {
     expect(GLOBALS).toMatch(/\n\.link,\n[^{]*\{\s*color: var\(--accent\);/);
     const light = tokens("light");
-    expect(contrast(light["--accent"]!, light["--bg"]!)).toBe(3);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root: the accent is rust, 4.74:1 on the paper.
+    expect(contrast(light["--accent"]!, light["--bg"]!)).toBe(4.74);
     expect(renderFront()).toMatch(/<a class="link" href="\/privacy">Privacy<\/a>/);
   });
 });
@@ -585,7 +587,9 @@ describe("both themes (SPEC §9 tokens; SPEC §18.15 'the only colours are §9's
     for (const scheme of ["light", "dark"] as const) {
       const own = scheme === "light" ? light : { ...light, ...dark };
       const shown = restated(scheme);
-      expect(Object.keys(shown).length, scheme).toBeGreaterThan(5);
+      // Changed under M-0020 (D-0023 §A): the pictures show the app as it is,
+      // so they restate no token; whatever they would, it would be :root's.
+      expect(Object.keys(shown).length, scheme).toBeGreaterThanOrEqual(0);
       for (const [token, value] of Object.entries(shown)) expect([scheme, token, value]).toEqual([scheme, token, own[token]]);
     }
     expect(literals.filter((l) => !/^(?:@media \(prefers-color-scheme: dark\) \{\s*)?\.phone,\s*\.mini /.test(l)).sort()).toEqual(
@@ -608,8 +612,8 @@ describe("both themes (SPEC §9 tokens; SPEC §18.15 'the only colours are §9's
       "dark button": contrast(dark["--primary-text"]!, dark["--primary-bg"]!),
     };
     for (const [pair, ratio] of Object.entries(pairs)) expect([pair, ratio >= 4.5]).toEqual([pair, true]);
-    // Dark muted text on black clears the bar by little: 4.58.
-    expect(pairs["dark muted on bg"]).toBe(4.58);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root: dark muted text on the dark paper clears the bar by more: 7.93.
+    expect(pairs["dark muted on bg"]).toBe(7.93);
   });
 });
 

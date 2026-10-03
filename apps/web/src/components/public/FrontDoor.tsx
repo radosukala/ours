@@ -70,8 +70,9 @@ import {
 } from "./door";
 import styles from "./door.module.css";
 import { MAINTAINER } from "./handover";
-import { countLine, FREE_LINE, INVITE_CLOSED_LINE, joinLabel, seatLine } from "./join";
+import { countLine, FREE_LINE, INVITE_CLOSED_LINE, joinLabel, memberCountLine, seatLine } from "./join";
 import { LEDE } from "./lede";
+import { MemberJoin } from "./MemberJoin";
 import { ServiceTabs, type Tab } from "./ServiceTabs";
 
 export type FrontDoorProps = {
@@ -89,6 +90,8 @@ export type FrontDoorProps = {
   seatsOpen?: number | null;
   /** Addresses waiting in line, or null when that could not be read (or joining is off). */
   seatsWaiting?: number | null;
+  /** A member is shown their feed where a visitor is asked to join (D-0023 §C). */
+  member?: boolean;
 };
 
 const ROMAN = ["i.", "ii.", "iii."] as const;
@@ -116,7 +119,7 @@ function External({ href, children, className }: { href: string; children: React
   );
 }
 
-function FeedPanel({ joining, count, seatsOpen, seatsWaiting }: Omit<FrontDoorProps, "email">) {
+function FeedPanel({ joining, count, seatsOpen, seatsWaiting, member }: Omit<FrontDoorProps, "email">) {
   const seats = joining && seatsOpen !== null && seatsOpen !== undefined ? seatLine(seatsOpen) : null;
   return (
     <div className={styles.possibility}>
@@ -128,7 +131,9 @@ function FeedPanel({ joining, count, seatsOpen, seatsWaiting }: Omit<FrontDoorPr
         </h3>
         <p className={styles.possibilityBody}>{LEDE}</p>
         <div className={styles.join}>
-          {joining ? (
+          {member ? (
+            <MemberJoin />
+          ) : joining ? (
             <>
               <GetInForm label={joinLabel(seatsOpen ?? null, seatsWaiting ?? null)} />
               {seats ? <p className={styles.joinStrong}>{seats}</p> : null}
@@ -144,7 +149,9 @@ function FeedPanel({ joining, count, seatsOpen, seatsWaiting }: Omit<FrontDoorPr
               <p className={styles.joinSmall}>{INVITE_CLOSED_LINE}</p>
             </>
           )}
-          {count !== null && count !== undefined ? <p className={styles.count}>{countLine(count)}</p> : null}
+          {count !== null && count !== undefined ? (
+            <p className={styles.count}>{member ? memberCountLine(count) : countLine(count)}</p>
+          ) : null}
         </div>
         <p>
           <Link href="/feed" className={styles.textLink}>
@@ -226,12 +233,12 @@ function PossibilityPanel({ index }: { index: number }) {
   );
 }
 
-export function FrontDoor({ joining, email, count = null, seatsOpen = null, seatsWaiting = null }: FrontDoorProps) {
+export function FrontDoor({ joining, email, count = null, seatsOpen = null, seatsWaiting = null, member = false }: FrontDoorProps) {
   const tabs: Tab[] = [
     {
       id: "feed",
       label: "Your people",
-      panel: <FeedPanel joining={joining} count={count} seatsOpen={seatsOpen} seatsWaiting={seatsWaiting} />,
+      panel: <FeedPanel joining={joining} count={count} seatsOpen={seatsOpen} seatsWaiting={seatsWaiting} member={member} />,
     },
     ...POSSIBILITIES.map((p, i) => ({ id: p.id, label: p.tab, panel: <PossibilityPanel index={i} /> })),
   ];

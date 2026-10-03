@@ -19,7 +19,7 @@ import { LIMITS } from "@/core/validate";
 import { requireViewer } from "@/web/viewer";
 import { createPostAction, loadMoreFeedAction } from "./actions";
 
-export const metadata: Metadata = { title: "Home" };
+export const metadata: Metadata = { title: "Feed" };
 
 /** The counter appears from this many characters (SPEC §8). */
 const POST_COUNTER_FROM = 1800;
@@ -33,7 +33,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <PageHeader title="Home" wordmark />
+      <PageHeader title="Feed" />
       <Composer
         id="compose"
         viewer={{ handle: viewer.handle, displayName: viewer.displayName }}

@@ -775,9 +775,10 @@ describe("closed: the fixes' side effects on pages M-0015 did not build", () => 
       (e) => e.tag === "a",
     )[0]!;
     expect([winner(unsubscribe, "color")?.selector, winner(unsubscribe, "text-decoration")?.value]).toEqual([".page a", "underline"]);
-    expect(["light", "dark"].map((s) => contrast(colourOf(unsubscribe, s as "light"), backgroundOf(unsubscribe, s as "light")))).toEqual([6.12, 4.58]);
+    // Changed under M-0020 (D-0023 §A): our.one's tokens replace X's at the root.
+    expect(["light", "dark"].map((s) => contrast(colourOf(unsubscribe, s as "light"), backgroundOf(unsubscribe, s as "light")))).toEqual([5.79, 7.93]);
     const underline = (s: "light" | "dark") => contrast(resolveColour("var(--outline-border)", s), resolveColour("var(--bg)", s));
-    expect([underline("light"), underline("dark")]).toEqual([1.44, 1.65]);
+    expect([underline("light"), underline("dark")]).toEqual([1.69, 2.38]);
   });
 
   it("closed: the footer's no-break separators: in the public layout, the not-found page, the in-app footer and the right column each of the eight is exactly '\\u00a0· ' and hidden from screen readers; every text projection the tests use collapses it to ' · ' (contract.test's footer line still reads 'Contract · Agreement · … · Privacy'); no mail template carries a '·'", () => {

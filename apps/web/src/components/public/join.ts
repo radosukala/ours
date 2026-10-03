@@ -40,6 +40,12 @@ export function countLine(n: number): string {
   return `${formatCount(n)} people are in. You'd be #${formatCount(n + 1)}.`;
 }
 
+/** The count for a member, who is already among them: no rank (D-0023 §C). */
+export function memberCountLine(n: number): string {
+  if (n === 1) return "1 person is in.";
+  return `${formatCount(n)} people are in.`;
+}
+
 /** Under the form, while joining is open (SPEC §18.15 item 1.3). */
 export const FREE_LINE = `Free to join. You get ${DEFAULT_INVITES} invites to bring your people.`;
 

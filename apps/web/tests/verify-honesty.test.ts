@@ -589,7 +589,10 @@ describe("the running version", () => {
   it("fixed: below 1000px no signed-in page shows the running version (its only copy is in .aside, which is display:none)", () => {
     const css = read("src/app/globals.css");
     const base = css.slice(0, css.indexOf("@media (min-width: 700px)"));
-    const asideHiddenAtBase = /\.nav,\s*\.aside\s*\{\s*display:\s*none;/.test(base);
+    // Changed under M-0020 (D-0023 §D): the panel, with the footer and its
+    // version, follows the page's column below 1000px, so it is shown at
+    // every width; the old check was that it hid at the base.
+    const asideShownAtBase = !/\.aside\s*\{[^}]*display:\s*none;/.test(base) && /\.aside\s*\{/.test(base);
     const appShell = [
       ...filesUnder("src/app/(app)"),
       "src/components/Nav.tsx",
@@ -597,7 +600,7 @@ describe("the running version", () => {
       "src/components/PageHeader.tsx",
     ].filter((f) => /\.tsx?$/.test(f));
     const elsewhere = appShell.filter((f) => /runningVersion|SiteFooter/.test(read(f)));
-    expect(asideHiddenAtBase).toBe(true);
+    expect(asideShownAtBase).toBe(true);
     expect(elsewhere, "some signed-in element visible under 1000px must carry the version").not.toEqual([]);
   });
 

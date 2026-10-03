@@ -36,8 +36,9 @@ import { FeedContrast } from "./FeedContrast";
 import { FeedPreview } from "./FeedPreview";
 import { GetInForm } from "./GetInForm";
 import { MAINTAINER, NOTICE_DAYS, THRESHOLD } from "./handover";
-import { countLine, FREE_LINE, INVITE_CLOSED_LINE, JOIN_LABEL, joinLabel, seatLine } from "./join";
+import { countLine, FREE_LINE, INVITE_CLOSED_LINE, JOIN_LABEL, joinLabel, memberCountLine, seatLine } from "./join";
 import { LEDE } from "./lede";
+import { MemberJoin } from "./MemberJoin";
 import styles from "./public.module.css";
 
 export type FrontPageProps = {
@@ -57,6 +58,8 @@ export type FrontPageProps = {
    * is open (`joinLabel`).
    */
   seatsWaiting?: number | null;
+  /** A member is shown their feed where a visitor is asked to join (D-0023 §C). */
+  member?: boolean;
 };
 
 /** The headline, one line each (D-0015 §A; D-0016 keeps it). */
@@ -164,7 +167,7 @@ const QUESTIONS: readonly { question: string; answer: string }[] = [
 export const CLOSE_HEADING = "Who would you like to hear from?";
 export const CLOSE_LINE = "Join, then send them an invite.";
 
-export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: FrontPageProps) {
+export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null, member = false }: FrontPageProps) {
   const seats = seatsOpen === null ? null : seatLine(seatsOpen);
   const label = joining ? joinLabel(seatsOpen, seatsWaiting) : JOIN_LABEL;
   return (
@@ -185,7 +188,9 @@ export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: Fr
           <h2 id="front-get-in" className="visually-hidden">
             {JOIN_LABEL}
           </h2>
-          {joining ? (
+          {member ? (
+            <MemberJoin />
+          ) : joining ? (
             <>
               <GetInForm label={label} />
               {seats ? <p className={styles.seats}>{seats}</p> : null}
@@ -306,7 +311,7 @@ export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: Fr
             <p>
               Today I hold the domain, the data and the keys. The members&apos; body has not been formed, and the handover has not happened.
             </p>
-            {count !== null ? <p className={styles.count}>{countLine(count)}</p> : null}
+            {count !== null ? <p className={styles.count}>{member ? memberCountLine(count) : countLine(count)}</p> : null}
             <p className={styles.links}>
               <Link href="/contract" className={styles.more}>
                 Read the contract
@@ -334,7 +339,7 @@ export function FrontPage({ count, joining, seatsOpen, seatsWaiting = null }: Fr
         </dl>
       </section>
 
-      {joining ? (
+      {joining && !member ? (
         <section className={styles.close} aria-labelledby="front-close">
           <h2 id="front-close">{CLOSE_HEADING}</h2>
           <p className={styles.closeLine}>{CLOSE_LINE}</p>
