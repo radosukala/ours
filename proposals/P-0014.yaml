@@ -1,0 +1,55 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0014
+title: Ready for the first deploy — one repository with its history, a site that says where it runs, a release Vercel runs, and the weekly email on Vercel's schedule
+status: ADOPTED
+
+requests:
+  decision_class: OPERATIONAL
+  decision_id: D-0021
+
+human_source:
+  path: proposals/P-0014.md
+evidence:
+  - path: proposals/P-0014.evidence-conversation-2026-10-03.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - everyone who opens our.one once it is deployed, who reads where it runs and who administers it
+  - the founder, whose administrator account is made by the release, and whose keys stay in Vercel
+  - members, once seats open, who receive the weekly email
+
+unresolved:
+  - the error in the first Vercel build, whose log stops before it
+  - the real keys the founder put in apps/web/.env.local, which belong in Vercel only
+  - ourstoday.com and oursnow.co, earlier sites still live, which make claims the records now forbid
+  - the legal review of /privacy (D-0012 §E), which now covers Vercel and Neon, and whether a transfer outside the EU must be stated
+  - the Vercel plan, whose terms the founder checks, and whose price goes in the ledger at the release
+
+cost:
+  proposer_hours: 1
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-03
+    actor: { id: founder, kind: human }
+    position: before replacing the domain, asked whether to switch to our.one or use an earlier domain (oursnow.co, ourstoday.com) with the brand OURS
+  - date: 2026-10-03
+    actor: { id: claude, kind: agent }
+    position: keep our.one — both earlier names state ownership in the present tense, which D-0012 forbids, both still serve earlier sites, and OURS is crowded as a public name; our.one's costs are its renewal price and the ourone.com typing leak
+  - date: 2026-10-03
+    actor: { id: founder, kind: human }
+    position: let's publish it to our.one; which repository, and why isn't it in Vercel; then, whether to start a new repository with only the latest version
+  - date: 2026-10-03
+    actor: { id: claude, kind: agent }
+    position: keep ours — no secret, private note or other person's contact data was ever committed, and the records cite 63 of its commits; commit with the GitHub no-reply address from now on and give the README a first section for visitors; four gaps block a true first deploy (the hosting lines, the founder's account, migrations without an agent holding the database's address, the weekly email's GET), plus the functions' region
+  - date: 2026-10-03
+    actor: { id: founder, kind: human }
+    position: ok; set up Vercel; the first build failed, with a log that stops before the error

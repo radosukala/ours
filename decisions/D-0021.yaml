@@ -1,0 +1,70 @@
+schema: ours.decision/v0.1
+decision_id: D-0021
+title: Ready for the first deploy — one repository with its history, a site that says where it runs, a release Vercel runs, and the weekly email on Vercel's schedule
+status: ADOPTED
+class: OPERATIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0021.md
+
+proposal: P-0014
+prerequisite_decisions: [D-0012, D-0013, D-0014, D-0020]
+
+outcome: >
+  ours stays the one public repository, with its whole history; commits
+  carry the founder's GitHub no-reply address from now on, and the README
+  gets a first section for visitors from our.one. our.one stays the name
+  (D-0012 §C). Every sentence about hosting, the database, the
+  administrator or deployment says what is true on the server that renders
+  it: on Vercel's production deployment, what runs it, read from the
+  platform and from the database address's host (never shown); anywhere
+  else, that the copy isn't the deployed site; the administrator lines say
+  what the database holds. Vercel's production build of the one commit the
+  founder names in OURS_RELEASE applies the migrations and creates the
+  founder's administrator account from three settings the founder enters
+  there, only if no account exists, under the founder script's lock;
+  nothing else touches the database, a push alone touches none, and the
+  build log never prints an address, a link or a key. The founder promotes
+  each release; new production builds don't take the domain by
+  themselves. The functions run in
+  Frankfurt. The weekly email answers Vercel's GET with the same secret, on
+  Mondays at 08:00 UTC. The real keys live only in Vercel. Authorizes
+  M-0018 (BUILD) and amends the draft M-0012.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0018]
+
+prohibits:
+  - a new repository for this work, or a rewritten history
+  - a page that says our.one is deployed, or names a host, a database or an administrator, unless the server rendering it runs there or holds it
+  - printing an address, a sign-in link, a key or the database's address in a build log
+  - touching the database from anywhere but Vercel's production build of the commit the founder names in OURS_RELEASE
+  - an agent opening a file that holds a real key, or entering one
+  - deploying under M-0018
+
+effective_from: 2026-10-03T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording is pending. §A
+  and §B read the founder's "ok" as yes to keeping ours and our.one,
+  because the founder then created the Vercel project from ours; §E's day
+  and hour are the agent's choice.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

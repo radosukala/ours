@@ -1,0 +1,143 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0018
+title: Ready for the first deploy — a site that says where it runs, a release Vercel runs, the weekly email on Vercel's schedule, and the README's first section
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0021
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-03T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0012, D-0013, D-0014, D-0020, D-0021]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0018.md
+
+objective: >
+  Build D-0021 §A's README section and §C to §E. In apps/web: every
+  sentence about hosting, the database, the administrator or deployment
+  (the hosting row on /power, /privacy's notice and its hosting and
+  administrator lines, the house rules' line on the administrator) says
+  what is true on the server that renders it — on Vercel's production
+  deployment, Vercel and its region, the database named from its address's
+  host with its region (the address never shown), and email as today, as
+  stated in this server's configuration; anywhere else, that this copy
+  isn't the deployed site; the administrator lines follow the database. A
+  release step that Vercel's production build runs before next build, only
+  for the commit the founder names in OURS_RELEASE: apply the migrations,
+  then create the founder's administrator account from FOUNDER_EMAIL,
+  FOUNDER_HANDLE and FOUNDER_NAME if no account exists, under the founder
+  script's lock; nothing in any other build, and a log that names no
+  one. apps/web/vercel.json with the build command, the
+  region fra1 and the weekly email's schedule (Mondays, 08:00 UTC); the
+  weekly email's route answers GET as it answers POST. In README.md, a
+  first section for visitors who come from our.one. SPEC.md §18.20.
+  Fictional data and a local database only.
+
+human_outcome: >
+  Once deployed, our.one says truthfully where it runs and who administers
+  it, the founder can sign in as its one administrator without any agent
+  holding a key, and members get the weekly email once seats open.
+
+adopted_constraints:
+  - A page names a host, a database or an administrator only when the server rendering it runs there or holds it.
+  - The database's address, a key, a sign-in link and a person's address appear on no page and in no log.
+  - Only Vercel's production build of the commit named in OURS_RELEASE touches the database; other commits' builds, previews, local builds and tests never touch a real one.
+  - The founder script keeps its rule that local accounts are fictional; the release creates only the first account, under its lock.
+  - The weekly email refuses every call without CRON_SECRET, by GET or POST.
+  - The feed's, the front door's, the contract's and the agreement's words are unchanged, and so are the kit, the rules, the tool and the schema.
+  - No real person's data, no email to a real address, no provider account, no domain touched, no package published; no agent opens apps/web/.env.local in the main checkout.
+
+hypotheses:
+  - A visitor to the deployed site can tell where it runs and who administers it, and the same build run anywhere else says it isn't the deployed site.
+  - A release can migrate the database and create the founder's account without any agent holding the database's address.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - README.md
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - kit/**
+      - vercel.json
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+  external_systems: []
+
+risk:
+  class: MEDIUM
+  reversibility: REVERSIBLE
+  affected_groups: [everyone who opens our.one once it is deployed, the founder]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+    - R-NO-FICTIONAL-OWNERSHIP
+    - R-WEAKEST-LAYER
+  security: [no-secret-exposure, release-in-production-build-only, nothing-printed-that-identifies-anyone]
+  privacy: [no-real-person-data-under-this-mandate, database-address-never-shown]
+
+acceptance:
+  tests:
+    - With Vercel's production settings imitated (VERCEL_ENV=production, a region, a Neon-shaped FICTIONAL database address), /power's hosting row and /privacy name Vercel and its region, the database and its region, and email as configured, as stated in this server's configuration; no page says our.one is not deployed; the database's address appears on no page.
+    - Without them, in development, a preview or a test, the same pages say this copy isn't the deployed site.
+    - The administrator lines follow the database — none yet, or the founder's account as the only one — on /privacy, /power and the house rules.
+    - The release step does nothing unless the build is Vercel's production build of the commit named in OURS_RELEASE (a malformed or shorter-than-7 value names nothing); in that build without DATABASE_URL it fails the build; with it, it applies the migrations, creates the founder's administrator account from the three settings once (two runs at once create one), creates nothing when an account exists, and prints nothing that holds an address, a link, a key or the database's address.
+    - The weekly email's route answers GET exactly as POST, and refuses both without CRON_SECRET; apps/web/vercel.json sets the build command, the region fra1 and the schedule "0 8 * * 1".
+    - The README's first section says nothing the records don't.
+    - Typecheck, lint, tests, the claims scan and a production build pass; pnpm ours check M-0018 --changed authorises the finished working tree.
+  evidence:
+    - a build receipt in receipts/builds/ naming the commits, every check and its result, and what was not checked
+    - an independent verification in receipts/conformance/, with the verifiers' tests committed as written before any is adapted
+
+limits:
+  stop_conditions:
+    - a page would have to name a host, a database or an administrator the server can't see
+    - the release would have to run anywhere but Vercel's production build of the commit the founder names, or an agent would have to hold a key
+    - the verified build would have to change at the release
+    - the feed's, the front door's, the contract's or the agreement's words would have to change
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0018 commits; no data, schema or provider is touched
+  irreversible_residue: none
+
+human_approvals:
+  adoption: the founder's "ok" in reply to the two questions (D-0021)
+  deploy: not authorized by this mandate (M-0012)
