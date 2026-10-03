@@ -29,8 +29,9 @@ outcome: >
   administrator or deployment says what is true on the server that renders
   it: on Vercel's production deployment, what runs it, read from the
   platform and from the database address's host (never shown); anywhere
-  else, that the copy isn't the deployed site; the administrator lines say
-  what the database holds. Vercel's production build of the one commit the
+  else, that the copy isn't the deployed site; the administrator lines
+  state the rule that only the founder can be the administrator (§I,
+  corrected before the build from "what the database holds"). Vercel's production build of the one commit the
   founder names in OURS_RELEASE applies the migrations and creates the
   founder's administrator account from three settings the founder enters
   there, only if no account exists, under the founder script's lock;
