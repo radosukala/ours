@@ -1024,11 +1024,12 @@ describe("closed (each passes on 4e04af5)", () => {
       "proposals/P-0016.yaml",
     ]);
     const receipt = record("receipts/builds/2026-10-03-M-0020.md");
-    // Changed after the verification of M-0020 (round one): the receipt says where the verification stands
-    // now, truly; its two tables of checks, before and after round one, each hold R-SCOPE as the one ENFORCED.
-    expect(receipt).toContain("Status: TESTED locally, after round one of the independent verification (28 findings fixed, one recorded). The re-check is next. Nothing is pushed or deployed.");
-    expect(receipt).toContain("The re-check has not run yet.");
-    expect([...receipt.matchAll(/\| ([^|]+) \| (ENFORCED|CHECKED|STRUCTURAL|INTERPRETED|DECLARED) \|/g)].filter((m) => m[2] === "ENFORCED").map((m) => m[1]!.trim())).toEqual(["R-SCOPE", "R-SCOPE"]);
+    // Changed after the verification of M-0020 (round one, then the re-check): the receipt says where the
+    // verification stands now, truly; its three tables of checks, before round one, after it and after the
+    // re-check, each hold R-SCOPE as the one ENFORCED.
+    expect(receipt).toContain("Status: TESTED locally, after the independent verification and its one re-check: 37 findings fixed, one recorded for the founder. Nothing is pushed or deployed.");
+    expect(receipt).not.toContain("has not run yet");
+    expect([...receipt.matchAll(/\| ([^|]+) \| (ENFORCED|CHECKED|STRUCTURAL|INTERPRETED|DECLARED) \|/g)].filter((m) => m[2] === "ENFORCED").map((m) => m[1]!.trim())).toEqual(["R-SCOPE", "R-SCOPE", "R-SCOPE"]);
   });
 
   it("closed: the eleven older tests M-0020 adapted kept their force, apart from the titles above — each adapted file carries 'Changed under M-0020' with its reason, none gained a skip or an only, and none has fewer assertions than before but verify-m0014-render, which dropped the one about the 1100px rule the panel no longer has, its reason in the comment; every changed number is the new tokens' own (13.14, 15.07, 5.79, 7.93 and the like, from #222b24 and #586157 on #f5f3eb, and their dark values)", () => {
