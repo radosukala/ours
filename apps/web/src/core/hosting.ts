@@ -28,6 +28,20 @@
 /** The environment, as the platform gives it. */
 export type Env = Readonly<Record<string, string | undefined>>;
 
+/**
+ * Whether this server may use a database on another machine: only on
+ * Vercel's own deployments (production or a preview), and in the tests,
+ * which imitate them. Anywhere else — `next dev`, `next start`, `vercel
+ * dev`, a script — only a database on this machine is used, so a key left
+ * in apps/web/.env.local reaches no local run (D-0021 §F; the re-check of
+ * M-0018). getDb() and the pages read this one rule: a page never names a
+ * database its server refuses (the re-check, RC3).
+ */
+export function remoteDatabaseAllowed(env: Env = process.env): boolean {
+  if (env.NODE_ENV === "test") return true;
+  return env.VERCEL === "1" && (env.VERCEL_ENV === "production" || env.VERCEL_ENV === "preview");
+}
+
 /** A region: its code, and the place it is in, when this file knows it. */
 export type Region = { code: string; place: string | null };
 
@@ -114,7 +128,8 @@ export function databaseFromUrl(url: string | undefined): NeonDatabase | null {
 
 /** Where this server runs, from the platform's own variables and the database's host. */
 export function hosting(env: Env = process.env): Hosting {
-  const database = databaseFromUrl(env.DATABASE_URL);
+  // A database the server would refuse to use isn't named (the re-check, RC3).
+  const database = remoteDatabaseAllowed(env) ? databaseFromUrl(env.DATABASE_URL) : null;
   if (env.VERCEL === "1" && env.VERCEL_ENV === "production") {
     return { deployed: true, region: region(env.VERCEL_REGION, VERCEL_PLACES), database };
   }

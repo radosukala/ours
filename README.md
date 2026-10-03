@@ -14,7 +14,7 @@
 > - **The builder kit:** [`kit`](./kit), the instructions a coding agent
 >   follows, the rules and the check.
 > - **The records:** a change is proposed ([`proposals`](./proposals)),
->   decided ([`decisions`](./decisions)), handed to an agent as a bounded
+>   decided ([`decisions`](./decisions)), given to an agent as a bounded
 >   task ([`mandates`](./mandates)), and receipted
 >   ([`receipts`](./receipts)). The receipts include independent
 >   verifications, by agents that didn't build what they checked.

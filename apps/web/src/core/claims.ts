@@ -215,9 +215,11 @@ export const PROHIBITED: readonly Prohibited[] = [
     // runs comes from the running server (src/core/hosting.ts), in words
     // this rule doesn't match ("this copy of our.one isn't the deployed
     // site"). A condition lets it through: "once our.one is deployed",
-    // "whether or not the site is deployed".
+    // "whether or not the site is deployed". The re-check of M-0018 (RC8)
+    // widened it to "Not deployed yet.", "our.one isn't live yet.", "It's
+    // not deployed yet." and "our.one has been deployed."
     pattern: new RegExp(
-      `\\bnothing is (?:yet )?deployed\\b|\\b(?:our\\.one|the site|this site|the feed)(?:${APOS}s| is) (?:now |already |not |not yet |yet )?(?:deployed|live)\\b|\\b(?:is|are) not (?:yet )?deployed\\b|\\b(?:is|are)n${APOS}t (?:yet )?deployed\\b`,
+      `\\bnothing (?:is|has been) (?:yet )?deployed\\b|\\bnot (?:yet )?deployed\\b|\\b(?:is|are)n${APOS}t (?:yet )?(?:deployed|live)\\b|\\b(?:our\\.one|the site|this site|the feed|it)(?:${APOS}s| is| has been| was)(?: not)?(?: (?:now|already|yet|not yet))? (?:deployed|live)\\b`,
       "i",
     ),
     reason: "D-0020 §F and D-0021 §C: no page states a deployment status; it turns at the deploy. Where the site runs comes from the running server.",
@@ -857,10 +859,11 @@ export function scanRepoPublicText(rootDir: string): ScanResult {
 /**
  * The build kit's text (D-0019 §B, M-0016), relative to apps/web: the
  * feed's manifest and rules block, and the files the site serves from kit/
- * at the repository's root, with the kit's README. Read by its own
- * function, so the trees the older tests build for `scanRepoPublicText`
- * stay as they are. Every file must exist: a scan that silently read
- * nothing would pass.
+ * at the repository's root, with the kit's README; and the two READMEs a
+ * visitor from our.one reads, the application's and the repository's (the
+ * re-check of M-0018, RC9). Read by its own function, so the trees the
+ * older tests build for `scanRepoPublicText` stay as they are. Every file
+ * must exist: a scan that silently read nothing would pass.
  */
 export const KIT_TEXT = {
   files: [
@@ -870,6 +873,8 @@ export const KIT_TEXT = {
     "../../kit/README.md",
     "../../kit/our-one.mjs",
     "../../kit/our.one.schema.json",
+    "README.md",
+    "../../README.md",
   ],
   /** The feed's manifest, whose claims.allowed sentences are quotations. */
   manifest: "our.one.json",

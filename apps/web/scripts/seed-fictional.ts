@@ -23,6 +23,7 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { createEmailToken } from "../src/core/auth";
 import { accountCreationOpen, appUrl } from "../src/core/config";
 import { closeDb, getDb, isLocal } from "../src/core/db";
+import { describeError } from "../src/core/db-errors";
 import { newId, randomToken, sha256 } from "../src/core/ids";
 import * as schema from "../src/core/schema";
 import {
@@ -298,7 +299,8 @@ async function main(): Promise<void> {
 
 main()
   .catch((error: unknown) => {
-    console.error("seed:fictional failed:", error instanceof Error ? error.message : error);
+    // What it means and its code, never its message (the re-check of M-0018, RC10).
+    console.error(`seed:fictional failed: ${describeError(error)}`);
     process.exitCode = 1;
   })
   .finally(() => closeDb());

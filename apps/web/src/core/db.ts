@@ -12,6 +12,7 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import { Pool } from "pg";
+import { remoteDatabaseAllowed } from "./hosting";
 import * as schema from "./schema";
 
 export type Schema = typeof schema;
@@ -44,13 +45,19 @@ declare global {
  */
 export function isLocal(url: string): boolean {
   try {
-    const host = new URL(url).hostname.replace(/^\[(.*)\]$/, "$1");
-    if (host === "") return true;
+    // The host pg connects to: a `host` parameter wins over the address's
+    // own host, as pg reads it (the re-check of M-0018, RC7).
+    const u = new URL(url);
+    const host = (u.searchParams.get("host") ?? u.hostname).replace(/^\[(.*)\]$/, "$1");
+    if (host === "" || host.startsWith("/")) return true;
     return host === "localhost" || host === "127.0.0.1" || host === "::1";
   } catch {
     return false;
   }
 }
+
+/** The address's parameters that would set pg's TLS; our.one sets it itself (the re-check of M-0018, RC7). */
+const TLS_PARAMETERS = ["sslmode", "channel_binding", "ssl", "sslcert", "sslkey", "sslrootcert", "sslpassword", "sslnegotiation"];
 
 export type ConnectionOptions = {
   connectionString: string;
@@ -66,7 +73,10 @@ export type ConnectionOptions = {
  *   for this machine too when the address asks for it (`sslmode`, as Neon
  *   writes it);
  * - the address's own `sslmode` and `channel_binding` are taken out and
- *   said to pg directly, so pg prints no warning about them into a log.
+ *   said to pg directly, so pg prints no warning about them into a log;
+ *   every other TLS parameter (`ssl=0`, `ssl=no-verify`, certificates) is
+ *   taken out too, so nothing in the address can turn TLS off or stop the
+ *   certificate check (the re-check of M-0018, RC7).
  */
 export function connectionOptions(url: string): ConnectionOptions {
   let u: URL;
@@ -81,8 +91,7 @@ export function connectionOptions(url: string): ConnectionOptions {
   }
   const mode = u.searchParams.get("sslmode");
   const binding = u.searchParams.get("channel_binding");
-  u.searchParams.delete("sslmode");
-  u.searchParams.delete("channel_binding");
+  for (const name of TLS_PARAMETERS) u.searchParams.delete(name);
   const tls = !isLocal(url) || (mode !== null && mode !== "disable");
   return {
     connectionString: u.toString(),
@@ -113,10 +122,11 @@ export function getDb(): Database {
   if (!url) {
     throw new Error("DATABASE_URL is not set.");
   }
-  // A local run never reaches the real database, whatever .env.local says
-  // (D-0021 §F; the verification of M-0018).
-  if (process.env.NODE_ENV === "development" && !isLocal(url)) {
-    throw new Error("In development, our.one uses only a database on this machine (D-0021 §F).");
+  // A local run never reaches the real database, whatever .env.local says:
+  // off Vercel's deployments, only a database on this machine (D-0021 §F;
+  // the re-check of M-0018, RC1).
+  if (!isLocal(url) && !remoteDatabaseAllowed()) {
+    throw new Error("Off Vercel's deployments, our.one uses only a database on this machine (D-0021 §F).");
   }
   const held = globalThis.__oursWebDb;
   if (held && held.url === url) return held.db;

@@ -484,7 +484,7 @@ afterEach(async () => {
 
 describe("defects (each FAILS on aebde1d)", () => {
   // RC1
-  it("DEFECT (MEDIUM): a local `next start` still reaches a database that isn't on this machine. D-0021 §J says a key left in apps/web/.env.local 'then reaches no local run', and SPEC §18.20 'A local run never reaches a remote database', but only NODE_ENV=development is refused: Next.js reads .env.local for `next start` as well (it skips the file only in test), and getDb() under NODE_ENV=production connects to whatever host DATABASE_URL names (served on 3631: /api/health of a local production server reached the fake at 0.0.0.0). The founder's main checkout, whose .env.local held the real keys (P-0014; D-0021 §F, §H), is the case these sentences were written for (a variant of R1)", async () => {
+  it("fixed (MEDIUM): a local `next start` still reaches a database that isn't on this machine. D-0021 §J says a key left in apps/web/.env.local 'then reaches no local run', and SPEC §18.20 'A local run never reaches a remote database', but only NODE_ENV=development is refused: Next.js reads .env.local for `next start` as well (it skips the file only in test), and getDb() under NODE_ENV=production connects to whatever host DATABASE_URL names (served on 3631: /api/health of a local production server reached the fake at 0.0.0.0). The founder's main checkout, whose .env.local held the real keys (P-0014; D-0021 §F, §H), is the case these sentences were written for (a variant of R1)", async () => {
     expect(record("decisions/D-0021.md")).toContain("A key left in apps/web/.env.local then reaches no local run");
     const spec = flat(read("SPEC.md")).replace(/[*`]/g, "");
     expect(JSON.parse(read("package.json")).scripts.start).toBe("next start");
@@ -518,7 +518,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC2
-  it("DEFECT (MEDIUM): M-0012 and D-0021 §J say pushes to main build previews 'which hold no production setting', but M-0012 scopes only DATABASE_URL (and the Neon integration's variables) to production: step 5's settings — SESSION_SECRET, CRON_SECRET, RESEND_API_KEY with MAIL_TRANSPORT=resend, FOUNDER_EMAIL (the one real address), OURS_RELEASE — are given no environment, and Vercel's form puts a new variable in Production, Preview and Development unless told otherwise (as the re-checker knows it; not checked over the network). Followed as written, every preview of a pushed commit runs with the real email key, and `vercel env pull` writes the keys into .env.local, which D-0021 §F keeps FICTIONAL (a variant of R2)", () => {
+  it("fixed (MEDIUM): M-0012 and D-0021 §J say pushes to main build previews 'which hold no production setting', but M-0012 scopes only DATABASE_URL (and the Neon integration's variables) to production: step 5's settings — SESSION_SECRET, CRON_SECRET, RESEND_API_KEY with MAIL_TRANSPORT=resend, FOUNDER_EMAIL (the one real address), OURS_RELEASE — are given no environment, and Vercel's form puts a new variable in Production, Preview and Development unless told otherwise (as the re-checker knows it; not checked over the network). Followed as written, every preview of a pushed commit runs with the real email key, and `vercel env pull` writes the keys into .env.local, which D-0021 §F keeps FICTIONAL (a variant of R2)", () => {
     const m12 = record("mandates/M-0012.md");
     const d21 = record("decisions/D-0021.md");
     const claim = "Pushes to main then build previews, which hold no production setting.";
@@ -533,7 +533,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC3
-  it("DEFECT (LOW): in development with a Neon address — the founder's own .env.local (P-0014), or `vercel dev` after `vercel env pull` — /privacy says 'Neon keeps its database …: everything this notice says is kept is stored there' and /power names Neon, while the same server refuses that database (getDb(): 'In development, our.one uses only a database on this machine'), so nothing is kept there: H1's fix and R1's disagree (served so by `next dev` on 3632: the pages named Neon, /api/health said database false, no connection was tried)", () => {
+  it("fixed (LOW): in development with a Neon address — the founder's own .env.local (P-0014), or `vercel dev` after `vercel env pull` — /privacy says 'Neon keeps its database …: everything this notice says is kept is stored there' and /power names Neon, while the same server refuses that database (getDb(): 'In development, our.one uses only a database on this machine'), so nothing is kept there: H1's fix and R1's disagree (served so by `next dev` on 3632: the pages named Neon, /api/health said database false, no connection was tried)", () => {
     const states: [string, Record<string, string>][] = [
       ["pnpm dev", { NODE_ENV: "development", DATABASE_URL: NEON_EU }],
       ["vercel dev", { NODE_ENV: "development", VERCEL: "1", VERCEL_ENV: "development", DATABASE_URL: NEON_EU }],
@@ -549,7 +549,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC4
-  it("DEFECT (LOW): deployed with PROPOSALS_EMAIL set, as M-0012 requires, /privacy says of an emailed proposal 'we keep your address and your message … They aren't stored on our.one itself.', and then that Neon keeps the database and 'everything this notice says is kept is stored there': H11's new words take in the proposals' mailbox, which isn't Neon; the feed's manifest says Neon holds 'everything in data.collects', which lists no proposals (a variant of H11)", () => {
+  it("fixed (LOW): deployed with PROPOSALS_EMAIL set, as M-0012 requires, /privacy says of an emailed proposal 'we keep your address and your message … They aren't stored on our.one itself.', and then that Neon keeps the database and 'everything this notice says is kept is stored there': H11's new words take in the proposals' mailbox, which isn't Neon; the feed's manifest says Neon holds 'everything in data.collects', which lists no proposals (a variant of H11)", () => {
     expect(record("mandates/M-0012.md")).toContain("choose the address and set PROPOSALS_EMAIL in Vercel");
     const manifest = JSON.parse(read("our.one.json")) as { data: { collects: { what: string }[]; sharedWith: { who: string; what: string }[] } };
     expect(manifest.data.sharedWith.find((s) => s.who === "Neon")?.what).toBe("The database, which holds everything in data.collects, while it is kept there.");
@@ -565,7 +565,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC5
-  it("DEFECT (LOW): R4's lock doesn't hold through a transaction pooler, which is what Neon's pooled address is (PgBouncer in transaction mode, as the re-checker knows Neon; the `-pooler` host the deploy tests use as the deployed address). The lock is session-wide, on a connection of its own: through the pooler it is taken by a server connection that outlives the release ('Ending the session releases the lock' isn't so there), and two releases at once on a fresh database — R4's case — leave one waiting, with no end, for a lock nobody will release (so in three rounds by hand and in this one, through a pooler written for this test); SPEC §18.20 says 'so two releases at once both pass'. The lock taken with pg_advisory_xact_lock in the migrations' own transaction passes this test", async () => {
+  it("fixed (LOW): R4's lock doesn't hold through a transaction pooler, which is what Neon's pooled address is (PgBouncer in transaction mode, as the re-checker knows Neon; the `-pooler` host the deploy tests use as the deployed address). The lock is session-wide, on a connection of its own: through the pooler it is taken by a server connection that outlives the release ('Ending the session releases the lock' isn't so there), and two releases at once on a fresh database — R4's case — leave one waiting, with no end, for a lock nobody will release (so in three rounds by hand and in this one, through a pooler written for this test); SPEC §18.20 says 'so two releases at once both pass'. The lock taken with pg_advisory_xact_lock in the migrations' own transaction passes this test", async () => {
     expect(read("tests/deploy-ready.test.ts")).toContain('"ep-fictional-pond-123456-pooler.eu-central-1.aws.neon.tech"');
 
     const fresh = await freshDatabase();
@@ -590,7 +590,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   }, 60_000);
 
   // RC6
-  it("DEFECT (LOW): the lock's own connection has no error handler: when it drops while the migrations run (here its session is ended with pg_terminate_backend while the migrations wait on a table lock), the release dies on Node's \"Unhandled 'error' event\" and prints the database's own message ('terminating connection due to administrator command'), the error's fields and a stack trace with the build machine's paths, instead of a 'Release step:' line. SPEC §18.20: a database error in the log is 'what it means and its code, never its message' (a variant of R4 and R5)", async () => {
+  it("fixed (LOW): the lock's own connection has no error handler: when it drops while the migrations run (here its session is ended with pg_terminate_backend while the migrations wait on a table lock), the release dies on Node's \"Unhandled 'error' event\" and prints the database's own message ('terminating connection due to administrator command'), the error's fields and a stack trace with the build machine's paths, instead of a 'Release step:' line. SPEC §18.20: a database error in the log is 'what it means and its code, never its message' (a variant of R4 and R5)", async () => {
     const fresh = await freshDatabase();
     const holder = new pg.Client({ connectionString: fresh.url });
     holder.on("error", () => undefined);
@@ -624,7 +624,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   }, 60_000);
 
   // RC7
-  it("DEFECT (LOW): the TLS rule and the local-only rule read the host from new URL(…).hostname, but pg reads more of the address (pg-connection-string 2.14, pg 8.23): a `host` parameter wins over it, `ssl=0` turns TLS off, `ssl=no-verify` stops the certificate check. So an address whose host is localhost but whose `host` parameter names another machine passes isLocal — the founder script and the development server connect there without TLS and send the password in clear text — and a remote address with `ssl=0` makes the release do the same: R6's case by another parameter, and R1's guard passed by one. Each needs an address edited by hand, as R6 did", async () => {
+  it("fixed (LOW): the TLS rule and the local-only rule read the host from new URL(…).hostname, but pg reads more of the address (pg-connection-string 2.14, pg 8.23): a `host` parameter wins over it, `ssl=0` turns TLS off, `ssl=no-verify` stops the certificate check. So an address whose host is localhost but whose `host` parameter names another machine passes isLocal — the founder script and the development server connect there without TLS and send the password in clear text — and a remote address with `ssl=0` makes the release do the same: R6's case by another parameter, and R1's guard passed by one. Each needs an address edited by hand, as R6 did", async () => {
     const script = await fakePostgres();
     const dev = await fakePostgres();
     const release = await fakePostgres();
@@ -639,9 +639,13 @@ describe("defects (each FAILS on aebde1d)", () => {
       });
       // The development server, given the same.
       setEnv({ NODE_ENV: "development", DATABASE_URL: viaHostParam(dev.port) });
-      await getDb()
-        .execute(sql`select 1`)
-        .catch(() => undefined);
+      // Changed after the re-check of M-0018 (RC1, RC7): getDb() now refuses
+      // this address itself, before any query, so the refusal is a throw.
+      try {
+        await getDb().execute(sql`select 1`);
+      } catch {
+        // refused, or failed: either way, nothing reached the fake
+      }
       await closeDb();
       // The release, given a remote address with ssl=0.
       const outcome = await runRelease({ DATABASE_URL: pgAddress(FICT_USERINFO, `0.0.0.0:${release.port}`, "/neondb?ssl=0") });
@@ -674,7 +678,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   }, 60_000);
 
   // RC8
-  it("DEFECT (LOW): the claims scan's new rule misses the very status H9 cited from the M-0017 verification — kit/README's 'Not deployed yet.' — and close forms of the ones it catches: 'our.one isn't live yet.' (it reads \"isn't\" only before 'deployed', though 'our.one is not live' is caught), 'It's not deployed yet.' and 'our.one has been deployed.' (a variant of H9)", () => {
+  it("fixed (LOW): the claims scan's new rule misses the very status H9 cited from the M-0017 verification — kit/README's 'Not deployed yet.' — and close forms of the ones it catches: 'our.one isn't live yet.' (it reads \"isn't\" only before 'deployed', though 'our.one is not live' is caught), 'It's not deployed yet.' and 'our.one has been deployed.' (a variant of H9)", () => {
     expect(prose(read("tests/verify-m0018-honesty.test.ts"))).toContain("kit/README's 'Not deployed yet.'");
     const caught = (s: string) => scanText(s, null).length > 0;
     for (const s of ["our.one is not live.", "our.one is not deployed yet.", "The site isn't deployed."]) expect(caught(s), s).toBe(true);
@@ -683,7 +687,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC9
-  it("DEFECT (LOW): H9 is marked fixed, but its last part still holds: `pnpm claims` reads neither apps/web/README.md — where H2's '**Nothing is deployed.**' stood, which the new rule would now catch — nor the root README, whose first section is for visitors from our.one; a status written back into either passes the scan (a variant of H9)", () => {
+  it("fixed (LOW): H9 is marked fixed, but its last part still holds: `pnpm claims` reads neither apps/web/README.md — where H2's '**Nothing is deployed.**' stood, which the new rule would now catch — nor the root README, whose first section is for visitors from our.one; a status written back into either passes the scan (a variant of H9)", () => {
     expect(git(["show", "39fd6ce:apps/web/README.md"])).toContain("**Nothing is deployed.**");
     expect(scanText("Nothing is deployed.", null).length).toBeGreaterThan(0);
     // What `pnpm claims` (scripts/claims-scan.ts) reads: the public text and the kit's.
@@ -693,7 +697,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC10
-  it("DEFECT (LOW): D-0021 §J says 'Errors are logged by name everywhere in the application', and SPEC §18.20 'never by message', but three local scripts still print the message — db:migrate's and seed:founder's 'database \"…\" does not exist', seed:fictional's 'Failed query: select count(*) from \"accounts\" params:' — and db:migrate prints the address it migrated, with its user, host and database name ('Migrations applied to postgresql://…'). digest.ts was changed; these weren't. They refuse any other machine now, so what they print is this machine's (a variant of R5)", async () => {
+  it("fixed (LOW): D-0021 §J says 'Errors are logged by name everywhere in the application', and SPEC §18.20 'never by message', but three local scripts still print the message — db:migrate's and seed:founder's 'database \"…\" does not exist', seed:fictional's 'Failed query: select count(*) from \"accounts\" params:' — and db:migrate prints the address it migrated, with its user, host and database name ('Migrations applied to postgresql://…'). digest.ts was changed; these weren't. They refuse any other machine now, so what they print is this machine's (a variant of R5)", async () => {
     expect(record("decisions/D-0021.md")).toContain("Errors are logged by name everywhere in the application.");
     expect(read("scripts/digest.ts")).toContain('error instanceof Error ? error.name : "unknown error"');
     const fresh = await freshDatabase();
@@ -730,7 +734,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   }, 60_000);
 
   // RC11
-  it("DEFECT (LOW): the weekly email's route says OPTIONS 'is answered by the framework with the methods allowed', but the framework's list has HEAD ('Allow: GET, HEAD, OPTIONS, POST'), which the route now refuses with 405, and that 405's own Allow ('GET, POST') leaves out OPTIONS, which is answered: the two answers disagree about what the route allows (a variant of R8)", async () => {
+  it("fixed (LOW): the weekly email's route says OPTIONS 'is answered by the framework with the methods allowed', but the framework's list has HEAD ('Allow: GET, HEAD, OPTIONS, POST'), which the route now refuses with 405, and that 405's own Allow ('GET, POST') leaves out OPTIONS, which is answered: the two answers disagree about what the route allows (a variant of R8)", async () => {
     const methods = autoImplementMethods(cronRoute as unknown as Parameters<typeof autoImplementMethods>[0]);
     const ctx = { params: Promise.resolve({}) } as never;
     const options = (await methods.OPTIONS(new Request("http://localhost:3000/api/cron/weekly-digest", { method: "OPTIONS" }) as never, ctx)) as Response;
@@ -745,7 +749,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC12
-  it("DEFECT (LOW): R2's fix rests the gate on the production branch — 'a branch named release, which only a deploy moves' (D-0021 §J; M-0012 step 6) — a rule given no class (AGENTS.md §7) and no mechanism: nothing asks GitHub to keep anyone but the founder from moving release, and any push to it is a production build with the production settings, gated only by that commit's own code. As written it is DECLARED, and the records state it as a fact (a variant of R2)", () => {
+  it("fixed (LOW): R2's fix rests the gate on the production branch — 'a branch named release, which only a deploy moves' (D-0021 §J; M-0012 step 6) — a rule given no class (AGENTS.md §7) and no mechanism: nothing asks GitHub to keep anyone but the founder from moving release, and any push to it is a production build with the production settings, gated only by that commit's own code. As written it is DECLARED, and the records state it as a fact (a variant of R2)", () => {
     expect(readRoot("AGENTS.md")).toContain("Every rule in this repository declares how it is actually held");
     const d21J = between(record("decisions/D-0021.md"), "J. After the verification", "Prohibited under this decision");
     const m12 = record("mandates/M-0012.md");
@@ -760,7 +764,7 @@ describe("defects (each FAILS on aebde1d)", () => {
   });
 
   // RC13
-  it("DEFECT (LOW): H13's kind again — an adapted test's title says the opposite of what it checks: verify-m0018-release.test.ts's 'closed: apps/web/vercel.json holds only keys … the install command with the frozen lockfile …' now asserts that there is no install command (its comment says 'Changed after the verification of M-0018'), and the title is what a run and a receipt show (a variant of H13)", () => {
+  it("fixed (LOW): H13's kind again — an adapted test's title says the opposite of what it checks: verify-m0018-release.test.ts's 'closed: apps/web/vercel.json holds only keys … the install command with the frozen lockfile …' now asserts that there is no install command (its comment says 'Changed after the verification of M-0018'), and the title is what a run and a receipt show (a variant of H13)", () => {
     const source = read("tests/verify-m0018-release.test.ts");
     const at = source.indexOf('expect(Object.keys(config).sort()).toEqual(["$schema", "buildCommand", "crons", "framework", "regions"]);');
     expect(at).toBeGreaterThan(-1);
@@ -784,7 +788,10 @@ describe("closed: where it runs, off the deployed site (each passes on aebde1d)"
       { name: "a preview, an unknown region", vars: { VERCEL: "1", VERCEL_ENV: "preview", VERCEL_REGION: "hkg1" }, vercel: "region hkg1", neon: false },
       { name: "a preview with a Neon address", vars: { ...PREVIEW, DATABASE_URL: NEON_EU }, vercel: "Frankfurt, Germany (fra1)", neon: true },
       { name: "a local copy with a Neon address", vars: { DATABASE_URL: NEON_EU }, vercel: null, neon: true },
-      { name: "next start with a Neon address", vars: { NODE_ENV: "production", DATABASE_URL: NEON_EU }, vercel: null, neon: true },
+      // Changed after the re-check of M-0018 (RC1, RC3): off Vercel's
+      // deployments a server refuses a database on another machine, so
+      // `next start` with a Neon address names none.
+      { name: "next start with a Neon address", vars: { NODE_ENV: "production", DATABASE_URL: NEON_EU }, vercel: null, neon: false },
       { name: "no VERCEL variables", vars: {}, vercel: null, neon: false },
       { name: "VERCEL=1 alone", vars: { VERCEL: "1" }, vercel: null, neon: false },
       { name: "VERCEL_ENV=preview without VERCEL=1", vars: { VERCEL_ENV: "preview", VERCEL_REGION: "fra1" }, vercel: null, neon: false },
@@ -802,15 +809,19 @@ describe("closed: where it runs, off the deployed site (each passes on aebde1d)"
         const row = hostingRow();
         expect(privacy, where).toContain("This copy of our.one isn't the deployed site. This notice describes what our.one keeps when it runs.");
         expect(row.who, where).toContain("isn't the deployed site");
+        // Changed after the re-check of M-0018 (RC1, RC3): a server off
+        // Vercel's deployments refuses a database elsewhere, so a copy run in
+        // production mode there (here with Resend's settings) names none.
+        const neon = s.neon && (s.vars.VERCEL === "1" || process.env.NODE_ENV !== "production");
         for (const text of [line, row.who]) {
           expect(text.includes("Vercel runs"), where).toBe(s.vercel !== null);
-          expect(text.includes(NEON_WORDS), where).toBe(s.neon);
+          expect(text.includes(NEON_WORDS), where).toBe(neon);
           if (s.vercel) expect(text, where).toContain(`as a preview, in ${s.vercel}`);
           if (s.vercel === "") expect(text, where).toMatch(/as a preview[.:]/);
-          expect(/\bnone\b/i.test(text), where).toBe(s.vercel === null && !s.neon);
+          expect(/\bnone\b/i.test(text), where).toBe(s.vercel === null && !neon);
         }
-        if (s.vercel !== null || s.neon) {
-          expect(line, where).toMatch(s.vercel !== null && s.neon ? /\. Both as stated in this server's configuration\.$/ : /\. As stated in this server's configuration\.$/);
+        if (s.vercel !== null || neon) {
+          expect(line, where).toMatch(s.vercel !== null && neon ? /\. Both as stated in this server's configuration\.$/ : /\. As stated in this server's configuration\.$/);
           expect(row, where).toMatchObject({ status: "STATED", statedBy: "configuration" });
         } else {
           expect(line, where).toBe(HOSTING_FILE);
@@ -850,7 +861,8 @@ describe("closed: where it runs, off the deployed site (each passes on aebde1d)"
           for (const part of ADDRESS_PARTS) expect(html.toLowerCase().includes(part.toLowerCase()), `${part}: ${where}`).toBe(false);
         }
         // The region's words, where the server would use the database (development is RC3's).
-        if (vars.NODE_ENV === "development" || vars.VERCEL_ENV === "development") continue;
+        // Changed after the re-check of M-0018 (RC1): `next start` off Vercel refuses it too.
+        if (vars.NODE_ENV === "development" || vars.NODE_ENV === "production" || vars.VERCEL_ENV === "development") continue;
         const row = hostingRow().who;
         if (a.region === false) expect(row, where).not.toContain("Neon");
         else if (a.region === null) expect(row, where).toMatch(/Neon keeps its database\./);
@@ -902,7 +914,9 @@ describe("closed: the release and the database (each passes on aebde1d)", () => 
     try {
       const outcome = await runRelease({ DATABASE_URL: pgAddress(FICT_USERINFO, `0.0.0.0:${forRelease.port}`, "/neondb?sslmode=disable") });
       expect(outcome).toEqual({ ok: false, lines: ["Release step: the migrations failed: the database doesn't offer TLS, which the release requires."] });
-      setEnv({ NODE_ENV: "production", DATABASE_URL: pgAddress(FICT_USERINFO, `0.0.0.0:${forSite.port}`, "/neondb?sslmode=disable") });
+      // Changed after the re-check of M-0018 (RC1): the site is the deployed
+      // one, on Vercel; off it, a server refuses a database elsewhere first.
+      setEnv({ ...PRODUCTION, NODE_ENV: "production", DATABASE_URL: pgAddress(FICT_USERINFO, `0.0.0.0:${forSite.port}`, "/neondb?sslmode=disable") });
       await getDb()
         .execute(sql`select 1`)
         .catch(() => undefined);

@@ -8,10 +8,10 @@
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { config } from "dotenv";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { readMigrationFiles } from "drizzle-orm/migrator";
 import pg from "pg";
 import { connectionOptions, isLocal } from "../src/core/db";
+import { describeError } from "../src/core/db-errors";
 
 export const MIGRATIONS_FOLDER = fileURLToPath(
   new URL("../drizzle", import.meta.url),
@@ -19,34 +19,51 @@ export const MIGRATIONS_FOLDER = fileURLToPath(
 
 /**
  * Apply every pending migration to the database at `url`, with the site's
- * TLS rule (`connectionOptions`), one run at a time: a session-wide lock is
- * held while they run, so a second run waits, then finds nothing to do (the
- * verification of M-0018). Ending the session releases the lock.
+ * TLS rule (`connectionOptions(url)`), one run at a time.
+ *
+ * Everything happens on one connection, in one transaction, under a lock
+ * that belongs to the transaction (`pg_advisory_xact_lock`): a second run
+ * waits, then finds nothing to do, and the lock ends with the transaction,
+ * even through a pooler that hands each transaction to a different server
+ * connection (the re-check of M-0018, RC5). A failure rolls back all of it,
+ * the bookkeeping table included. The connection's errors reach the caller
+ * as a rejected query, never as an unhandled event (RC6).
+ *
+ * The bookkeeping is drizzle's, so `drizzle-kit` and earlier databases
+ * agree: the table drizzle.__drizzle_migrations, a migration applied when
+ * its folder time is later than the last one recorded, its statements
+ * split at drizzle's breakpoints.
  */
 export async function migrateUrl(url: string): Promise<void> {
-  const options = connectionOptions(url);
-  const lock = new pg.Client(options);
-  await lock.connect();
+  const migrations = readMigrationFiles({ migrationsFolder: MIGRATIONS_FOLDER });
+  const client = new pg.Client(connectionOptions(url));
+  client.on("error", () => undefined);
+  await client.connect();
   try {
-    await lock.query("select pg_advisory_lock(hashtextextended('ours:migrations', 0))");
-    const pool = new pg.Pool({ ...options, max: 1 });
-    try {
-      await migrate(drizzle(pool), { migrationsFolder: MIGRATIONS_FOLDER });
-    } finally {
-      await pool.end();
+    await client.query("begin");
+    await client.query("select pg_advisory_xact_lock(hashtextextended('ours:migrations', 0))");
+    await client.query('create schema if not exists "drizzle"');
+    await client.query(
+      'create table if not exists "drizzle"."__drizzle_migrations" (id serial primary key, hash text not null, created_at bigint)',
+    );
+    const { rows } = await client.query<{ created_at: string | null }>(
+      'select created_at from "drizzle"."__drizzle_migrations" order by created_at desc limit 1',
+    );
+    const last = rows[0]?.created_at == null ? null : Number(rows[0].created_at);
+    for (const migration of migrations) {
+      if (last !== null && last >= migration.folderMillis) continue;
+      for (const statement of migration.sql) await client.query(statement);
+      await client.query('insert into "drizzle"."__drizzle_migrations" ("hash", "created_at") values ($1, $2)', [
+        migration.hash,
+        migration.folderMillis,
+      ]);
     }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => undefined);
+    throw error;
   } finally {
-    await lock.end();
-  }
-}
-
-function redact(url: string): string {
-  try {
-    const u = new URL(url);
-    if (u.password) u.password = "***";
-    return u.toString();
-  } catch {
-    return "(unparseable DATABASE_URL)";
+    await client.end().catch(() => undefined);
   }
 }
 
@@ -64,7 +81,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   await migrateUrl(url);
-  console.log(`Migrations applied to ${redact(url)}`);
+  // No address: the log names nothing of the database (the re-check of M-0018, RC10).
+  console.log("Migrations applied.");
 }
 
 const invokedDirectly =
@@ -73,7 +91,8 @@ const invokedDirectly =
 
 if (invokedDirectly) {
   main().catch((error: unknown) => {
-    console.error("Migration failed:", error instanceof Error ? error.message : error);
+    // What it means and its code, never its message (the re-check of M-0018, RC10).
+    console.error(`Migration failed: ${describeError(error)}`);
     process.exit(1);
   });
 }

@@ -456,7 +456,9 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
     expect(methods.POST).toBe(cronPOST);
     const options = (await methods.OPTIONS(new Request(URL_CRON, { method: "OPTIONS" }) as never, { params: Promise.resolve({}) } as never)) as Response;
     expect(options.status).toBe(204);
-    expect(options.headers.get("allow")).toBe("GET, HEAD, OPTIONS, POST");
+    // Changed after the re-check of M-0018 (RC11): the route answers OPTIONS
+    // itself, listing what it allows; HEAD isn't among them.
+    expect(options.headers.get("allow")).toBe("GET, POST, OPTIONS");
     // The defect: HEAD runs GET (and so the weekly email), while the route's comment says any other method is refused.
     const source = prose(read("src/app/api/cron/weekly-digest/route.ts"));
     expect({ headRunsGet: methods.HEAD === cronGET, commentSaysRefused: source.includes("any other method is refused by the framework") }).not.toEqual({
@@ -681,8 +683,9 @@ describe("closed: the release itself (each passes on d26556a)", () => {
         ok: false,
         lines: ["Release step: the migrations failed: something the migrations create exists already (42P07)."],
       });
-      expect(await tablesIn(fresh.url)).toEqual(["drizzle.__drizzle_migrations", "public.accounts"]);
-      expect(await query(fresh.url, "select count(*)::int as n from drizzle.__drizzle_migrations")).toEqual([{ n: 0 }]);
+      // Changed after the re-check of M-0018 (RC5): the migrations and their
+      // bookkeeping table share one transaction, so a failure leaves nothing.
+      expect(await tablesIn(fresh.url)).toEqual(["public.accounts"]);
     } finally {
       await fresh.drop();
     }
@@ -766,7 +769,7 @@ describe("closed: the founder script after the refactor (passes on d26556a)", ()
 });
 
 describe("closed: how Vercel builds it (each passes on d26556a)", () => {
-  it("closed: apps/web/vercel.json holds only keys Vercel's schema has — framework nextjs, the install command with the frozen lockfile, the build command, one region (fra1) and one cron — and the cron is valid: five fields, minute 0, hour 8, any day of the month, any month, day of the week 1 (Monday), on a path whose route exports GET; the root vercel.json, unchanged by the build, builds only the oursorg.com page (pnpm proof into apps/proof/dist) and isn't read for a project whose root directory is apps/web, which M-0012 tells the founder to set, with no overrides", () => {
+  it("closed: apps/web/vercel.json holds only keys Vercel's schema has — framework nextjs, no install command (Vercel picks pnpm from the lockfile; retitled after the re-check, RC13), the build command, one region (fra1) and one cron — and the cron is valid: five fields, minute 0, hour 8, any day of the month, any month, day of the week 1 (Monday), on a path whose route exports GET; the root vercel.json, unchanged by the build, builds only the oursorg.com page (pnpm proof into apps/proof/dist) and isn't read for a project whose root directory is apps/web, which M-0012 tells the founder to set, with no overrides", () => {
     const config = JSON.parse(read("vercel.json")) as Record<string, unknown>;
     // Changed after the verification of M-0018 (this file's own note on the
     // install override): no install command, so Vercel picks pnpm from the

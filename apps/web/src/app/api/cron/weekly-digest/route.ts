@@ -8,8 +8,9 @@
  * CRON_SECRET as that header (D-0021 §E; apps/web/vercel.json schedules it
  * on Mondays at 08:00 UTC); a person or a script can POST. Both methods are
  * the same handler. HEAD, which Next.js would answer by running GET, is
- * refused here; OPTIONS is answered by the framework with the methods
- * allowed, and runs nothing (the verification of M-0018). The answer
+ * refused here (the verification of M-0018); OPTIONS lists GET, POST and
+ * OPTIONS, and runs nothing, and HEAD's refusal lists the same (its
+ * re-check, RC11). The answer
  * carries counts, never a message from an error. A second call in the same
  * week sends nothing new: each person gets at most one a week.
  */
@@ -50,7 +51,15 @@ export async function POST(request: Request): Promise<Response> {
 /** Vercel's scheduler calls with GET (D-0021 §E): the same handler, the same secret. */
 export const GET = POST;
 
+/** The methods this route allows; OPTIONS and HEAD's refusal say the same. */
+const ALLOW = "GET, POST, OPTIONS";
+
 /** HEAD runs nothing: without it, Next.js would answer HEAD by running GET. */
 export function HEAD(): Response {
-  return new Response(null, { status: 405, headers: { Allow: "GET, POST", ...NO_STORE } });
+  return new Response(null, { status: 405, headers: { Allow: ALLOW, ...NO_STORE } });
+}
+
+/** OPTIONS runs nothing, and lists what the route allows. */
+export function OPTIONS(): Response {
+  return new Response(null, { status: 204, headers: { Allow: ALLOW, ...NO_STORE } });
 }

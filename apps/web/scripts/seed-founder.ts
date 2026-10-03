@@ -28,6 +28,7 @@ import { config } from "dotenv";
 import { createEmailToken } from "../src/core/auth";
 import { accountCreationOpen, appUrl, DEFAULT_INVITES } from "../src/core/config";
 import { closeDb, getDb, isLocal } from "../src/core/db";
+import { describeError } from "../src/core/db-errors";
 import { isCoreError } from "../src/core/errors";
 import { createFirstAccount } from "../src/core/founder";
 import { normEmail, validDisplayName, validHandle } from "../src/core/validate";
@@ -113,7 +114,8 @@ async function main(): Promise<void> {
 
 main()
   .catch((error: unknown) => {
-    console.error("seed:founder failed:", error instanceof Error ? error.message : error);
+    // What it means and its code, never its message (the re-check of M-0018, RC10).
+    console.error(`seed:founder failed: ${describeError(error)}`);
     process.exitCode = 1;
   })
   .finally(() => closeDb());

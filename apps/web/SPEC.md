@@ -2801,3 +2801,32 @@ as a bearer token. `apps/web/vercel.json` schedules it at `0 8 * * 1`
 - **The claims scan** catches a deployment status (*"our.one is live."*,
   *"Nothing is deployed."*) and lets a condition through (*"once our.one is
   deployed"*).
+
+**After the re-check** (one agent, 13 findings, each fixed; the receipt
+has them):
+
+- **Off Vercel's deployments, a database on this machine only:**
+  `getDb()` refuses any other unless the server runs on Vercel (production
+  or a preview) or under test. That covers `next start` and `vercel dev`,
+  not only `next dev` (`remoteDatabaseAllowed` in `src/core/hosting.ts`).
+  The pages name no database the server would refuse.
+- **The release gate's branch, `release`, is DECLARED:** nothing technical
+  stops a push to it (D-0021 §K).
+- **The migrations** run on one connection, in one transaction, under
+  `pg_advisory_xact_lock`. The lock ends with the transaction, even
+  through a pooler. A failure rolls back everything, the bookkeeping table
+  included. The connection's errors reach the caller as a rejected query.
+  The bookkeeping stays drizzle's own.
+- **The address can't change the rule:** a `host` parameter counts as the
+  host, and every TLS parameter (`ssl`, `sslcert` and the others, as well
+  as `sslmode` and `channel_binding`) is taken out before pg reads it.
+- **The local scripts** print a database error's meaning and code
+  (`src/core/db-errors.ts`); `db:migrate` says "Migrations applied." with
+  no address.
+- **The claims scan** reads `apps/web/README.md` and the root README, and
+  its status rule catches "Not deployed yet.", "our.one isn't live yet.",
+  "It's not deployed yet." and "our.one has been deployed."
+- **The weekly email's route** answers OPTIONS itself; it and HEAD's
+  refusal list "GET, POST, OPTIONS".
+- **`/privacy`:** Neon keeps "everything this notice says is kept on
+  our.one", not an emailed proposal's mailbox.

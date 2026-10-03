@@ -146,7 +146,8 @@ describe("the pages, as a copy that isn't the deployed site", () => {
     vi.unstubAllEnvs();
     vi.stubEnv("DATABASE_URL", NEON_URL);
     expect(page(PrivacyPage)).toContain(
-      `Hosting ${NOT_DEPLOYED} Neon keeps its database, in Frankfurt, Germany (eu-central-1): everything this notice says is kept is stored there. As stated in this server's configuration.`,
+      // Changed after the re-check of M-0018 (RC4): what is kept on our.one.
+      `Hosting ${NOT_DEPLOYED} Neon keeps its database, in Frankfurt, Germany (eu-central-1): everything this notice says is kept on our.one is stored there. As stated in this server's configuration.`,
     );
   });
 });
@@ -182,7 +183,8 @@ describe("the pages, on Vercel's production deployment (imitated)", () => {
     expect(privacy).toContain(
       // Changed after the verification of M-0018 (H11): Neon keeps everything
       // this notice says is kept, the seat requests below the table included.
-      "Hosting Vercel runs our.one's server, in Frankfurt, Germany (fra1): every request to the site passes through it, with your IP address. Neon keeps our.one's database, in Frankfurt, Germany (eu-central-1): everything this notice says is kept is stored there. Both as stated in this server's configuration.",
+      // Changed after the re-check of M-0018 (RC4): what is kept on our.one.
+      "Hosting Vercel runs our.one's server, in Frankfurt, Germany (fra1): every request to the site passes through it, with your IP address. Neon keeps our.one's database, in Frankfurt, Germany (eu-central-1): everything this notice says is kept on our.one is stored there. Both as stated in this server's configuration.",
     );
   });
 

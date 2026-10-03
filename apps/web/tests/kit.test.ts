@@ -973,7 +973,18 @@ describe("/build (SPEC §18.18)", () => {
 describe("the claims scan reads the kit's text (D-0019 §G)", () => {
   it("finds nothing in the kit, the feed's manifest or its rules block", () => {
     const { files, hits } = scanKitText(WEB_ROOT);
-    expect(files).toEqual(["our.one.json", "AGENTS.md", "../../kit/build.md", "../../kit/README.md", "../../kit/our-one.mjs", "../../kit/our.one.schema.json"]);
+    // Changed after the re-check of M-0018 (RC9): the two READMEs a visitor
+    // from our.one reads are scanned too.
+    expect(files).toEqual([
+      "our.one.json",
+      "AGENTS.md",
+      "../../kit/build.md",
+      "../../kit/README.md",
+      "../../kit/our-one.mjs",
+      "../../kit/our.one.schema.json",
+      "README.md",
+      "../../README.md",
+    ]);
     expect(hits.map(formatHit)).toEqual([]);
   });
 

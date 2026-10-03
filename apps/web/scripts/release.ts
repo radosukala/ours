@@ -35,6 +35,7 @@ import { pathToFileURL } from "node:url";
 import { accountCreationOpen, DEFAULT_INVITES } from "../src/core/config";
 import { closeDb, type Db, getDb } from "../src/core/db";
 import { isCoreError } from "../src/core/errors";
+import { describeError } from "../src/core/db-errors";
 import { createFirstAccount } from "../src/core/founder";
 import type { Env } from "../src/core/hosting";
 import { normEmail, validDisplayName, validHandle } from "../src/core/validate";
@@ -69,49 +70,7 @@ export function releaseGate(env: Env): ReleaseGate {
   return { run: true };
 }
 
-/** What a database error means, by its code, in words that name nothing of the address. */
-const ERROR_WORDS: Readonly<Record<string, string>> = {
-  "28P01": "the database refused the password",
-  "28000": "the database refused the user",
-  "3D000": "the database the address names doesn't exist",
-  "42P07": "something the migrations create exists already",
-  "42710": "something the migrations create exists already",
-  "23505": "a row the release adds exists already",
-  ECONNREFUSED: "the database refused the connection",
-  ECONNRESET: "the database closed the connection",
-  ENOTFOUND: "the database's host wasn't found",
-  EAI_AGAIN: "the database's host couldn't be looked up",
-  ETIMEDOUT: "the connection to the database timed out",
-};
-
-/** pg's own words for a server without TLS, which the release requires: they name nothing of the address. */
-const NO_TLS = "The server does not support SSL connections";
-
-/** The first code on an error, its cause, or the errors it gathers (a host with several addresses). */
-function codeOf(error: unknown, depth = 0): string | null {
-  if (depth > 4 || typeof error !== "object" || error === null) return null;
-  const code = (error as { code?: unknown }).code;
-  if (typeof code === "string" && /^[A-Z0-9_]{2,20}$/.test(code)) return code;
-  const nested = [(error as { cause?: unknown }).cause, ...(((error as { errors?: unknown }).errors as unknown[]) ?? [])];
-  for (const inner of nested) {
-    const found = codeOf(inner, depth + 1);
-    if (found) return found;
-  }
-  return null;
-}
-
-/**
- * A database error in the build log: what it means and its code, never its
- * message, which can name the database, a user or a host (the verification
- * of M-0018).
- */
-export function describeError(error: unknown): string {
-  const code = codeOf(error);
-  if (code) return ERROR_WORDS[code] ? `${ERROR_WORDS[code]} (${code}).` : `error code ${code}.`;
-  const messages = [error, (error as { cause?: unknown } | null)?.cause].map((e) => (e instanceof Error ? e.message : ""));
-  if (messages.some((m) => m.startsWith(NO_TLS))) return "the database doesn't offer TLS, which the release requires.";
-  return `${error instanceof Error ? error.name : "an error"}, with no code.`;
-}
+export { describeError } from "../src/core/db-errors";
 
 export type ReleaseOutcome =
   | { ok: true; lines: string[] }

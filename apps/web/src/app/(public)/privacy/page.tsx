@@ -156,8 +156,12 @@ function emailProvider(): string {
 
 const where_ = (region: Region | null) => (region ? `, in ${regionWords(region)}` : "");
 
-/** What Neon receives: everything this notice says is kept, the seat requests included (the verification of M-0018). */
-const NEON_KEEPS = "everything this notice says is kept is stored there.";
+/**
+ * What Neon receives: everything this notice says is kept on our.one, the
+ * seat requests included (the verification of M-0018), and not what an
+ * emailed proposal leaves in a mailbox (its re-check, RC4).
+ */
+const NEON_KEEPS = "everything this notice says is kept on our.one is stored there.";
 
 /**
  * Who hosts the site and keeps the database, from where this server runs

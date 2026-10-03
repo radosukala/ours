@@ -225,12 +225,17 @@ const SAMPLES: Record<string, string[]> = {
     "She gives it away.",
   ],
   // The verification of M-0018: a deployment status, which turns at the deploy.
-  [sourceOf("nothing is (?:yet )?deployed")]: [
+  [sourceOf("nothing (?:is|has been) (?:yet )?deployed")]: [
     "our.one is deployed.",
     "our.one is live.",
     "Nothing is deployed.",
     "our.one is not deployed yet.",
     "The site isn't deployed.",
+    // The re-check of M-0018 (RC8).
+    "Not deployed yet.",
+    "our.one isn't live yet.",
+    "It's not deployed yet.",
+    "our.one has been deployed.",
   ],
 };
 
