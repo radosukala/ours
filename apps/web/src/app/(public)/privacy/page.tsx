@@ -50,7 +50,7 @@ import {
   PENDING_JOIN_TTL_MINUTES,
   SESSION_TTL_DAYS,
 } from "@/core/config";
-import { ADMINISTRATOR_RULE, type Hosting, hosting, NOT_DEPLOYED, regionWords } from "@/core/hosting";
+import { ADMINISTRATOR_RULE, type Hosting, hosting, NOT_DEPLOYED, type Region, regionWords } from "@/core/hosting";
 import { EMAIL_PROVIDER_WORDS, emailSending, HOSTING_FILE } from "@/core/transparency";
 
 export const dynamic = "force-dynamic";
@@ -154,21 +154,36 @@ function emailProvider(): string {
   return EMAIL_PROVIDER_WORDS[emailSending()];
 }
 
+const where_ = (region: Region | null) => (region ? `, in ${regionWords(region)}` : "");
+
+/** What Neon receives: everything this notice says is kept, the seat requests included (the verification of M-0018). */
+const NEON_KEEPS = "everything this notice says is kept is stored there.";
+
 /**
  * Who hosts the site and keeps the database, from where this server runs
- * (D-0021 §C), the same source as /power's hosting row.
+ * (D-0021 §C), the same source as /power's hosting row. A copy that isn't
+ * the deployed site still names Vercel on a preview, and Neon when its
+ * database is Neon's; it says "None" only when neither is true.
  */
 function hostingWords(where: Hosting): string {
-  if (!where.deployed) return HOSTING_FILE;
-  const server = where.region
-    ? `Vercel runs our.one's server, in ${regionWords(where.region)}: every request to the site passes through it, with your IP address.`
-    : "Vercel runs our.one's server: every request to the site passes through it, with your IP address.";
-  const database = where.database
-    ? where.database.region
-      ? `Neon keeps our.one's database, in ${regionWords(where.database.region)}: everything in the table above is stored there.`
-      : "Neon keeps our.one's database: everything in the table above is stored there."
-    : "This server's configuration doesn't name its database's provider.";
-  return `${server} ${database} Both as stated in this server's configuration.`;
+  const named: string[] = [];
+  if (where.deployed) {
+    named.push(`Vercel runs our.one's server${where_(where.region)}: every request to the site passes through it, with your IP address.`);
+    named.push(
+      where.database
+        ? `Neon keeps our.one's database${where_(where.database.region)}: ${NEON_KEEPS}`
+        : "This server's configuration doesn't name its database's provider.",
+    );
+  } else {
+    if (where.vercel) {
+      named.push(`Vercel runs this copy, as a preview${where_(where.vercel.region)}: every request to it passes through Vercel, with your IP address.`);
+    }
+    if (where.database) named.push(`Neon keeps its database${where_(where.database.region)}: ${NEON_KEEPS}`);
+    if (named.length === 0) return HOSTING_FILE;
+    named.unshift(NOT_DEPLOYED);
+  }
+  const both = (where.deployed || where.vercel) && where.database;
+  return `${named.join(" ")} ${both ? "Both as stated" : "As stated"} in this server's configuration.`;
 }
 
 export default function PrivacyPage() {

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
-  "description": "OURS web: a home for friends and the people you choose to follow. Built under M-0010; nothing is deployed.",
+  "description": "OURS web: our.one's site, and the feed, a home for friends and the people you choose to follow.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

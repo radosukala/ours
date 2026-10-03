@@ -3,9 +3,9 @@
 > **Coming from our.one?** This is its code and its records, in one public
 > repository.
 >
-> - **our.one** is a friends feed, and the first project of a network its
->   founder is starting, to bring people and builders together to create
->   services their users can control. Today the founder decides, under
+> - **our.one** is a network its founder is starting, to bring people and
+>   builders together to create services their users can control. Its
+>   first project is a friends feed. Today the founder decides, under
 >   bootstrap authority. The common agreement those services would sign is
 >   a draft, and no member ownership has been issued.
 > - **The site and the feed:** [`apps/web`](./apps/web). Whether it is
@@ -22,7 +22,9 @@
 >   The receipts cite its commits, so anyone can check how each change was
 >   made.
 >
-> The rest of this page is about OURS, the institution behind it.
+> The rest of this page is about OURS: the working name of this repository
+> and its records, and of the member institution they describe, which
+> isn't formed yet.
 
 **The enduring institution people belong to.** `oursorg.com` · communities'
 tools at `our.one`

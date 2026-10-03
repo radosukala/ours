@@ -22,7 +22,7 @@ import { count, getTableName, is, sql } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import { createEmailToken } from "../src/core/auth";
 import { accountCreationOpen, appUrl } from "../src/core/config";
-import { closeDb, getDb } from "../src/core/db";
+import { closeDb, getDb, isLocal } from "../src/core/db";
 import { newId, randomToken, sha256 } from "../src/core/ids";
 import * as schema from "../src/core/schema";
 import {
@@ -52,7 +52,7 @@ type Person = {
 };
 
 const PEOPLE: Person[] = [
-  { key: "ada", handle: "ada_quillon", name: "Ada Quillon", about: "Runs the allotment rota. Tea over coffee.", acceptsFollowers: true, isAdmin: true },
+  { key: "ada", handle: "ada_quillon", name: "Ada Quillon", about: "Stands in for the founder in this FICTIONAL copy. Runs the allotment rota.", acceptsFollowers: true, isAdmin: true },
   { key: "bruno", handle: "bruno_varnell", name: "Bruno Varnell", about: "Bikes, bread, bad puns.", invitedBy: "ada" },
   { key: "cleo", handle: "cleo_marsh", name: "Cleo Marsh", about: "Night shifts and early birds.", invitedBy: "ada" },
   { key: "devika", handle: "devika_r", name: "Devika Rennard", about: "Choir on Thursdays.", invitedBy: "cleo" },
@@ -131,6 +131,9 @@ async function main(): Promise<void> {
 
   const url = process.env.DATABASE_URL?.trim();
   if (!url) fail("DATABASE_URL is not set. See .env.example.");
+  // A local script uses only a database on this machine (D-0021 §F; the
+  // verification of M-0018).
+  if (!isLocal(url)) fail("Refused: this script runs only against a database on this machine (D-0021 §F).");
   if (!isLocalUrl(url) || process.env.NODE_ENV === "production") {
     fail("Refused: FICTIONAL seed data goes only into a database on this machine.");
   }

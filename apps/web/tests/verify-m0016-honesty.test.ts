@@ -505,7 +505,10 @@ describe("defects (each FAILS on a92bbb5)", () => {
   it("fixed (LOW): kit/README.md, in the public repository, gives the one line for an agent and says the files are 'Served at' /build.md and /kit/…, with no status; nothing is deployed (M-0016; M-0012 is a draft), so today the line points at a page our.one doesn't serve, and AGENTS.md §6 asks every public statement to carry its state, as apps/web's own package says 'nothing is deployed'", () => {
     expect(record("mandates/M-0016.md")).toContain("Nothing is deployed.");
     expect(record("mandates/M-0012.md")).toContain("Status: DRAFT");
-    expect(read("package.json")).toContain("nothing is deployed");
+    // Changed after the verification of M-0018 (H2): package.json's
+    // description no longer carries a deployment status, which turns at the
+    // deploy; the kit README's status below is what this test is about.
+    expect(read("package.json")).not.toContain("nothing is deployed");
     const readme = kitText("README.md");
     if (/Served at|https:\/\/our\.one\/build\.md/.test(readme)) {
       expect(readme).toMatch(/\bnot (?:yet )?deployed\b|\bonce our\.one is deployed\b|\bisn't deployed\b|\buntil\b[^.]*\bdeploy/i);

@@ -50,7 +50,7 @@ export default function PowerPage() {
         <ControlList rows={result.rows} />
       )}
 
-      <p>This page changes when control changes. Every change is a commit in the our.one records, published with each release.</p>
+      <p>This page changes when control changes. The rows stated in this server&apos;s configuration come from its settings, and change with them; every other change is a commit in the our.one records, published with each release.</p>
       <p className={styles.meta}>
         The list is a file in the our.one records, published with each
         release:{" "}

@@ -224,6 +224,14 @@ const SAMPLES: Record<string, string[]> = {
     "I handed our.one over to its members.",
     "She gives it away.",
   ],
+  // The verification of M-0018: a deployment status, which turns at the deploy.
+  [sourceOf("nothing is (?:yet )?deployed")]: [
+    "our.one is deployed.",
+    "our.one is live.",
+    "Nothing is deployed.",
+    "our.one is not deployed yet.",
+    "The site isn't deployed.",
+  ],
 };
 
 describe("each prohibited pattern is caught", () => {

@@ -846,7 +846,8 @@ export async function suspendAccount(
       // The decision is recorded; only the message failed to be written.
       console.error(
         "[ours] the suspension notice could not be sent:",
-        error instanceof Error ? error.message : error,
+        // Never the message: it can carry an address (the verification of M-0018).
+        error instanceof Error ? error.name : "unknown error",
       );
     }
   }

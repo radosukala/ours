@@ -87,7 +87,8 @@ async function sendThroughResend(input: MailInput): Promise<MailResult> {
   } catch (error) {
     console.error(
       "[ours] sending through resend failed:",
-      error instanceof Error ? error.message : error,
+      // Never the message: it can carry an address (the verification of M-0018).
+      error instanceof Error ? error.name : "unknown error",
     );
     return { ok: false, errorCode: "resend_exception" };
   }

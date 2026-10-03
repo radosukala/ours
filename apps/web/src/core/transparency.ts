@@ -39,7 +39,7 @@ import {
   mailTransport,
   resendSettings,
 } from "./config";
-import { type Hosting, hosting as currentHosting, NOT_DEPLOYED, runsOnWords } from "./hosting";
+import { copyRunsOnWords, type Hosting, hosting as currentHosting, NOT_DEPLOYED, runsOnWords } from "./hosting";
 import controlFile from "../../transparency/control.json";
 import ledgerFile from "../../transparency/ledger.json";
 
@@ -487,6 +487,12 @@ export const HOSTING_ASSET = "Hosting, database, email sending";
  */
 export const HOSTING_FILE = "None: this copy of our.one isn't the deployed site.";
 
+/** The record that says the hosting accounts are the founder's (the verification of M-0018). */
+const ACCOUNTS_RECORD: Evidence = {
+  path: "decisions/D-0013.md",
+  label: "Decision D-0013 §D: Vercel, Neon and Resend, all three the founder's accounts",
+};
+
 /** What this server does with email, as the hosting row's last sentence. */
 const EMAIL_SENTENCE: Readonly<Record<EmailSending, string>> = {
   outbox: "This server sends no email: each message is written to a test outbox instead.",
@@ -499,7 +505,12 @@ const EMAIL_SENTENCE: Readonly<Record<EmailSending, string>> = {
  *
  * - on Vercel's production deployment: what runs it, from the platform and
  *   the database's host (`runsOnWords`), what it does with email, and whose
- *   accounts they are; STATED, as "stated in this server's configuration";
+ *   accounts they are; STATED, as "stated in this server's configuration",
+ *   with D-0013 §D, the record that says the accounts are the founder's;
+ * - anywhere else, when the copy runs on Vercel (a preview) or keeps its
+ *   database at Neon: that it isn't the deployed site, what it runs on
+ *   (`copyRunsOnWords`) and what it does with email; STATED, as the
+ *   configuration's (the verification of M-0018);
  * - anywhere else: the file's record that this copy isn't the deployed
  *   site, with what it does with email; RECORDED, except that a copy which
  *   sends through Resend says so as stated in its configuration, because no
@@ -523,10 +534,19 @@ export function withHosting(rows: ControlRow[], sending: EmailSending, where: Ho
     );
   }
   let shown: ControlRow;
+  const copyRunsOn = where.deployed ? null : copyRunsOnWords(where);
   if (where.deployed) {
     shown = {
       ...fileRow,
       who: `${runsOnWords(where)} ${EMAIL_SENTENCE[sending]} The accounts are the founder's.`,
+      status: "STATED",
+      statedBy: "configuration",
+      evidence: [...(fileRow.evidence ?? []), ACCOUNTS_RECORD],
+    };
+  } else if (copyRunsOn) {
+    shown = {
+      ...fileRow,
+      who: `${NOT_DEPLOYED} ${copyRunsOn} ${EMAIL_SENTENCE[sending]}`,
       status: "STATED",
       statedBy: "configuration",
     };

@@ -44,7 +44,9 @@ export async function run<T extends object = object>(
     if (isCoreError(error)) {
       return { ok: false, error: error.message };
     }
-    console.error("[ours] action failed:", error);
+    // Never the message or the whole error: a database error can carry a
+    // person's address or the database's host (the verification of M-0018).
+    console.error("[ours] action failed:", error instanceof Error ? error.name : "unknown error");
     return { ok: false, error: GENERIC_ERROR };
   }
 }
@@ -72,7 +74,8 @@ export function afterResponse(task: () => Promise<void>): void | Promise<void> {
     try {
       await task();
     } catch (error) {
-      console.error("[ours] work after the response failed:", error);
+      // Never the message: it can carry an address (the verification of M-0018).
+      console.error("[ours] work after the response failed:", error instanceof Error ? error.name : "unknown error");
     }
   };
   try {

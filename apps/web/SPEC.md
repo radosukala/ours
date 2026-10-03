@@ -2735,6 +2735,9 @@ vercel-build`, which is `tsx scripts/release.ts && next build`):
   names in `OURS_RELEASE`**: 7 to 40 hexadecimal characters that begin the
   build's `VERCEL_GIT_COMMIT_SHA`. Any other build does nothing, and its
   log says why.
+- **How that is held** (AGENTS.md §7): ENFORCED by this script, in the
+  commit being built, so only as strong as the care over what reaches the
+  production branch (see *After the verification*).
 - **Without `DATABASE_URL` it fails the build.** With it, it applies the
   migrations.
 - **Then the founder's account,** from `FOUNDER_EMAIL`, `FOUNDER_HANDLE`
@@ -2754,3 +2757,47 @@ vercel-build`, which is `tsx scripts/release.ts && next build`):
 secret, because Vercel's scheduler calls with GET and sends `CRON_SECRET`
 as a bearer token. `apps/web/vercel.json` schedules it at `0 8 * * 1`
 (Mondays, 08:00 UTC) and sets the functions' region, `fra1`.
+
+**After the verification** (two verifiers, 21 findings; the receipt is
+`receipts/conformance/2026-10-03-M-0018.verification.md`):
+
+- **How the release gate is held** (AGENTS.md §7): **ENFORCED** by
+  `scripts/release.ts` in the commit being built. A commit can change that
+  code, and Vercel gives a production build the production settings, so the
+  gate is as strong as the care over what reaches the production branch.
+  M-0012 therefore has the founder build production from a `release`
+  branch, which only a deploy moves; routine pushes to `main` become
+  previews, which hold no production setting.
+- **The settings are checked before the database is touched:** a release
+  that fails on the founder's settings, or on a missing data controller,
+  leaves the database as it was.
+- **The migrations run one at a time,** under a session-wide lock, so two
+  releases at once both pass.
+- **One TLS rule for the site, the migrations and the release**
+  (`connectionOptions` in `src/core/db.ts`): TLS with the certificate
+  checked for any host but this machine, and for this machine when the
+  address asks for it. The address's `sslmode` and `channel_binding` are
+  said to pg directly, so pg writes no warning into the log.
+- **A database error in the log** is what it means and its code
+  (*"the database refused the password (28P01)."*), never its message.
+- **A local run never reaches a remote database:** `seed:founder`,
+  `seed:fictional`, `db:migrate` and `digest` refuse an address that isn't
+  on this machine, before connecting, and so does the development server.
+- **Errors are logged by name,** never by message, everywhere in the app.
+- **The weekly email's route** answers HEAD with 405: Next.js would answer
+  it by running GET.
+- **`apps/web/vercel.json`** sets no install command: Vercel's own
+  detection picks pnpm 10 from the lockfile, and an override can run an
+  older pnpm.
+- **Where it runs, off the deployed site:**
+  - a preview names Vercel, and a copy whose database is Neon's names
+    Neon, each saying it isn't the deployed site; *"None"* only when
+    neither;
+  - a region is named only when the host's label is a region code;
+  - `/privacy` says Neon keeps *"everything this notice says is kept"*;
+  - `/power` says its configuration rows change with the server's
+    settings;
+  - the deployed hosting row cites D-0013 §D for whose accounts they are.
+- **The claims scan** catches a deployment status (*"our.one is live."*,
+  *"Nothing is deployed."*) and lets a condition through (*"once our.one is
+  deployed"*).

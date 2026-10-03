@@ -11,18 +11,32 @@ import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
+import { connectionOptions, isLocal } from "../src/core/db";
 
 export const MIGRATIONS_FOLDER = fileURLToPath(
   new URL("../drizzle", import.meta.url),
 );
 
-/** Apply every pending migration to the database at `url`. */
+/**
+ * Apply every pending migration to the database at `url`, with the site's
+ * TLS rule (`connectionOptions`), one run at a time: a session-wide lock is
+ * held while they run, so a second run waits, then finds nothing to do (the
+ * verification of M-0018). Ending the session releases the lock.
+ */
 export async function migrateUrl(url: string): Promise<void> {
-  const pool = new pg.Pool({ connectionString: url, max: 1 });
+  const options = connectionOptions(url);
+  const lock = new pg.Client(options);
+  await lock.connect();
   try {
-    await migrate(drizzle(pool), { migrationsFolder: MIGRATIONS_FOLDER });
+    await lock.query("select pg_advisory_lock(hashtextextended('ours:migrations', 0))");
+    const pool = new pg.Pool({ ...options, max: 1 });
+    try {
+      await migrate(drizzle(pool), { migrationsFolder: MIGRATIONS_FOLDER });
+    } finally {
+      await pool.end();
+    }
   } finally {
-    await pool.end();
+    await lock.end();
   }
 }
 
@@ -41,6 +55,12 @@ async function main(): Promise<void> {
   const url = process.env.DATABASE_URL?.trim();
   if (!url) {
     console.error("DATABASE_URL is not set. See .env.example.");
+    process.exit(1);
+  }
+  if (!isLocal(url)) {
+    console.error(
+      "Refused: db:migrate runs only against a database on this machine. The deployed site's database is migrated by Vercel's production build (D-0021 §D, §F).",
+    );
     process.exit(1);
   }
   await migrateUrl(url);

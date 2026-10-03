@@ -210,6 +210,21 @@ export const PROHIBITED: readonly Prohibited[] = [
     reason: "D-0012: no claim of ownership, in the present or as done; \"it's yours\" is the same claim as \"it's ours\".",
   },
   {
+    // The verification of M-0018: a deployment status turns at the deploy,
+    // so a page may not state one (D-0020 §F, D-0021 §C); where the site
+    // runs comes from the running server (src/core/hosting.ts), in words
+    // this rule doesn't match ("this copy of our.one isn't the deployed
+    // site"). A condition lets it through: "once our.one is deployed",
+    // "whether or not the site is deployed".
+    pattern: new RegExp(
+      `\\bnothing is (?:yet )?deployed\\b|\\b(?:our\\.one|the site|this site|the feed)(?:${APOS}s| is) (?:now |already |not |not yet |yet )?(?:deployed|live)\\b|\\b(?:is|are) not (?:yet )?deployed\\b|\\b(?:is|are)n${APOS}t (?:yet )?deployed\\b`,
+      "i",
+    ),
+    reason: "D-0020 §F and D-0021 §C: no page states a deployment status; it turns at the deploy. Where the site runs comes from the running server.",
+    unlessPrecededBy: /\b(?:once|when|whether|if|until|before|after|unless)\b[^.;:!?]*$/i,
+    lookback: 120,
+  },
+  {
     // "hand it to" since M-0013: the front page's signed promise handed
     // our.one to a body of its members, and the rule could not see it
     // (the cold read of 29 September 2026). The verification of M-0013

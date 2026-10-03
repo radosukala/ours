@@ -27,7 +27,7 @@ import { parseArgs } from "node:util";
 import { config } from "dotenv";
 import { createEmailToken } from "../src/core/auth";
 import { accountCreationOpen, appUrl, DEFAULT_INVITES } from "../src/core/config";
-import { closeDb, getDb } from "../src/core/db";
+import { closeDb, getDb, isLocal } from "../src/core/db";
 import { isCoreError } from "../src/core/errors";
 import { createFirstAccount } from "../src/core/founder";
 import { normEmail, validDisplayName, validHandle } from "../src/core/validate";
@@ -45,6 +45,12 @@ export function isFictionalAddress(email: string): boolean {
 
 async function main(): Promise<void> {
   config({ path: [".env.local", ".env"], quiet: true });
+  // Before anything connects: a local script uses only a database on this
+  // machine (D-0021 §F; the verification of M-0018).
+  const target = process.env.DATABASE_URL?.trim();
+  if (target && !isLocal(target)) {
+    fail("Refused: this script runs only against a database on this machine (D-0021 §F).");
+  }
 
   const { values } = parseArgs({
     // pnpm forwards a literal "--"; ignore it.

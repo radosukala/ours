@@ -623,7 +623,11 @@ describe("the public pages, rendered (SPEC §17 items 17–20)", () => {
     );
     expect(text).not.toContain("Not yet named.");
     expect(text).toContain(STATUS_LINE);
-    expect(text).toContain("This page changes when control changes. Every change is a commit in the our.one records, published with each release.");
+    // Changed after the verification of M-0018 (H6): the rows stated in the
+    // server's configuration change with its settings, not by a commit.
+    expect(text).toContain(
+      "This page changes when control changes. The rows stated in this server's configuration come from its settings, and change with them; every other change is a commit in the our.one records, published with each release.",
+    );
     expect(text).toContain("Running version: v0-FICTIONAL-power.");
   });
 

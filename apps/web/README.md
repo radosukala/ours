@@ -9,13 +9,15 @@ framework imports) and the first web application on it (Next.js). The
 specification is [`SPEC.md`](./SPEC.md).
 
 **Authority.** Built under [`M-0010`](../../mandates/M-0010.yaml) (BUILD),
-from [`D-0011`](../../decisions/D-0011.md). **Nothing is deployed.** No
-domain, provider account or real person's data is used; all seed and test
-data is FICTIONAL, with `example.test` addresses, and mail goes to a local
+from [`D-0011`](../../decisions/D-0011.md), and the mandates after it. In
+this repository, every seed and test uses FICTIONAL data, with
+`example.test` addresses, and a local copy sends its mail to a local
 `outbox` table, never to a real address.
 
 **Status.** The core and the web application are IMPLEMENTED and TESTED
-locally. **Nothing is deployed**; release is a separate decision.
+locally. A release is a separate decision (`M-0012`). Whether our.one is
+deployed, and where, the site itself says on its `/power` page; a copy
+that isn't the deployed site says so on `/privacy` and `/power`.
 
 What "tested" means here:
 

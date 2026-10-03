@@ -24,7 +24,7 @@ import { createFirstAccount } from "@/core/founder";
 import { ADMINISTRATOR_RULE, databaseFromUrl, type Env, hosting, NOT_DEPLOYED, runsOnWords } from "@/core/hosting";
 import { accounts } from "@/core/schema";
 import { HOSTING_FILE, loadControl } from "@/core/transparency";
-import { releaseGate, runRelease, withoutAddress } from "../scripts/release";
+import { describeError, releaseGate, runRelease } from "../scripts/release";
 import { db, makeAccount, reset } from "./helpers";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -70,7 +70,12 @@ describe("where this server runs", () => {
   it("anywhere but Vercel's production deployment, this copy isn't the deployed site", () => {
     expect(hosting({})).toEqual({ deployed: false });
     expect(hosting({ VERCEL: "1" })).toEqual({ deployed: false });
-    expect(hosting({ VERCEL: "1", VERCEL_ENV: "preview", VERCEL_REGION: "fra1" })).toEqual({ deployed: false });
+    // Changed after the verification of M-0018 (H1): a preview isn't the
+    // deployed site, and now says that Vercel runs it.
+    expect(hosting({ VERCEL: "1", VERCEL_ENV: "preview", VERCEL_REGION: "fra1" })).toEqual({
+      deployed: false,
+      vercel: { region: { code: "fra1", place: "Frankfurt, Germany" } },
+    });
     expect(hosting({ VERCEL: "1", VERCEL_ENV: "development" })).toEqual({ deployed: false });
     expect(hosting({ VERCEL_ENV: "production" })).toEqual({ deployed: false });
     expect(hosting({ VERCEL: "true", VERCEL_ENV: "production" })).toEqual({ deployed: false });
@@ -128,12 +133,21 @@ describe("the pages, as a copy that isn't the deployed site", () => {
     expect(row.who.startsWith(HOSTING_FILE)).toBe(true);
   });
 
-  it("a preview on Vercel is still a copy that isn't the deployed site", () => {
+  // Changed after the verification of M-0018 (H1): a preview, and a copy
+  // whose database is Neon's, say they aren't the deployed site and name
+  // what they run on, instead of "None".
+  it("a preview on Vercel is still a copy that isn't the deployed site, and says Vercel runs it", () => {
     vi.stubEnv("VERCEL", "1");
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("VERCEL_REGION", "fra1");
     expect(page(PrivacyPage)).toContain(NOT_DEPLOYED);
-    expect(page(PowerPage)).toContain(HOSTING_FILE);
+    expect(page(PowerPage)).toContain(`${NOT_DEPLOYED} Vercel runs it, as a preview, in Frankfurt, Germany (fra1).`);
+    expect(page(PowerPage)).not.toContain(HOSTING_FILE);
+    vi.unstubAllEnvs();
+    vi.stubEnv("DATABASE_URL", NEON_URL);
+    expect(page(PrivacyPage)).toContain(
+      `Hosting ${NOT_DEPLOYED} Neon keeps its database, in Frankfurt, Germany (eu-central-1): everything this notice says is kept is stored there. As stated in this server's configuration.`,
+    );
   });
 });
 
@@ -166,7 +180,9 @@ describe("the pages, on Vercel's production deployment (imitated)", () => {
     const privacy = page(PrivacyPage);
     expect(privacy).not.toContain(NOT_DEPLOYED);
     expect(privacy).toContain(
-      "Hosting Vercel runs our.one's server, in Frankfurt, Germany (fra1): every request to the site passes through it, with your IP address. Neon keeps our.one's database, in Frankfurt, Germany (eu-central-1): everything in the table above is stored there. Both as stated in this server's configuration.",
+      // Changed after the verification of M-0018 (H11): Neon keeps everything
+      // this notice says is kept, the seat requests below the table included.
+      "Hosting Vercel runs our.one's server, in Frankfurt, Germany (fra1): every request to the site passes through it, with your IP address. Neon keeps our.one's database, in Frankfurt, Germany (eu-central-1): everything this notice says is kept is stored there. Both as stated in this server's configuration.",
     );
   });
 
@@ -331,15 +347,19 @@ describe("the release itself (against the local test database)", () => {
     expect(await db().select().from(accounts)).toHaveLength(0);
   });
 
-  it("a database error is printed without the address's host, user or password", async () => {
+  // Changed after the verification of M-0018 (R5): an error is told by what
+  // it means and its code, never by its message, so nothing of the address
+  // can reach the log; withoutAddress() is gone.
+  it("a database error is printed as what it means and its code, without any part of the address", async () => {
     const outcome = await runRelease({ ...founder, DATABASE_URL: pg(FICT_USERINFO, "127.0.0.1:1", "/neondb") }, db());
     expect(outcome.ok).toBe(false);
-    const log = logOf(outcome.lines);
-    expect(log).toContain("the migrations failed");
-    for (const part of ["fict_user", "fict_pass_0123", "127.0.0.1"]) expect(log).not.toContain(part);
-    expect(withoutAddress("connect to ep-x.eu-central-1.aws.neon.tech as fict_user failed", NEON_URL.replace("ep-fictional-pond-123456-pooler", "ep-x"))).toBe(
-      "connect to *** as *** failed",
+    expect(outcome.lines).toEqual(["Release step: the migrations failed: the database refused the connection (ECONNREFUSED)."]);
+    const withHost = Object.assign(new Error("getaddrinfo ENOTFOUND ep-x.eu-central-1.aws.neon.tech"), { code: "ENOTFOUND" });
+    expect(describeError(withHost)).toBe("the database's host wasn't found (ENOTFOUND).");
+    expect(describeError(new Error("database \"fict_db\" does not exist", { cause: { code: "3D000" } }))).toBe(
+      "the database the address names doesn't exist (3D000).",
     );
+    expect(describeError(new Error("something about fict_user at ep-x"))).toBe("Error, with no code.");
   });
 
   it("the shared first-account rule is the founder script's, with its lock", async () => {

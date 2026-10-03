@@ -732,7 +732,7 @@ describe("closed (each passes on cb1aadd)", () => {
     expect(textOf(maintainers)).toContain("Tell us what you need, and what you use or pay for it today.");
   });
 
-  it("closed: /privacy says what the drafts do, and follows PROPOSALS_EMAIL — 'stays in your browser … unless you copy it' without the address, '… or open it in your own email app and send it yourself' with it; the hosting line it carries is the one M-0012's precondition 11 names, unchanged", () => {
+  it("closed: /privacy says what the drafts do, and follows PROPOSALS_EMAIL — 'stays in your browser … unless you copy it' without the address, '… or open it in your own email app and send it yourself' with it; the hosting line it carries is the one M-0012's precondition 11 named, as M-0018 changed it (Changed under M-0018, retitled after its verification)", () => {
     const without = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     expect(without).toContain("When you draft a need or an idea on our pages, what you type stays in your browser. Nothing is saved or sent, and it's gone when you close or reload the page, unless you copy it.");
     vi.stubEnv("PROPOSALS_EMAIL", "ideas@example.test");

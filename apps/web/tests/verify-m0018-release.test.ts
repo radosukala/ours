@@ -295,7 +295,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   beforeEach(reset);
 
   // R1
-  it("DEFECT (MEDIUM): nothing keeps a local run from touching the real database, though D-0021 §D says local runs don't, and P-0014 records that the founder put the real keys in apps/web/.env.local — every local script (seed:founder, db:migrate, seed:fictional, digest) reads that file and connects to whatever host DATABASE_URL names. The sharpest case: the founder script, fictional-only by address but not by database, would make a FICTIONAL administrator the first account of the real database, and the release would then make no founder account and still pass ('an account exists already'), leaving our.one administered by an address nobody can sign in with. The script should refuse a database that isn't on this machine before connecting to it", async () => {
+  it("fixed (MEDIUM): nothing keeps a local run from touching the real database, though D-0021 §D says local runs don't, and P-0014 records that the founder put the real keys in apps/web/.env.local — every local script (seed:founder, db:migrate, seed:fictional, digest) reads that file and connects to whatever host DATABASE_URL names. The sharpest case: the founder script, fictional-only by address but not by database, would make a FICTIONAL administrator the first account of the real database, and the release would then make no founder account and still pass ('an account exists already'), leaving our.one administered by an address nobody can sign in with. The script should refuse a database that isn't on this machine before connecting to it", async () => {
     expect(record("decisions/D-0021.md")).toContain("Nothing else touches the database: other commits' builds, preview builds and local runs don't.");
     expect(record("proposals/P-0014.md")).toContain("the real keys the founder put in apps/web/.env.local, which belong in Vercel only;");
     for (const script of ["scripts/seed-founder.ts", "scripts/migrate.ts", "scripts/seed-fictional.ts", "scripts/digest.ts"]) {
@@ -335,7 +335,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   }, 60_000);
 
   // R2
-  it("DEFECT (MEDIUM): the rule that only the named production build touches the database doesn't say how it is held (AGENTS.md §7 requires ENFORCED, CHECKED, STRUCTURAL, INTERPRETED or DECLARED), and it is held only by the code of the commit being built: Vercel runs the pushed commit's vercel.json, its vercel-build and its release.ts, and M-0012 puts DATABASE_URL in every production build — every push to main, since Vercel gives production variables to the build as well as to the functions — so a pushed commit whose build reaches the database (a changed vercel-build, a page prerendered from it) touches the real one with no commit named. D-0021 §D states 'A push alone touches no database' with no qualification, and M-0012 doesn't tell the founder that every push to main is a production build holding the real database's address, whose staged deployment runs with the production variables at its own address, behind Deployment Protection only (BUILD and DEPLOY are kept apart by the build's own code, AGENTS.md §8)", () => {
+  it("fixed (MEDIUM): the rule that only the named production build touches the database doesn't say how it is held (AGENTS.md §7 requires ENFORCED, CHECKED, STRUCTURAL, INTERPRETED or DECLARED), and it is held only by the code of the commit being built: Vercel runs the pushed commit's vercel.json, its vercel-build and its release.ts, and M-0012 puts DATABASE_URL in every production build — every push to main, since Vercel gives production variables to the build as well as to the functions — so a pushed commit whose build reaches the database (a changed vercel-build, a page prerendered from it) touches the real one with no commit named. D-0021 §D states 'A push alone touches no database' with no qualification, and M-0012 doesn't tell the founder that every push to main is a production build holding the real database's address, whose staged deployment runs with the production variables at its own address, behind Deployment Protection only (BUILD and DEPLOY are kept apart by the build's own code, AGENTS.md §8)", () => {
     const d21 = record("decisions/D-0021.md");
     expect(d21).toContain("A push alone touches no database: BUILD never becomes DEPLOY by itself (AGENTS.md §8).");
     const m12 = record("mandates/M-0012.md");
@@ -353,7 +353,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   });
 
   // R3
-  it("DEFECT (LOW): a build that fails on the founder's settings — one of the three set, a value that isn't valid, no data controller — has already migrated the database: the release applies the migrations first and checks the settings after, so a failed build leaves the database changed (on a later release, ahead of the deployment our.one still serves). The settings can be checked before the database is touched", async () => {
+  it("fixed (LOW): a build that fails on the founder's settings — one of the three set, a value that isn't valid, no data controller — has already migrated the database: the release applies the migrations first and checks the settings after, so a failed build leaves the database changed (on a later release, ahead of the deployment our.one still serves). The settings can be checked before the database is touched", async () => {
     const touched: Record<string, number> = {};
     const cases: [string, Env, RegExp][] = [
       ["one of the three", { FOUNDER_EMAIL: FOUNDER.FOUNDER_EMAIL }, /set all three of FOUNDER_EMAIL, FOUNDER_HANDLE and FOUNDER_NAME, or none/],
@@ -377,7 +377,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   }, 60_000);
 
   // R4
-  it("DEFECT (LOW): two releases at once on a database that isn't migrated yet — the first release's case — fail one of the two builds: both read 'no migrations', both run them, and the second dies on a duplicate type ('pg_type_typname_nsp_index'). The account is still made once and the schema is whole, so nothing is lost; but deploy-ready.test.ts's 'two releases at once make one account', which expects both to succeed, runs on a database tests/setup.ts has already migrated and never meets the race. A lock around the migrations, as around the account, would let both pass", async () => {
+  it("fixed (LOW): two releases at once on a database that isn't migrated yet — the first release's case — fail one of the two builds: both read 'no migrations', both run them, and the second dies on a duplicate type ('pg_type_typname_nsp_index'). The account is still made once and the schema is whole, so nothing is lost; but deploy-ready.test.ts's 'two releases at once make one account', which expects both to succeed, runs on a database tests/setup.ts has already migrated and never meets the race. A lock around the migrations, as around the account, would let both pass", async () => {
     const fresh = await freshDatabase();
     try {
       const env = { DATABASE_URL: fresh.url, ...FOUNDER };
@@ -395,7 +395,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   }, 60_000);
 
   // R5
-  it("DEFECT (LOW): an error from the database still names parts of its address in the build log — the database's name ('database \"…\" does not exist'), and a user name or password shorter than 3 characters, which withoutAddress() leaves in ('role \"xy\" does not exist') — while SPEC §18.20 says the log 'names no address, link, key or part of the database's address'; only the host, and a user or password of 3 or more characters, are taken out. (For a host that resolves to several addresses, a refused connection prints no reason at all: 'the migrations failed: Failed query: CREATE SCHEMA IF NOT EXISTS \"drizzle\"'.)", async () => {
+  it("fixed (LOW): an error from the database still names parts of its address in the build log — the database's name ('database \"…\" does not exist'), and a user name or password shorter than 3 characters, which withoutAddress() leaves in ('role \"xy\" does not exist') — while SPEC §18.20 says the log 'names no address, link, key or part of the database's address'; only the host, and a user or password of 3 or more characters, are taken out. (For a host that resolves to several addresses, a refused connection prints no reason at all: 'the migrations failed: Failed query: CREATE SCHEMA IF NOT EXISTS \"drizzle\"'.)", async () => {
     expect(flat(read("SPEC.md"))).toContain("**Its log** names no address, link, key or part of the database's address;");
     const absent = `ours_fict_absent_${randomBytes(4).toString("hex")}`;
     const missing = new URL(ADMIN_URL);
@@ -415,7 +415,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   });
 
   // R6
-  it("DEFECT (LOW): the migrations take their TLS from the address alone: with no sslmode in it, the release's first connection to a host src/core/db.ts treats as remote is plain TCP, and the release sends the database's password in clear text to whoever answers there — while the account step, through getDb(), insists on TLS with the certificate checked for any host but localhost, 127.0.0.1 and ::1. Neon's addresses carry sslmode=require, so this needs an address edited by hand; the two steps of one release should hold the same rule", async () => {
+  it("fixed (LOW): the migrations take their TLS from the address alone: with no sslmode in it, the release's first connection to a host src/core/db.ts treats as remote is plain TCP, and the release sends the database's password in clear text to whoever answers there — while the account step, through getDb(), insists on TLS with the certificate checked for any host but localhost, 127.0.0.1 and ::1. Neon's addresses carry sslmode=require, so this needs an address edited by hand; the two steps of one release should hold the same rule", async () => {
     expect(read("src/core/db.ts")).toContain("ssl: isLocal(url) ? false : { rejectUnauthorized: true },");
     const fake = await fakePostgres();
     try {
@@ -432,7 +432,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   });
 
   // R7
-  it("DEFECT (LOW): with a Neon address (sslmode=require, as Neon writes it), every release prints pg-connection-string's nine-line process warning, 'SECURITY WARNING: The SSL modes … are treated as aliases for verify-full', with a link to postgresql.org, ahead of its own lines — D-0021 §D: 'The build log says only what was done'; M-0018: the release 'prints nothing that holds an address, a link, a key or the database's address'", async () => {
+  it("fixed (LOW): with a Neon address (sslmode=require, as Neon writes it), every release prints pg-connection-string's nine-line process warning, 'SECURITY WARNING: The SSL modes … are treated as aliases for verify-full', with a link to postgresql.org, ahead of its own lines — D-0021 §D: 'The build log says only what was done'; M-0018: the release 'prints nothing that holds an address, a link, a key or the database's address'", async () => {
     const fake = await fakePostgres();
     try {
       const url = pgAddress(`fict_user:${FICT_PASS}`, `127.0.0.1:${fake.port}`, "/neondb?sslmode=require&channel_binding=require");
@@ -450,7 +450,7 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
   }, 60_000);
 
   // R8
-  it("DEFECT (LOW): the weekly email's route says 'Both methods are the same handler, and any other method is refused by the framework', but since it exports GET, Next.js 16 answers HEAD by running GET — a HEAD with the secret runs the weekly email — and answers OPTIONS itself (204, 'Allow: GET, HEAD, OPTIONS, POST'). No one without CRON_SECRET gets further, so nothing is opened; the route's own account of what it refuses is wrong since this build", async () => {
+  it("fixed (LOW): the weekly email's route says 'Both methods are the same handler, and any other method is refused by the framework', but since it exports GET, Next.js 16 answers HEAD by running GET — a HEAD with the secret runs the weekly email — and answers OPTIONS itself (204, 'Allow: GET, HEAD, OPTIONS, POST'). No one without CRON_SECRET gets further, so nothing is opened; the route's own account of what it refuses is wrong since this build", async () => {
     // What Next.js 16.2.7 serves for this module's exports, as its route module builds it.
     const methods = autoImplementMethods(cronRoute as unknown as Parameters<typeof autoImplementMethods>[0]);
     expect(methods.POST).toBe(cronPOST);
@@ -666,17 +666,20 @@ describe("closed: the release itself (each passes on d26556a)", () => {
         expect(log, part).not.toContain(part);
       }
     }
-    expect(refused.lines[0]).toContain("connect ECONNREFUSED ***:1");
-    expect(unknown.lines[0]).toMatch(/role "\*\*\*" does not exist|password authentication failed for user "\*\*\*"/);
+    // Changed after the verification of M-0018 (R5): an error is told by what
+    // it means and its code, never by its message.
+    expect(refused.lines[0]).toBe("Release step: the migrations failed: the database refused the connection (ECONNREFUSED).");
+    expect(unknown.lines[0]).toMatch(/^Release step: the migrations failed: the database refused the (?:user \(28000\)|password \(28P01\))\.$/);
     expect(unreadable.lines).toEqual(["Release step: the migrations failed: (an error from a database whose address can't be read)"]);
 
     const fresh = await freshDatabase();
     try {
       await query(fresh.url, "create table accounts (id integer)");
       const failed = await runRelease({ DATABASE_URL: fresh.url, ...FOUNDER }, fresh.db);
+      // Changed after the verification of M-0018 (R5): the code, not the message.
       expect(failed).toEqual({
         ok: false,
-        lines: ['Release step: the migrations failed: Failed query: CREATE TABLE "accounts" ( (relation "accounts" already exists)'],
+        lines: ["Release step: the migrations failed: something the migrations create exists already (42P07)."],
       });
       expect(await tablesIn(fresh.url)).toEqual(["drizzle.__drizzle_migrations", "public.accounts"]);
       expect(await query(fresh.url, "select count(*)::int as n from drizzle.__drizzle_migrations")).toEqual([{ n: 0 }]);
@@ -765,11 +768,13 @@ describe("closed: the founder script after the refactor (passes on d26556a)", ()
 describe("closed: how Vercel builds it (each passes on d26556a)", () => {
   it("closed: apps/web/vercel.json holds only keys Vercel's schema has — framework nextjs, the install command with the frozen lockfile, the build command, one region (fra1) and one cron — and the cron is valid: five fields, minute 0, hour 8, any day of the month, any month, day of the week 1 (Monday), on a path whose route exports GET; the root vercel.json, unchanged by the build, builds only the oursorg.com page (pnpm proof into apps/proof/dist) and isn't read for a project whose root directory is apps/web, which M-0012 tells the founder to set, with no overrides", () => {
     const config = JSON.parse(read("vercel.json")) as Record<string, unknown>;
-    expect(Object.keys(config).sort()).toEqual(["$schema", "buildCommand", "crons", "framework", "installCommand", "regions"]);
+    // Changed after the verification of M-0018 (this file's own note on the
+    // install override): no install command, so Vercel picks pnpm from the
+    // lockfile instead of the oldest pnpm in its image.
+    expect(Object.keys(config).sort()).toEqual(["$schema", "buildCommand", "crons", "framework", "regions"]);
     expect(config).toEqual({
       $schema: "https://openapi.vercel.sh/vercel.json",
       framework: "nextjs",
-      installCommand: "pnpm install --frozen-lockfile",
       buildCommand: "pnpm run vercel-build",
       regions: ["fra1"],
       crons: [{ path: "/api/cron/weekly-digest", schedule: "0 8 * * 1" }],
@@ -784,8 +789,10 @@ describe("closed: how Vercel builds it (each passes on d26556a)", () => {
     expect(rootChanged.status).toBe(0);
     expect(rootChanged.stdout).toBe("");
     expect(JSON.parse(readRoot("vercel.json"))).toMatchObject({ buildCommand: "pnpm proof", outputDirectory: "apps/proof/dist", framework: null });
+    // Changed after the verification of M-0018: M-0012 now says vercel.json
+    // sets the build command and the region, and Vercel picks pnpm itself.
     expect(record("mandates/M-0012.md")).toContain(
-      "with root directory apps/web, and no overrides for its build, install or output commands: apps/web/vercel.json sets them, with the functions' region, Frankfurt (D-0021 §D).",
+      "with root directory apps/web, and no overrides for its build, install or output commands: apps/web/vercel.json sets the build command and the functions' region, Frankfurt, and Vercel picks pnpm from the lockfile (D-0021 §D, §J).",
     );
   });
 

@@ -241,7 +241,7 @@ afterEach(() => {
 /* ------------------------------------------------------------- defects */
 
 describe("defects (each FAILS on bee6e3b)", () => {
-  it("DEFECT (MEDIUM): off Vercel's production deployment the hosting lines say 'None' without looking where the server runs — on a Vercel preview (VERCEL=1, VERCEL_ENV=preview) Vercel hosts the copy and every request passes through it, and on a copy whose DATABASE_URL is Neon's (the founder's own .env.local held the database's address, P-0014's evidence) Neon keeps its data; yet /privacy's 'Who else receives your data' says 'Hosting: None: this copy of our.one isn't the deployed site.' and /power's row says 'None: …' as RECORDED. D-0021 §C has /privacy name Vercel and Neon 'when the server runs on them', and asks of a preview only that it say it isn't the deployed site (served so on 3527)", () => {
+  it("fixed (MEDIUM): off Vercel's production deployment the hosting lines say 'None' without looking where the server runs — on a Vercel preview (VERCEL=1, VERCEL_ENV=preview) Vercel hosts the copy and every request passes through it, and on a copy whose DATABASE_URL is Neon's (the founder's own .env.local held the database's address, P-0014's evidence) Neon keeps its data; yet /privacy's 'Who else receives your data' says 'Hosting: None: this copy of our.one isn't the deployed site.' and /power's row says 'None: …' as RECORDED. D-0021 §C has /privacy name Vercel and Neon 'when the server runs on them', and asks of a preview only that it say it isn't the deployed site (served so on 3527)", () => {
     const d0021 = record("decisions/D-0021.md");
     expect(d0021).toContain("/privacy names Vercel and Neon among those who receive data, with what each receives, when the server runs on them.");
     expect(d0021).toContain("Anywhere else, in development, in a preview or in a test, the page says that this copy isn't the deployed site.");
@@ -267,7 +267,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect({ preview, neon }).toEqual({ preview: { privacy: true, power: true }, neon: { privacy: true, power: true } });
   });
 
-  it("DEFECT (MEDIUM): apps/web/README.md says '**Nothing is deployed.**' twice and 'No domain, provider account or real person's data is used', and package.json's description 'nothing is deployed' — each false the day our.one deploys (the release makes the founder's own account; M-0012 sends real email through Resend, at the domain our.one). That README is what GitHub shows at OPEN_CODE_URL, the 'Open code' link in every public footer, and where the root README's new section sends visitors from our.one ('The site and the feed: apps/web'); D-0020 §F and D-0021 §C want every status true on the deployed site and off it, and M-0018 left these unchanged", () => {
+  it("fixed (MEDIUM): apps/web/README.md says '**Nothing is deployed.**' twice and 'No domain, provider account or real person's data is used', and package.json's description 'nothing is deployed' — each false the day our.one deploys (the release makes the founder's own account; M-0012 sends real email through Resend, at the domain our.one). That README is what GitHub shows at OPEN_CODE_URL, the 'Open code' link in every public footer, and where the root README's new section sends visitors from our.one ('The site and the feed: apps/web'); D-0020 §F and D-0021 §C want every status true on the deployed site and off it, and M-0018 left these unchanged", () => {
     expect(OPEN_CODE_URL).toBe("https://github.com/radosukala/ours/tree/main/apps/web");
     expect(textOf(renderToStaticMarkup(createElement(PublicLayout, null, "FICTIONAL page")))).toContain("Open code");
     expect(readmeFirstSection(true)).toContain("(./apps/web)");
@@ -276,7 +276,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect({ readme: turns.test(flat(read("README.md"))), packageJson: turns.test(description) }).toEqual({ readme: false, packageJson: false });
   });
 
-  it("DEFECT (LOW): deployed, a Neon host with no region label (`ep-….aws.neon.tech`, four labels) shows its first label, the endpoint's own name, as the region — 'Neon keeps its database, in region ep-fictional-pond-123456.' on /power, and the same on /privacy (served so on 3527): the part of the database's address that names it (D-0021 §C: 'the address itself is never shown'; M-0018: 'the database's address appears on no page'). A region shown should be a region code, or nothing", () => {
+  it("fixed (LOW): deployed, a Neon host with no region label (`ep-….aws.neon.tech`, four labels) shows its first label, the endpoint's own name, as the region — 'Neon keeps its database, in region ep-fictional-pond-123456.' on /power, and the same on /privacy (served so on 3527): the part of the database's address that names it (D-0021 §C: 'the address itself is never shown'; M-0018: 'the database's address appears on no page'). A region shown should be a region code, or nothing", () => {
     const url = pg("ep-fictional-pond-123456.aws.neon.tech");
     expect(new URL(url).hostname.split(".")).toHaveLength(4);
     setEnv({ ...PRODUCTION, DATABASE_URL: url });
@@ -284,7 +284,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(shown).toEqual({ privacy: false, power: false });
   });
 
-  it("DEFECT (LOW): deployed, /power's hosting row ends 'The accounts are the founder's.' under the badge 'stated in this server's configuration', with D-0021 §C as its one record; no setting can say whose accounts these are (hosting.ts itself calls it 'the founder's statement'), D-0021 doesn't say it, and the record that does, D-0013 §D ('All three are the founder's accounts.'), isn't cited", () => {
+  it("fixed (LOW): deployed, /power's hosting row ends 'The accounts are the founder's.' under the badge 'stated in this server's configuration', with D-0021 §C as its one record; no setting can say whose accounts these are (hosting.ts itself calls it 'the founder's statement'), D-0021 doesn't say it, and the record that does, D-0013 §D ('All three are the founder's accounts.'), isn't cited", () => {
     expect(record("decisions/D-0013.md")).toContain("All three are the founder's accounts.");
     expect(record("decisions/D-0021.md")).not.toMatch(/accounts are the founder's|founder's accounts/);
     setEnv({ ...PRODUCTION, DATABASE_URL: NEON_EU });
@@ -294,7 +294,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(saysIt && row.statedBy === "configuration" && !cited).toBe(false);
   });
 
-  it("DEFECT (LOW): deployed with a database the configuration doesn't name — another host, a look-alike, a malformed or a missing address — /privacy's hosting line names Vercel, says 'This server's configuration doesn't name its database's provider.', then 'Both as stated in this server's configuration.': both of one, the second being the configuration naming nothing (served so on 3527)", () => {
+  it("fixed (LOW): deployed with a database the configuration doesn't name — another host, a look-alike, a malformed or a missing address — /privacy's hosting line names Vercel, says 'This server's configuration doesn't name its database's provider.', then 'Both as stated in this server's configuration.': both of one, the second being the configuration naming nothing (served so on 3527)", () => {
     const lines = [pg("db.example.test", "/ours"), pg("neon.tech.example.test"), "not a url", undefined].map((url) => {
       setEnv({ ...PRODUCTION, DATABASE_URL: url });
       return privacyLine("Hosting");
@@ -303,7 +303,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(lines.filter((l) => l.includes("Both as stated"))).toEqual([]);
   });
 
-  it("DEFECT (LOW): /power says 'This page changes when control changes. Every change is a commit in the our.one records, published with each release.' Since M-0018 its hosting row is the server's: deployed, moving the database to another region in Vercel's settings moves 'Neon keeps its database' from Frankfurt to Ohio with no commit, and the deploy itself turns the file's 'None: …' into 'Vercel runs this site, …' by none either; the line under it, 'The list is a file in the our.one records', links a file that says 'None: …'", () => {
+  it("fixed (LOW): /power says 'This page changes when control changes. Every change is a commit in the our.one records, published with each release.' Since M-0018 its hosting row is the server's: deployed, moving the database to another region in Vercel's settings moves 'Neon keeps its database' from Frankfurt to Ohio with no commit, and the deploy itself turns the file's 'None: …' into 'Vercel runs this site, …' by none either; the line under it, 'The list is a file in the our.one records', links a file that says 'None: …'", () => {
     setEnv({ ...PRODUCTION, DATABASE_URL: NEON_EU });
     const frankfurt = hostingRow().who;
     setEnv({ ...PRODUCTION, DATABASE_URL: NEON_US });
@@ -315,7 +315,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(claim === "" || /configuration|settings|server/i.test(claim)).toBe(true);
   });
 
-  it("DEFECT (LOW): the README's first section, written for visitors from our.one, says 'our.one is a friends feed, and the first project of a network its founder is starting'; the records make our.one the network and the feed its first project — D-0017 §A ('our.one becomes a network of services … The feed is the first project'), D-0012 §C (our.one the name 'for the product and the network'), and the front door those visitors come from ('Starting with a friends feed. Building toward much more.')", () => {
+  it("fixed (LOW): the README's first section, written for visitors from our.one, says 'our.one is a friends feed, and the first project of a network its founder is starting'; the records make our.one the network and the feed its first project — D-0017 §A ('our.one becomes a network of services … The feed is the first project'), D-0012 §C (our.one the name 'for the product and the network'), and the front door those visitors come from ('Starting with a friends feed. Building toward much more.')", () => {
     const d0017 = record("decisions/D-0017.md");
     expect(d0017).toContain("our.one becomes a network of services:");
     expect(d0017).toContain("The feed is the first project, under the same framework.");
@@ -326,7 +326,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(/\bour\.one is a (?:friends )?feed\b|\bour\.one is [^.]*\bthe first project of a network\b/i.test(section)).toBe(false);
   });
 
-  it("DEFECT (LOW): the same section ends 'The rest of this page is about OURS, the institution behind it.' — an institution behind our.one, today; the page's own status says MEMBER INSTITUTION NOT YET FORMED (AGENTS.md §2), and its next lines call the institution sentence 'a sentence about what OURS is for, not a description of what exists'", () => {
+  it("fixed (LOW): the same section ends 'The rest of this page is about OURS, the institution behind it.' — an institution behind our.one, today; the page's own status says MEMBER INSTITUTION NOT YET FORMED (AGENTS.md §2), and its next lines call the institution sentence 'a sentence about what OURS is for, not a description of what exists'", () => {
     const readme = readRoot("README.md");
     expect(readme).toMatch(/MEMBER INSTITUTION\s+NOT YET FORMED/);
     expect(readRoot("AGENTS.md")).toMatch(/MEMBER INSTITUTION\s+NOT YET FORMED/);
@@ -334,7 +334,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(readmeFirstSection()).not.toMatch(/\bthe institution behind\b/i);
   });
 
-  it("DEFECT (LOW): the claims scan has no rule for the status D-0021 prohibits — 'our.one is deployed.', 'our.one is live.', 'Nothing is deployed.' and 'our.one is not deployed yet.' all pass it — so a status that turns at the deploy is caught only on the three pages deploy-ready.test.ts renders; apps/web/README.md's 'Nothing is deployed.' (above) is that kind, as were two of the M-0017 verification's findings ('This line hasn't been tried yet.', kit/README's 'Not deployed yet.'), and the scan reads neither apps/web/README.md nor the root README", () => {
+  it("fixed (LOW): the claims scan has no rule for the status D-0021 prohibits — 'our.one is deployed.', 'our.one is live.', 'Nothing is deployed.' and 'our.one is not deployed yet.' all pass it — so a status that turns at the deploy is caught only on the three pages deploy-ready.test.ts renders; apps/web/README.md's 'Nothing is deployed.' (above) is that kind, as were two of the M-0017 verification's findings ('This line hasn't been tried yet.', kit/README's 'Not deployed yet.'), and the scan reads neither apps/web/README.md nor the root README", () => {
     expect(record("decisions/D-0021.md")).toContain(
       "a page that says our.one is deployed, or names a host, a database or an administrator, unless the server rendering it runs there or holds it;",
     );
@@ -343,14 +343,17 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(samples.map((s) => scanText(s, null).length > 0)).toEqual([true, true, true, true]);
   });
 
-  it("DEFECT (LOW): /power cites 'Founding authority, section 4' twice (the domain our.one, and the money); that section's control map says 'production infrastructure | none provisioned', which the deploy makes false — our.one on Vercel and Neon in the founder's accounts (D-0013 §D, M-0012), with a Vercel project the founder has already made (P-0014). authority/** is outside M-0018's paths, so this is the founder's to amend, by a record", () => {
+  // Recorded, not fixed, after the verification: authority/** is outside
+  // M-0018's paths; the founder amends FOUNDING-AUTHORITY §4's infrastructure
+  // row by a record at the deploy (D-0021 §J, M-0012).
+  it.skip("recorded, not fixed (LOW): /power cites 'Founding authority, section 4' twice (the domain our.one, and the money); that section's control map says 'production infrastructure | none provisioned', which the deploy makes false — our.one on Vercel and Neon in the founder's accounts (D-0013 §D, M-0012), with a Vercel project the founder has already made (P-0014). authority/** is outside M-0018's paths, so this is the founder's to amend, by a record", () => {
     const cites = loadControl().flatMap((r) => (r.evidence ?? []).filter((e) => e.path === "authority/FOUNDING-AUTHORITY.md"));
     expect(cites.length).toBeGreaterThanOrEqual(2);
     expect(cites.every((e) => /section 4/.test(e.label))).toBe(true);
     expect(readRoot("authority/FOUNDING-AUTHORITY.md")).not.toMatch(/\|\s*production infrastructure\s*\|\s*none provisioned\s*\|/);
   });
 
-  it("DEFECT (LOW): deployed, /privacy says Neon keeps the database and 'everything in the table above is stored there'; the seat line — the address of everyone who asks for a seat, the `waitlist` table — is told in the paragraph below the table, and is stored there too; the feed's manifest says Neon holds 'everything in data.collects', which lists the seat requests", () => {
+  it("fixed (LOW): deployed, /privacy says Neon keeps the database and 'everything in the table above is stored there'; the seat line — the address of everyone who asks for a seat, the `waitlist` table — is told in the paragraph below the table, and is stored there too; the feed's manifest says Neon holds 'everything in data.collects', which lists the seat requests", () => {
     expect(read("src/core/schema.ts")).toMatch(/pgTable\(\s*"waitlist",\s*\{\s*email: text\("email"\)/);
     const manifest = JSON.parse(read("our.one.json")) as { data: { collects: { what: string }[]; sharedWith: { who: string; what: string }[] } };
     expect(manifest.data.collects.some((c) => /^Seat requests/.test(c.what))).toBe(true);
@@ -363,7 +366,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(line.includes("table above") && !/seat/i.test(line) && !tableHasSeats).toBe(false);
   });
 
-  it("DEFECT (LOW): the rule 'Only the founder can be the administrator.' is shown as true before the deploy, but the documented way to run a copy (apps/web/README's 'Run it locally': seed:fictional) makes 'Ada Quillon', who 'Runs the allotment rota', the administrator — never called the founder, while the same copy's /contract says the maintainer who acts on reports is Rado. D-0021 §I's reason, repeated in hosting.ts ('only the founder script and the release make an administrator'), misses this third path, which sets is_admin itself, outside createFirstAccount. (The rule holds there only by /rules' own definition: Ada is that copy's first, uninvited account.)", () => {
+  it("fixed (LOW): the rule 'Only the founder can be the administrator.' is shown as true before the deploy, but the documented way to run a copy (apps/web/README's 'Run it locally': seed:fictional) makes 'Ada Quillon', who 'Runs the allotment rota', the administrator — never called the founder, while the same copy's /contract says the maintainer who acts on reports is Rado. D-0021 §I's reason, repeated in hosting.ts ('only the founder script and the release make an administrator'), misses this third path, which sets is_admin itself, outside createFirstAccount. (The rule holds there only by /rules' own definition: Ada is that copy's first, uninvited account.)", () => {
     expect(read("README.md")).toContain("seed:fictional");
     expect(textOf(render(ContractPage))).toMatch(/acts on reports, and pays the bills\. Today that is me, Rado/);
     const seed = read("scripts/seed-fictional.ts");
@@ -379,7 +382,7 @@ describe("defects (each FAILS on bee6e3b)", () => {
     expect(ruleNamesTheFounder ? notCalledTheFounder : []).toEqual([]);
   });
 
-  it("DEFECT (LOW): one of the five adapted tests now says the opposite of what it checks — verify-m0017-honesty.test.ts's 'closed: … the hosting line it carries is the one M-0012's precondition 11 names, unchanged' asserts M-0018's changed line ('This copy of our.one isn't the deployed site. …'); the comment inside says 'Changed under M-0018', but the title, which is what a run and a receipt show, still says unchanged", () => {
+  it("fixed (LOW): one of the five adapted tests now says the opposite of what it checks — verify-m0017-honesty.test.ts's 'closed: … the hosting line it carries is the one M-0012's precondition 11 names, unchanged' asserts M-0018's changed line ('This copy of our.one isn't the deployed site. …'); the comment inside says 'Changed under M-0018', but the title, which is what a run and a receipt show, still says unchanged", () => {
     const source = read("tests/verify-m0017-honesty.test.ts");
     const at = source.indexOf("This copy of our.one isn't the deployed site. This notice describes what our.one keeps when it runs.");
     expect(at).toBeGreaterThan(-1);

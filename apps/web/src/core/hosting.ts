@@ -8,11 +8,17 @@
  *   own variables report it: `VERCEL=1` and `VERCEL_ENV=production`.
  *   Anywhere else (development, a preview, a test) this copy isn't the
  *   deployed site, and the pages say so.
+ * - **A copy that isn't the deployed site still names what it runs on**
+ *   (the verification of M-0018): Vercel, on a preview (`VERCEL=1` and
+ *   `VERCEL_ENV=preview`; `vercel dev` runs on this machine, not Vercel),
+ *   and Neon, when its database is Neon's. It says "None" only when neither
+ *   is true.
  * - **The region** is `VERCEL_REGION`, which the platform sets for a running
  *   function.
  * - **The database** is named from its address's host, and the address is
- *   never shown: a host ending in `.neon.tech` is Neon, and its region is
- *   the label before `aws` or `azure`. Any other host isn't named.
+ *   never shown: a host ending in `.neon.tech` is Neon. Its region is the
+ *   label before `aws` or `azure`, when that label is a region code and not
+ *   the endpoint's own name. Any other host isn't named.
  * - **The administrator** is a rule, not a reading: only the founder can be
  *   the administrator (D-0021 §I), true before the deploy and after it.
  *
@@ -25,14 +31,24 @@ export type Env = Readonly<Record<string, string | undefined>>;
 /** A region: its code, and the place it is in, when this file knows it. */
 export type Region = { code: string; place: string | null };
 
+/** The database, when its host is Neon's. */
+export type NeonDatabase = { provider: "Neon"; region: Region | null };
+
 export type Hosting =
-  | { deployed: false }
+  | {
+      /** A copy that isn't the deployed site. */
+      deployed: false;
+      /** Present when this copy is a preview on Vercel. */
+      vercel?: { region: Region | null };
+      /** Present when this copy's database is Neon's. */
+      database?: NeonDatabase;
+    }
   | {
       deployed: true;
       /** Null when the platform doesn't report it. */
       region: Region | null;
       /** Null when the database's provider can't be named from its host. */
-      database: { provider: "Neon"; region: Region | null } | null;
+      database: NeonDatabase | null;
     };
 
 /** Vercel's function regions in Europe, and its default (D-0021 §D). Others show their code only. */
@@ -55,8 +71,14 @@ const NEON_PLACES: Readonly<Record<string, string>> = {
   "us-west-2": "Oregon, United States",
 };
 
-/** A region code as the platform or the host writes it: lower-case letters, digits and hyphens. */
+/** A region code as the platform writes it: lower-case letters, digits and hyphens. */
 const REGION_CODE = /^[a-z0-9-]{2,40}$/;
+
+/** An AWS region code, as Neon's hosts carry it: "eu-central-1", "us-east-2". */
+const AWS_REGION = /^[a-z]{2}-(?:north|south|east|west|central|northeast|southeast|northwest|southwest)-\d{1,2}$/;
+
+/** An Azure region name, as Neon's hosts carry it: "germanywestcentral", "eastus2". */
+const AZURE_REGION = /^[a-z]{4,30}\d?$/;
 
 function region(code: string | undefined, places: Readonly<Record<string, string>>): Region | null {
   const trimmed = code?.trim().toLowerCase();
@@ -68,7 +90,7 @@ function region(code: string | undefined, places: Readonly<Record<string, string
  * The database's provider and region, from the host in its address. Only
  * the host is read; nothing else in the address leaves this function.
  */
-export function databaseFromUrl(url: string | undefined): { provider: "Neon"; region: Region | null } | null {
+export function databaseFromUrl(url: string | undefined): NeonDatabase | null {
   if (!url) return null;
   let host: string;
   try {
@@ -79,18 +101,29 @@ export function databaseFromUrl(url: string | undefined): { provider: "Neon"; re
   const labels = host.split(".");
   const n = labels.length;
   if (n < 4 || labels[n - 1] !== "tech" || labels[n - 2] !== "neon") return null;
+  // The region is the label before the cloud, and never the first label,
+  // which is the endpoint's own name (the verification of M-0018).
   const cloud = labels[n - 3];
-  const code = cloud === "aws" || cloud === "azure" ? labels[n - 4] : undefined;
+  const label = n >= 5 ? labels[n - 4] : undefined;
+  const code =
+    label && ((cloud === "aws" && AWS_REGION.test(label)) || (cloud === "azure" && AZURE_REGION.test(label)))
+      ? label
+      : undefined;
   return { provider: "Neon", region: region(code, NEON_PLACES) };
 }
 
 /** Where this server runs, from the platform's own variables and the database's host. */
 export function hosting(env: Env = process.env): Hosting {
-  if (env.VERCEL !== "1" || env.VERCEL_ENV !== "production") return { deployed: false };
+  const database = databaseFromUrl(env.DATABASE_URL);
+  if (env.VERCEL === "1" && env.VERCEL_ENV === "production") {
+    return { deployed: true, region: region(env.VERCEL_REGION, VERCEL_PLACES), database };
+  }
   return {
-    deployed: true,
-    region: region(env.VERCEL_REGION, VERCEL_PLACES),
-    database: databaseFromUrl(env.DATABASE_URL),
+    deployed: false,
+    ...(env.VERCEL === "1" && env.VERCEL_ENV === "preview"
+      ? { vercel: { region: region(env.VERCEL_REGION, VERCEL_PLACES) } }
+      : {}),
+    ...(database ? { database } : {}),
   };
 }
 
@@ -101,6 +134,20 @@ export function regionWords(r: Region): string {
 
 /** The sentence a copy that isn't the deployed site says about itself. */
 export const NOT_DEPLOYED = "This copy of our.one isn't the deployed site.";
+
+/** What a copy that isn't the deployed site runs on, or null when it runs on neither (it says "None" then). */
+export function copyRunsOnWords(h: Extract<Hosting, { deployed: false }>): string | null {
+  const parts: string[] = [];
+  if (h.vercel) {
+    parts.push(h.vercel.region ? `Vercel runs it, as a preview, in ${regionWords(h.vercel.region)}.` : "Vercel runs it, as a preview.");
+  }
+  if (h.database) {
+    parts.push(
+      h.database.region ? `Neon keeps its database, in ${regionWords(h.database.region)}.` : "Neon keeps its database.",
+    );
+  }
+  return parts.length ? parts.join(" ") : null;
+}
 
 /** What runs this deployed server, in one or two sentences: the host and the database. */
 export function runsOnWords(h: Extract<Hosting, { deployed: true }>): string {
@@ -117,7 +164,9 @@ export function runsOnWords(h: Extract<Hosting, { deployed: true }>): string {
 
 /**
  * Who can be the administrator: a rule, so it is as true before the deploy
- * as after it (D-0021 §I). Only the founder script and the release make an
- * administrator, and each makes the first account only.
+ * as after it (D-0021 §I). On a real copy only the founder script and the
+ * release make an administrator, each the first account only. The
+ * fictional seed makes one too, for a development copy, and says that
+ * account stands in for the founder (the verification of M-0018).
  */
 export const ADMINISTRATOR_RULE = "Only the founder can be the administrator.";
