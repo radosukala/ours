@@ -119,9 +119,9 @@
     "eyebrow eyebrow"
     "title   picture"
     "text    picture";
-  gap: 24px 46px;
+  gap: 16px 46px;
   align-items: start;
-  padding: 44px 0 52px;
+  padding: 24px 0 52px;
 }
 
 .hero > .eyebrow {
@@ -141,7 +141,7 @@
 .headline {
   grid-area: title;
   max-width: 790px;
-  font-size: clamp(56px, 7.2vw, 102px);
+  font-size: clamp(56px, 5.3vw, 80px);
   font-weight: 500;
   line-height: 0.96;
   letter-spacing: -0.064em;
@@ -175,7 +175,7 @@
 }
 
 .heroStatus {
-  margin-top: 20px;
+  margin-top: 14px;
   color: var(--sub);
   font-size: 13px;
 }
@@ -203,14 +203,14 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 0.3em;
-  margin-top: 26px;
+  margin-top: 16px;
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .progressN {
-  font-size: clamp(40px, 5vw, 56px);
+  font-size: clamp(36px, 3.2vw, 44px);
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.05em;
@@ -250,7 +250,7 @@
   display: grid;
   gap: 10px;
   max-width: 520px;
-  margin: 22px 0 0;
+  margin: 16px 0 0;
   scroll-margin-top: 24px;
 }
 
@@ -1286,7 +1286,7 @@
   }
 
   .headline {
-    font-size: 111px;
+    font-size: 84px;
   }
 }
 

@@ -31,7 +31,7 @@ import { Suspense } from "react";
 import { Account, SignIn } from "@/components/PublicAccount";
 import { SiteFooter } from "@/components/RightColumn";
 import { SiteHeader, Wordmark } from "@/components/SiteHeader";
-import { CARD, DOOR_LEDE, DOOR_TITLE, TAGLINE } from "@/components/public/door";
+import { CARD, TAGLINE } from "@/components/public/door";
 import { appUrl } from "@/core/config";
 
 export const dynamic = "force-dynamic";
@@ -50,17 +50,16 @@ export function generateMetadata(): Metadata {
   const base = siteBase();
   return {
     ...(base ? { metadataBase: base } : {}),
+    // No title or description here: Next fills them from the page's own, so a shared link to /privacy
+    // says what /privacy says, and the front door's says the front door's. A page with none of its own
+    // takes the root layout's (the description is `DOOR_LEDE`).
     openGraph: {
       type: "website",
       siteName: "our.one",
-      title: DOOR_TITLE,
-      description: DOOR_LEDE,
       images: [{ url: CARD.path, width: CARD.width, height: CARD.height, alt: CARD.alt }],
     },
     twitter: {
       card: "summary_large_image",
-      title: DOOR_TITLE,
-      description: DOOR_LEDE,
       images: [{ url: CARD.path, alt: CARD.alt }],
     },
   };

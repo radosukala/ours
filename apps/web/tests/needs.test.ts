@@ -306,16 +306,24 @@ describe("a request that carries a need (D-0024 §B)", () => {
     expect((await db().select().from(waitlist)).length + (await db().select().from(outbox)).length).toBeGreaterThan(0);
   });
 
-  it("is kept the same for every address: one with an account, one in line, one new, and each gets the same answer", async () => {
+  it("is kept the same for every address: one with an account, one in line, one new, and each is told the same by takeSeat", async () => {
     await maintainer();
     const member = await makeAccount({ email: "ines_f@example.test" });
     await db().insert(waitlist).values({ email: "jonas_f@example.test", createdAt: at("2026-10-01T00:00:00Z") });
+    // The answer is takeSeat's, so that is what is asked (requestSeat itself resolves to nothing for every request).
+    const form = (email: string, need: string) => {
+      const data = new FormData();
+      data.set("email", email);
+      data.set("need", need);
+      return data;
+    };
+    web.headers.set("x-forwarded-for", "203.0.113.30");
     const answers = [
-      await ask("ines_f@example.test", "one"),
-      await ask("jonas_f@example.test", "two"),
-      await ask("kira_f@example.test", "three"),
+      await takeSeat(null, form("ines_f@example.test", "one")),
+      await takeSeat(null, form("jonas_f@example.test", "two")),
+      await takeSeat(null, form("kira_f@example.test", "three")),
     ];
-    expect(answers).toEqual([undefined, undefined, undefined]);
+    expect(answers).toEqual([{ ok: true }, { ok: true }, { ok: true }]);
     expect((await stored()).map((r) => r.body).sort()).toEqual(["one", "three", "two"]);
     expect(await db().select({ id: accounts.id }).from(accounts).where(eq(accounts.id, member.id))).toHaveLength(1);
   });
@@ -366,10 +374,16 @@ describe("takeSeat with a need: the field a refusal belongs to (D-0024 §B)", ()
   it("returns a too-long need, or one with an address, as an error at the need's own field, and keeps and counts nothing", async () => {
     await maintainer();
     withClient();
-    expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "x".repeat(141) }))).toEqual({ error: NEED_TOO_LONG, field: "need" });
+    // A refusal carries what was typed (`values`), which the form puts back (D-0025 §G).
+    expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "x".repeat(141) }))).toEqual({
+      error: NEED_TOO_LONG,
+      field: "need",
+      values: { email: "mara_f@example.test", need: "x".repeat(141) },
+    });
     expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "call me on mara_f@example.test" }))).toEqual({
       error: NEED_HAS_ADDRESS,
       field: "need",
+      values: { email: "mara_f@example.test", need: "call me on mara_f@example.test" },
     });
     await nothingKept();
     expect(await db().select().from(rateEvents)).toEqual([]);
@@ -389,7 +403,10 @@ describe("takeSeat with a need: the field a refusal belongs to (D-0024 §B)", ()
     withClient();
     vi.stubEnv("DATA_CONTROLLER", "");
     vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
-    expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "Messenger" }))).toEqual({ error: SEATS_CLOSED });
+    expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "Messenger" }))).toEqual({
+      error: SEATS_CLOSED,
+      values: { email: "mara_f@example.test", need: "Messenger" },
+    });
     await nothingKept();
   });
 });

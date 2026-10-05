@@ -49,11 +49,12 @@ export const DOOR_STATUS = "Founder-led today. User control isn't built yet.";
 
 /**
  * The first screen's question (D-0024 §A, §B): optional, beside the address.
- * Its hint says what is true of the answer: it is kept apart from the
- * address, so it can't be found again to change or delete.
+ * Its hint says what is true of the answer and what the form asks of the
+ * person: up to 140 characters, no way to change or delete it later (nothing
+ * in it says whose it is), so leave anything about yourself out of it.
  */
 export const NEED_LABEL = "Which app would you take back?";
-export const NEED_HINT = "Optional. It's kept apart from your email, so it can't be changed or deleted later.";
+export const NEED_HINT = "Optional, up to 140 characters. It can't be changed or deleted later, so please leave anything about yourself out of it.";
 
 export const STRIP_LINE = "Software should answer to the people who depend on it.";
 

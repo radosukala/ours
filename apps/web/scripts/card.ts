@@ -62,14 +62,14 @@ export function cardHtml(): string {
 <html lang="en"><head><meta charset="utf-8"><title>our.one</title><style>
 html,body{margin:0;width:${CARD.width}px;height:${CARD.height}px;background:${paper};color:${ink};overflow:hidden}
 body{position:relative;font-family:"Helvetica Neue",Helvetica,Arial,"Liberation Sans",sans-serif}
-.wm{position:absolute;left:84px;top:64px;display:flex;align-items:center;gap:10px;font-size:34px;font-weight:700;letter-spacing:-0.03em}
-.wm i{display:inline-block;width:12px;height:12px;border-radius:50%;background:${rust}}
+.wm{position:absolute;left:82px;top:58px;font-size:42px;font-weight:700;letter-spacing:-0.07em}
+.wm i{font-style:normal;color:${rust}}
 h1{position:absolute;left:80px;top:150px;margin:0;font-size:112px;font-weight:500;line-height:.98;letter-spacing:-0.064em}
 h1 span{display:block}
 h1 em{color:${rust};font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:400;letter-spacing:-0.04em}
 .foot{position:absolute;left:84px;top:540px;font-size:26px;color:${sub}}
 </style></head><body>
-<div class="wm"><i></i>our.one</div>
+<div class="wm">our<i>.</i>one</div>
 <h1><span>${escapeHtml(a)}</span><span>${escapeHtml(b)}</span><span>${escapeHtml(c)} <em>${escapeHtml(ours)}</em></span></h1>
 <div class="foot">${escapeHtml(DOOR_START.split(". ")[0]!)}.</div>
 </body></html>

@@ -13,7 +13,10 @@
  * The form may carry a named app (D-0024 §B), the optional answer to "Which
  * app would you take back?". It is refused at its own field when it is too
  * long or holds an email address (`field: "need"`); otherwise it is kept
- * apart from the address (core/needs.ts) and the answer is the same one.
+ * without the address (core/needs.ts) and the answer is the same one. A
+ * refusal carries what was typed (`values`), so the form puts it back; the
+ * action is the form's own, passed to useActionState as it is, so the form
+ * still posts without JavaScript.
  */
 import { unstable_rethrow } from "next/navigation";
 import { getDb } from "@/core/db";
@@ -23,18 +26,22 @@ import { validNeed } from "@/core/validate";
 import { afterResponse, GENERIC_ERROR } from "@/web/actions";
 import { clientIpHash } from "@/web/request";
 
-/** A refusal; `field` says which input it belongs to (the address, unless it says "need"). */
-export type SeatResult = { ok: true } | { error: string; field?: "need" };
+/** What was typed, handed back with a refusal so the form can put it back (React empties a form after every submit). */
+export type Sent = { email: string; need: string };
+
+/** A refusal; `field` says which input it belongs to (the address, unless it says "need"); `values` is what was typed, when the action has it. */
+export type SeatResult = { ok: true } | { error: string; field?: "need"; values?: Sent };
 
 export async function takeSeat(_previous: unknown, form: FormData): Promise<SeatResult> {
   const email = form.get("email");
   // Only the front door's form has the field; /feed's has none, and sends no need.
   const need = form.get("need");
+  const values: Sent = { email: typeof email === "string" ? email : "", need: typeof need === "string" ? need : "" };
   try {
     try {
       validNeed(need);
     } catch (error) {
-      if (isCoreError(error)) return { error: error.message, field: "need" };
+      if (isCoreError(error)) return { error: error.message, field: "need", values };
       throw error;
     }
     await requestSeat(getDb(), {
@@ -47,13 +54,13 @@ export async function takeSeat(_previous: unknown, form: FormData): Promise<Seat
   } catch (error) {
     unstable_rethrow(error);
     if (isCoreError(error)) {
-      return { error: error.code === "CLOSED" ? SEATS_CLOSED : error.message };
+      return { error: error.code === "CLOSED" ? SEATS_CLOSED : error.message, values };
     }
     // Never the message: it can carry an address.
     console.error(
       "[ours] a seat request failed:",
       error instanceof Error ? error.name : "unknown error",
     );
-    return { error: GENERIC_ERROR };
+    return { error: GENERIC_ERROR, values };
   }
 }

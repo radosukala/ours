@@ -77,7 +77,6 @@ import {
   DOOR_LEDE,
   DOOR_START,
   DOOR_STATUS,
-  DOOR_TITLE,
   MEMBER_JOIN,
   NEED_HINT,
   NEED_LABEL,
@@ -199,13 +198,18 @@ describe("the first screen, for a visitor (D-0024 §A)", () => {
     expect(render({ needs: 0 })).toContain('name="need"');
   });
 
-  it("labels the question and hints that it is optional and kept apart, and the answer's field takes at most 140 characters", () => {
+  it("labels the question and hints that it is optional, says the 140 and that it can't be changed or deleted so a person should leave themselves out, and puts no maxlength on the field so a longer one is refused in words (D-0025 §B, §H)", () => {
     const html = render();
     expect(textOf(html)).toContain(NEED_LABEL);
     expect(NEED_LABEL).toBe("Which app would you take back?");
     expect(textOf(html)).toContain(NEED_HINT);
-    expect(NEED_HINT).toMatch(/^Optional\./);
-    expect(html).toMatch(/<input[^>]*id="field-need"[^>]*maxLength="140"|<input[^>]*maxLength="140"[^>]*id="field-need"/i);
+    expect(NEED_HINT).toMatch(/^Optional, up to 140 characters\./);
+    expect(NEED_HINT).toContain("can't be changed or deleted later");
+    expect(NEED_HINT).toContain("please leave anything about yourself out of it");
+    // No maxlength: the browser would cut a pasted sentence at 140 without a word; the refusal says it.
+    const at = html.indexOf('id="field-need"');
+    expect(at).toBeGreaterThan(0);
+    expect(html.slice(html.lastIndexOf("<input", at), html.indexOf(">", at))).not.toMatch(/maxLength/i);
     expect(html).not.toMatch(/<input[^>]*name="need"[^>]*required/);
   });
 
@@ -242,9 +246,14 @@ describe("the first screen, for a visitor (D-0024 §A)", () => {
     const badAddress = view({ state: { error: "That doesn't look like an email address." }, values: { email: "nope", need: "Messenger" } });
     expect(badAddress).toContain('value="nope"');
     expect(badAddress).toContain('value="Messenger"');
-    // The form hands the fields back only after a refusal, never after the one answer.
+    // The form is the server action itself (so it posts without JavaScript), and the action hands the fields back
+    // with a refusal and never with the one answer.
     const source = read("src/components/public/GetInForm.tsx");
-    expect(source).toContain('const values = shown !== null && "error" in shown.result ? shown.sent : undefined;');
+    expect(source).toMatch(/useActionState<[^>]*>\(\s*takeSeat,/);
+    expect(source).toContain("const values = given ?? refusal?.values;");
+    const action = read("src/app/(public)/seat-actions.ts");
+    expect(action).toContain("return { ok: true };");
+    expect([...action.matchAll(/values \}|values,\s*\}/g)].length).toBeGreaterThanOrEqual(3);
   });
 
   it("stacks the address, the question and the button, each on its own line, when the form has the question: the one-line layout is for one field and a button (found in a browser: three children in two columns crushed the address and the button)", () => {
@@ -334,24 +343,26 @@ describe("the count of named apps (D-0024 §C)", () => {
   it("is a line under the form once at least one is named, singular for one, and never for none or an unread count", () => {
     expect(needsLine(0)).toBeNull();
     expect(needsLine(-1)).toBeNull();
-    expect(needsLine(1)).toBe("1 app named so far.");
-    expect(needsLine(2)).toBe("2 apps named so far.");
-    expect(needsLine(1284)).toBe("1,284 apps named so far.");
-    expect(textOf(render({ needs: 1 }))).toContain("1 app named so far.");
-    expect(textOf(render({ needs: 12 }))).toContain("12 apps named so far.");
-    for (const needs of [0, null]) expect(textOf(render({ needs })), String(needs)).not.toMatch(/apps? named so far/);
+    // Changed after round one (H3, D-0025 §C): the line counts answers, which is what is counted, and says so.
+    expect(needsLine(1)).toBe("1 answer so far.");
+    expect(needsLine(2)).toBe("2 answers so far.");
+    expect(needsLine(1284)).toBe("1,284 answers so far.");
+    expect(textOf(render({ needs: 1 }))).toContain("1 answer so far.");
+    expect(textOf(render({ needs: 12 }))).toContain("12 answers so far.");
+    expect(textOf(render({ needs: 12 }))).not.toMatch(/apps? named/);
+    for (const needs of [0, null]) expect(textOf(render({ needs })), String(needs)).not.toMatch(/answers? so far/);
   });
 
   it("is not shown to a member or while joining is closed, whatever the number", () => {
-    expect(textOf(render({ needs: 12, member: true }))).not.toMatch(/apps? named so far/);
-    expect(textOf(render({ needs: 12, joining: false }))).not.toMatch(/apps? named so far/);
+    expect(textOf(render({ needs: 12, member: true }))).not.toMatch(/answers? so far/);
+    expect(textOf(render({ needs: 12, joining: false }))).not.toMatch(/answers? so far/);
   });
 
-  it("is read by the route as a number: one named, and the page says '1 app named so far.' and shows none of the words", async () => {
+  it("is read by the route as a number: one kept, and the page says '1 answer so far.' and shows none of the words", async () => {
     await makeAccount({ isAdmin: true, handle: "rado_fict" });
     await recordNeed(db(), "Zorbulon photo app FICTIONAL", new Date("2026-10-05T10:00:00Z"));
     const html = renderToStaticMarkup((await FrontDoorRoute()) as ReactElement);
-    expect(textOf(html)).toContain("1 app named so far.");
+    expect(textOf(html)).toContain("1 answer so far.");
     expect(html).not.toContain("Zorbulon");
     expect(textOf(html)).toContain(progressLine(1));
   });
@@ -361,7 +372,7 @@ describe("the count of named apps (D-0024 §C)", () => {
     await db().execute(sql`drop table needs`);
     try {
       const html = renderToStaticMarkup((await FrontDoorRoute()) as ReactElement);
-      expect(textOf(html)).not.toMatch(/apps? named so far/);
+      expect(textOf(html)).not.toMatch(/answers? so far/);
       expect(textOf(firstScreen(html))).toContain(DOOR_STATUS);
       // The release can reach production before its migration: the page then asks for the address alone,
       // and invites nobody to type what can't be kept.
@@ -453,23 +464,22 @@ describe("the link card (D-0024 §E)", () => {
     vi.stubEnv("APP_URL", "https://our.example.test/");
     const meta = generateMetadata() as Record<string, unknown> & {
       metadataBase?: URL;
-      openGraph: { type: string; siteName: string; title: string; description: string; images: { url: string; width: number; height: number; alt: string }[] };
-      twitter: { card: string; title: string; description: string; images: { url: string; alt: string }[] };
+      openGraph: { type: string; siteName: string; images: { url: string; width: number; height: number; alt: string }[] };
+      twitter: { card: string; images: { url: string; alt: string }[] };
     };
     expect(meta.metadataBase?.href).toBe("https://our.example.test/");
     expect(meta.openGraph).toEqual({
       type: "website",
       siteName: "our.one",
-      title: DOOR_TITLE,
-      description: DOOR_LEDE,
       images: [{ url: "/card.png", width: 1200, height: 630, alt: CARD.alt }],
     });
     expect(meta.twitter).toEqual({
       card: "summary_large_image",
-      title: DOOR_TITLE,
-      description: DOOR_LEDE,
       images: [{ url: "/card.png", alt: CARD.alt }],
     });
+    // Changed after round one (R5): the card names no title or description, so Next fills them from the page's own
+    // (a link to /privacy says what /privacy says); the front door's page sets the door's.
+    expect("title" in meta.openGraph || "description" in meta.openGraph || "title" in meta.twitter || "description" in meta.twitter).toBe(false);
     // The image resolves against the base, to the site's own address and nowhere else.
     expect(new URL(meta.openGraph.images[0]!.url, meta.metadataBase).href).toBe("https://our.example.test/card.png");
     expect(CARD.alt).toBe("our.one: The software we live in should be ours.");

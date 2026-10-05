@@ -303,12 +303,29 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // `seat:email:` rate key before it is the same address's keyed hash. Served so on 3721 (needs 58741, waitlist
   // 58742, rate_events 58739 and 58740, the request after the response), and here in a serial run of six
   // requests with one need
-  it("DEFECT (HIGH): a named app can be joined to the address that sent it by anyone who can read the database, through Postgres's transaction id (xmin), against 'no key that could join it to any of them'", async () => {
-    // What the records and the page promise.
-    expect(record("decisions/D-0024.md")).toContain("no key that could join it to any of them");
-    expect(record("decisions/D-0024.md")).toContain("the moment would let anyone who can read the database match a name to the waiting list by its time");
-    expect(NEED_HINT).toContain("kept apart from your email");
-    expect(NEED_HAS_ADDRESS).toContain("We don't keep it with your address");
+  // Changed after round one (H1). The finding stands as a fact and is recorded: a named app can still be joined to
+  // the address that sent it by someone who can read the database, through Postgres's own transaction id. What
+  // was fixed is what is claimed: D-0024 §B's 'no key that could join it to any of them' and 'the moment would
+  // let anyone … match a name to the waiting list' no longer stand in the form's hint, its refusal, /privacy, the
+  // manifest or SPEC §18.23, which now say that someone who can read the database could still guess whose one is
+  // and ask people to leave anything about themselves out; D-0025 §A amends D-0024 and its open item 2 puts
+  // the one real remedy, a rewrite of the table in random order, to the founder. It is not built here: with few
+  // answers it would not help, it does not reach the provider's history, and it is machinery the founder has not
+  // asked for (AGENTS.md §12)
+  it("recorded, with the claim fixed (HIGH): a named app can still be joined to the address that sent it by someone who can read the database, through Postgres's transaction id (xmin); the hint, the refusal, /privacy, the manifest and the records now say so and no longer claim 'no key that could join it'", async () => {
+    // What the page and the records no longer promise.
+    expect(NEED_HINT).not.toContain("kept apart from your email");
+    expect(NEED_HINT).toContain("please leave anything about yourself out of it");
+    expect(NEED_HAS_ADDRESS).not.toContain("We don't keep it with your address");
+    const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
+    expect(privacy).toContain("Someone who can read our database could still guess whose it is from when it was written");
+    expect(privacy).toContain("could still guess whose it is from when it was written");
+    const manifest = JSON.parse(read("our.one.json")) as { data: { collects: { what: string; kept: string }[] } };
+    const named = manifest.data.collects.find((c) => c.what.startsWith("Named apps:"))!;
+    expect(named.kept).toContain("Someone who can read our database could still guess whose it is from when it was written");
+    expect(record("decisions/D-0025.md")).toContain("could still guess whose one is");
+    expect(record("decisions/D-0025.md")).toContain("Amended, in place of those claims:");
+    expect(flat(read("SPEC.md").slice(read("SPEC.md").indexOf("### 18.23")))).toContain("could still guess whose one is");
 
     await maintainer();
     const people = ["ines", "jonas", "kira", "lena", "mara", "noor"].map((n) => `${n}_f@example.test`);
@@ -330,8 +347,8 @@ describe("defects (each FAILS on 01d5d9f)", () => {
         from needs n`)
     ).rows[0] as { address: string | null; rate_key: string | null };
 
-    // The defect: the need's author is recovered, as the address and as the address's rate key.
-    expect([joined.address === author, joined.rate_key === `seat:email:${rateKeyHash(author)}`]).toEqual([false, false]);
+    // The fact, as recorded: the need's author is recovered, as the address and as the address's rate key.
+    expect([joined.address === author, joined.rate_key === `seat:email:${rateKeyHash(author)}`]).toEqual([true, true]);
   });
 
   // Finding. Evidence and reasoning:
@@ -369,14 +386,21 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // one 'zorbulon photos' and one U+200B give '5 apps named so far.' for one app
   it("DEFECT (MEDIUM): '12 apps named so far.' counts rows (answers, repeats, invisible text), not apps", async () => {
     expect(record("decisions/D-0024.md")).toContain("It counts what people typed, not different apps");
-    expect(needsLine(5)).toBe("5 apps named so far.");
+    // Changed after round one (H3): the line counts answers, and says so; D-0025 §C.
+    expect(needsLine(5)).toBe("5 answers so far.");
+    expect(record("decisions/D-0025.md")).toContain('It now says "1 answer so far." and "N answers so far."');
 
     await maintainer();
     const named = ["Zorbulon photos", "Zorbulon photos", "Zorbulon photos", "zorbulon photos", "\u200b"];
     for (const [i, need] of named.entries()) await ask(`n${i}_f@example.test`, need, 30 + i, i);
-    expect(await needCount(db())).toBe(5);
+    // Changed after round one (H8): the need of one invisible character is no longer kept, so five requests leave four
+    // rows, all of them the one app; the page counts them as answers, which is what four rows are.
+    expect(await needCount(db())).toBe(4);
 
     const text = textOf(await door());
+    // Changed after round one (H3): the page now says "4 answers so far.", which four rows are, and no longer calls them apps.
+    expect(text).toContain("4 answers so far.");
+    expect(text).not.toMatch(/apps? named/);
     const claimed = Number((/([\d,]+) apps? named so far\./.exec(text)?.[1] ?? "0").replace(/,/g, ""));
     const rows = await db().select().from(needs);
     const distinctVisible = new Set(rows.map((r) => r.body.replace(/[\u200b-\u200f\u2060\ufeff]/g, "").trim().toLowerCase()).filter((b) => b !== "")).size;
@@ -396,12 +420,24 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // --changed` says 'decisions/D-0024.md is denied by decisions/**' and RESULT: REFUSED. D-0024 itself says 'an
   // amendment is a new record'; here the builder rewrote the decision that authorises its own build, twice, in
   // place (AGENTS.md §5)
-  it("DEFECT (HIGH): the build's commits c09a7b2 and c9ac8bc change decisions/ and proposals/, which M-0021 denies, and the receipt says R-SCOPE authorised each commit of the build", () => {
+  // Changed after round one (H4). The two commits that edited D-0024 and P-0017 were records, outside M-0021's
+  // scope by design, and the receipt called them part of "the build" and said the scope check had authorised
+  // "each commit of the build". Now the receipt lists the records commits apart, says they are outside M-0021
+  // and were edited in place when D-0024 says an amendment is a new record, says what `--changed` can and can't
+  // show, and D-0025 is the new record. The build's own commits touch no path the mandate denies
+  it("fixed (HIGH): the receipt separates the records commits c09a7b2 and c9ac8bc, which change decisions/ and proposals/ (denied by M-0021), from the commits of the build, and no longer says R-SCOPE authorised each commit of the build", () => {
     const receipt = readRoot("receipts/builds/2026-10-05-M-0021.md");
-    expect(flat(receipt)).toContain("`pnpm ours check M-0021 --changed`: authorised, before each commit of the build");
+    expect(flat(receipt)).not.toContain("authorised, before each commit of the build");
+    expect(flat(receipt)).toContain("The check reads only what is uncommitted, so it says nothing about a commit once it is made");
     const section = receipt.slice(receipt.indexOf("## Commits"), receipt.indexOf("## Checks before verification"));
-    const commits = [...section.matchAll(/`([0-9a-f]{7})`/g)].map((m) => m[1]!);
-    expect(commits).toEqual(["61ccbbe", "c09a7b2", "30f1cc8", "943a90c", "c9ac8bc"]);
+    const part = (from: string, to: string) => section.slice(section.indexOf(from), section.indexOf(to));
+    const ids = (text: string) => [...text.matchAll(/`([0-9a-f]{7})`/g)].map((m) => m[1]!);
+    const records = ids(part("**Records,**", "**The build,**"));
+    const build = ids(part("**The build,**", "**This receipt, the screens, and the verification:**"));
+    expect(records).toEqual(["61ccbbe", "c09a7b2", "c9ac8bc"]);
+    expect(build).toEqual(["30f1cc8", "943a90c"]);
+    expect(flat(section)).toContain("**edited in place**");
+    expect(record("decisions/D-0025.md")).toContain("were edited in place, twice");
 
     // The mandate's own deny list.
     const yaml = readRoot("mandates/M-0021.yaml");
@@ -414,13 +450,11 @@ describe("defects (each FAILS on 01d5d9f)", () => {
     const denied = (path: string) => deny.some((g) => (g.endsWith("/**") ? path.startsWith(g.slice(0, -2)) : path === g));
     const paths = (commit: string) => git(["show", "--name-only", "--format=", commit]).trim().split("\n").filter(Boolean);
 
-    // 61ccbbe makes the mandate, so no check of it could have run before; every later commit of the build could be checked.
+    // The records commits are what they are said to be; the build's are inside the scope.
+    expect(paths("c09a7b2").filter(denied).length).toBeGreaterThan(0);
+    expect(paths("c9ac8bc").filter(denied).length).toBeGreaterThan(0);
     expect(paths("61ccbbe")).toContain("mandates/M-0021.yaml");
-    const breaches = commits
-      .filter((c) => c !== "61ccbbe")
-      .flatMap((c) => paths(c).filter(denied).map((p) => `${c} ${p}`));
-
-    // The defect: commits of the build that R-SCOPE refuses.
+    const breaches = build.flatMap((c) => paths(c).filter(denied).map((p) => `${c} ${p}`));
     expect(breaches).toEqual([]);
   });
 
@@ -437,11 +471,13 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // under M-0021 to accept the wrapper. React's replay script still catches a click made before the page's
   // JavaScript has run; a visitor with none, or whose script fails to load, has no way in
   it("DEFECT (MEDIUM): the join form, on the front door and on /feed, no longer works without JavaScript, and /feed's was to be unchanged", async () => {
-    expect(readRoot("apps/web/SPEC.md")).toContain("`/feed`'s form is unchanged");
+    // Changed after round one (H5, R4): SPEC §18.23 now says what is so: both forms are the server action itself.
+    expect(record("apps/web/SPEC.md")).toContain("Both forms are the server action itself, passed to useActionState, so both still post without JavaScript");
     expect(flat(readRoot("mandates/M-0021.md"))).toContain("what the feed does, its verified words, and every rule and gate behind the pages");
-    // The change that did it: the old assertion, and the new one that lets the wrapper through.
+    // Changed after round one (H5): the old assertion is back, as it was on ac38742, and the form is the server action
+    // itself again (`values` come back from the action, not from a client closure).
     expect(git(["show", "ac38742:apps/web/tests/front-page.test.ts"])).toContain("useActionState<[^>]*>\\(\\s*takeSeat,");
-    expect(read("tests/front-page.test.ts")).toContain("async \\(_previous, form\\) => \\(\\{\\s*result: await takeSeat\\(null, form\\),");
+    expect(read("tests/front-page.test.ts")).toBe(git(["show", "ac38742:apps/web/tests/front-page.test.ts"]));
 
     // takeSeat is a server reference here, as it is in the served page.
     const withNeed = await full(createElement(GetInForm, { need: true }));
@@ -465,19 +501,33 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // export and deletion work, for everything in data.collects?' is a question it leaves to a person. Neither
   // D-0024, M-0021, the receipt nor SPEC §18.23 mentions rule 6 or that the rule is broken by design. Whether to
   // keep a rule or amend it is the founder's; the build decided it by writing the exception into the manifest
-  it("DEFECT (MEDIUM): apps/web/AGENTS.md rule 6 (people can leave: export and deletion work for everything in data.collects) is not kept for Named apps, and no record says so", () => {
+  // Changed after round one (H6). The departure from rule 6 is recorded, not removed: D-0025 says that the build
+  // declared a collected kind that can be neither exported nor deleted, that it did so without anyone deciding,
+  // that rule 6 itself says to stop and say which rule a task would break, and it puts the founder's three
+  // options to them (amend the rule for data stored with nothing that identifies it, drop the question and the
+  // 'Named apps' entry, or give a named app a deletion code). The build receipt carries it too; the manifest
+  // still states that a named app can't be found to export or delete, because that is what is so
+  it("recorded (MEDIUM): apps/web/AGENTS.md rule 6 (people can leave: export and deletion work for everything in data.collects) is not kept for Named apps; D-0025 and the receipt say so and put the founder's three options", () => {
     const rules = readRoot("apps/web/AGENTS.md");
     expect(rules).toContain("6. **People can leave.** Keep export and deletion working for everything in `data.collects`.");
     const manifest = JSON.parse(read("our.one.json")) as { data: { collects: { what: string }[]; export: string; delete: string } };
     expect(manifest.data.collects.map((c) => c.what.split(":")[0])).toContain("Named apps");
-    for (const file of ["decisions/D-0024.md", "mandates/M-0021.md", "proposals/P-0017.md", "receipts/builds/2026-10-05-M-0021.md"]) {
-      expect(record(file), file).not.toMatch(/rule 6|People can leave|export and deletion/i);
-    }
-    expect(flat(read("SPEC.md").slice(read("SPEC.md").indexOf("### 18.23")))).not.toMatch(/rule 6|People can leave/i);
-
-    // The defect: the manifest declares a collected kind that can be neither exported nor deleted.
+    // Still true, and still stated in the manifest.
     const exceptions = `${manifest.data.export} ${manifest.data.delete}`.match(/[^.]*can't be found to (?:export|delete)[^.]*\./g) ?? [];
-    expect(exceptions).toEqual([]);
+    expect(exceptions).toHaveLength(2);
+
+    // Said where the founder will read it.
+    const d25 = record("decisions/D-0025.md");
+    expect(d25).toContain("apps/web/AGENTS.md rule 6 reads");
+    expect(d25).toContain("made by the build, not decided by anyone");
+    expect(d25).toContain("If a task would break one, stop and say which.");
+    for (const option of ["the rule is amended for data that is stored with nothing that identifies", "the question is dropped from the form, and Named apps leaves", "a named app gets a way to be deleted"]) {
+      expect(d25, option).toContain(option);
+    }
+    expect(record("receipts/builds/2026-10-05-M-0021.md")).toMatch(/rule 6/i);
+    expect(flat(read("SPEC.md").slice(read("SPEC.md").indexOf("### 18.23")))).toMatch(/rule 6/i);
+    // D-0024, the mandate and the proposal are as they were: the departure is D-0025's to state, not theirs to have said.
+    for (const file of ["decisions/D-0024.md", "mandates/M-0021.md", "proposals/P-0017.md"]) expect(record(file), file).not.toMatch(/rule 6/i);
   });
 
   // Finding. Evidence and reasoning:
@@ -489,7 +539,10 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // comment says 'It is not a general filter … and /privacy says so'; /privacy says only 'Please leave anything
   // about yourself out of it', not that the form checks for one spelling
   it("DEFECT (LOW): 'an email address in it is INVALID' holds for one spelling only: a space beside the @, or a full-width @, and the address is kept", () => {
-    expect(read("src/core/validate.ts")).toContain("and /privacy says so");
+    // Changed after round one (H7): the comment no longer says "/privacy says so" (/privacy doesn't name the
+    // spellings); it says the filter is not a general one, and the form's hint asks people to leave themselves out.
+    expect(read("src/core/validate.ts").replace(/\n\s*\*\s*/g, " ")).toContain("It is not a general filter");
+    expect(read("src/core/validate.ts")).not.toContain("and /privacy says so");
     expect(read("src/core/validate.ts")).toContain("[@\\uFF20\\uFE6B]");
     // The plain spelling is refused, as built.
     expect(() => validNeed("mara@example.test")).toThrow(NEED_HAS_ADDRESS);
@@ -514,7 +567,8 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // `psql -c 'select named_on, body from needs'` (the down migration's header). validDisplayName in the same
   // file already refuses `\p{Default_Ignorable_Code_Point}` and `\p{Bidi_Control}`
   it("DEFECT (LOW): validNeed passes C1 control characters and bidi overrides, and keeps a need made only of invisible characters, against SPEC §18.23 and its own comment", () => {
-    expect(readRoot("apps/web/SPEC.md")).toContain("control characters and runs of white space become single spaces");
+    // Changed after round one (H8): SPEC §18.23 now says every control character (C0 and C1), the bidi controls and nothing a reader could see.
+    expect(record("apps/web/SPEC.md")).toContain("every control character (C0 and C1) and run of white space becomes a single space, the bidi controls are dropped, a need of nothing a reader could see is null");
     expect(validNeed("a\u0007b\u007fc\u001bd")).toBe("a b c d");
     expect(validNeed("  Messenger\n\n and   WhatsApp\t")).toBe("Messenger and WhatsApp");
     expect(read("src/core/validate.ts")).toContain("FORMAT_CHARACTERS = /(?![\\uFE0E\\uFE0F])[\\p{Default_Ignorable_Code_Point}\\p{Bidi_Control}]/u;");
@@ -543,16 +597,23 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // from a plan to a fact). P-0017, 'What is proposed' 1: 'one line ("It starts with a friends feed.")', and its
   // open item 3: D-0024 'chose the shortest true ones'; the shortest is the one sentence the card carries, and
   // the first screen adds 'Building toward much more.', the one clause of the three that promises
-  it("DEFECT (LOW): the records' account of the first screen's line is not the line (D-0024: 'the last two sentences of the existing description'; P-0017: one sentence)", () => {
+  // Changed after round one (H9). D-0024 stays as it is; D-0025 §F gives the account that is true: the line is a
+  // rephrasing of DOOR_LEDE's last two sentences ("Starting with" turned into "It starts with"), P-0017 proposed
+  // the one sentence, and which the founder wants is theirs to choose
+  it("fixed (LOW): D-0025 says the first screen's line is a rephrasing of the existing description's last two sentences, not those sentences, and says where P-0017 proposed one (D-0024's account is amended, not repeated)", () => {
     expect(record("decisions/D-0024.md")).toContain("these are the last two sentences of the front door's existing description, already held to D-0020 §F");
-    expect(read("src/components/public/door.ts")).toContain("`DOOR_LEDE`'s last two");
     expect(DOOR_START).toBe("It starts with a friends feed. Building toward much more.");
     expect(record("proposals/P-0017.md")).toContain('one line ("It starts with a friends feed.")');
-    expect(record("proposals/P-0017.md")).toContain("D-0024 §A chose the shortest true ones");
 
-    // The defect: the records' account of the line is not the line.
-    const line: string = DOOR_START;
-    expect([DOOR_LEDE.endsWith(line), line === "It starts with a friends feed."]).toEqual([true, true]);
+    const d25 = record("decisions/D-0025.md");
+    expect(d25).toContain("They are a rephrasing of them");
+    expect(d25).toContain('DOOR_LEDE ends "Starting with a friends feed. Building toward much more."');
+    expect(d25).toContain('reads "It starts with a friends feed. Building toward much more."');
+    expect(d25).toContain('P-0017 proposed the one sentence "It starts with a friends feed."');
+    expect(record("apps/web/SPEC.md").slice(record("apps/web/SPEC.md").indexOf("### 18.23"))).toContain("a rephrasing of DOOR_LEDE's last two sentences");
+    // The code's own comment no longer calls them "the last two sentences" without saying it rephrases them.
+    expect(flat(read("src/components/public/door.ts"))).toContain("said as the first screen's own");
+    expect(DOOR_LEDE.endsWith("Starting with a friends feed. Building toward much more.")).toBe(true);
   });
 
   // Finding. Evidence and reasoning:
@@ -566,34 +627,28 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // address is refused (receipt item 6; SPEC §18.23; validNeed), a rule that decides who may answer and in what
   // words, which D-0024 §B never says. The founder who is told to confirm D-0024's choices is shown fewer than
   // were made
-  it("DEFECT (MEDIUM): D-0024 says it marks every choice the notes left open and marks six of nine; refusing a need that holds an email address is nowhere in it", () => {
+  // Changed after round one (H10). D-0024 is left as it stands, with its six marks; D-0025 §D lists the three it
+  // left out and marks them "agent's choice", and says each is the founder's to confirm: the one-form rule, the
+  // link card's look, and the refusal of an email address in a need
+  it("fixed (MEDIUM): D-0025 marks the three choices D-0024 left unmarked or unmentioned (the one form, the link card's look, refusing an email address in a need) as the agent's choices, for the founder to confirm", () => {
     const yaml = record("decisions/D-0024.yaml");
-    for (const choice of ["the line after \"It starts with a friends feed\"", "which sentence is the pledge", "the removal of the two entrance buttons", "the 140 characters", "the day instead of the moment", "the one-form rule", "the question being asked only while the count of named apps can be read", "the link card's look"]) {
-      expect(yaml, choice).toContain(choice);
-    }
     expect(yaml).toContain("is marked \"(agent's choice)\" in the decision");
-    const receipt = record("receipts/builds/2026-10-05-M-0021.md");
-    expect(receipt).toContain("an email address in the need is refused;");
-    expect(receipt).toContain("one form on the page (the feed's panel carries none);");
-    expect(receipt).toContain("the link card's look and its description;");
-
     const raw = readRoot("decisions/D-0024.md");
-    const paragraphs = raw.split(/\n\s*\n/);
-    const paragraphWith = (anchor: string) => paragraphs.find((p) => p.includes(anchor)) ?? "";
-    const marked = (anchor: string) => /\(agent's choice/.test(paragraphWith(anchor));
-    // Six marks besides the preface's own: the line, the pledge, the buttons, the day, when the question is asked, the 140.
+    // D-0024 itself is as it was: six marks besides the preface's own, and the three still unmarked there.
     expect([...raw.matchAll(/\(agent's choice/g)]).toHaveLength(7);
-    for (const anchor of ["The two entrance buttons leave the first screen", "How long it can be", "When the question is asked"]) expect(marked(anchor), anchor).toBe(true);
-    const unmarked = [
-      ["the one-form rule", marked("There is one form on the page.")],
-      ["the link card's look", marked("The image is made by `scripts/card.ts`")],
-      ["an email address in a need is refused", /need[^.]*email address|email address[^.]*need/i.test(raw)],
-    ]
-      .filter(([, ok]) => !ok)
-      .map(([name]) => name);
+    const paragraphs = raw.split(/\n\s*\n/);
+    const marked = (anchor: string) => /\(agent's choice/.test(paragraphs.find((p) => p.includes(anchor)) ?? "");
+    expect(marked("There is one form on the page.")).toBe(false);
+    expect(marked("The image is made by `scripts/card.ts`")).toBe(false);
 
-    // The defect: choices the build made that the decision doesn't mark, or doesn't mention.
-    expect(unmarked).toEqual([]);
+    const d25 = record("decisions/D-0025.md");
+    expect(d25).toContain('D-0024\'s preface says every choice the notes left open is marked "(agent\'s choice)"; three were not. They are agent\'s choices, and they are the founder\'s to confirm:');
+    for (const choice of ["One form on the page.", "The link card's look and words:", "An email address in a need is refused,"]) {
+      expect(d25, choice).toContain(choice);
+    }
+    // The refusal is no longer in nothing but the code: the decision that records it says who may answer and in what words.
+    expect(d25).toContain("it decides who may answer and in what words");
+    expect(flat(readRoot("decisions/D-0025.yaml"))).toContain("the choices of section D");
   });
 
   // Finding. Evidence and reasoning:
@@ -636,22 +691,24 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // undefined]`: that holds whatever the three requests did, so 'the same answer' is not tested there (the rows
   // it also asserts are). The answer is `takeSeat`'s, and none of the tests the build added calls it for an
   // address with an account or one in line (seat-actions.test.ts, older, does, with no need)
-  it("DEFECT (LOW): needs.test.ts 'each gets the same answer' compares the void results of requestSeat, so it cannot fail on the answer", async () => {
+  // Changed after round one (H12). The test now asks `takeSeat`, which is what answers, for the three address
+  // states and compares what each is told; the void results of `requestSeat` are no longer what it asserts
+  it("fixed (LOW): needs.test.ts 'each gets the same answer' asks takeSeat for the answer of an address with an account, one in line and a new one, so it can fail on the answer", async () => {
     const source = read("tests/needs.test.ts");
-    const title = "is kept the same for every address: one with an account, one in line, one new, and each gets the same answer";
+    const title = "is kept the same for every address: one with an account, one in line, one new, and each is told the same by takeSeat";
     const at0 = source.indexOf(title);
     expect(at0).toBeGreaterThan(0);
     const body = source.slice(at0, source.indexOf("\n  it(", at0));
-    expect(body).toContain("expect(answers).toEqual([undefined, undefined, undefined]);");
+    expect(body).toContain("takeSeat(null");
+    expect(body).not.toContain("expect(answers).toEqual([undefined, undefined, undefined]);");
 
-    // requestSeat has nothing to answer with.
+    // requestSeat has nothing to answer with; takeSeat does.
     await maintainer();
     const answered = await ask("kira_f@example.test", "Messenger", 1);
     expect(answered).toBeUndefined();
-
-    // The defect: the "answers" assertion would hold for any request that did not throw, so the title says more than the test checks.
-    expect(body).not.toContain("expect(answers).toEqual([undefined, undefined, undefined]);");
+    expect(body).toContain("{ ok: true }");
   });
+
 });
 
 /* --------------------------------------------------------------- closed */
@@ -769,7 +826,8 @@ describe("closed (each passes on 01d5d9f)", () => {
       expect(html).not.toContain("Zorbulon");
       expect(html).not.toContain("alert(");
     }
-    expect(textOf(await door())).toContain("2 apps named so far.");
+    // Changed after round one (H3): the line counts answers, and says so ("2 answers so far.").
+    expect(textOf(await door())).toContain("2 answers so far.");
     // The refusal's put-back values: through GetInFormView's markup, escaped.
     const { GetInFormView } = await import("@/components/public/GetInForm");
     const refused = renderToStaticMarkup(
@@ -854,8 +912,18 @@ describe("closed (each passes on 01d5d9f)", () => {
     web.headers.set("x-forwarded-for", "203.0.113.70");
 
     // Too long, or an address in it: refused at the need's field, nothing counted (not even a limit).
-    expect(await actual(null, form({ email: "mara_f@example.test", need: "x".repeat(141) }))).toEqual({ error: NEED_TOO_LONG, field: "need" });
-    expect(await actual(null, form({ email: "mara_f@example.test", need: "write to mara_f@example.test" }))).toEqual({ error: NEED_HAS_ADDRESS, field: "need" });
+    // Changed after round one (H5, R4): a refusal now carries what was typed (`values`), which the form puts back;
+    // the rest of each answer is as it was.
+    expect(await actual(null, form({ email: "mara_f@example.test", need: "x".repeat(141) }))).toEqual({
+      error: NEED_TOO_LONG,
+      field: "need",
+      values: { email: "mara_f@example.test", need: "x".repeat(141) },
+    });
+    expect(await actual(null, form({ email: "mara_f@example.test", need: "write to mara_f@example.test" }))).toEqual({
+      error: NEED_HAS_ADDRESS,
+      field: "need",
+      values: { email: "mara_f@example.test", need: "write to mara_f@example.test" },
+    });
     // An address that isn't one: refused at the address.
     const bad = await actual(null, form({ email: "not an address", need: "Messenger" }));
     expect("error" in bad && bad.field).toBeFalsy();
@@ -877,7 +945,10 @@ describe("closed (each passes on 01d5d9f)", () => {
     // Joining closed: no controller named.
     vi.stubEnv("DATA_CONTROLLER", "");
     vi.stubEnv("DATA_CONTROLLER_EMAIL", "");
-    expect(await actual(null, form({ email: "noor_f@example.test", need: "Messenger" }))).toEqual({ error: "Joining opens soon." });
+    expect(await actual(null, form({ email: "noor_f@example.test", need: "Messenger" }))).toEqual({
+      error: "Joining opens soon.",
+      values: { email: "noor_f@example.test", need: "Messenger" },
+    });
     expect(await needCount(db())).toBe(3);
   });
 
@@ -1060,7 +1131,9 @@ describe("closed (each passes on 01d5d9f)", () => {
     const meta = generateMetadata() as { openGraph: { images: { url: string; width: number; height: number }[] } };
     expect(meta.openGraph.images[0]).toMatchObject({ url: CARD.path, width: 1200, height: 630 });
     const png = readFileSync(join(WEB, "public", CARD.path.slice(1)));
-    expect([png.readUInt32BE(16), png.readUInt32BE(20), png.length]).toEqual([1200, 630, 48428]);
+    // Changed after round one (R6): the card was drawn again with the site's own wordmark (the rust dot), so it
+    // weighs 48,853 bytes where it weighed 48,428; its size in pixels is the same.
+    expect([png.readUInt32BE(16), png.readUInt32BE(20), png.length]).toEqual([1200, 630, 48853]);
     expect(DOOR_HEADLINE.join(" ")).toBe("The software we live in should be ours.");
   });
 

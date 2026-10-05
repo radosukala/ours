@@ -923,9 +923,9 @@ describe("closed (each passes on 4e04af5)", () => {
     // is 184865b's byte for byte once those four additions are taken out.
     const privacyAsVerified = (text: string) =>
       text
-        .replace(/ \* A named app \(D-0024 §B, SPEC §18\.23\)[\s\S]*? because that is true of nothing else it\n \* keeps\.\n \*\n/, "")
+        .replace(/ \* A named app \(D-0024 §B, SPEC §18\.23\)[\s\S]*? nothing else it keeps\.\n \*\n/, "")
         .replace(/  \{\n    title: "Named apps",\n[\s\S]*?\n  \},\n(?=\];)/, "")
-        .replace(" If you also name an app on the form, those words are kept apart from your address: see Named apps.", "")
+        .replace(" If you also answer the question on the form, those words are kept without your address: see Named apps.", "")
         .replace(/          <li>\n            <strong>A named app can&apos;t be found\.<\/strong>\n[\s\S]*?          <\/li>\n/, "");
     expect(privacyAsVerified(read("src/app/(public)/privacy/page.tsx"))).toBe(git(["show", "184865b:apps/web/src/app/(public)/privacy/page.tsx"]));
   });

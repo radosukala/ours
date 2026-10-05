@@ -560,30 +560,31 @@ describe("closed (each passes on cb1aadd)", () => {
 
     // Changed after the verification of M-0020 (H2): the two pictures were redrawn to show the app as it is
     // (D-0023 §A, §D); their people, posts and words are still 25ce8f0's.
-    // Changed under M-0021 (D-0024 §A): GetInForm gains an optional second field, "Which app would
-    // you take back?", for the front door's form; /feed's passes none, and renders what it did.
-    // Its verified words (the label, the one answer, the button's) are 25ce8f0's: the file is
-    // 25ce8f0's once the field, its refusal and its props are taken out.
+    // Changed under M-0021 (D-0024 §A, D-0025 §G, §H): GetInForm gains an optional second field, "Which app
+    // would you take back?", for the front door's form; /feed's passes none, and renders what it did. Its
+    // verified words (the label, the one answer, the button's) are 25ce8f0's: the file is 25ce8f0's once the
+    // field, the refusal's field and kept values, the one answer's place and the button's aria-disabled are
+    // taken out. (After round one the hook is the verified one again: the server action itself.)
     const getInAsVerified = (text: string) =>
       text
-        .replace(/\n \*\n \* On the front door \(D-0024 §A\)[\s\S]*? sends none\.\n \*\//, "\n */")
-        .replace('import { LIMITS } from "@/core/validate";\n', "")
+        .replace(/\n \*\n \* On the front door \(D-0024 §A\)[\s\S]*? keyboard focus stays on it\.\n \*\//, "\n */")
+        .replace('import { type SeatResult, type Sent, takeSeat } from "@/app/(public)/seat-actions";', 'import { type SeatResult, takeSeat } from "@/app/(public)/seat-actions";')
         .replace('import { NEED_HINT, NEED_LABEL } from "./door";\n', "")
-        // The hook that keeps what was typed across a refusal (React empties a form after every submit), and
-        // the function around it, are the verified ones once it is taken out.
+        .replace("export function GetInForm({ label = JOIN_LABEL, need = false }: { label?: string; need?: boolean }) {", "export function GetInForm({ label = JOIN_LABEL }: { label?: string }) {")
+        .replace(" label={label} need={need} />;", " label={label} />;")
+        .replace("  label = JOIN_LABEL,\n  need = false,\n  values: given,\n}: {", "  label = JOIN_LABEL,\n}: {")
+        .replace("  label?: string;\n  need?: boolean;\n  /** What to put back in the fields: a refusal's own values, unless given. */\n  values?: Sent;\n}) {", "  label?: string;\n}) {")
         .replace(
-          /\/\*\* What was typed, kept across a refusal[^\n]*\*\/\ntype Sent[^\n]*\nconst text[^\n]*\n\n\/\*\* The form, with the button's words for the seats open now \(`joinLabel`\)\. \*\/\nexport function GetInForm[\s\S]*?\n\}\n/,
-          "/** The form, with the button's words for the seats open now (`joinLabel`). */\nexport function GetInForm({ label = JOIN_LABEL }: { label?: string }) {\n  const [state, formAction, pending] = useActionState<SeatResult | null, FormData>(\n    takeSeat,\n    null,\n  );\n  return <GetInFormView state={state} action={formAction} pending={pending} label={label} />;\n}\n",
-        )
-        .replace("  label = JOIN_LABEL,\n  need = false,\n  values,\n}: {", "  label = JOIN_LABEL,\n}: {")
-        .replace("  label?: string;\n  need?: boolean;\n  /** What was typed when the form was refused, put back in its fields. */\n  values?: Sent;\n}) {", "  label?: string;\n}) {")
-        .replace(
-          '  const refusal = state !== null && "error" in state ? state : null;\n  // A refusal belongs to the field it names; the address\'s is the default.\n  const error = refusal !== null && refusal.field !== "need" ? refusal.error : null;\n  const needError = refusal !== null && refusal.field === "need" ? refusal.error : null;\n  const answered = state !== null && refusal === null;\n',
+          '  const refusal = state !== null && "error" in state ? state : null;\n  // What was typed when the form was refused, put back in its fields.\n  const values = given ?? refusal?.values;\n  // A refusal belongs to the field it names; the address\'s is the default.\n  const error = refusal !== null && refusal.field !== "need" ? refusal.error : null;\n  const needError = refusal !== null && refusal.field === "need" ? refusal.error : null;\n  const answered = state !== null && refusal === null;\n',
           '  const error = state !== null && "error" in state ? state.error : null;\n  const answered = state !== null && error === null;\n',
         )
-        .replace("          defaultValue={values?.email}\n", "")
+        // The one answer was drawn after the form, and is now drawn first.
+        .replace('      {answered ? (\n        <p className="notice notice--ok" role="status">\n          {CHECK_YOUR_EMAIL}\n        </p>\n      ) : null}\n      <form ', "      <form ")
+        .replace("      </form>\n    </div>", '      </form>\n      {answered ? (\n        <p className="notice notice--ok" role="status">\n          {CHECK_YOUR_EMAIL}\n        </p>\n      ) : null}\n    </div>')
         .replace('className={`form get-in-form${need ? " get-in-form--need" : ""}`}', 'className="form get-in-form"')
-        .replace(/        \{need \? \(\n          <Field\n[\s\S]*?        \) : null\}\n/, "");
+        .replace("          defaultValue={values?.email}\n", "")
+        .replace(/        \{need \? \(\n          <Field\n[\s\S]*?        \) : null\}\n/, "")
+        .replace(/        <Button\n          type="submit"\n[\s\S]*?        >\n/, '        <Button type="submit" kind="primary" size="large" block disabled={pending}>\n');
     expect(getInAsVerified(read("src/components/public/GetInForm.tsx"))).toBe(gitShow(FRONT_PAGE_VERIFIED, "apps/web/src/components/public/GetInForm.tsx"));
     for (const file of ["lede.ts", "handover.ts"]) {
       expect(read(`src/components/public/${file}`), file).toBe(gitShow(FRONT_PAGE_VERIFIED, `apps/web/src/components/public/${file}`));

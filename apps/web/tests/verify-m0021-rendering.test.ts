@@ -877,7 +877,7 @@ describe("closed checks (each held, and passes)", () => {
     expect(elements(byClass(tree, "pledge")[0]!).map((e) => e.tag)).toEqual(["blockquote", "figcaption"]);
     expect(findAll(tree, (e) => e.tag === "input" && e.attrs.type === "email")).toHaveLength(1);
     const form = byClass(tree, "heroJoin")[0]!;
-    expect(elements(form).map((e) => (e.tag === "p" ? text(e).slice(0, 14) : e.tag))).toEqual(["div", "3 apps named s", "No seats are o", "Free to join. ", "We'll email yo"]);
+    expect(elements(form).map((e) => (e.tag === "p" ? text(e).slice(0, 14) : e.tag))).toEqual(["div", "3 answers so f", "No seats are o", "Free to join. ", "We'll email yo"]);
     // "The number set large" (M-0021): at least twice the sentence's 18px at every width, 40px to 56px as Chromium drew it
     const sizes = [320, 375, 820, 1000, 1440].map((w) => px(cascade(byClass(tree, "progressN")[0]!, ["font-size"], at(w))!.value, at(w)));
     sizes.forEach((size) => expect(size).toBeGreaterThanOrEqual(36));
@@ -1168,6 +1168,7 @@ describe("closed checks (each held, and passes)", () => {
     expect(source).not.toMatch(/useEffect|fetch\(|useLayoutEffect/);
     expect(read("src/app/(public)/page.tsx")).toMatch(/joining && !member \? readNeeds\(\)/);
     expect(needsLine(0)).toBeNull();
-    expect(needsLine(1)).toBe("1 app named so far.");
+    // Changed after round one (H3): the line counts answers, and says so.
+    expect(needsLine(1)).toBe("1 answer so far.");
   });
 });

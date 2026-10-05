@@ -51,12 +51,14 @@ export function progressLine(n: number): string {
 }
 
 /**
- * Under the form, once at least one app has been named (D-0024 §C). It is
- * the number kept: what people typed, not different apps. Nothing for none.
+ * Under the form, once at least one answer has been kept (D-0024 §C, as
+ * D-0025 amends it): the number of answers, which is what is counted. It is
+ * not a number of apps: five people can name one, and nothing here tells
+ * which are the same. Nothing for none.
  */
 export function needsLine(n: number): string | null {
   if (n <= 0) return null;
-  return n === 1 ? "1 app named so far." : `${formatCount(n)} apps named so far.`;
+  return n === 1 ? "1 answer so far." : `${formatCount(n)} answers so far.`;
 }
 
 /** The count for a member, who is already among them: no rank (D-0023 §C). */

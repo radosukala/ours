@@ -126,16 +126,17 @@ describe("takeSeat: the front page's Get in form (SPEC §18.4)", () => {
     const ask = () => takeSeat(null, form({ email: "mara_f@example.test" }));
 
     vi.stubEnv("DATA_CONTROLLER", "");
-    expect(await ask()).toEqual({ error: SEATS_CLOSED });
+    // Changed under M-0021 (D-0025 §G): a refusal carries what was typed (`values`), which the form puts back.
+    expect(await ask()).toEqual({ error: SEATS_CLOSED, values: { email: "mara_f@example.test", need: "" } });
     vi.unstubAllEnvs();
 
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("CLIENT_IP_HEADER", "");
-    expect(await ask()).toEqual({ error: SEATS_CLOSED });
+    expect(await ask()).toEqual({ error: SEATS_CLOSED, values: { email: "mara_f@example.test", need: "" } });
     vi.unstubAllEnvs();
 
     await db().update(accounts).set({ suspendedAt: t0 }).where(eq(accounts.id, rado.id));
-    expect(await ask()).toEqual({ error: "Joining opens soon." });
+    expect(await ask()).toEqual({ error: "Joining opens soon.", values: { email: "mara_f@example.test", need: "" } });
 
     await runLater();
     expect(await db().select().from(rateEvents)).toEqual([]);
@@ -147,14 +148,16 @@ describe("takeSeat: the front page's Get in form (SPEC §18.4)", () => {
     await maintainer();
     expect(await takeSeat(null, form({ email: "not an email" }))).toEqual({
       error: "Enter a valid email address.",
+      values: { email: "not an email", need: "" },
     });
-    expect(await takeSeat(null, form())).toEqual({ error: "Enter a valid email address." });
+    expect(await takeSeat(null, form())).toEqual({ error: "Enter a valid email address.", values: { email: "", need: "" } });
     web.headers.set("x-forwarded-for", "203.0.113.20");
     for (let i = 0; i < 3; i++) {
       expect(await takeSeat(null, form({ email: "mara_f@example.test" }))).toEqual({ ok: true });
     }
     expect(await takeSeat(null, form({ email: "mara_f@example.test" }))).toEqual({
       error: RATE_LIMITED_MESSAGE,
+      values: { email: "mara_f@example.test", need: "" },
     });
   });
 
@@ -195,6 +198,7 @@ describe("takeSeat: the front page's Get in form (SPEC §18.4)", () => {
     try {
       expect(await takeSeat(null, form({ email: "mara_f@example.test" }))).toEqual({
         error: GENERIC_ERROR,
+        values: { email: "mara_f@example.test", need: "" },
       });
       expect(spy).toHaveBeenCalled();
       expect(JSON.stringify(spy.mock.calls)).not.toContain("mara_f");
