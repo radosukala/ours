@@ -637,6 +637,8 @@ const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
  * page (M-0011, SPEC §18.12), which is /feed since D-0020.
  */
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
+// Changed under M-0021 (D-0024 §A): the pledge's sentence is on the front door's first screen too.
+const DOOR_FILE = "src/components/public/FrontDoor.tsx";
 /** The /agreement copy (M-0015; D-0018 §E: three sentences let through there only, and the never-reached case). */
 const AGREEMENT_FILE = "src/app/(public)/agreement/page.tsx";
 /** The /projects copy (the re-check of M-0015: one listed sentence, the never-reached case). */
@@ -652,7 +654,7 @@ describe("what people are shown: every public page, the footers and every mail, 
     return [
       // Changed after D-0020 (M-0017): / is the front door, with no listed
       // sentence; the front page's copy, and its listed sentences, are /feed's.
-      ["/", renderToStaticMarkup(landing), null],
+      ["/", renderToStaticMarkup(landing), DOOR_FILE],
       ["/feed", renderToStaticMarkup(feed), FRONT_FILE],
       ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
@@ -719,6 +721,7 @@ describe("what people are shown: every public page, the footers and every mail, 
       [CONTRACT_FILE]: "/contract",
       // Changed after D-0020 (M-0017): the front page's copy is /feed's.
       [FRONT_FILE]: "/feed",
+      [DOOR_FILE]: "/",
       [AGREEMENT_FILE]: "/agreement",
       [PROJECTS_FILE]: "/projects",
     };
@@ -728,9 +731,12 @@ describe("what people are shown: every public page, the footers and every mail, 
     for (const entry of ALLOWLIST) {
       // A source-form entry (with {THRESHOLD} or ${THRESHOLD}) is never shown as such.
       const sourceForm = /\{THRESHOLD\}|\$\{THRESHOLD\}/.test(entry.sentence);
+      // Changed under M-0021 (D-0024 §A): one sentence, the pledge's, is listed for two files, so it is
+      // shown on both their pages and nowhere else.
+      const shownOn = ALLOWLIST.filter((e) => e.sentence === entry.sentence).map((e) => home[e.file]);
       for (const [page, html] of rendered) {
         expect(textOf(html).includes(entry.sentence), `${page}: ${entry.sentence}`).toBe(
-          !sourceForm && page === home[entry.file],
+          !sourceForm && shownOn.includes(page),
         );
       }
     }

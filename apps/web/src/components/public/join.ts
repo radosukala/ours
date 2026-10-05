@@ -9,7 +9,7 @@
  * (D-0020 §B).
  */
 import { DEFAULT_INVITES } from "@/core/config";
-import { formatCount } from "./handover";
+import { formatCount, THRESHOLD } from "./handover";
 
 /** A seat is open and nobody waits, or the seats can't be read. */
 export const JOIN_LABEL = "Join our.one";
@@ -38,6 +38,11 @@ export function countLine(n: number): string {
   if (n === 0) return "Nobody is in yet. You'd be #1.";
   if (n === 1) return "1 person is in. You'd be #2.";
   return `${formatCount(n)} people are in. You'd be #${formatCount(n + 1)}.`;
+}
+
+/** The count against the handover's threshold (D-0024 §B): "1 of 100,000". A number, never a bar. */
+export function ofThreshold(n: number): string {
+  return `${formatCount(n)} of ${THRESHOLD}`;
 }
 
 /** The count for a member, who is already among them: no rank (D-0023 §C). */

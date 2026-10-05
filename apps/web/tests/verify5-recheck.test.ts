@@ -626,7 +626,8 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
     const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence));
     // Changed under M-0015 (its re-check): the contract's never-reached sentence is also
     // listed once on /agreement and once on /projects, each in its own file.
-    expect(handover).toHaveLength(12);
+    // Changed under M-0021 (D-0024 §A): the signed promise is listed for the front door too (twice).
+    expect(handover).toHaveLength(14);
     for (const entry of handover) {
       expect(scanText(entry.sentence, entry.file), entry.sentence).toEqual([]);
       expect(scanText(entry.sentence, elsewhere).length, entry.sentence).toBeGreaterThan(0);

@@ -30,6 +30,7 @@ import { Diagram } from "./Diagram";
 import { DraftButton } from "./Draft";
 import { CaughtUpMarker } from "@/components/Marker";
 import { NEW_POSTS, PREVIEW_CAPTION, PREVIEW_LAST_VISIT, PREVIEW_NOW, SEEN_POST } from "./FeedPreview";
+import { FirstScreenForm } from "./FirstScreenForm";
 import { GetInForm } from "./GetInForm";
 import {
   AGENT_FOOT,
@@ -45,7 +46,7 @@ import {
   BUILD_TERMS,
   DOOR_EYEBROW,
   DOOR_HEADLINE,
-  DOOR_LEDE,
+  DOOR_WHAT,
   DOOR_STATUS,
   ENTRANCES,
   IDEA_CLOSE,
@@ -70,8 +71,8 @@ import {
   partFoot,
 } from "./door";
 import styles from "./door.module.css";
-import { MAINTAINER } from "./handover";
-import { countLine, FREE_LINE, INVITE_CLOSED_LINE, joinLabel, memberCountLine, seatLine } from "./join";
+import { MAINTAINER, THRESHOLD } from "./handover";
+import { countLine, FREE_LINE, INVITE_CLOSED_LINE, joinLabel, memberCountLine, ofThreshold, seatLine } from "./join";
 import { LEDE } from "./lede";
 import { MemberJoin } from "./MemberJoin";
 import { ServiceTabs, type Tab } from "./ServiceTabs";
@@ -93,6 +94,8 @@ export type FrontDoorProps = {
   seatsWaiting?: number | null;
   /** A member is shown their feed where a visitor is asked to join (D-0023 §C). */
   member?: boolean;
+  /** How many needs have been named (D-0024 §C), or null when that could not be read. */
+  needs?: number | null;
 };
 
 const ROMAN = ["i.", "ii.", "iii."] as const;
@@ -234,7 +237,8 @@ function PossibilityPanel({ index }: { index: number }) {
   );
 }
 
-export function FrontDoor({ joining, email, count = null, seatsOpen = null, seatsWaiting = null, member = false }: FrontDoorProps) {
+export function FrontDoor({ joining, email, count = null, seatsOpen = null, seatsWaiting = null, member = false, needs = null }: FrontDoorProps) {
+  const heroSeats = joining && seatsOpen !== null ? seatLine(seatsOpen) : null;
   const tabs: Tab[] = [
     {
       id: "feed",
@@ -246,8 +250,10 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
 
   return (
     <div className={`wide ${styles.door}`}>
-      {/* The first screen: the message, the two entrances, what holds
-          today, and the picture. */}
+      {/* The first screen (D-0024 §A), in this order: the headline, what it
+          is, the promise with the count against its threshold, what holds
+          today, and one form; the builders' entrance as a text link; and the
+          picture. */}
       <div className={styles.wrap}>
         <section className={styles.hero} aria-labelledby="door-title">
           <p className={styles.eyebrow}>
@@ -262,23 +268,49 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
             </span>
           </h1>
           <div className={styles.heroText}>
-            <p className={styles.lede}>{DOOR_LEDE}</p>
-            <p className={styles.actions}>
-              <a href="#part" className={`${styles.btn} ${styles.btnSolid}`}>
-                {ENTRANCES.people}
-                <span aria-hidden="true" className={styles.arrow}>
-                  ↗
-                </span>
-              </a>
-              <a href="#build" className={styles.btn}>
-                {ENTRANCES.builders}
-                <span aria-hidden="true" className={styles.arrow}>
-                  ↗
-                </span>
-              </a>
-            </p>
+            <p className={styles.lede}>{DOOR_WHAT}</p>
+            {/* The promise, in the pledge's own words (D-0016 §C), with the
+                public count against its threshold before it (D-0024 §B). */}
+            <figure className={styles.heroPromise}>
+              {count !== null ? <p className={styles.heroCount}>{ofThreshold(count)}</p> : null}
+              <blockquote className={styles.heroPledge}>
+                <p>
+                  I&apos;ll never sell our.one. When {THRESHOLD}{" "}
+                  people have joined, I hand over its domain, its data and the right to replace me to a{" "}
+                  <span className={styles.nowrap}>not-for-profit</span> body of its members. Until then, I hold all three.
+                </p>
+              </blockquote>
+              <figcaption className={styles.heroPledgeBy}>
+                {MAINTAINER}, maintainer ·{" "}
+                <Link href="/contract" className={styles.heroPledgeLink}>
+                  How that works
+                </Link>
+              </figcaption>
+            </figure>
             <p className={styles.heroStatus}>
               {DOOR_STATUS} <a href="#open">See where it stands.</a>
+            </p>
+            {member ? (
+              <div className={styles.heroJoin}>
+                <MemberJoin />
+              </div>
+            ) : joining ? (
+              <FirstScreenForm
+                label={joinLabel(seatsOpen, seatsWaiting)}
+                lines={heroSeats ? [heroSeats, FREE_LINE] : [FREE_LINE]}
+                needs={needs}
+              />
+            ) : (
+              <div className={styles.heroJoin}>
+                <p className="notice">Joining opens soon.</p>
+                <p className={styles.joinSmall}>{INVITE_CLOSED_LINE}</p>
+              </div>
+            )}
+            <p className={styles.heroBuild}>
+              <Link href="/build" className={styles.textLink}>
+                {ENTRANCES.builders}
+                <span aria-hidden="true"> ↗</span>
+              </Link>
             </p>
           </div>
           <Diagram />

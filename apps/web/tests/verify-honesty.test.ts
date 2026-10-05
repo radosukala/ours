@@ -393,8 +393,9 @@ describe("/privacy", () => {
   it("closed: every table in src/core/schema.ts is described", () => {
     const schema = read("src/core/schema.ts");
     const tables = [...schema.matchAll(/pgTable\(\s*"([a-z_]+)"/g)].map((m) => m[1]!);
-    // 19 under M-0010; M-0011 (SPEC §18.4) adds seat_state and waitlist.
-    expect(tables.length).toBe(21);
+    // 19 under M-0010; M-0011 (SPEC §18.4) adds seat_state and waitlist. Changed under M-0021 (D-0024 §C):
+    // the needs table, 22.
+    expect(tables.length).toBe(22);
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     const described: Record<string, string> = {
       accounts: "Your account",
@@ -418,6 +419,8 @@ describe("/privacy", () => {
       digest_deliveries: "Weekly email record",
       // The paragraph SPEC §18.4 adds to /privacy for a seat request.
       waitlist: "If you ask for a seat",
+      // Changed under M-0021 (D-0024 §C): a need named on the front door.
+      needs: "Apps you name",
     };
     // One number (how many seats are open) and when it changed: nothing
     // about a person, so /privacy has nothing to say about it.

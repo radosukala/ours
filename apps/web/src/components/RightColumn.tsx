@@ -11,6 +11,7 @@ import { LinkButton } from "./Button";
 import { DraftButton } from "./public/Draft";
 import { MEMBER_PANEL, TAGLINE } from "./public/door";
 import { THRESHOLD } from "./public/handover";
+import { ofThreshold } from "./public/join";
 
 export const OPEN_CODE_URL =
   "https://github.com/radosukala/ours/tree/main/apps/web";
@@ -55,7 +56,13 @@ export function SiteFooter({ className }: { className?: string }) {
 }
 
 /** our.one's own card, beside a member's feed (D-0023 §D). */
-export function OursCard({ email }: { email: string | null }) {
+/**
+ * our.one's panel (D-0023 §D): the line, that the feed is the first
+ * project, the two drafts, and the four places; with the public count
+ * against the handover's threshold, a number, never a bar (D-0024 §B),
+ * when it could be read.
+ */
+export function OursCard({ email, count = null }: { email: string | null; count?: number | null }) {
   return (
     <section className="card card--ours" aria-labelledby="ours-card-title">
       <p className="card__kicker">{MEMBER_PANEL.kicker}</p>
@@ -63,6 +70,7 @@ export function OursCard({ email }: { email: string | null }) {
         {TAGLINE}
       </h2>
       <p className="card__text">{MEMBER_PANEL.text}</p>
+      {count !== null ? <p className="card__count">{ofThreshold(count)} people are in.</p> : null}
       <div className="card__actions">
         <DraftButton kind="need" label={MEMBER_PANEL.need} email={email} className="btn btn--outline btn--small card__draft" />
         <DraftButton kind="idea" label={MEMBER_PANEL.idea} email={email} className="btn btn--outline btn--small card__draft" />
@@ -80,11 +88,19 @@ export function OursCard({ email }: { email: string | null }) {
   );
 }
 
-export function RightColumn({ invitesRemaining, email = null }: { invitesRemaining: number; email?: string | null }) {
+export function RightColumn({
+  invitesRemaining,
+  email = null,
+  count = null,
+}: {
+  invitesRemaining: number;
+  email?: string | null;
+  count?: number | null;
+}) {
   return (
     <aside className="aside" aria-label="our.one">
       <div className="aside__inner">
-        <OursCard email={email} />
+        <OursCard email={email} count={count} />
         <section className="card" aria-labelledby="invite-card-title">
           <h2 id="invite-card-title" className="card__title">
             Invite someone

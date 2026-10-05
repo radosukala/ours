@@ -14,7 +14,9 @@
  * - the seats open and the addresses waiting, only when the form is shown:
  *   the button's words follow both (D-0016 §B);
  * - PROPOSALS_EMAIL (`proposalsEmail()`): the drafts offer the visitor's
- *   own email app only while it is set.
+ *   own email app only while it is set;
+ * - how many needs have been named (`needsCount`, D-0024 §C), shown
+ *   beside the form from the first one.
  *
  * If the count or the seats cannot be read (the database is down, or not
  * there yet), that line is left out. The page still renders, with no error
@@ -25,6 +27,7 @@ import { FrontDoor } from "@/components/public/FrontDoor";
 import { DOOR_LEDE, DOOR_TITLE } from "@/components/public/door";
 import { accountCreationOpen, clientIpHeader, proposalsEmail } from "@/core/config";
 import { getDb } from "@/core/db";
+import { needsCount } from "@/core/needs";
 import { memberCount, seatState } from "@/core/seats";
 import { isMemberHere } from "@/web/viewer";
 
@@ -52,6 +55,14 @@ async function readCount(): Promise<number | null> {
   }
 }
 
+async function readNeeds(): Promise<number | null> {
+  try {
+    return asCount(await needsCount(getDb()));
+  } catch (error) {
+    return logged("the needs could not be counted", error);
+  }
+}
+
 async function readSeats(): Promise<{ open: number | null; waiting: number | null }> {
   try {
     const state = await seatState(getDb());
@@ -67,7 +78,11 @@ export default async function FrontDoorRoute() {
   const member = await isMemberHere();
 
   const joining = accountCreationOpen() && clientIpHeader() !== null;
-  const [count, seats] = await Promise.all([readCount(), joining ? readSeats() : Promise.resolve(null)]);
+  const [count, seats, needs] = await Promise.all([
+    readCount(),
+    joining ? readSeats() : Promise.resolve(null),
+    joining ? readNeeds() : Promise.resolve(null),
+  ]);
 
   return (
     <FrontDoor
@@ -77,6 +92,7 @@ export default async function FrontDoorRoute() {
       seatsOpen={seats?.open ?? null}
       seatsWaiting={seats?.waiting ?? null}
       member={member}
+      needs={needs}
     />
   );
 }

@@ -671,6 +671,13 @@ hr {
   font-size: 15px;
 }
 
+/* The public count against its threshold, in our.one's panel (D-0024 §B). */
+.card__count {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .card__actions {
   display: flex;
   flex-wrap: wrap;

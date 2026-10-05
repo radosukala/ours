@@ -1009,7 +1009,9 @@ describe("closed checks (each held, and passes)", () => {
     for (const route of [FrontDoorRoute, FeedPageRoute]) {
       const tree = render(await route(), true);
       expect(text(tree)).toContain(MEMBER_JOIN.line);
-      expect(findAll(tree, (e) => e.tag === "a" && text(e) === MEMBER_JOIN.link).map((a) => a.attrs.href)).toEqual(["/home"]);
+      // Changed under M-0021 (D-0024 §A, §C): on the front door a member is shown their feed on the first
+      // screen too, in place of the form, so "Open your feed" is there twice.
+      expect(findAll(tree, (e) => e.tag === "a" && text(e) === MEMBER_JOIN.link).map((a) => a.attrs.href)).toEqual(route === FrontDoorRoute ? ["/home", "/home"] : ["/home"]);
       expect(findAll(tree, (e) => e.tag === "form")).toEqual([]);
       expect(text(tree)).toContain("10 people are in.");
       expect(text(tree)).not.toContain("You'd be #");

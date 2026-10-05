@@ -20,15 +20,21 @@ export const DOOR_HEADLINE = ["The software", "we live in", "should be", "ours."
 /** The metadata title. */
 export const DOOR_TITLE = `our.one · ${TAGLINE}`;
 
+/** The description of our.one, for the page's metadata and the manifest (D-0023). */
 export const DOOR_LEDE =
   "We're bringing people and builders together to create services their users can control. Starting with a friends feed. Building toward much more.";
 
-/** Under the two entrances (D-0020 §F): what holds today, before anything else. */
+/** What it is, one line, under the headline (D-0024 §A): the video's own words. */
+export const DOOR_WHAT = "It starts with a friends feed: your people, newest first, and then it ends. No ads.";
+
+/** Under the promise (D-0020 §F): what holds today, before anything else. */
 export const DOOR_STATUS = "Founder-led today. User control isn't built yet.";
 
-/** The two entrances (D-0020 §A). */
+/**
+ * The builders' entrance (D-0020 §A), a text link under the form since
+ * D-0024 §C; the people's entrance is the form itself.
+ */
 export const ENTRANCES = {
-  people: "I want this to exist",
   builders: "I want to build",
 } as const;
 

@@ -21,6 +21,7 @@
 import { proposalsEmail } from "@/core/config";
 import { getDb } from "@/core/db";
 import { countIncomingRequests, countUnread } from "@/core/notifications";
+import { memberCount } from "@/core/seats";
 import { MemberLinks } from "@/components/MemberLinks";
 import { RightColumn } from "@/components/RightColumn";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -34,9 +35,14 @@ export default async function AppLayout({
 }) {
   const viewer = await requireViewer();
   const db = getDb();
-  const [unread, pending] = await Promise.all([
+  const [unread, pending, count] = await Promise.all([
     countUnread(db, viewer.id),
     countIncomingRequests(db, viewer.id),
+    // The public count against its threshold, for the panel (D-0024 §B); the page stands without it.
+    memberCount(db).catch((error: unknown) => {
+      console.error("[ours] the count could not be read:", error instanceof Error ? error.name : "unknown error");
+      return null;
+    }),
   ]);
   const navViewer = {
     handle: viewer.handle,
@@ -54,7 +60,7 @@ export default async function AppLayout({
         <main id="main" className="app-main">
           {children}
         </main>
-        <RightColumn invitesRemaining={viewer.invitesRemaining} email={proposalsEmail()} />
+        <RightColumn invitesRemaining={viewer.invitesRemaining} email={proposalsEmail()} count={count} />
       </div>
       <TabBar viewer={navViewer} counts={counts} />
     </div>

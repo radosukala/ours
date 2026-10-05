@@ -277,10 +277,11 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(feed).toContain('<h2 id="front-runs">Keep your people. Change who runs it.</h2>');
     expect(textOf(feed)).toContain("Until then, I hold all three.");
 
-    // / is the front door: no such section, and no promise to land on.
+    // / is the front door: no such section to land on. Changed under M-0021 (D-0024 §A): its first
+    // screen carries the pledge's words now, so the promise is there, but not the section the link names.
     const door = renderToStaticMarkup((await FrontDoorRoute()) as ReactElement);
     expect(door).not.toContain('id="front-runs"');
-    expect(textOf(door)).not.toMatch(/I hand over|I hold all three/);
+    expect(textOf(door)).toMatch(/I hold all three/);
 
     // The defect: the page the link names doesn't carry the section it names.
     const [path, anchor] = href.split("#");
@@ -824,7 +825,8 @@ describe("closed (each passes on cb1aadd)", () => {
     for (const f of changed) expect(scanText(read(f), f).map((h) => h.match), f).toEqual([]);
     for (const joining of [true, false]) {
       for (const email of [null, "ideas@example.test"]) {
-        expect(scanText(textOf(renderDoor({ joining, email })), null)).toEqual([]);
+        // Changed under M-0021 (D-0024 §A): the pledge's sentence is listed for FrontDoor.tsx by exact text.
+        expect(scanText(textOf(renderDoor({ joining, email })), "src/components/public/FrontDoor.tsx")).toEqual([]);
       }
     }
     for (const kind of ["need", "idea"] as const) expect(scanText(textOf(hydratedDraft(kind, "ideas@example.test")), null)).toEqual([]);

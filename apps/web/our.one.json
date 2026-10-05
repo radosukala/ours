@@ -75,6 +75,11 @@
         "kept": "Until you delete your account."
       },
       {
+        "what": "Apps you name: What you write in \"Which app would you take back?\" on the front door, and when. Not your address: nothing links a need to you.",
+        "why": "To see what people want made theirs, and to count it in public.",
+        "kept": "For 12 months, or until a decision publishes or deletes them. They are not removed automatically yet."
+      },
+      {
         "what": "Test outbox: Only on a server set to write email to a test outbox instead of sending it: each email's address, subject and text.",
         "why": "To build and test our.one without emailing anyone.",
         "kept": "They are not removed automatically yet. What was written to your address is deleted when you delete your account."

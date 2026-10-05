@@ -546,13 +546,18 @@ describe("closed (each passes on 185bb67)", () => {
     expect(textOf(render(ProjectsPage))).toContain(LEDE);
   });
 
-  it("closed: proposals and needs go by email only: /maintainers renders no form, field or button, its route holds only the page, and no table holds them", () => {
+  it("closed: proposals go by email only: /maintainers renders no form, field or button, its route holds only the page, and no table holds a proposal; a need named on the front door is kept since M-0021, without an address (D-0024 §C)", () => {
     vi.stubEnv("PROPOSALS_EMAIL", "proposals@example.test");
     const markup = render(MaintainersPage);
     expect(markup).not.toMatch(/<form|<input|<textarea|<button|<select/);
     expect((markup.match(/href="mailto:proposals@example\.test\?subject=/g) ?? []).length).toBe(2);
     expect(readdirSync(join(WEB, "src/app/(public)/maintainers"))).toEqual(["page.tsx"]);
-    expect(readFileSync(join(WEB, "src/core/schema.ts"), "utf8")).not.toMatch(/proposal|\bneeds?\b/i);
+    // Changed under M-0021 (D-0024 §C): the needs table holds the words and when, and no address.
+    const schema = readFileSync(join(WEB, "src/core/schema.ts"), "utf8");
+    expect(schema).not.toMatch(/proposal/i);
+    const needsTable = schema.slice(schema.indexOf('pgTable(\n  "needs"'), schema.indexOf("/* ---", schema.indexOf('pgTable(\n  "needs"')));
+    expect(needsTable).toMatch(/text\("text"\)/);
+    expect(needsTable).not.toMatch(/email|address|account/i);
   });
 
   it("closed: no safeguard reads as built: every sentence on the three pages that says 'built' also says not, none or yet", () => {

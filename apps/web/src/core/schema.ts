@@ -571,6 +571,28 @@ export const waitlist = pgTable(
   (t) => [index("waitlist_created_idx").on(t.createdAt, t.email)],
 );
 
+/* ---------------------------------------------------------------- needs */
+
+/**
+ * A need named on the front door (D-0024 §C, SPEC §18.23): the answer to
+ * "Which app would you take back?", and when. Nothing links it to an
+ * address: the check keeps it to the words, at most 140 characters, and
+ * the table has no column for anything else. Kept for 12 months, or until
+ * a decision publishes or deletes them.
+ */
+export const needs = pgTable(
+  "needs",
+  {
+    id: text("id").primaryKey(),
+    text: text("text").notNull(),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("needs_text_length", sql`char_length(${t.text}) BETWEEN 1 AND 140`),
+    index("needs_created_idx").on(t.createdAt),
+  ],
+);
+
 /* ----------------------------------------------------------------- types */
 
 export type Account = typeof accounts.$inferSelect;
@@ -594,3 +616,4 @@ export type MailLogEntry = typeof mailLog.$inferSelect;
 export type DigestDelivery = typeof digestDeliveries.$inferSelect;
 export type SeatState = typeof seatState.$inferSelect;
 export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type Need = typeof needs.$inferSelect;

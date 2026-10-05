@@ -984,13 +984,14 @@ describe("the records' exact text, against the pages and the sources they cite (
     );
   });
 
-  it("closed (item 4, open for the founder): 'have joined' is in exactly the three sentences D-0016 §N names — the card, the handover promise and the status line — in the public text (two in FrontPage.tsx, one in RightColumn.tsx, none in a mail) and on the rendered front page; the same page counts 'people are in', and /contract's trigger is the count of 'accounts that exist and are not suspended'; the question is recorded in §N with 'are in' proposed, in SPEC §18.16, and in D-0016.yaml as pending", () => {
+  it("closed (item 4, open for the founder): 'have joined' is in exactly the three sentences D-0016 §N names — the card, the handover promise and the status line — in the public text (two in FrontPage.tsx, one in RightColumn.tsx, none in a mail; since M-0021 the card's sentence once more, in FrontDoor.tsx) and on the rendered front page; the same page counts 'people are in', and /contract's trigger is the count of 'accounts that exist and are not suspended'; the question is recorded in §N with 'are in' proposed, in SPEC §18.16, and in D-0016.yaml as pending", () => {
     const counts: Record<string, number> = {};
     for (const file of publicTextFiles(WEB_ROOT)) {
       const found = readFileSync(join(WEB_ROOT, file), "utf8").match(/have joined/g)?.length ?? 0;
       if (found > 0) counts[file] = found;
     }
-    expect(counts).toEqual({ [FRONT]: 2, "src/components/RightColumn.tsx": 1 });
+    // Changed under M-0021 (D-0024 §A): the card's sentence is on the front door's first screen too.
+    expect(counts).toEqual({ [FRONT]: 2, "src/components/RightColumn.tsx": 1, "src/components/public/FrontDoor.tsx": 1 });
     const page = renderToStaticMarkup(createElement(PublicLayout, null, createElement(FrontPage, { joining: true, count: 1284, seatsOpen: 5 })));
     expect(sentencesOf(page).filter((sentence) => sentence.includes("have joined"))).toEqual([
       CARD_HANDOVER,

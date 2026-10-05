@@ -722,7 +722,7 @@ describe("closed (each passes on a92bbb5)", () => {
     expect((JSON.parse(then.stdout) as { systemMessage: string }).systemMessage).toContain("our.one check still fails: licence.");
   });
 
-  it("closed: the feed's our.one.json against its code — its fourteen kinds of data cover the schema's twenty-one tables (seat_state holds no one's data); no file outside src/core and scripts imports a database client or runs a query (pages and actions hand getDb to src/core); the only outside service in the code is Resend: no other dependency the tool knows, no tracker, no fetch, no next/font/google and no script from another site", () => {
+  it("closed: the feed's our.one.json against its code — its fifteen kinds of data (since M-0021) cover the schema's twenty-two tables (seat_state holds no one's data); no file outside src/core and scripts imports a database client or runs a query (pages and actions hand getDb to src/core); the only outside service in the code is Resend: no other dependency the tool knows, no tracker, no fetch, no next/font/google and no script from another site", () => {
     const m = JSON.parse(read("our.one.json")) as { data: { collects: { what: string }[]; sharedWith: { who: string; packages: string[] }[]; boundary: string[] } };
     const kinds = m.data.collects.map((c) => c.what.split(":")[0]!);
     const tables = [...read("src/core/schema.ts").matchAll(/pgTable\(\s*"([a-z_]+)"/g)].map((x) => x[1]!);
@@ -748,6 +748,8 @@ describe("closed (each passes on a92bbb5)", () => {
       digest_deliveries: "Weekly email record",
       seat_state: null,
       waitlist: "Seat requests",
+      // Changed under M-0021 (D-0024 §C): a need named on the front door.
+      needs: "Apps you name",
     };
     expect(tables.sort()).toEqual(Object.keys(kindOf).sort());
     expect(new Set(Object.values(kindOf).filter((k): k is string => k !== null))).toEqual(new Set(kinds));

@@ -1277,7 +1277,8 @@ describe("closed checks (each held, and passes)", () => {
     const m0020 = readRoot("mandates/M-0020.yaml");
     for (const allowed of ["- apps/web/**", "- receipts/builds/**", "- receipts/conformance/**"]) expect(m0020).toContain(allowed);
     expect([...scanRepoPublicText(WEB).hits, ...scanKitText(WEB).hits]).toEqual([]);
-    expect(ALLOWLIST).toHaveLength(17);
+    // Changed under M-0021 (D-0024 §A): the pledge's sentence listed for FrontDoor.tsx in both forms.
+    expect(ALLOWLIST).toHaveLength(19);
   });
 
   it("closed: R12 is put to the founder truly in both receipts, and still stands as recorded — the header every visitor gets isn't sticky, and D-0023 §B gives a member that header and keeps the bar 'on a phone', so keeping a member's links in view is a choice between two of its sentences, not a fix; no box around the member's links is sticky or fixed at 820, 1000 or 1440px, and the bar hides from 700px; the test is skipped, not removed", () => {

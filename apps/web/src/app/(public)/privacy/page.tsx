@@ -51,6 +51,7 @@ import {
   SESSION_TTL_DAYS,
 } from "@/core/config";
 import { ADMINISTRATOR_RULE, type Hosting, hosting, NOT_DEPLOYED, type Region, regionWords } from "@/core/hosting";
+import { NEED_KEPT_MONTHS } from "@/core/needs";
 import { EMAIL_PROVIDER_WORDS, emailSending, HOSTING_FILE } from "@/core/transparency";
 
 export const dynamic = "force-dynamic";
@@ -137,6 +138,12 @@ const KEPT: Kept[] = [
     what: "For each week, whether your weekly email was sent, skipped or failed.",
     why: "So you get at most one a week.",
     howLong: "Until you delete your account.",
+  },
+  {
+    title: "Apps you name",
+    what: "What you write in \"Which app would you take back?\" on the front door, and when. Not your address: nothing links a need to you.",
+    why: "To see what people want made theirs, and to count it in public.",
+    howLong: `For ${NEED_KEPT_MONTHS} months, or until a decision publishes or deletes them. ${NOT_REMOVED_YET}`,
   },
   {
     title: "Test outbox",

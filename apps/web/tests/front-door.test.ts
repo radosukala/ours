@@ -63,9 +63,9 @@ import PrivacyPage from "@/app/(public)/privacy/page";
 import ProjectsPage from "@/app/(public)/projects/page";
 import {
   DOOR_EYEBROW,
-  DOOR_LEDE,
   DOOR_STATUS,
   DOOR_TITLE,
+  DOOR_WHAT,
   ENTRANCES,
   ILLUSTRATION,
   OPEN_FOOT,
@@ -165,7 +165,9 @@ describe("what the front door never says (D-0020 §F)", () => {
 
   it("the claims scan finds nothing in any rendered state, nor in its source files", () => {
     for (const state of STATES) {
-      expect(scanText(textOf(render(state)), null).map((h) => h.match), JSON.stringify(state)).toEqual([]);
+      // Changed under M-0021 (D-0024 §A): the pledge's handover sentence is on the first screen, listed
+      // for FrontDoor.tsx by exact text, as /feed's is for FrontPage.tsx; the scan reads it with that file.
+      expect(scanText(textOf(render(state)), "src/components/public/FrontDoor.tsx").map((h) => h.match), JSON.stringify(state)).toEqual([]);
     }
     for (const file of [
       "src/components/public/door.ts",
@@ -229,17 +231,23 @@ describe("what the front door never says (D-0020 §F)", () => {
   it("a count that couldn't be read is left out; the page still renders", () => {
     const text = textOf(render({ count: null }));
     expect(text).not.toMatch(/people are in|person is in|Nobody is in yet/);
-    expect(text).toContain(DOOR_LEDE);
+    // Changed under M-0021 (D-0024 §A, §B): the first screen says what it is in one line, and the
+    // count against its threshold is left out with the count.
+    expect(text).toContain(DOOR_WHAT);
+    expect(text).not.toContain("of 100,000");
   });
 });
 
 /* ------------------------------------------------------------- the copy */
 
 describe("the front door's copy (D-0020 §A)", () => {
-  it("the message: eyebrow, headline, lede, the two entrances and what holds today, in that order", () => {
+  it("the message: eyebrow, headline, what it is, the promise, what holds today, the form and the builders' entrance, in that order", () => {
+    // Changed under M-0021 (D-0024 §A, §C): the first screen's order is the headline, what it is, the
+    // promise with the count, the status, one form; the people's entrance is the form, and the builders'
+    // a text link to /build. tests/first-screen.test.ts checks each part.
     const html = render();
     const text = textOf(html);
-    const order = [DOOR_EYEBROW, TAGLINE, DOOR_LEDE, ENTRANCES.people, ENTRANCES.builders, DOOR_STATUS];
+    const order = [DOOR_EYEBROW, TAGLINE, DOOR_WHAT, "How that works", DOOR_STATUS, "Your email", ENTRANCES.builders];
     let at = -1;
     for (const part of order) {
       const next = text.indexOf(part, at + 1);
@@ -248,7 +256,7 @@ describe("the front door's copy (D-0020 §A)", () => {
     }
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     expect(textOf(html.slice(html.indexOf("<h1"), html.indexOf("</h1>")))).toBe(TAGLINE);
-    expect(links(html)).toEqual(expect.arrayContaining([[`${ENTRANCES.people} ↗`, "#part"], [`${ENTRANCES.builders} ↗`, "#build"], ["See where it stands.", "#open"]]));
+    expect(links(html)).toEqual(expect.arrayContaining([[`${ENTRANCES.builders} ↗`, "/build"], ["See where it stands.", "#open"]]));
   });
 
   it("the projects: the feed first, then two possibilities, each labelled with no project announced", () => {

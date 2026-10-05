@@ -2950,3 +2950,69 @@ token table (X's colours), the left navigation with its *Post* pill,
     4.5:1 or more;
   - the member's menu closes on Escape and on a tap outside it, as the
     app's other menus do (`useDismissableMenu`).
+
+### 18.23 The first screen, for people who come from a post (M-0021, 5 October 2026)
+
+D-0024. The front door's first screen says the whole thing, in order, and
+has one thing to do that works; a need named is kept; every page carries a
+link card. Everything below the first screen is unchanged, and so are
+`/feed`'s verified words, the contract, the agreement, the drafts and what
+the feed does.
+
+- **The first screen** (§A), in `FrontDoor.tsx`'s hero, in this order:
+  - the eyebrow and the headline, as before;
+  - what it is, one line (`DOOR_WHAT`): *"It starts with a friends feed:
+    your people, newest first, and then it ends. No ads."* It replaces
+    D-0020 §A's lede on the front door; `DOOR_LEDE` stays the description
+    in the metadata and the manifest;
+  - the promise: the public count against its threshold (`ofThreshold`,
+    *"1 of 100,000"*), then the pledge's own words, as `/feed`'s card has
+    them (the handover sentence listed for `FrontDoor.tsx` by exact text in
+    `claims.ts`), signed *"Rado, maintainer · How that works"*, to
+    `/contract`;
+  - the status line, as before;
+  - the form (§C), or for a member *"You're in."* and *"Open your feed"*
+    (`MemberJoin`), or while joining is closed *"Joining opens soon."* with
+    the invite line;
+  - *"I want to build"* as a text link to `/build`. *"I want this to
+    exist"* is gone: the form is the entrance.
+- **The count** (§B): `memberCount`, accounts that exist and aren't
+  suspended; the waiting list never counts. A number, never a bar. When it
+  can't be read, the sentence stands alone (`count: null`). The panel
+  beside a member's feed (`OursCard`) shows *"N of 100,000 people are
+  in."* from the same count, read in the app's layout and left out when it
+  fails.
+- **The form** (§C), `FirstScreenForm`: the address; an optional need,
+  *"Which app would you take back?"*, at most 140 characters, with the
+  hint *"Optional. Kept without your address."*; one button with D-0016
+  §B's words (`joinLabel`); under it the seat line (when no seat is open)
+  and the free line; and, from the first one, *"N apps named so far."*
+  (`needsLine`). It posts to `takeSeat`.
+- **A need, in `takeSeat`:** read first (`normalizeNeed`: whitespace
+  collapsed, control characters dropped, empty is none; over 140 refused at
+  its field, before anything is counted); then the seat request, with its
+  gates and rate limits; then, only if that went through, kept
+  (`nameNeed`). If keeping it fails, the request stands and the failure is
+  logged by name. `SeatResult` gains `field: "need"` for a refusal at the
+  need; the feed's form never sends one.
+- **The `needs` table** (migration `0003_needs`): `id`, `text` (checked to
+  1–140 characters), `created_at`; no column for an address, and nothing
+  links a need to one. `needsCount` is the public count. No code lists the
+  words: they are read by the founder in the database, and never shown to
+  a visitor or a member. Kept for 12 months (`NEED_KEPT_MONTHS`), or until
+  a decision publishes or deletes them; nothing removes them automatically
+  yet. The down migration, `drizzle/down/0003_needs.sql`, drops the table
+  after an export.
+- **The privacy notice:** the row *"Apps you name"*: what, why, and *"For
+  12 months, or until a decision publishes or deletes them. They are not
+  removed automatically yet."* The "what Neon receives" line stays true.
+- **The link card** (§D), in the root layout's metadata: `metadataBase`
+  from `APP_URL` (left unset when it can't be read), `openGraph` with the
+  site's name, the type and one image, `twitter` with the large card; no
+  title or description of their own, so each page's flow in. The image,
+  `public/card.png`, 1200 by 630, is rendered from `scripts/card.html` by
+  `pnpm card` (a headless Chromium, `CHROME_HEADLESS_SHELL`) and committed:
+  what a crawler is shown is what was committed.
+- **The founder's actions, no code:** a first wave of seats opened in
+  `/admin` when the post goes out; `PROPOSALS_EMAIL` set, so the drafts
+  have a destination.

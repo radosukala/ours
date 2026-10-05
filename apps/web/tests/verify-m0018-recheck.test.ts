@@ -975,7 +975,7 @@ describe("closed: the release and the database (each passes on aebde1d)", () => 
     try {
       const both = await Promise.all([runRelease({ DATABASE_URL: twice.url }), runRelease({ DATABASE_URL: twice.url })]);
       expect(both.map((o) => o.ok)).toEqual([true, true]);
-      expect(await query(twice.url, "select count(*)::int as n from drizzle.__drizzle_migrations")).toEqual([{ n: 3 }]);
+      expect(await query(twice.url, "select count(*)::int as n from drizzle.__drizzle_migrations")).toEqual([{ n: 4 }]); // Changed under M-0021: 0003_needs
       expect(await advisoryLocks(twice.name)).toEqual([]);
     } finally {
       await twice.drop();

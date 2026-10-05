@@ -877,7 +877,10 @@ describe("closed checks (each held, and passes)", () => {
       ...PLACES.filter((p) => p.href.includes("#")).map((p) => p.href),
       ...[...front.matchAll(/href="(#[\w-]+)"/g)].map((m) => `/${m[1]!}`),
     ];
-    expect(targets).toEqual(expect.arrayContaining(["/feed#front-runs", "/#idea", "/#open", "/#part", "/#build"]));
+    // Changed under M-0021 (D-0024 §A, §C): the first screen's entrances to #part and #build are gone; the
+    // form is the people's entrance, and the builders' is a link to /build. #idea and #open stay.
+    expect(targets).toEqual(expect.arrayContaining(["/feed#front-runs", "/#idea", "/#open"]));
+    expect(targets).not.toEqual(expect.arrayContaining(["/#part"]));
     for (const href of targets) {
       const [path, id] = href.split("#");
       expect(pages[path || "/"] ?? "", href).toContain(`id="${id}"`);
@@ -912,7 +915,8 @@ describe("closed checks (each held, and passes)", () => {
     for (const joining of [true, false]) {
       for (const email of [null, EMAIL]) {
         for (const hydrated of [false, true]) {
-          expect(scanText(text(door({ joining, email }, hydrated)), null), `${joining} ${email} ${hydrated}`).toEqual([]);
+          // Changed under M-0021 (D-0024 §A): the pledge's sentence is listed for FrontDoor.tsx by exact text.
+          expect(scanText(text(door({ joining, email }, hydrated)), "src/components/public/FrontDoor.tsx"), `${joining} ${email} ${hydrated}`).toEqual([]);
         }
       }
     }

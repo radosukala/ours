@@ -896,10 +896,15 @@ describe("closed (each passes on 4e04af5)", () => {
     expect(gone("src/components/TabBar.tsx")).toEqual(["Home"]);
     expect(gone("src/components/RightColumn.tsx")).toEqual(["More"]);
     expect(gone("src/components/Nav.tsx")).toEqual(expect.arrayContaining(["Home", "our.one home", "New post", "Your account settings"]));
+    // Changed under M-0021 (D-0024 §C): /privacy gained the needs' row, and nothing else: its diff
+    // against 184865b removes no line of content.
+    const privacyRemoved = git(["diff", "-U0", "184865b", "--", "apps/web/src/app/(public)/privacy/page.tsx"])
+      .split("\n")
+      .filter((l) => l.startsWith("-") && !l.startsWith("---"));
+    expect(privacyRemoved).toEqual([]);
     for (const file of [
       "src/app/(public)/contract/page.tsx",
       "src/components/public/floorRules.ts",
-      "src/app/(public)/privacy/page.tsx",
       "src/app/(public)/power/page.tsx",
       "src/app/(public)/costs/page.tsx",
       "src/app/(public)/agreement/page.tsx",
@@ -972,8 +977,10 @@ describe("closed (each passes on 4e04af5)", () => {
     const kit = scanKitText(WEB);
     expect([...pages.hits, ...kit.hits]).toEqual([]);
     // Changed after the verification of M-0020 (H2, H4, H11): places.ts and PublicAccount.tsx added, InAppSiteFooter.tsx gone.
-    expect(pages.files.length + kit.files.length).toBe(178);
-    expect(ALLOWLIST.length).toBe(17);
+    // Changed under M-0021 (D-0024): needs.ts and FirstScreenForm.tsx added (180), and the pledge's sentence
+    // listed for FrontDoor.tsx in both forms (19).
+    expect(pages.files.length + kit.files.length).toBe(180);
+    expect(ALLOWLIST.length).toBe(19);
     expect(record("receipts/builds/2026-10-03-M-0020.md")).toContain("| Claims scan | CHECKED | no prohibited claim in 177 files; 17 sentences listed |");
 
     const check = spawnSync(process.execPath, ["kit/our-one.mjs", "check", "--project", "apps/web"], {
