@@ -237,6 +237,11 @@ function PossibilityPanel({ index }: { index: number }) {
  * optional question under the button's words (D-0016 §B), the lines under it
  * and, once an app has been named, how many; for a member (D-0023 §C)
  * "You're in." and a way to the feed; while joining is closed, only that.
+ *
+ * **The question is asked only while the count of named apps can be read**
+ * (`needs` is a number, even 0): a release that reaches production before
+ * its migration, or a database that can't answer, asks for nothing the site
+ * can't keep, and the address alone still takes a seat.
  */
 function HeroJoin({
   joining,
@@ -246,14 +251,15 @@ function HeroJoin({
   seatsWaiting,
 }: Pick<FrontDoorProps, "joining" | "member" | "needs" | "seatsOpen" | "seatsWaiting">) {
   const seats = joining && seatsOpen !== null && seatsOpen !== undefined ? seatLine(seatsOpen) : null;
-  const named = needs !== null && needs !== undefined ? needsLine(needs) : null;
+  const asking = needs !== null && needs !== undefined;
+  const named = asking ? needsLine(needs) : null;
   return (
     <div id="join" className={styles.heroJoin}>
       {member ? (
         <MemberJoin />
       ) : joining ? (
         <>
-          <GetInForm label={joinLabel(seatsOpen ?? null, seatsWaiting ?? null)} need />
+          <GetInForm label={joinLabel(seatsOpen ?? null, seatsWaiting ?? null)} need={asking} />
           {named ? <p className={styles.joinStrong}>{named}</p> : null}
           {seats ? <p className={styles.joinStrong}>{seats}</p> : null}
           <p className={styles.joinStrong}>{FREE_LINE}</p>

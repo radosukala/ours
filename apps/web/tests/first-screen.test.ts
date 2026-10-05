@@ -185,6 +185,20 @@ describe("the first screen, for a visitor (D-0024 §A)", () => {
     }
   });
 
+  it("asks the question only while the count of named apps can be read: with no number, or no table, the form is the address and the button, and still takes a seat", () => {
+    for (const needs of [null, undefined]) {
+      const html = render({ needs });
+      expect(html, String(needs)).not.toContain('name="need"');
+      expect(textOf(html), String(needs)).not.toContain(NEED_LABEL);
+      expect(html).toContain('name="email"');
+      expect(textOf(html)).toContain(JOIN_LABEL);
+      expect(html).not.toContain("get-in-form--need");
+      expect((html.match(/<form/g) ?? []).length).toBe(1);
+    }
+    // Even none named yet asks it: the table is there, and says 0.
+    expect(render({ needs: 0 })).toContain('name="need"');
+  });
+
   it("labels the question and hints that it is optional and kept apart, and the answer's field takes at most 140 characters", () => {
     const html = render();
     expect(textOf(html)).toContain(NEED_LABEL);
@@ -349,7 +363,11 @@ describe("the count of named apps (D-0024 §C)", () => {
       const html = renderToStaticMarkup((await FrontDoorRoute()) as ReactElement);
       expect(textOf(html)).not.toMatch(/apps? named so far/);
       expect(textOf(firstScreen(html))).toContain(DOOR_STATUS);
+      // The release can reach production before its migration: the page then asks for the address alone,
+      // and invites nobody to type what can't be kept.
       expect(html).toContain('name="email"');
+      expect(html).not.toContain('name="need"');
+      expect(textOf(html)).not.toContain(NEED_LABEL);
     } finally {
       await db().execute(sql.raw(readFileSync(join(WEB_ROOT, "drizzle/0003_needs.sql"), "utf8")));
     }

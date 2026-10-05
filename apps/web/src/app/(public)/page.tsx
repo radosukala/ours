@@ -12,7 +12,9 @@
  * - the public count, `memberCount` (D-0012 §B): /contract counts "the
  *   number on the front page";
  * - how many apps have been named, `needCount` (D-0024 §C): a number, never
- *   the words;
+ *   the words. The form asks "Which app would you take back?" only while that
+ *   number can be read: until the release's migration has made the table, the
+ *   form asks for the address alone;
  * - the seats open and the addresses waiting, only when the form is shown:
  *   the button's words follow both (D-0016 §B);
  * - PROPOSALS_EMAIL (`proposalsEmail()`): the drafts offer the visitor's

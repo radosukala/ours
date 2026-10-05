@@ -2988,6 +2988,12 @@ of the feed, as they were.
     deleted later."* (`NEED_HINT`), then the button (`joinLabel`, D-0016 §B),
     then, in this order, *"N apps named so far."* (`needsLine`, only once
     one has been named), the seat line, `FREE_LINE` and the Privacy line.
+  - **The question is asked only while the count of named apps can be
+    read** (`needs` is a number). Production applies migrations only in a
+    release build the founder names, so this code can be live before the
+    `needs` table is: until then, or while the database can't answer, the
+    form asks for the address alone, and nothing invites a visitor to type
+    what can't be kept.
   - Joining closed: *"Joining opens soon."* and `INVITE_CLOSED_LINE`, no
     field. A member: `MemberJoin`, *"You're in."* and *"Open your feed"*
     (§18.22 §C), and no count line of its own.
