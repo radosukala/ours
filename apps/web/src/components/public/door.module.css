@@ -114,11 +114,12 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
   grid-template-areas:
     "eyebrow eyebrow"
-    "title   picture"
-    "text    picture";
+    "title   act"
+    "what    act"
+    "picture act";
   gap: 24px 46px;
   align-items: start;
   padding: 44px 0 52px;
@@ -155,9 +156,20 @@
   letter-spacing: -0.04em;
 }
 
-.heroText {
-  grid-area: text;
+/* What it is, under the headline. */
+.heroWhat {
+  grid-area: what;
+}
+
+/* The promise, the status and the form (D-0024 §A): beside the headline on
+   a wide screen, after what it is on a narrow one. */
+.heroAct {
+  grid-area: act;
   max-width: 590px;
+}
+
+.heroAct > .heroPromise {
+  margin-top: 0;
 }
 
 .lede {
@@ -1380,6 +1392,20 @@
   }
 }
 
+/* One column when the two would be too narrow: the headline, what it is, the
+   promise and the form, then the picture. */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "eyebrow"
+      "title"
+      "what"
+      "act"
+      "picture";
+  }
+}
+
 @media (max-width: 760px) {
   .hero {
     display: flex;
@@ -1685,7 +1711,8 @@
 
   .values a,
   .agentActions a,
-  .openFoot a {
+  .openFoot a,
+  .heroPledgeLink {
     display: inline-flex;
     align-items: center;
     min-height: 44px;

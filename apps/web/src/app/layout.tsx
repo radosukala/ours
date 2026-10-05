@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { DOOR_LEDE, TAGLINE } from "@/components/public/door";
+import { DOOR_LEDE, DOOR_STATUS, TAGLINE } from "@/components/public/door";
 import "./globals.css";
 
 /**
  * Where the link card's image lives, for a crawler: the site's own address,
  * APP_URL, read here as `appUrl()` reads it (the root layout imports
  * nothing from the core, so `next build` touches no database). Without
- * one the image's path is left relative, and the platform's own address
- * stands in.
+ * one, Next writes the image's address from the platform's own (on Vercel)
+ * or from the request's host.
  */
 function metadataBase(): URL | undefined {
   const value = process.env.APP_URL?.replace(/\/+$/, "");
@@ -32,10 +32,15 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "our.one",
     type: "website",
-    images: [{ url: "/card.png", width: 1200, height: 630, alt: TAGLINE }],
+    images: [{ url: "/card.png", width: 1200, height: 630, alt: `${TAGLINE} ${DOOR_STATUS}` }],
   },
   twitter: { card: "summary_large_image", images: ["/card.png"] },
-  referrer: "no-referrer",
+  // same-origin, as next.config.ts's header says: under no-referrer a browser
+  // posts a form with `Origin: null`, and Next then refuses the server action,
+  // so a form without JavaScript, or before the page's script has loaded,
+  // failed with a 500 (the verification of M-0021, R1). Other sites still get
+  // no referrer; this meta tag overrides the header, so the two must agree.
+  referrer: "same-origin",
   formatDetection: { telephone: false, email: false, address: false },
 };
 

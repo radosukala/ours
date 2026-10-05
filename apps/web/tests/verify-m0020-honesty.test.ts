@@ -979,7 +979,8 @@ describe("closed (each passes on 4e04af5)", () => {
     // Changed after the verification of M-0020 (H2, H4, H11): places.ts and PublicAccount.tsx added, InAppSiteFooter.tsx gone.
     // Changed under M-0021 (D-0024): needs.ts and FirstScreenForm.tsx added (180), and the pledge's sentence
     // listed for FrontDoor.tsx in both forms (19).
-    expect(pages.files.length + kit.files.length).toBe(180);
+    // Changed after the verification of M-0021 (H8): need-words.ts added (181).
+    expect(pages.files.length + kit.files.length).toBe(181);
     expect(ALLOWLIST.length).toBe(19);
     expect(record("receipts/builds/2026-10-03-M-0020.md")).toContain("| Claims scan | CHECKED | no prohibited claim in 177 files; 17 sentences listed |");
 

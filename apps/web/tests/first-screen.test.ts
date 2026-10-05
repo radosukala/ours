@@ -68,7 +68,7 @@ import { MEMBER_JOIN } from "@/components/public/door";
 import { scanText } from "@/core/claims";
 import { isCoreError } from "@/core/errors";
 import { RATE_LIMITED_MESSAGE } from "@/core/limits";
-import { nameNeed, NEED_KEPT_MONTHS, NEED_LABEL, NEED_MAX, NEED_TOO_LONG, needsCount, needsLine, normalizeNeed } from "@/core/needs";
+import { dayOf, nameNeed, NEED_KEPT_MONTHS, NEED_LABEL, NEED_MAX, NEED_TOO_LONG, needsCount, needsLine, normalizeNeed } from "@/core/needs";
 import { needs, rateEvents, seatState as seatRow, waitlist } from "@/core/schema";
 import { SEATS_CLOSED } from "@/core/seats";
 import { at, db, makeAccount, reset } from "./helpers";
@@ -275,12 +275,13 @@ describe("the form (D-0024 §C)", () => {
   it("shows a refusal at the field it concerns, and the one answer after a valid submission", () => {
     const view = (state: Parameters<typeof FirstScreenFormView>[0]["state"]) =>
       renderToStaticMarkup(createElement(FirstScreenFormView, { state, action: () => {}, pending: false, lines: [FREE_LINE], needs: null }));
+    // Changed after the verification of M-0021 (R3): the first screen's fields have ids of their own.
     const atEmail = view({ error: SEATS_CLOSED });
-    expect(atEmail).toMatch(/id="field-email-error"[^>]*>[^<]*Joining opens soon\./);
-    expect(atEmail).not.toMatch(/id="field-need-error"/);
+    expect(atEmail).toMatch(/id="first-screen-email-error"[^>]*>[^<]*Joining opens soon\./);
+    expect(atEmail).not.toMatch(/id="first-screen-need-error"/);
     const atNeed = view({ error: NEED_TOO_LONG, field: "need" });
-    expect(atNeed).toMatch(new RegExp(`id="field-need-error"[^>]*>[^<]*${NEED_TOO_LONG.replace(".", "\\.")}`));
-    expect(atNeed).not.toMatch(/id="field-email-error"/);
+    expect(atNeed).toMatch(new RegExp(`id="first-screen-need-error"[^>]*>[^<]*${NEED_TOO_LONG.replace(".", "\\.")}`));
+    expect(atNeed).not.toMatch(/id="first-screen-email-error"/);
     expect(textOf(view({ ok: true }))).toContain(CHECK_YOUR_EMAIL);
     expect(textOf(view(null))).not.toContain(CHECK_YOUR_EMAIL);
   });
@@ -307,7 +308,8 @@ describe("a need, in the core (D-0024 §C)", () => {
     const id = await nameNeed(db(), { text: "  the group chat we all hate ", now: t0 });
     expect(id).toMatch(/^[0-9a-z]+$/i);
     const rows = await db().select().from(needs);
-    expect(rows).toEqual([{ id, text: "the group chat we all hate", createdAt: t0 }]);
+    // Changed after the verification of M-0021 (H1): the day is kept, not the moment.
+    expect(rows).toEqual([{ id, text: "the group chat we all hate", createdAt: at("2026-10-05T00:00:00Z") }]);
     expect(Object.keys(rows[0]!).sort()).toEqual(["createdAt", "id", "text"]);
     // The database holds the line too, whatever the code does.
     const refusedBy = async (statement: ReturnType<typeof sql>): Promise<string> => {
@@ -400,6 +402,39 @@ function listFiles(dir: string): string[] {
   return out;
 }
 
+describe("the form posts without JavaScript, and keeps what was typed (the verification of M-0021)", () => {
+  it("its action is takeSeat itself, not a wrapper, so the server renders the form with the action's own fields; the page's referrer policy lets a form post carry its origin", () => {
+    // A wrapper around takeSeat made the server render `action="javascript:throw …"`: a form without JavaScript,
+    // or before the page's script has loaded, did nothing. Under no-referrer a browser posts `Origin: null` and
+    // Next refuses the action. Both were seen in a browser with scripts off.
+    expect(read("src/components/public/FirstScreenForm.tsx")).toContain("useActionState<SeatResult | null, FormData>(takeSeat, null)");
+    expect(read("src/components/public/FirstScreenForm.tsx")).not.toMatch(/useActionState<[^>]*>\(\s*async/);
+    expect(rootMetadata.referrer).toBe("same-origin");
+    expect(read("next.config.ts")).toContain('{ key: "Referrer-Policy", value: "same-origin" }');
+  });
+
+  it("its fields are controlled, so React's reset after the action leaves a refused address and need in place; an answer starts the form again", () => {
+    const source = read("src/components/public/FirstScreenForm.tsx");
+    expect(source).toContain("value={typed.email}");
+    expect(source).toContain("value={typed.need}");
+    expect(source).toContain("setTyped(NOTHING_TYPED)");
+    const refused = renderToStaticMarkup(
+      createElement(FirstScreenFormView, { state: { error: NEED_TOO_LONG, field: "need" }, action: () => {}, pending: false, lines: [], needs: null, typed: { email: "mara_f@example.test", need: "the calendar" } }),
+    );
+    expect(refused).toContain('value="mara_f@example.test"');
+    expect(refused).toContain('value="the calendar"');
+  });
+
+  it("a need keeps the day, not the moment, and the public count is of distinct apps", async () => {
+    expect(dayOf(at("2026-10-05T17:42:09Z")).toISOString()).toBe("2026-10-05T00:00:00.000Z");
+    expect(dayOf(at("2026-10-05T23:59:59Z")).toISOString()).toBe("2026-10-05T00:00:00.000Z");
+    const t = at("2026-10-05T17:42:09Z");
+    for (const text of ["The calendar app", "the calendar app", "  the  CALENDAR app ", "the group chat"]) await nameNeed(db(), { text, now: t });
+    expect(await needsCount(db())).toBe(2);
+    expect((await db().select({ createdAt: needs.createdAt }).from(needs)).every((r) => r.createdAt.toISOString() === "2026-10-05T00:00:00.000Z")).toBe(true);
+  });
+});
+
 /* ================================================= privacy, the card */
 
 describe("the privacy notice and the link card (D-0024 §C, §D)", () => {
@@ -407,7 +442,8 @@ describe("the privacy notice and the link card (D-0024 §C, §D)", () => {
     const text = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     expect(NEED_KEPT_MONTHS).toBe(12);
     expect(text).toContain("Apps you name");
-    expect(text).toContain(`What you write in "${NEED_LABEL}" on the front door, and when. Not your address: nothing links a need to you.`);
+    // Changed after the verification of M-0021 (H1): what is kept of "when" is the day, and the notice says so.
+    expect(text).toContain(`What you write in "${NEED_LABEL}" on the front door, and the day you wrote it. Not your address: a need is kept apart from it, with the day and not the time.`);
     expect(text).toContain("To see what people want made theirs, and to count it in public.");
     expect(text).toContain("For 12 months, or until a decision publishes or deletes them. They are not removed automatically yet.");
     // The "what Neon receives" line, shown on the deployed site, stays true: the needs are kept on our.one too.
@@ -418,7 +454,8 @@ describe("the privacy notice and the link card (D-0024 §C, §D)", () => {
     expect(rootMetadata.openGraph).toMatchObject({
       siteName: "our.one",
       type: "website",
-      images: [{ url: "/card.png", width: 1200, height: 630, alt: TAGLINE }],
+      // Changed after the verification of M-0021 (H5): the alt carries the status line the picture does.
+      images: [{ url: "/card.png", width: 1200, height: 630, alt: `${TAGLINE} ${DOOR_STATUS}` }],
     });
     expect(rootMetadata.twitter).toMatchObject({ card: "summary_large_image", images: ["/card.png"] });
     // No title or description of its own, so each page's flow into the card.

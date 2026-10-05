@@ -2,7 +2,9 @@
  * The front door, `/` (D-0020 §A; SPEC §18.19). The words are door.ts's,
  * in the order a stranger needs them:
  *
- * - the message, the two entrances, and what holds today;
+ * - the first screen (D-0024 §A): the message, what it is, the promise
+ *   with the count against its threshold, what holds today, the form, and
+ *   the builders' entrance as a text link;
  * - the idea: AI is changing who can build, so let's change who has a say;
  * - the projects: the feed first, then two labelled possibilities;
  * - what "ours" means, as the common agreement proposes it, with an
@@ -253,7 +255,10 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
       {/* The first screen (D-0024 §A), in this order: the headline, what it
           is, the promise with the count against its threshold, what holds
           today, and one form; the builders' entrance as a text link; and the
-          picture. */}
+          picture. On a wide screen the promise, the status and the form sit
+          beside the headline (the grid's "act" area), so the form is in view
+          without scrolling, and the picture is under what it is (the
+          verification of M-0021, R2); the order in the page is the same. */}
       <div className={styles.wrap}>
         <section className={styles.hero} aria-labelledby="door-title">
           <p className={styles.eyebrow}>
@@ -267,8 +272,8 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
               {DOOR_HEADLINE[2]} <em className={styles.ours}>{DOOR_HEADLINE[3]}</em>
             </span>
           </h1>
-          <div className={styles.heroText}>
-            <p className={styles.lede}>{DOOR_WHAT}</p>
+          <p className={`${styles.lede} ${styles.heroWhat}`}>{DOOR_WHAT}</p>
+          <div className={styles.heroAct}>
             {/* The promise, in the pledge's own words (D-0016 §C), with the
                 public count against its threshold before it (D-0024 §B). */}
             <figure className={styles.heroPromise}>

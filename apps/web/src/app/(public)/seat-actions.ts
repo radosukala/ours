@@ -15,7 +15,9 @@
  * so a bad one is refused before anything is counted, and it is kept only
  * after `requestSeat` has let the request through. It is kept without the
  * address (`nameNeed`). If keeping it fails, the request still stands: the
- * seat email is on its way, and a second submit would only hit the limits.
+ * address is in line, or its link is on its way, and the failure is logged
+ * by name; a second submit would keep the need again, which is the same
+ * as naming it twice.
  */
 import { unstable_rethrow } from "next/navigation";
 import { getDb } from "@/core/db";

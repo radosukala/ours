@@ -2988,31 +2988,62 @@ the feed does.
   §B's words (`joinLabel`); under it the seat line (when no seat is open)
   and the free line; and, from the first one, *"N apps named so far."*
   (`needsLine`). It posts to `takeSeat`.
-- **A need, in `takeSeat`:** read first (`normalizeNeed`: whitespace
-  collapsed, control characters dropped, empty is none; over 140 refused at
-  its field, before anything is counted); then the seat request, with its
-  gates and rate limits; then, only if that went through, kept
-  (`nameNeed`). If keeping it fails, the request stands and the failure is
-  logged by name. `SeatResult` gains `field: "need"` for a refusal at the
-  need; the feed's form never sends one.
+- **A need, in `takeSeat`:** read first (`normalizeNeed`, in
+  `need-words.ts`, a plain module the form can import: whitespace
+  collapsed, control characters dropped (Unicode's Cc, the C1 set
+  included, and the bidirectional controls), empty is none; over 140
+  refused at its field, before anything is counted); then the seat
+  request, with its gates and rate limits; then, only if that went
+  through, kept (`nameNeed`). If keeping it fails, the request stands and
+  the failure is logged by name. `SeatResult` gains `field: "need"` for a
+  refusal at the need; the feed's form never sends one.
 - **The `needs` table** (migration `0003_needs`): `id`, `text` (checked to
-  1–140 characters), `created_at`; no column for an address, and nothing
-  links a need to one. `needsCount` is the public count. No code lists the
-  words: they are read by the founder in the database, and never shown to
-  a visitor or a member. Kept for 12 months (`NEED_KEPT_MONTHS`), or until
-  a decision publishes or deletes them; nothing removes them automatically
-  yet. The down migration, `drizzle/down/0003_needs.sql`, drops the table
-  after an export.
-- **The privacy notice:** the row *"Apps you name"*: what, why, and *"For
-  12 months, or until a decision publishes or deletes them. They are not
-  removed automatically yet."* The "what Neon receives" line stays true.
+  1–140 characters), `created_at`, kept to the day, not the moment (the
+  verification, H1), so a need isn't paired with a seat request by the
+  time it came; no column for an address. `needsCount` is the public
+  count: the distinct texts, read without regard to case, so one app named
+  three times is one. No code lists the words: they are read by the
+  founder in the database, and never shown to a visitor or a member. Kept
+  for 12 months (`NEED_KEPT_MONTHS`), or until a decision publishes or
+  deletes them; nothing removes them automatically yet. The down
+  migration, `drizzle/down/0003_needs.sql`, drops the table after an
+  export.
+- **The privacy notice:** the row *"Apps you name"*: what (*"… and the day
+  you wrote it. Not your address: a need is kept apart from it, with the
+  day and not the time."*), why, and *"For 12 months, or until a decision
+  publishes or deletes them. They are not removed automatically yet."* The
+  "what Neon receives" line stays true. Under the first screen's form, the
+  feed's own privacy note (D-0016 §B), with its link to `/privacy`.
 - **The link card** (§D), in the root layout's metadata: `metadataBase`
   from `APP_URL` (left unset when it can't be read), `openGraph` with the
-  site's name, the type and one image, `twitter` with the large card; no
-  title or description of their own, so each page's flow in. The image,
+  site's name, the type and one image, whose `alt` is the headline and the
+  status line the picture carries, `twitter` with the large card; no title
+  or description of their own, so each page's flow in. The image,
   `public/card.png`, 1200 by 630, is rendered from `scripts/card.html` by
   `pnpm card` (a headless Chromium, `CHROME_HEADLESS_SHELL`) and committed:
   what a crawler is shown is what was committed.
 - **The founder's actions, no code:** a first wave of seats opened in
   `/admin` when the post goes out; `PROPOSALS_EMAIL` set, so the drafts
   have a destination.
+- **After the verification, for rendering and use:**
+  - the form posts without JavaScript, or before the page's script has
+    loaded (R1): its action is `takeSeat` itself, not a wrapper, and the
+    root layout's `referrer` is `same-origin`, as `next.config.ts`'s
+    `Referrer-Policy` header says; under `no-referrer` a browser posts a
+    form with `Origin: null` and Next refuses the action (the meta tag
+    overrides the header, so the two must agree);
+  - the first screen's layout (R2): from 901px the promise, the status and
+    the form sit beside the headline (the grid's `act` area) and the
+    picture under what it is, so the form's button is in view at 1440×900,
+    1366×768 and 1280×720; below 901px it is one column, in the same
+    order. On a phone the decided order puts the promise before the form,
+    so the button is about 1,020px down at 375×812: recorded for the
+    founder, not changed;
+  - the first screen's fields have ids of their own, `first-screen-email`
+    and `first-screen-need` (R3), as the Projects panel's form on the same
+    page has `field-email`;
+  - the fields are controlled, so after a refusal the address and the need
+    stay (R4); an answer starts the form again. The feed's own form
+    (`GetInForm`, verified words unchanged) still loses its address after a
+    refusal, as before M-0021;
+  - *"How that works"* is a 44px target on a touch screen (R5).

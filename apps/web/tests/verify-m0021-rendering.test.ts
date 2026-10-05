@@ -617,7 +617,7 @@ function linkBox(a: El, ctx: Ctx): { height: number; pitch: number; display: str
  * against the measurements: at 1440 the button's bottom 1,075.35 for
  * 1,075.3 measured; at 375, 1,029.85 for 1,029.8.
  */
-function firstScreen(ctx: Ctx, lines: { eyebrow: number; headline: number; what: number; pledge: number; status: number }) {
+function firstScreen(ctx: Ctx, lines: { eyebrow: number; headline: number; what: number; pledge: number; status: number }, beside = false) {
   const lh = (el: string[], fallback: number) => parseFloat(value(el, "line-height", ctx) ?? String(fallback));
   const header = ctx.width <= 760 ? 127 : 89;
   const heroPad = px(value([".hero"], "padding", ctx)?.split(/\s+/)[0]);
@@ -645,7 +645,9 @@ function firstScreen(ctx: Ctx, lines: { eyebrow: number; headline: number; what:
   const top = header + heroPad;
   const headlineTop = top + eyebrow + gap;
   const whatTop = headlineTop + headline + gap;
-  const promiseTop = whatTop + what + promiseMargin;
+  // Changed after the verification of M-0021 (R2): from 901px the promise, the status and the form sit beside the
+  // headline, in the grid's "act" area, so the promise starts where the headline does.
+  const promiseTop = beside ? headlineTop : whatTop + what + promiseMargin;
   const statusTop = promiseTop + promise + statusMargin;
   const formTop = statusTop + status + joinMargin;
   const buttonTop = formTop + label + fieldGap + input + formGap + label + fieldGap + input + fieldGap + hint + formGap;
@@ -655,7 +657,7 @@ function firstScreen(ctx: Ctx, lines: { eyebrow: number; headline: number; what:
 /* =============================================================== findings */
 
 describe("findings (each FAILS on 089cbcd, and passes once fixed)", () => {
-  it("DEFECT (HIGH): without JavaScript, or before the page's script has loaded, submitting the first screen's form returns a bare 'Internal Server Error' page and nothing is kept — measured in Chromium 153 at 1440×900 with scripts disabled: the form is wired for it (action=\"\", method=\"POST\", the $ACTION hidden fields), Enter in the need field posted, the server answered 500 and logged \"`x-forwarded-host` header with value `localhost:3742` does not match `origin` header with value `null` … Aborting the action\"; the request's Origin header was the string null (with scripts on, React's fetch carried http://localhost:3742 and got 200). The root layout's metadata sets referrer: \"no-referrer\" (since M-0010), and under that policy a browser serialises the Origin of every form POST as null (Fetch §4.1, 'append a request Origin header'), which Next's server-action origin check refuses; the feed's form and the sign-in form post the same way (useActionState and a form action) and are older than M-0021, though only the first screen's was driven here. D-0024 §C: 'the form is the entrance'; M-0021: 'has one thing to do that works'. A policy of same-origin or strict-origin-when-cross-origin keeps referrers from other sites while letting the site's own posts carry their origin", () => {
+  it("fixed (HIGH): without JavaScript, or before the page's script has loaded, submitting the first screen's form returns a bare 'Internal Server Error' page and nothing is kept — measured in Chromium 153 at 1440×900 with scripts disabled: the form is wired for it (action=\"\", method=\"POST\", the $ACTION hidden fields), Enter in the need field posted, the server answered 500 and logged \"`x-forwarded-host` header with value `localhost:3742` does not match `origin` header with value `null` … Aborting the action\"; the request's Origin header was the string null (with scripts on, React's fetch carried http://localhost:3742 and got 200). The root layout's metadata sets referrer: \"no-referrer\" (since M-0010), and under that policy a browser serialises the Origin of every form POST as null (Fetch §4.1, 'append a request Origin header'), which Next's server-action origin check refuses; the feed's form and the sign-in form post the same way (useActionState and a form action) and are older than M-0021, though only the first screen's was driven here. D-0024 §C: 'the form is the entrance'; M-0021: 'has one thing to do that works'. A policy of same-origin or strict-origin-when-cross-origin keeps referrers from other sites while letting the site's own posts carry their origin", () => {
     expect(LAYOUT_TSX).toContain("referrer:");
     const policy = rootMetadata.referrer;
     const originSent = policy === undefined || ["same-origin", "strict-origin-when-cross-origin", "origin", "origin-when-cross-origin", "no-referrer-when-downgrade", "strict-origin", "unsafe-url"].includes(policy as string);
@@ -664,21 +666,47 @@ describe("findings (each FAILS on 089cbcd, and passes once fixed)", () => {
     expect({ policy, originSent: originSent || postsToARoute }).toEqual({ policy, originSent: true });
   });
 
-  it("DEFECT (MEDIUM): the form, the one thing to do, is below the first screen at every common size — measured in Chromium 153 as a visitor with the waiting list: the button's bottom at 1,075px in a 900px-tall window at 1440 (the receipt's own size, whose screen ends at 'Your email'), 1,065 at 1366×768, 1,047 at 1280×720, 994 at 1000×900, 1,184 at 820×1180, 1,030 at 375×812 (the status line itself is under the fold of a 375×667 phone) and 1,178 at 320×568; for a member 'Open your feed' ends at 916 at 1440×900. D-0024 §A: 'The first screen says the whole thing… the headline; what it is; the promise…; the status; one form'; its reason 1: 'People from a post give the site ten seconds'; M-0021: 'has one thing to do that works'. The parts stack in one column under a 102px headline (294px for its three lines), the 182px promise and the status, while the picture's column beside them is empty below 747px", () => {
-    const wide = firstScreen(at(1440), { eyebrow: 1, headline: 3, what: 2, pledge: 3, status: 1 });
-    const laptop = firstScreen(at(1366), { eyebrow: 1, headline: 3, what: 2, pledge: 3, status: 1 });
-    const phone = firstScreen(at(375), { eyebrow: 2, headline: 3, what: 2, pledge: 5, status: 2 });
-    // The estimate reproduces the browser: 1,075.3 and 1,029.8 measured.
-    expect(Math.abs(wide.buttonBottom - 1075.3)).toBeLessThan(3);
-    expect(Math.abs(phone.buttonBottom - 1029.8)).toBeLessThan(3);
+  it("fixed (MEDIUM, wide screens; the phone is recorded below): the form, the one thing to do, is below the first screen at every common size — measured in Chromium 153 as a visitor with the waiting list: the button's bottom at 1,075px in a 900px-tall window at 1440 (the receipt's own size, whose screen ends at 'Your email'), 1,065 at 1366×768, 1,047 at 1280×720, 994 at 1000×900, 1,184 at 820×1180, 1,030 at 375×812 (the status line itself is under the fold of a 375×667 phone) and 1,178 at 320×568; for a member 'Open your feed' ends at 916 at 1440×900. D-0024 §A: 'The first screen says the whole thing… the headline; what it is; the promise…; the status; one form'; its reason 1: 'People from a post give the site ten seconds'; M-0021: 'has one thing to do that works'. The parts stack in one column under a 102px headline (294px for its three lines), the 182px promise and the status, while the picture's column beside them is empty below 747px", () => {
+    // Changed after the verification of M-0021 (R2): from 901px the promise, the status and the form sit beside the
+    // headline (the grid's "act" area), with the picture under what it is, and the page's order is the same. The
+    // estimate below is the verifier's model with that layout, and it reproduces the browser on the fixed build: the
+    // button's bottom at 671px at 1440×900, 1366×768 and 1280×720 (measured; the estimate gives 671.2). The phone's
+    // single column is recorded below, as the decided order (D-0024 §A) puts the promise before the form.
+    const css = read("src/components/public/door.module.css");
+    expect(css).toMatch(/\.hero \{[^}]*grid-template-areas:\s*"eyebrow eyebrow"\s*"title\s+act"\s*"what\s+act"\s*"picture\s+act";/);
+    expect(css).toMatch(/\.heroAct \{\s*grid-area: act;/);
+    // The order in the page is the decided one: the headline, what it is, the promise, the status, the form.
+    const order = [TAGLINE, DOOR_WHAT, "How that works", DOOR_STATUS, "Your email"];
+    const textOfHero = text(hero(door()));
+    let last = -1;
+    for (const part of order) {
+      const next = textOfHero.indexOf(part, last + 1);
+      expect(next, part).toBeGreaterThan(last);
+      last = next;
+    }
+    const wide = firstScreen(at(1440), { eyebrow: 1, headline: 3, what: 2, pledge: 3, status: 1 }, true);
+    const laptop = firstScreen(at(1366), { eyebrow: 1, headline: 3, what: 2, pledge: 3, status: 1 }, true);
+    const small = firstScreen(at(1280), { eyebrow: 1, headline: 3, what: 2, pledge: 3, status: 1 }, true);
+    expect(Math.abs(wide.buttonBottom - 671)).toBeLessThan(3);
     expect({
       "1440x900": Math.round(wide.buttonBottom) <= 900,
       "1366x768": Math.round(laptop.buttonBottom) <= 768,
-      "375x812": Math.round(phone.buttonBottom) <= 812,
-    }).toEqual({ "1440x900": true, "1366x768": true, "375x812": true });
+      "1280x720": Math.round(small.buttonBottom) <= 720,
+    }).toEqual({ "1440x900": true, "1366x768": true, "1280x720": true });
   });
 
-  it("DEFECT (MEDIUM): / now has two inputs with the id field-email, and the Projects panel's 'Your email' label is bound to the first screen's field — measured in Chromium 153 at 1440 and, by touch, at 375: document.querySelectorAll('#field-email').length is 2, the panel's label's .control is the first screen's input, and a click or tap on that label scrolls the page to the top (scrollY 423 at 1440, 422 at 375) and focuses the other form; an error on the panel's field would be described by aria-describedby=\"field-email-error\", which resolves to the first screen's. Before M-0021 the front door had one email form. SPEC §9: 'labels on every input'; WCAG 1.3.1 and 4.1.1. Field.tsx derives the id from the name (`field-${name}`) and neither FirstScreenForm nor GetInForm passes one", () => {
+  // Recorded, not fixed (the verification of M-0021): on a phone the decided order, the promise before the form,
+  // puts the form's button at about 1,020px at 375×812 (the browser, on the fixed build; 1,030 before the layout
+  // change), a screen and a quarter down. Whether a phone should see the form first (a different order there), or a
+  // way to it from the top, is the founder's decision, put to the founder in the receipts. The test stays as
+  // written, and skipped, until that decision; its estimate is the verifier's, calibrated on 089cbcd.
+  it.skip("recorded, not fixed (MEDIUM, phones): the form, the one thing to do, is below the first screen at every common size — measured in Chromium 153 as a visitor with the waiting list: the button's bottom at 1,075px in a 900px-tall window at 1440 (the receipt's own size, whose screen ends at 'Your email'), 1,065 at 1366×768, 1,047 at 1280×720, 994 at 1000×900, 1,184 at 820×1180, 1,030 at 375×812 (the status line itself is under the fold of a 375×667 phone) and 1,178 at 320×568; for a member 'Open your feed' ends at 916 at 1440×900. D-0024 §A: 'The first screen says the whole thing… the headline; what it is; the promise…; the status; one form'; its reason 1: 'People from a post give the site ten seconds'; M-0021: 'has one thing to do that works'. The parts stack in one column under a 102px headline (294px for its three lines), the 182px promise and the status, while the picture's column beside them is empty below 747px", () => {
+    const phone = firstScreen(at(375), { eyebrow: 2, headline: 3, what: 2, pledge: 5, status: 2 });
+    expect(Math.abs(phone.buttonBottom - 1029.8)).toBeLessThan(3);
+    expect(Math.round(phone.buttonBottom) <= 812).toBe(true);
+  });
+
+  it("fixed (MEDIUM): / now has two inputs with the id field-email, and the Projects panel's 'Your email' label is bound to the first screen's field — measured in Chromium 153 at 1440 and, by touch, at 375: document.querySelectorAll('#field-email').length is 2, the panel's label's .control is the first screen's input, and a click or tap on that label scrolls the page to the top (scrollY 423 at 1440, 422 at 375) and focuses the other form; an error on the panel's field would be described by aria-describedby=\"field-email-error\", which resolves to the first screen's. Before M-0021 the front door had one email form. SPEC §9: 'labels on every input'; WCAG 1.3.1 and 4.1.1. Field.tsx derives the id from the name (`field-${name}`) and neither FirstScreenForm nor GetInForm passes one", () => {
     const tree = door();
     const ids = findAll(tree, (e) => e.attrs.id !== undefined && e.attrs.id.startsWith("field-")).map((e) => e.attrs.id!);
     const duplicates = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
@@ -686,7 +714,7 @@ describe("findings (each FAILS on 089cbcd, and passes once fixed)", () => {
     expect(duplicates).toEqual([]);
   });
 
-  it("DEFECT (MEDIUM): a refusal empties the form, so the person retypes everything and the refusal names words that are no longer there — measured in Chromium 153 at 1440: after 'Keep it to 140 characters.' (a need of 141 characters, Enter in its field) both fields read \"\", the 141 characters and the address gone; after 'Enter a valid email address.' the need written beside it ('the calendar app') is gone too; the same by touch at 375. React resets a form whose `action` prop is a function once the action returns, whatever it returned, and FirstScreenForm's fields are uncontrolled with nothing put back: no value or defaultValue from the state, no requestFormReset/preventDefault of its own. needs.ts: 'refused (INVALID), so the person can shorten it'; SPEC §18.23: 'refused at its field'. The feed's form loses the address the same way, which is older than M-0021; the need is new, and up to 140 characters", () => {
+  it("fixed (MEDIUM): a refusal empties the form, so the person retypes everything and the refusal names words that are no longer there — measured in Chromium 153 at 1440: after 'Keep it to 140 characters.' (a need of 141 characters, Enter in its field) both fields read \"\", the 141 characters and the address gone; after 'Enter a valid email address.' the need written beside it ('the calendar app') is gone too; the same by touch at 375. React resets a form whose `action` prop is a function once the action returns, whatever it returned, and FirstScreenForm's fields are uncontrolled with nothing put back: no value or defaultValue from the state, no requestFormReset/preventDefault of its own. needs.ts: 'refused (INVALID), so the person can shorten it'; SPEC §18.23: 'refused at its field'. The feed's form loses the address the same way, which is older than M-0021; the need is new, and up to 140 characters", () => {
     // Nothing in the view puts the typed words back after a refusal: the refused state carries no values,
     // and the inputs render without any.
     const refused = formView({ error: NEED_TOO_LONG, field: "need" });
@@ -696,7 +724,7 @@ describe("findings (each FAILS on 089cbcd, and passes once fixed)", () => {
     expect({ keeps, needValue: need.attrs.value }).toEqual({ keeps: true, needValue: expect.any(String) });
   });
 
-  it("DEFECT (LOW): on a touch screen 'How that works', the first screen's way to the contract, is a 16px-tall target — measured in Chromium 153 with touch at 320, 375 and 820px: a.heroPledgeLink 98×16, where the header's places, the panel's links and 'I want to build' are 44px (SPEC §9's 44px on mobile; WCAG 2.5.8 asks 24px, with an exception for a link inside a sentence that this caption, a name and a link, only arguably is). door.module.css gives .textLink, .btnSmall, .values a, .agentActions a and .openFoot a a rule under (pointer: coarse) and .heroPledgeLink none; 'See where it stands.' beside it is older than M-0021", () => {
+  it("fixed (LOW): on a touch screen 'How that works', the first screen's way to the contract, is a 16px-tall target — measured in Chromium 153 with touch at 320, 375 and 820px: a.heroPledgeLink 98×16, where the header's places, the panel's links and 'I want to build' are 44px (SPEC §9's 44px on mobile; WCAG 2.5.8 asks 24px, with an exception for a link inside a sentence that this caption, a name and a link, only arguably is). door.module.css gives .textLink, .btnSmall, .values a, .agentActions a and .openFoot a a rule under (pointer: coarse) and .heroPledgeLink none; 'See where it stands.' beside it is older than M-0021", () => {
     const h = hero(door());
     const link = byClass(h, "heroPledgeLink")[0]!;
     expect(text(link)).toBe("How that works");
@@ -709,7 +737,8 @@ describe("findings (each FAILS on 089cbcd, and passes once fixed)", () => {
 
 describe("closed checks (each held, and passes)", () => {
   it("closed: nothing scrolls sideways, passes an edge or overlaps — the front door as a visitor, a member, with joining closed and with the database down, × 320, 375, 820, 1000 and 1440px × light and dark (40 loads in Chromium 153, and 20 more with a member's cookie on the closed and the database-down instances): scrollWidth equal to clientWidth, no box past either edge, no two of the first screen's blocks intersecting, no text overflowing its box but SVG labels in the picture; the hero is a two-column grid with minmax(0, …) tracks from 761px and a column below, the promise and the form capped at 560 and 520px, the fields and the button full width", () => {
-    expect(value([".hero"], "grid-template-columns")).toBe("minmax(0, 1.32fr) minmax(0, 1fr)");
+    // Changed after the verification of M-0021 (R2): the hero's two columns are the headline's and the promise's.
+    expect(value([".hero"], "grid-template-columns")).toBe("minmax(0, 1.12fr) minmax(0, 1fr)");
     expect(value([".hero"], "flex-direction", at(760))).toBe("column");
     expect(value([".heroPromise"], "max-width")).toBe("560px");
     expect(value([".heroJoin"], "max-width")).toBe("520px");
@@ -722,9 +751,11 @@ describe("closed checks (each held, and passes)", () => {
   it("closed: the first screen's order, in the markup and on the screen — the eyebrow, the headline, what it is, the promise (the count, the pledge, the signature), the status, the form, 'I want to build' as a text link, then the picture (beside from 761px, below on a phone); tops ascending at every width and in every state (Chromium 153); one h1; 'I want this to exist' gone", () => {
     const h = hero(door());
     const blocks = elements(h).map((e) => moduleClass(e).split(" ")[0] || e.tag);
-    expect(blocks).toEqual(["eyebrow", "headline", "heroText", "diagram"]);
-    const textParts = elements(byClass(h, "heroText")[0]!).map((e) => moduleClass(e).split(" ")[0] || e.tag);
-    expect(textParts).toEqual(["lede", "heroPromise", "heroStatus", "heroJoin", "heroBuild"]);
+    // Changed after the verification of M-0021 (R2): what it is stands beside the act block, which holds the promise,
+    // the status, the form and the builders' link; the order in the page is the same.
+    expect(blocks).toEqual(["eyebrow", "headline", "lede", "heroAct", "diagram"]);
+    const textParts = elements(byClass(h, "heroAct")[0]!).map((e) => moduleClass(e).split(" ")[0] || e.tag);
+    expect(textParts).toEqual(["heroPromise", "heroStatus", "heroJoin", "heroBuild"]);
     const promise = elements(byClass(h, "heroPromise")[0]!).map((e) => `${e.tag}.${moduleClass(e)}`);
     expect(promise).toEqual(["p.heroCount", "blockquote.heroPledge", "figcaption.heroPledgeBy"]);
     const t = text(h);
@@ -743,7 +774,9 @@ describe("closed checks (each held, and passes)", () => {
     }
     expect(findAll(h, (e) => e.tag === "h1")).toHaveLength(1);
     expect(t).not.toContain("I want this to exist");
-    expect(value([".hero"], "grid-template-areas")?.replace(/\s+/g, " ")).toBe('"eyebrow eyebrow" "title picture" "text picture"');
+    // Changed after the verification of M-0021 (R2): the promise, the status and the form (the "act" area) sit beside
+    // the headline and what it is, with the picture under them; the markup's order is unchanged.
+    expect(value([".hero"], "grid-template-areas")?.replace(/\s+/g, " ")).toBe('"eyebrow eyebrow" "title act" "what act" "picture act"');
     expect(value([".diagram"], "max-width", at(375))).toBe("450px");
   });
 
@@ -842,6 +875,8 @@ describe("closed checks (each held, and passes)", () => {
       "input email",
       "input need",
       WAITING_LIST_LABEL,
+      // Changed after the verification of M-0021 (H2): the privacy note's link under the form.
+      "Privacy",
       `${ENTRANCES.builders} ↗`,
     ]);
     const member = hero(door({ member: true }));
@@ -860,34 +895,36 @@ describe("closed checks (each held, and passes)", () => {
     expect(value([".public :focus-visible"], "outline")).toBe("3px solid var(--rust)");
   });
 
+  // Changed after the verification of M-0021 (R3): the first screen's fields have ids of their own (first-screen-*),
+  // as the Projects panel's form on the same page has field-email.
   it("closed: the fields as rendered and as a screen reader hears them — 'Your email' (type email, required, maxLength 254, inputmode email, autocomplete email) and 'Which app would you take back?' (type text, not required, maxLength 140, autocomplete off) each labelled by `for`, the hint 'Optional. Kept without your address.' tied to the need by aria-describedby; the form posts without the browser's own validation (noValidate), as the feed's does", () => {
     const h = hero(door());
     const inputs = findAll(h, (e) => e.tag === "input");
     expect(inputs.map((i) => i.attrs.name)).toEqual(["email", "need"]);
     const [email, need] = inputs as [El, El];
-    expect(email.attrs).toMatchObject({ id: "field-email", type: "email", required: "", maxlength: "254", inputmode: "email", autocomplete: "email", autocapitalize: "none", spellcheck: "false" });
-    expect(need.attrs).toMatchObject({ id: "field-need", type: "text", maxlength: String(NEED_MAX), autocomplete: "off", "aria-describedby": "field-need-hint" });
+    expect(email.attrs).toMatchObject({ id: "first-screen-email", type: "email", required: "", maxlength: "254", inputmode: "email", autocomplete: "email", autocapitalize: "none", spellcheck: "false" });
+    expect(need.attrs).toMatchObject({ id: "first-screen-need", type: "text", maxlength: String(NEED_MAX), autocomplete: "off", "aria-describedby": "first-screen-need-hint" });
     expect(need.attrs.required).toBeUndefined();
     const labels = findAll(h, (e) => e.tag === "label");
     expect(labels.map((l) => [l.attrs.for, text(l)])).toEqual([
-      ["field-email", "Your email"],
-      ["field-need", NEED_LABEL],
+      ["first-screen-email", "Your email"],
+      ["first-screen-need", NEED_LABEL],
     ]);
-    expect(text(findAll(h, (e) => e.attrs.id === "field-need-hint")[0]!)).toBe(NEED_HINT);
+    expect(text(findAll(h, (e) => e.attrs.id === "first-screen-need-hint")[0]!)).toBe(NEED_HINT);
     expect(findAll(h, (e) => e.tag === "form")[0]!.attrs.novalidate).toBe("");
   });
 
   it("closed: each refusal at its field, and the one answer — in Chromium 153: a need of 141 characters, set past the browser's maxLength by script and sent with Enter, drew 'Keep it to 140 characters.' under the need (role alert, aria-invalid, described by the hint and the error) and nothing under the address, and kept nothing; 'not an email' and an empty address drew 'Enter a valid email address.' under the address and nothing under the need; a fourth submission from one address in an hour drew the rate limit's sentence under the address; with the database down, 'Something went wrong. Please try again.' there; every valid submission (with a need, with one of exactly 140 characters, with none; by touch at 375 dark) drew the one answer in a role=status notice under the button, and the button was disabled while pending", () => {
     const atNeed = formView({ error: NEED_TOO_LONG, field: "need" });
-    const needError = findAll(atNeed, (e) => e.attrs.id === "field-need-error")[0]!;
+    const needError = findAll(atNeed, (e) => e.attrs.id === "first-screen-need-error")[0]!;
     expect(text(needError)).toBe(NEED_TOO_LONG);
     expect(needError.attrs.role).toBe("alert");
-    expect(findAll(atNeed, (e) => e.tag === "input" && e.attrs.name === "need")[0]!.attrs).toMatchObject({ "aria-invalid": "true", "aria-describedby": "field-need-hint field-need-error" });
-    expect(findAll(atNeed, (e) => e.attrs.id === "field-email-error")).toEqual([]);
+    expect(findAll(atNeed, (e) => e.tag === "input" && e.attrs.name === "need")[0]!.attrs).toMatchObject({ "aria-invalid": "true", "aria-describedby": "first-screen-need-hint first-screen-need-error" });
+    expect(findAll(atNeed, (e) => e.attrs.id === "first-screen-email-error")).toEqual([]);
     for (const error of ["Enter a valid email address.", "You've done that too many times. Try again later.", GENERIC_ERROR, SEATS_CLOSED]) {
       const atEmail = formView({ error });
-      expect(text(findAll(atEmail, (e) => e.attrs.id === "field-email-error")[0]!)).toBe(error);
-      expect(findAll(atEmail, (e) => e.attrs.id === "field-need-error")).toEqual([]);
+      expect(text(findAll(atEmail, (e) => e.attrs.id === "first-screen-email-error")[0]!)).toBe(error);
+      expect(findAll(atEmail, (e) => e.attrs.id === "first-screen-need-error")).toEqual([]);
       expect(findAll(atEmail, (e) => e.tag === "input" && e.attrs.name === "need")[0]!.attrs["aria-invalid"]).toBeUndefined();
     }
     const answered = formView({ ok: true });
@@ -896,7 +933,8 @@ describe("closed checks (each held, and passes)", () => {
     expect(hasClass(status, "notice--ok")).toBe(true);
     // The answer follows the form, before the lines under it.
     const join = byClass(answered, "heroJoin")[0]!;
-    expect(elements(join).map((e) => e.tag)).toEqual(["form", "p", "p"]);
+    // Changed after the verification of M-0021 (H2): the privacy note is the last line under the form.
+    expect(elements(join).map((e) => e.tag)).toEqual(["form", "p", "p", "p"]);
     expect(findAll(formView(null), (e) => e.attrs.role === "status")).toEqual([]);
     const pending = findAll(formView(null, { pending: true }), (e) => e.tag === "button")[0]!;
     expect(pending.attrs.disabled).toBe("");
@@ -910,7 +948,7 @@ describe("closed checks (each held, and passes)", () => {
     expect(needsLine(1284)).toBe("1,284 apps named so far.");
     const h = hero(door({ needs: 2 }));
     const join = byClass(h, "heroJoin")[0]!;
-    expect(elements(join).map((e) => `${e.tag}.${moduleClass(e).split(" ").pop()}`)).toEqual(["form.heroForm", "p.joinStrong", "p.joinStrong", "p.needsLine"]);
+    expect(elements(join).map((e) => `${e.tag}.${moduleClass(e).split(" ").pop()}`)).toEqual(["form.heroForm", "p.joinStrong", "p.joinStrong", "p.needsLine", "p.joinSmall"]); // Changed after the verification of M-0021 (H2): the privacy note
     expect(text(byClass(h, "needsLine")[0]!)).toBe("2 apps named so far.");
     expect(value([".needsLine"], "font-size")).toBe("14px");
     expect(value([".needsLine"], "font-weight")).toBe("700");
@@ -933,7 +971,7 @@ describe("closed checks (each held, and passes)", () => {
   });
 
   it("closed: the link card as crawlers fetch it — from `next start`, /, /feed, /contract, /privacy and a not-found address (404) fetched as Twitterbot/1.0, facebookexternalhit/1.1, Slackbot-LinkExpanding 1.0 and Discordbot/2.0 all served the same tags: og:title and twitter:title the page's title, og:description and twitter:description the page's description (the front door's for pages without one), og:site_name our.one, og:type website, og:image and twitter:image http://localhost:3742/card.png (absolute, from APP_URL), og:image:width 1200, og:image:height 630, og:image:alt the headline, twitter:card summary_large_image; the image 200 image/png, 53,558 bytes, 1200×630, byte-identical to public/card.png and to a fresh render of scripts/card.html in the same browser (0 of 756,000 pixels differing); the card's words are door.ts's and its colours the identity's", () => {
-    expect(rootMetadata.openGraph).toMatchObject({ siteName: "our.one", type: "website", images: [{ url: "/card.png", width: 1200, height: 630, alt: TAGLINE }] });
+    expect(rootMetadata.openGraph).toMatchObject({ siteName: "our.one", type: "website", images: [{ url: "/card.png", width: 1200, height: 630, alt: `${TAGLINE} ${DOOR_STATUS}` }] }); // Changed after the verification of M-0021 (H5): the alt carries the status line
     expect(rootMetadata.twitter).toMatchObject({ card: "summary_large_image", images: ["/card.png"] });
     expect(rootMetadata.openGraph).not.toHaveProperty("title");
     expect(rootMetadata.openGraph).not.toHaveProperty("description");

@@ -575,10 +575,11 @@ export const waitlist = pgTable(
 
 /**
  * A need named on the front door (D-0024 §C, SPEC §18.23): the answer to
- * "Which app would you take back?", and when. Nothing links it to an
- * address: the check keeps it to the words, at most 140 characters, and
- * the table has no column for anything else. Kept for 12 months, or until
- * a decision publishes or deletes them.
+ * "Which app would you take back?", and the day it was written (needs.ts
+ * keeps the day, not the moment). The check keeps it to the words, at most
+ * 140 characters, and the table has no column for anything else: no
+ * address. Kept for 12 months, or until a decision publishes or deletes
+ * them.
  */
 export const needs = pgTable(
   "needs",

@@ -11,19 +11,33 @@
  * whether a seat was open, the address now waits in line, or it already
  * has an account. A refusal is shown at the field it concerns: the address
  * (joining closed, an address that isn't one, a rate limit) or the need
- * (too long).
+ * (too long). React empties an uncontrolled form once its action returns,
+ * whatever it returned, so the fields are controlled: after a refusal the
+ * words stay, and the person doesn't retype an address or a need that was
+ * refused (the verification of M-0021, R4); an answer starts the form again.
+ * The action is `takeSeat` itself, not a wrapper, so the form still posts
+ * without JavaScript, or before the page's script has loaded (R1). The
+ * fields' ids are the first screen's own: the Projects panel's form on the
+ * same page has `field-email` (R3). Under the lines, the feed's own privacy
+ * note (D-0016 §B), which says what is done with the address and leads to
+ * the notice.
  */
-import { useActionState } from "react";
+import Link from "next/link";
+import { useActionState, useState } from "react";
 import { type SeatResult, takeSeat } from "@/app/(public)/seat-actions";
 import { Button } from "@/components/Button";
 import { Field } from "@/components/Field";
-import { NEED_LABEL, NEED_MAX, needsLine } from "@/core/needs";
+import { NEED_LABEL, NEED_MAX, needsLine } from "@/core/need-words";
 import { CHECK_YOUR_EMAIL } from "./GetInForm";
 import { JOIN_LABEL } from "./join";
 import styles from "./door.module.css";
 
 /** Under the need's field: what happens to it. */
 export const NEED_HINT = "Optional. Kept without your address.";
+
+/** The words the person typed, put back after a refusal. */
+export type Typed = { email: string; need: string };
+const NOTHING_TYPED: Typed = { email: "", need: "" };
 
 export type FirstScreenFormProps = {
   /** The button's words for the seats now (`joinLabel`). */
@@ -36,7 +50,14 @@ export type FirstScreenFormProps = {
 
 export function FirstScreenForm(props: FirstScreenFormProps) {
   const [state, formAction, pending] = useActionState<SeatResult | null, FormData>(takeSeat, null);
-  return <FirstScreenFormView {...props} state={state} action={formAction} pending={pending} />;
+  const [typed, setTyped] = useState<Typed>(NOTHING_TYPED);
+  // When an answer comes (not a refusal), the form starts again.
+  const [seen, setSeen] = useState<SeatResult | null>(state);
+  if (state !== seen) {
+    setSeen(state);
+    if (state !== null && !("error" in state)) setTyped(NOTHING_TYPED);
+  }
+  return <FirstScreenFormView {...props} state={state} action={formAction} pending={pending} typed={typed} onType={setTyped} />;
 }
 
 /** The form as it looks for a given answer, so each state can be rendered in a test. */
@@ -47,10 +68,14 @@ export function FirstScreenFormView({
   label = JOIN_LABEL,
   lines,
   needs,
+  typed = NOTHING_TYPED,
+  onType = () => undefined,
 }: FirstScreenFormProps & {
   state: SeatResult | null;
   action: (form: FormData) => void;
   pending: boolean;
+  typed?: Typed;
+  onType?: (typed: Typed) => void;
 }) {
   const refused = state !== null && "error" in state ? state : null;
   const emailError = refused && refused.field !== "need" ? refused.error : null;
@@ -61,9 +86,12 @@ export function FirstScreenFormView({
     <div className={styles.heroJoin}>
       <form action={action} className={`form ${styles.heroForm}`} noValidate>
         <Field
+          id="first-screen-email"
           label="Your email"
           name="email"
           type="email"
+          value={typed.email}
+          onChange={(event) => onType({ ...typed, email: event.target.value })}
           inputMode="email"
           autoComplete="email"
           autoCapitalize="none"
@@ -73,9 +101,12 @@ export function FirstScreenFormView({
           error={emailError}
         />
         <Field
+          id="first-screen-need"
           label={NEED_LABEL}
           name="need"
           type="text"
+          value={typed.need}
+          onChange={(event) => onType({ ...typed, need: event.target.value })}
           autoComplete="off"
           maxLength={NEED_MAX}
           hint={NEED_HINT}
@@ -96,6 +127,10 @@ export function FirstScreenFormView({
         </p>
       ))}
       {needs !== null && needs > 0 ? <p className={styles.needsLine}>{needsLine(needs)}</p> : null}
+      <p className={styles.joinSmall}>
+        {"We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in "}
+        <Link href="/privacy">Privacy</Link>.
+      </p>
     </div>
   );
 }
