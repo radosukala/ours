@@ -290,7 +290,7 @@ afterEach(async () => {
 
 /* ------------------------------------------------------------- defects */
 
-describe("defects (each FAILS on 01d5d9f)", () => {
+describe("findings (each FAILED on 01d5d9f, and passes now: fixed, or recorded)", () => {
   // Finding. Evidence and reasoning:
   // a named app can be joined to the address that sent it by anyone who can read the database, with no key but
   // Postgres's own transaction id. D-0024 §B: 'no key that could join it to any of them' and the day, not the
@@ -359,7 +359,7 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // and in the manifest, nowhere on the form (D-0024 §B: 'It asks people not to put anything about themselves in
   // it'). A visitor who is told the form asked, and was never asked, has been given a reason that isn't true,
   // for a sentence that says why a stored need can't be found
-  it("DEFECT (HIGH): /privacy says the form asks you to leave anything about yourself out of the need, and the form asks no such thing", async () => {
+  it("fixed (HIGH): /privacy says the form asks you to leave anything about yourself out of the need, and the form asks no such thing", async () => {
     const privacy = textOf(renderToStaticMarkup(createElement(PrivacyPage)));
     expect(privacy).toContain("Please leave anything about yourself out of it.");
     const claimsTheFormAsks = privacy.includes("That is why the form asks you to leave anything about yourself out of it.");
@@ -384,7 +384,7 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // number carries a source that says it). The receipt lists 'answers' as the founder's to confirm, and `Not
   // checked here: Abuse`; neither changes what the page says today. Served so: three needs 'Zorbulon photos',
   // one 'zorbulon photos' and one U+200B give '5 apps named so far.' for one app
-  it("DEFECT (MEDIUM): '12 apps named so far.' counts rows (answers, repeats, invisible text), not apps", async () => {
+  it("fixed (MEDIUM): '12 apps named so far.' counts rows (answers, repeats, invisible text), not apps", async () => {
     expect(record("decisions/D-0024.md")).toContain("It counts what people typed, not different apps");
     // Changed after round one (H3): the line counts answers, and says so; D-0025 §C.
     expect(needsLine(5)).toBe("5 answers so far.");
@@ -470,7 +470,7 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // have to change'. The test that pinned it (front-page.test.ts: `useActionState<…>(takeSeat,`) was rewritten
   // under M-0021 to accept the wrapper. React's replay script still catches a click made before the page's
   // JavaScript has run; a visitor with none, or whose script fails to load, has no way in
-  it("DEFECT (MEDIUM): the join form, on the front door and on /feed, no longer works without JavaScript, and /feed's was to be unchanged", async () => {
+  it("fixed (MEDIUM): the join form, on the front door and on /feed, no longer works without JavaScript, and /feed's was to be unchanged", async () => {
     // Changed after round one (H5, R4): SPEC §18.23 now says what is so: both forms are the server action itself.
     expect(record("apps/web/SPEC.md")).toContain("Both forms are the server action itself, passed to useActionState, so both still post without JavaScript");
     expect(flat(readRoot("mandates/M-0021.md"))).toContain("what the feed does, its verified words, and every rule and gate behind the pages");
@@ -538,7 +538,7 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // already knows the full-width trick (HANDLE_LIKE in validate.ts, for display names). validate.ts's own
   // comment says 'It is not a general filter … and /privacy says so'; /privacy says only 'Please leave anything
   // about yourself out of it', not that the form checks for one spelling
-  it("DEFECT (LOW): 'an email address in it is INVALID' holds for one spelling only: a space beside the @, or a full-width @, and the address is kept", () => {
+  it("fixed (LOW): 'an email address in it is INVALID' holds for one spelling only: a space beside the @, or a full-width @, and the address is kept", () => {
     // Changed after round one (H7): the comment no longer says "/privacy says so" (/privacy doesn't name the
     // spellings); it says the filter is not a general one, and the form's hint asks people to leave themselves out.
     expect(read("src/core/validate.ts").replace(/\n\s*\*\s*/g, " ")).toContain("It is not a general filter");
@@ -566,7 +566,7 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // is kept, counted and shown in the count as an app; it reads as empty. The founder is told to read them with
   // `psql -c 'select named_on, body from needs'` (the down migration's header). validDisplayName in the same
   // file already refuses `\p{Default_Ignorable_Code_Point}` and `\p{Bidi_Control}`
-  it("DEFECT (LOW): validNeed passes C1 control characters and bidi overrides, and keeps a need made only of invisible characters, against SPEC §18.23 and its own comment", () => {
+  it("fixed (LOW): validNeed passes C1 control characters and bidi overrides, and keeps a need made only of invisible characters, against SPEC §18.23 and its own comment", () => {
     // Changed after round one (H8): SPEC §18.23 now says every control character (C0 and C1), the bidi controls and nothing a reader could see.
     expect(record("apps/web/SPEC.md")).toContain("every control character (C0 and C1) and run of white space becomes a single space, the bidi controls are dropped, a need of nothing a reader could see is null");
     expect(validNeed("a\u0007b\u007fc\u001bd")).toBe("a b c d");
@@ -660,7 +660,7 @@ describe("defects (each FAILS on 01d5d9f)", () => {
   // receipt: 'Until then the site runs this code on the old schema'. Production applies migrations only in a
   // release build the founder names, so the window is the founder's to leave open, and nothing on /privacy says
   // the question isn't asked yet
-  it("DEFECT (LOW): between a push to main and the migration, /privacy says the words are counted on the front page, where there is no count", async () => {
+  it("fixed (LOW): between a push to main and the migration, /privacy says the words are counted on the front page, where there is no count", async () => {
     expect(record("decisions/D-0020.md")).toContain("A status stays true on the deployed site and off it.");
     expect(record("receipts/builds/2026-10-05-M-0021.md")).toContain("Until then the site runs this code on the old schema, and the form asks for the address alone");
     await maintainer();
