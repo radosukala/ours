@@ -954,7 +954,9 @@ describe("closed (each passes on 089cbcd)", () => {
 
   it("closed: the receipt's numbers and statuses are so, rerun on 089cbcd under env -i — 67 files, 1,701 pass and 2 skipped, the claims scan's 180 files and 19 sentences, READY TO PROPOSE, a production build that passed with no DATABASE_URL; its status is TESTED, one of AGENTS.md §6's states, and it claims no deploy; the three commits it names are what they are, and 089cbcd adds only the stopping rule; D-0024 and M-0021 are ADOPTED, M-0021 a BUILD mandate whose scope allows apps/web/** and the receipts and denies the records; and the new sentences write our.one as AGENTS.md §11 says and claim nothing §9 prohibits", () => {
     const r = receipt();
-    expect(r).toContain("Status: TESTED locally, before the independent verification. Nothing is pushed or deployed.");
+    // Changed after the verification of M-0021 (round one): the receipt says where the verification stands now,
+    // truly. The checks table "before verification" below is kept as it was, with its numbers on e1fc284.
+    expect(r).toContain("Status: TESTED locally, after round one of the independent verification (13 findings fixed, one part recorded). The re-check is next. Nothing is pushed or deployed.");
     expect(r).toContain("| Tests (vitest, real Postgres) | CHECKED | 1,701 pass, 2 skipped (M-0020's R12, and one older), in 67 files on e1fc284 |");
     expect(r).toContain("| Typecheck, lint | CHECKED | pass |");
     expect(r).toContain("| Production build | CHECKED | pass |");
@@ -1028,6 +1030,12 @@ describe("closed (each passes on 089cbcd)", () => {
       "06-feed-panel-member-1440-light.jpg",
       "07-first-screen-1000-light.jpg",
       "08-link-card.png",
+      // Changed after the verification of M-0021 (round one): the screens taken after the fixes.
+      "09-first-screen-1440-light-after-round-one.jpg",
+      "10-first-screen-1280x720-light-after-round-one.jpg",
+      "11-first-screen-1440-dark-after-round-one.jpg",
+      "12-first-screen-375-light-after-round-one.jpg",
+      "13-first-screen-member-1440-light-after-round-one.jpg",
     ]);
     const rule = record("receipts/conformance/2026-10-05-M-0021.verification.md");
     expect(rule).toContain("Status of this receipt: OPEN — the stopping rule, declared before the verification starts.");
