@@ -2991,7 +2991,7 @@ the feed does.
 - **A need, in `takeSeat`:** read first (`normalizeNeed`, in
   `need-words.ts`, a plain module the form can import: whitespace
   collapsed, control characters dropped (Unicode's Cc, the C1 set
-  included, and the bidirectional controls), empty is none; over 140
+  included, and all twelve bidirectional controls), empty is none; over 140
   refused at its field, before anything is counted); then the seat
   request, with its gates and rate limits; then, only if that went
   through, kept (`nameNeed`). If keeping it fails, the request stands and
@@ -2999,8 +2999,9 @@ the feed does.
   refusal at the need; the feed's form never sends one.
 - **The `needs` table** (migration `0003_needs`): `id`, `text` (checked to
   1–140 characters), `created_at`, kept to the day, not the moment (the
-  verification, H1), so a need isn't paired with a seat request by the
-  time it came; no column for an address. `needsCount` is the public
+  verification, H1), and a random `id`, not a ULID, which would carry the
+  moment to the millisecond (the re-check, RC1), so a need isn't paired
+  with a seat request by the time it came; no column for an address. `needsCount` is the public
   count: the distinct texts, read without regard to case, so one app named
   three times is one. No code lists the words: they are read by the
   founder in the database, and never shown to a visitor or a member. Kept
@@ -3042,8 +3043,11 @@ the feed does.
   - the first screen's fields have ids of their own, `first-screen-email`
     and `first-screen-need` (R3), as the Projects panel's form on the same
     page has `field-email`;
-  - the fields are controlled, so after a refusal the address and the need
-    stay (R4); an answer starts the form again. The feed's own form
+  - the fields are controlled, so with JavaScript a refusal keeps the
+    address and the need, and words typed before the page's script ran are
+    taken in when it runs (R4); an answer starts the form again. A refused
+    post made without JavaScript comes back with empty fields, as the page
+    is rendered afresh (the re-check, RC3). The feed's own form
     (`GetInForm`, verified words unchanged) still loses its address after a
     refusal, as before M-0021;
   - *"How that works"* is a 44px target on a touch screen (R5).

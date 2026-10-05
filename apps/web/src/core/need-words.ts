@@ -22,7 +22,8 @@ export const NEED_TOO_LONG = `Keep it to ${NEED_MAX} characters.`;
 /**
  * The need as it is kept: whitespace collapsed to single spaces, ends
  * trimmed, every control character (Unicode's Cc, the C1 set included)
- * and the bidirectional controls dropped. Empty (nothing written, or only
+ * and every one of the twelve bidirectional controls (Unicode's
+ * Bidi_Control) dropped. Empty (nothing written, or only
  * spaces) is null: the form's field is optional. Longer than `NEED_MAX`
  * is refused (INVALID), so the person can shorten it; the browser's own
  * `maxLength` makes that rare.
@@ -31,7 +32,7 @@ export function normalizeNeed(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const text = raw
     .replace(/\s+/g, " ")
-    .replace(/[\p{Cc}\u202a-\u202e\u2066-\u2069]/gu, "")
+    .replace(/[\p{Cc}\p{Bidi_Control}]/gu, "")
     .replace(/\s+/g, " ")
     .trim();
   if (text === "") return null;

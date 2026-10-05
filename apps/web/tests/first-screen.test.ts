@@ -306,7 +306,8 @@ describe("a need, in the core (D-0024 §C)", () => {
   it("keeps the words and when, nothing else: the table has no column for an address, and the check holds the length", async () => {
     const t0 = at("2026-10-05T10:00:00Z");
     const id = await nameNeed(db(), { text: "  the group chat we all hate ", now: t0 });
-    expect(id).toMatch(/^[0-9a-z]+$/i);
+    // Changed after the re-check of M-0021 (RC1): the id is a random token (16 bytes, base64url), not a ULID.
+    expect(id).toMatch(/^[\w-]{22}$/);
     const rows = await db().select().from(needs);
     // Changed after the verification of M-0021 (H1): the day is kept, not the moment.
     expect(rows).toEqual([{ id, text: "the group chat we all hate", createdAt: at("2026-10-05T00:00:00Z") }]);
@@ -409,6 +410,11 @@ describe("the form posts without JavaScript, and keeps what was typed (the verif
     // Next refuses the action. Both were seen in a browser with scripts off.
     expect(read("src/components/public/FirstScreenForm.tsx")).toContain("useActionState<SeatResult | null, FormData>(takeSeat, null)");
     expect(read("src/components/public/FirstScreenForm.tsx")).not.toMatch(/useActionState<[^>]*>\(\s*async/);
+    // Changed after the re-check of M-0021 (RC7): the guard also names the attribute the dispatch has to reach
+    // unwrapped, whatever the spelling of the hook's argument: the hook's action goes to the view as it is, and
+    // the view puts it on the form untouched.
+    expect(read("src/components/public/FirstScreenForm.tsx")).toContain("action={formAction}");
+    expect(read("src/components/public/FirstScreenForm.tsx")).toContain("<form action={action}");
     expect(rootMetadata.referrer).toBe("same-origin");
     expect(read("next.config.ts")).toContain('{ key: "Referrer-Policy", value: "same-origin" }');
   });

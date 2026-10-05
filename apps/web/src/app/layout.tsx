@@ -6,8 +6,9 @@ import "./globals.css";
  * Where the link card's image lives, for a crawler: the site's own address,
  * APP_URL, read here as `appUrl()` reads it (the root layout imports
  * nothing from the core, so `next build` touches no database). Without
- * one, Next writes the image's address from the platform's own (on Vercel)
- * or from the request's host.
+ * one, Next falls back to its own default: the platform's address on
+ * Vercel, and localhost with the server's port elsewhere; it never uses the
+ * request's host.
  */
 function metadataBase(): URL | undefined {
   const value = process.env.APP_URL?.replace(/\/+$/, "");

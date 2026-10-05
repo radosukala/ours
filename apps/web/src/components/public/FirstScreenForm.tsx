@@ -15,7 +15,12 @@
  * whatever it returned, so the fields are controlled: after a refusal the
  * words stay, and the person doesn't retype an address or a need that was
  * refused (the verification of M-0021, R4); an answer starts the form again.
- * The action is `takeSeat` itself, not a wrapper, so the form still posts
+ * Words typed before the page's script ran are in the fields but not in the
+ * state, which starts empty, so they are taken in when the script runs:
+ * otherwise the first keystroke would write the state over them (the
+ * re-check, RC2). That holds with JavaScript; a refused post made without
+ * it comes back with empty fields (RC3). The action is `takeSeat` itself,
+ * not a wrapper, so the form still posts
  * without JavaScript, or before the page's script has loaded (R1). The
  * fields' ids are the first screen's own: the Projects panel's form on the
  * same page has `field-email` (R3). Under the lines, the feed's own privacy
@@ -23,7 +28,7 @@
  * the notice.
  */
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { type Ref, useActionState, useEffect, useRef, useState } from "react";
 import { type SeatResult, takeSeat } from "@/app/(public)/seat-actions";
 import { Button } from "@/components/Button";
 import { Field } from "@/components/Field";
@@ -51,13 +56,23 @@ export type FirstScreenFormProps = {
 export function FirstScreenForm(props: FirstScreenFormProps) {
   const [state, formAction, pending] = useActionState<SeatResult | null, FormData>(takeSeat, null);
   const [typed, setTyped] = useState<Typed>(NOTHING_TYPED);
+  const form = useRef<HTMLFormElement>(null);
+  // Take in what was typed before this script ran (RC2).
+  useEffect(() => {
+    if (!form.current) return;
+    const data = new FormData(form.current);
+    const email = data.get("email");
+    const need = data.get("need");
+    const early = { email: typeof email === "string" ? email : "", need: typeof need === "string" ? need : "" };
+    if (early.email !== "" || early.need !== "") setTyped(early);
+  }, []);
   // When an answer comes (not a refusal), the form starts again.
   const [seen, setSeen] = useState<SeatResult | null>(state);
   if (state !== seen) {
     setSeen(state);
     if (state !== null && !("error" in state)) setTyped(NOTHING_TYPED);
   }
-  return <FirstScreenFormView {...props} state={state} action={formAction} pending={pending} typed={typed} onType={setTyped} />;
+  return <FirstScreenFormView {...props} state={state} action={formAction} pending={pending} typed={typed} onType={setTyped} formRef={form} />;
 }
 
 /** The form as it looks for a given answer, so each state can be rendered in a test. */
@@ -70,12 +85,14 @@ export function FirstScreenFormView({
   needs,
   typed = NOTHING_TYPED,
   onType = () => undefined,
+  formRef,
 }: FirstScreenFormProps & {
   state: SeatResult | null;
   action: (form: FormData) => void;
   pending: boolean;
   typed?: Typed;
   onType?: (typed: Typed) => void;
+  formRef?: Ref<HTMLFormElement>;
 }) {
   const refused = state !== null && "error" in state ? state : null;
   const emailError = refused && refused.field !== "need" ? refused.error : null;
@@ -84,7 +101,7 @@ export function FirstScreenFormView({
 
   return (
     <div className={styles.heroJoin}>
-      <form action={action} className={`form ${styles.heroForm}`} noValidate>
+      <form action={action} className={`form ${styles.heroForm}`} noValidate ref={formRef}>
         <Field
           id="first-screen-email"
           label="Your email"

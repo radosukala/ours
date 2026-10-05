@@ -7,7 +7,9 @@
  * - A need is kept without the address, and nothing here takes one: the
  *   table has no column for it, and this module never sees it. Its time
  *   is kept to the day, not the moment it came (the verification of
- *   M-0021, H1), so the words and the day are all that is kept.
+ *   M-0021, H1), and its id is random, not a ULID, which would carry the
+ *   moment to the millisecond (the re-check, RC1): so the words and the
+ *   day are all that is kept.
  * - It rides on the seat request's gates and rate limits: the action calls
  *   `requestSeat` first, and only then `nameNeed`. This module adds no gate
  *   of its own, so it is never called on its own in production code.
@@ -19,7 +21,7 @@
 import { countDistinct, sql } from "drizzle-orm";
 import type { Db } from "./db";
 import { invalid } from "./errors";
-import { newId } from "./ids";
+import { randomToken } from "./ids";
 import { normalizeNeed } from "./need-words";
 import { needs } from "./schema";
 
@@ -34,7 +36,7 @@ export function dayOf(moment: Date): Date {
 export async function nameNeed(db: Db, input: { text: string; now?: Date }): Promise<string> {
   const text = normalizeNeed(input.text);
   if (text === null) throw invalid("Write the app's name, or leave it empty.");
-  const id = newId();
+  const id = randomToken(16);
   await db.insert(needs).values({ id, text, createdAt: dayOf(input.now ?? new Date()) });
   return id;
 }

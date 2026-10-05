@@ -415,7 +415,8 @@ describe("defects (each FAILS on 089cbcd)", () => {
   it("fixed (LOW): SPEC §18.23 says a need is read with its 'control characters dropped'; normalizeNeed drops the C0 controls and DEL (U+0000–U+001F, U+007F) and keeps the C1 controls (U+0080–U+009F), which are control characters too (Unicode's Cc), so a need can carry them, and they count towards the 140 ('Keep it to 140 characters.' for 139 visible ones). Its comment says 'no control characters'", () => {
     // Changed after the verification of M-0021 (H4): SPEC and the comment say Unicode's Cc, the C1 set included, and
     // the function moved to need-words.ts (H8).
-    expect(spec()).toContain("control characters dropped (Unicode's Cc, the C1 set included, and the bidirectional controls)");
+    // Changed after the re-check of M-0021 (RC5): SPEC and the comment say all twelve bidirectional controls.
+    expect(spec()).toContain("control characters dropped (Unicode's Cc, the C1 set included, and all twelve bidirectional controls)");
     expect(prose("src/core/need-words.ts")).toContain("every control character (Unicode's Cc, the C1 set included)");
     expect(normalizeNeed("the\u0000calendar\u0007 app\u007f")).toBe("thecalendar app");
     const kept = normalizeNeed("the\u0085calendar\u009bapp")!;
@@ -446,7 +447,8 @@ describe("defects (each FAILS on 089cbcd)", () => {
     expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "the calendar app" }))).toEqual({ ok: true });
     expect(await takeSeat(null, form({ email: "mara_f@example.test", need: "the group chat" }))).toEqual({ ok: true });
     await runLater();
-    expect(await storedNeeds()).toEqual(["the calendar app", "the group chat"]);
+    // Changed after the re-check of M-0021 (RC1): the rows have no insertion order (a day and a random id).
+    expect((await storedNeeds()).sort()).toEqual(["the calendar app", "the group chat"]);
     expect(await db().select().from(outbox)).toEqual([]);
     expect((await db().select().from(waitlist)).map((r) => r.email)).toEqual(["mara_f@example.test"]);
     if (prose("src/app/(public)/seat-actions.ts").includes("the seat email is on its way, and a second submit would only hit the limits")) {
@@ -704,9 +706,11 @@ describe("closed (each passes on 089cbcd)", () => {
     expect(await takeSeat(null, form({ email: "nora_f@example.test", need: "  the\tgroup   chat  " }))).toEqual({ ok: true });
     await runLater();
 
-    const rows = await db().select().from(needs).orderBy(needs.createdAt, needs.id);
-    expect(rows.map((r) => r.text)).toEqual(["é".repeat(NEED_MAX), "\u{1d11e}".repeat(NEED_MAX), "the group chat"]);
-    const lengths = await db().execute(sql`select char_length(text)::int as n from needs order by created_at, id`);
+    // Changed after the re-check of M-0021 (RC1): the rows carry the day and a random id, so they have no
+    // insertion order to read back; they are compared as a set.
+    const rows = await db().select().from(needs);
+    expect(rows.map((r) => r.text).sort()).toEqual(["é".repeat(NEED_MAX), "\u{1d11e}".repeat(NEED_MAX), "the group chat"].sort());
+    const lengths = await db().execute(sql`select char_length(text)::int as n from needs order by n desc`);
     expect(lengths.rows).toEqual([{ n: 140 }, { n: 140 }, { n: 14 }]);
     for (const row of rows) {
       expect(Object.keys(row).sort()).toEqual(["createdAt", "id", "text"]);
