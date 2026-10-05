@@ -1,0 +1,61 @@
+schema: ours.decision/v0.1
+decision_id: D-0024
+title: The first screen, for people who come from a post — one message, one form, the count against its threshold, a need named, a link card
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0024.md
+
+proposal: P-0017
+prerequisite_decisions: [D-0012, D-0016, D-0020, D-0023]
+
+outcome: >
+  The front door's first screen says, in order, the headline, what our.one
+  is in one line, the pledge's promise with the public count against its
+  threshold of 100,000, the status line, and one form: the address and an
+  optional "Which app would you take back?", with D-0016 §B's button. A
+  need named is kept without the address, for 12 months, counted in
+  public, read by the founder and not published; the privacy notice says
+  so. The count is a number, never a bar, on the first screen and beside a
+  member's feed; the waiting list never counts. Every public page carries
+  a link card. The first wave of seats and the proposals address are the
+  founder's actions. Replaces D-0020 §A's lede and two entrances on the
+  front door. Authorizes M-0021 (BUILD); nothing is pushed before the
+  founder has seen the first screen's words and screenshots and said go.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0021]
+
+prohibits:
+  - a sentence on the first screen claiming user control, ownership, a holder or a safeguard exists today
+  - a progress bar, or a count that includes the waiting list
+  - keeping a need with its address, or publishing a need, under M-0021
+  - changing /feed's verified words, the contract, or what the feed does
+
+effective_from: 2026-10-05T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of this exact wording, and of the
+  first screen's words, is pending. §A reads "plenty of text" as an order
+  of things, not a cut; §C's 12 months is the draft's number; the first
+  wave's size is open.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

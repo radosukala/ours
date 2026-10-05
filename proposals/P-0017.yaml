@@ -1,0 +1,45 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0017
+title: The first screen, for people who come from a post — one message, one form, the count against its threshold, a need named, a link card
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0024
+
+human_source:
+  path: proposals/P-0017.md
+evidence:
+  - path: proposals/P-0017.evidence-conversation-2026-10-05.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - visitors, who would meet the whole proposition on the first screen, with one thing to do
+  - people who name an app they would take back, whose words are kept, counted and read
+  - members, who would see the count against its threshold beside their feed
+
+unresolved:
+  - the size of the first wave of seats
+  - whether the needs are published later, and how they are moderated
+  - how long a need is kept (the draft says 12 months)
+  - the message test with people who haven't met the project (D-0020 §C)
+
+cost:
+  proposer_hours: 0.5
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-05
+    actor: { id: founder, kind: human }
+    position: before the post, improve the site; a counter of how many more people are needed to move ownership; an easier way to declare demand for a project that should be user-owned; too much text; put your email to sign up or confirm your demand; is the message simple enough, participation easy enough, and the why and the difference sold well
+  - date: 2026-10-05
+    actor: { id: claude, kind: agent }
+    position: measured, the front door has 1,435 words, twelve asks and one working door, with the promise off the first screen and no link card; proposed one first screen with the headline, what it is, the count against 100,000, the status and one form with an optional need; needs kept unlinked, counted and read, not published; a card; a first wave of seats and the proposals address as the founder's actions

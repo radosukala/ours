@@ -1,0 +1,130 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0021
+title: The first screen, for people who come from a post — one message, one form, the count against its threshold, a need named, a link card
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0024
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-05T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0012, D-0016, D-0020, D-0023, D-0024]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0021.md
+
+objective: >
+  Build D-0024 in apps/web: the front door's first screen in the decided
+  order (the headline, what it is in one line, the public count against
+  100,000 with the pledge's sentence, the status line, one form); the
+  count as a number on the first screen and beside a member's feed, the
+  sentence alone when it can't be read; the form with the address, an
+  optional need of at most 140 characters and D-0016 §B's button, one
+  submit through the seat request's gates and limits; a needs table kept
+  without the address for 12 months, with a public count; the privacy
+  notice's row; a link card with a committed image on every public page.
+  SPEC §18.23.
+
+human_outcome: >
+  A person who comes from a post sees what our.one is, what is promised and
+  how far it is, and has one thing to do that works.
+
+adopted_constraints:
+  - No sentence on the first screen claims user control, ownership, a holder or a safeguard exists today (D-0020 §F).
+  - The count is accounts that exist and aren't suspended; the waiting list never counts; it is a number, never a bar.
+  - A need is kept without the address, never published under this mandate, and never shown to anyone but the founder.
+  - /feed's verified words, the contract, the agreement, the drafts and what the feed does are unchanged.
+  - The public pages still never depend on the database being up.
+  - Fictional data only; nothing loads from anywhere but the site.
+
+hypotheses:
+  - A visitor who gives the site ten seconds learns what it is, what is promised and how far it is, and can act once.
+  - People name the app they would take back when asked in one line beside the address.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - kit/**
+      - vercel.json
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+  external_systems: []
+
+risk:
+  class: MEDIUM
+  reversibility: REVERSIBLE
+  affected_groups: [visitors, people who name a need, members]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+  security: [no-secret-exposure, nothing-loaded-from-elsewhere, needs-unlinked-from-addresses]
+  privacy: [no-real-person-data-under-this-mandate, privacy-notice-before-the-form]
+
+acceptance:
+  tests:
+    - The first screen renders, in order, the headline, the one line of what it is, the count against 100,000 with the pledge's sentence, the status line and the form; nothing on it claims user control, ownership, a holder or a safeguard exists today.
+    - The count is memberCount as "N of 100,000", a number; with the database down the sentence stands alone and the page renders; the waiting list changes nothing in it.
+    - The form takes an address and an optional need; the button's words follow D-0016 §B; a need is refused over 140 characters; a request without a need goes through; a need never goes through without the seat request's gates.
+    - A need is stored without the address and is never rendered to a visitor or a member; the public count of needs is right from the first one.
+    - The privacy notice names the need, its purpose and 12 months, and the "what Neon receives" line stays true.
+    - Every public page serves og:title, og:description, og:image and twitter:card, and the image is a committed file in the identity.
+    - /feed, /contract and /agreement are byte-identical in their verified words.
+    - Typecheck, lint, tests, the claims scan, a production build, and pnpm ours check M-0021 --changed.
+  evidence:
+    - the first screen's words shown to the founder before the build
+    - a build receipt with screenshots, desktop and phone, light and dark
+    - an independent verification in receipts/conformance/, with the verifiers' tests committed as written before any fix
+
+limits:
+  stop_conditions:
+    - /feed's verified words, the contract or the agreement would have to change
+    - a need would have to be kept with an address, or shown to anyone but the founder
+    - a public page would have to depend on the database being up
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0021 commits and drop the needs table in a down migration; no provider is touched
+  irreversible_residue: needs named before a rollback are lost unless exported first
+
+human_approvals:
+  adoption: the founder's "ok go" to the proposal of 5 October 2026 (D-0024)
+  deploy: the founder's go, after the first screen's words and screenshots (D-0024 §E)
