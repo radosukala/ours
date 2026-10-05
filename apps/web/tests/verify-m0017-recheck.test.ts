@@ -877,7 +877,12 @@ describe("closed checks (each held, and passes)", () => {
       ...PLACES.filter((p) => p.href.includes("#")).map((p) => p.href),
       ...[...front.matchAll(/href="(#[\w-]+)"/g)].map((m) => `/${m[1]!}`),
     ];
-    expect(targets).toEqual(expect.arrayContaining(["/feed#front-runs", "/#idea", "/#open", "/#part", "/#build"]));
+    // Changed under M-0021 (D-0024 §A): the two entrances, and with them "#part" and "#build" as
+    // links from the first screen, are gone; the feed's panel now points to the one form, "#join".
+    // Every link into a section still lands on a section the page draws, which the loop below checks.
+    expect(targets).toEqual(expect.arrayContaining(["/feed#front-runs", "/#idea", "/#open", "/#join"]));
+    expect(targets).not.toContain("/#part");
+    expect(targets).not.toContain("/#build");
     for (const href of targets) {
       const [path, id] = href.split("#");
       expect(pages[path || "/"] ?? "", href).toContain(`id="${id}"`);
@@ -912,7 +917,8 @@ describe("closed checks (each held, and passes)", () => {
     for (const joining of [true, false]) {
       for (const email of [null, EMAIL]) {
         for (const hydrated of [false, true]) {
-          expect(scanText(text(door({ joining, email }, hydrated)), null), `${joining} ${email} ${hydrated}`).toEqual([]);
+          // Changed under M-0021 (D-0024 §A): under the front door's own file, for which the pledge's sentence is listed.
+          expect(scanText(text(door({ joining, email }, hydrated)), "src/components/public/FrontDoor.tsx"), `${joining} ${email} ${hydrated}`).toEqual([]);
         }
       }
     }

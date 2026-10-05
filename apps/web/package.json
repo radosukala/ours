@@ -18,6 +18,7 @@
     "seed:founder": "tsx scripts/seed-founder.ts",
     "seed:fictional": "tsx scripts/seed-fictional.ts",
     "claims": "tsx scripts/claims-scan.ts",
+    "card": "tsx scripts/card.ts",
     "digest": "tsx scripts/digest.ts"
   },
   "dependencies": {

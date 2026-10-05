@@ -41,6 +41,8 @@ export const LIMITS = {
   replyMax: 1000,
   noteMax: 40,
   reportDetailsMax: 500,
+  /** A named app (D-0024 §B). The `needs` table's check says the same. */
+  needMax: 140,
 } as const;
 
 /** Length in characters (code points). */
@@ -176,6 +178,35 @@ export function validNote(input: unknown): string {
     throw invalid(`A note can be at most ${LIMITS.noteMax} characters.`);
   }
   return note;
+}
+
+/** What a refusal of a named app says (D-0024 §B). They are shown at the field. */
+export const NEED_TOO_LONG = `Keep it to ${LIMITS.needMax} characters.`;
+export const NEED_HAS_ADDRESS = "Leave email addresses out of this one. We don't keep it with your address, and it isn't needed.";
+
+const ADDRESS_IN_TEXT = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+/**
+ * A named app (D-0024 §B): what a visitor typed to "Which app would you
+ * take back?". One line of up to 140 characters, with control characters
+ * and runs of white space made single spaces. Empty means nothing was named
+ * and nothing is kept: `null`.
+ *
+ * Refused (INVALID, in words) when it is too long, or when it holds an email
+ * address: the form asks for one beside it, and a need is kept with nothing
+ * that says whose it is, so an address typed into the wrong box would break
+ * that. It is not a general filter: it can't tell other things about a
+ * person from an app's name, and /privacy says so.
+ */
+export function validNeed(input: unknown): string | null {
+  const need = asString(input)
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (need === "") return null;
+  if (charCount(need) > LIMITS.needMax) throw invalid(NEED_TOO_LONG);
+  if (ADDRESS_IN_TEXT.test(need)) throw invalid(NEED_HAS_ADDRESS);
+  return need;
 }
 
 /** A report's details: up to 500 characters, may be empty. */

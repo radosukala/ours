@@ -637,6 +637,11 @@ const CONTRACT_FILE = "src/app/(public)/contract/page.tsx";
  * page (M-0011, SPEC §18.12), which is /feed since D-0020.
  */
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
+/**
+ * The front door's copy (M-0021; D-0024 §A): one listed sentence, the maintainer's pledge on the first
+ * screen, which is also /feed's signed promise's first sentence.
+ */
+const FRONT_DOOR_FILE = "src/components/public/FrontDoor.tsx";
 /** The /agreement copy (M-0015; D-0018 §E: three sentences let through there only, and the never-reached case). */
 const AGREEMENT_FILE = "src/app/(public)/agreement/page.tsx";
 /** The /projects copy (the re-check of M-0015: one listed sentence, the never-reached case). */
@@ -652,7 +657,9 @@ describe("what people are shown: every public page, the footers and every mail, 
     return [
       // Changed after D-0020 (M-0017): / is the front door, with no listed
       // sentence; the front page's copy, and its listed sentences, are /feed's.
-      ["/", renderToStaticMarkup(landing), null],
+      // Changed under M-0021 (D-0024 §A): the front door's first screen carries the maintainer's
+      // pledge, listed for FrontDoor.tsx, so / is scanned under that file, as /feed is under its own.
+      ["/", renderToStaticMarkup(landing), FRONT_DOOR_FILE],
       ["/feed", renderToStaticMarkup(feed), FRONT_FILE],
       ["/contract", renderToStaticMarkup(createElement(ContractPage)), CONTRACT_FILE],
       ["/rules", renderToStaticMarkup(createElement(RulesPage)), RULES_FILE],
@@ -719,18 +726,28 @@ describe("what people are shown: every public page, the footers and every mail, 
       [CONTRACT_FILE]: "/contract",
       // Changed after D-0020 (M-0017): the front page's copy is /feed's.
       [FRONT_FILE]: "/feed",
+      // Changed under M-0021 (D-0024 §A): the front door's pledge.
+      [FRONT_DOOR_FILE]: "/",
       [AGREEMENT_FILE]: "/agreement",
       [PROJECTS_FILE]: "/projects",
     };
     // Since D-0016 §K every entry belongs to one file: none is let through on every page.
     expect(ALLOWLIST.every((e) => Object.keys(e).sort().join() === "file,reason,sentence")).toBe(true);
     expect([...new Set(ALLOWLIST.map((e) => e.file))].sort()).toEqual(Object.keys(home).sort());
+    // Changed under M-0021 (D-0024 §A): the pledge's sentence is listed for two files, /feed's and the front
+    // door's, and is shown on those two pages and on no other. Every other entry still belongs to one.
+    const homesOf = (sentence: string) => new Set(ALLOWLIST.filter((e) => e.sentence === sentence).map((e) => home[e.file]));
+    const shared = [...new Set(ALLOWLIST.map((e) => e.sentence))].filter((sentence) => homesOf(sentence).size > 1);
+    expect(shared).toEqual([
+      "When {THRESHOLD} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.",
+      "When 100,000 people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.",
+    ]);
     for (const entry of ALLOWLIST) {
       // A source-form entry (with {THRESHOLD} or ${THRESHOLD}) is never shown as such.
       const sourceForm = /\{THRESHOLD\}|\$\{THRESHOLD\}/.test(entry.sentence);
       for (const [page, html] of rendered) {
         expect(textOf(html).includes(entry.sentence), `${page}: ${entry.sentence}`).toBe(
-          !sourceForm && page === home[entry.file],
+          !sourceForm && homesOf(entry.sentence).has(page),
         );
       }
     }

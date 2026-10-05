@@ -56,6 +56,7 @@ import manifest from "@/app/manifest";
 import { FRIENDS_SOURCE, FrontPage, type FrontPageProps } from "@/components/public/FrontPage";
 import { MAINTAINER, NOTICE_DAYS } from "@/components/public/handover";
 import { STATUS_LINE } from "@/components/RightColumn";
+import { NEED_HINT, NEED_LABEL } from "@/components/public/door";
 import { ALLOWLIST, scanText } from "@/core/claims";
 import { DEFAULT_INVITES, HANDOVER_THRESHOLD } from "@/core/config";
 import { isCoreError } from "@/core/errors";
@@ -234,7 +235,9 @@ describe("the seat line (D-0015 §D), by the product's own paths", () => {
 
     // Zoe opens the front page. No seat is open, and it tells her she joins the waiting list.
     const front = textOf(await renderRoute());
-    expect(front).toContain("Your email Join the waiting list");
+    // Changed under M-0021 (D-0024 §A): the form now has the optional question between the
+    // address and the button, so the two are no longer neighbours; the button is the same.
+    expect(front).toContain(`Your email ${NEED_LABEL} ${NEED_HINT} Join the waiting list`);
     expect(front).toContain("No seats are open right now. Seats go to whoever has waited longest.");
     expect(front).not.toContain("you'll get the next one");
     expect(front).not.toMatch(/next (?:seat|one)/);

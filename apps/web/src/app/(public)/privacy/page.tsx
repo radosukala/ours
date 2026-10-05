@@ -16,6 +16,13 @@
  * Download and deletion work while an account is active; a suspended
  * person writes to the controller (honesty-2).
  *
+ * A named app (D-0024 §B, SPEC §18.23), the optional answer to "Which app
+ * would you take back?", is an entry of its own, last in `KEPT`: the words
+ * and the day, with nothing that says whose they are, so they can't be
+ * shown, changed or deleted later. The page says so here, in the seat
+ * paragraph and in "Your rights", because that is true of nothing else it
+ * keeps.
+ *
  * A seat request (SPEC §18.4) is a purpose of its own, in one paragraph:
  * the address is kept to send the join link, or in line until a seat opens
  * and it is invited, or until its owner asks for it to be deleted.
@@ -144,6 +151,12 @@ const KEPT: Kept[] = [
     why: "To build and test our.one without emailing anyone.",
     howLong: `${NOT_REMOVED_YET} What was written to your address is deleted when you delete your account.`,
   },
+  {
+    title: "Named apps",
+    what: "The words you type if you answer Which app would you take back?, and the day you typed them. Nothing else: not your email address, not your account, not your network address. Please leave anything about yourself out of it.",
+    why: "So the maintainer can read which apps people would take back. They are counted on the front page, and nothing else shows them.",
+    howLong: "They are not removed automatically yet. Nothing in one says whose it is, so it can't be shown to you, changed or deleted later.",
+  },
 ];
 
 /**
@@ -250,7 +263,7 @@ export default function PrivacyPage() {
           ))}
         </ul>
         <p>
-          {"If you ask for a seat, we keep your email address to send you the join link. If no seat is open, it waits in line until one opens and you are invited. The join link's record keeps the address until you join or ask us to delete it: nothing removes it automatically yet. To be deleted, write to the controller."}
+          {"If you ask for a seat, we keep your email address to send you the join link. If no seat is open, it waits in line until one opens and you are invited. The join link's record keeps the address until you join or ask us to delete it: nothing removes it automatically yet. To be deleted, write to the controller. If you also name an app on the form, those words are kept apart from your address: see Named apps."}
         </p>
         {proposals ? (
           <p>
@@ -321,6 +334,10 @@ export default function PrivacyPage() {
             <strong>Delete it.</strong> While your account is active, delete
             it in <Link href="/settings/delete">Settings → Delete</Link>.
             Your posts, replies, likes, connections and sessions go with it.
+          </li>
+          <li>
+            <strong>A named app can&apos;t be found.</strong>
+            {" If you answered \"Which app would you take back?\", what you typed is kept with nothing that says whose it is, so it can't be shown to you, changed or deleted later. That is why the form asks you to leave anything about yourself out of it."}
           </li>
           <li>
             <strong>If your account is suspended,</strong>

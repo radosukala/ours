@@ -2,8 +2,9 @@
  * The panel of the signed-in pages (SPEC §9; D-0023 §D): beside the page's
  * column at 1000px and wider, after it below that. our.one's own card (the
  * line, the feed as its first project, and the drafts of a need and an
- * idea), the Invite someone card with the remaining invites, and the small
- * footer. `SiteFooter` is also used by the public pages.
+ * idea) and, while the count can be read, how many of the threshold are in
+ * (D-0024 §D); the Invite someone card with the remaining invites, and the
+ * small footer. `SiteFooter` is also used by the public pages.
  */
 import Link from "next/link";
 import { runningVersion } from "@/core/config";
@@ -11,6 +12,7 @@ import { LinkButton } from "./Button";
 import { DraftButton } from "./public/Draft";
 import { MEMBER_PANEL, TAGLINE } from "./public/door";
 import { THRESHOLD } from "./public/handover";
+import { progressLine } from "./public/join";
 
 export const OPEN_CODE_URL =
   "https://github.com/radosukala/ours/tree/main/apps/web";
@@ -54,8 +56,12 @@ export function SiteFooter({ className }: { className?: string }) {
   );
 }
 
-/** our.one's own card, beside a member's feed (D-0023 §D). */
-export function OursCard({ email }: { email: string | null }) {
+/**
+ * our.one's own card, beside a member's feed (D-0023 §D). `count` is the
+ * public count, or null when it could not be read: the line is left out
+ * then, and the card and the feed never wait on it.
+ */
+export function OursCard({ email, count = null }: { email: string | null; count?: number | null }) {
   return (
     <section className="card card--ours" aria-labelledby="ours-card-title">
       <p className="card__kicker">{MEMBER_PANEL.kicker}</p>
@@ -63,6 +69,7 @@ export function OursCard({ email }: { email: string | null }) {
         {TAGLINE}
       </h2>
       <p className="card__text">{MEMBER_PANEL.text}</p>
+      {count !== null ? <p className="card__count">{progressLine(count)}</p> : null}
       <div className="card__actions">
         <DraftButton kind="need" label={MEMBER_PANEL.need} email={email} className="btn btn--outline btn--small card__draft" />
         <DraftButton kind="idea" label={MEMBER_PANEL.idea} email={email} className="btn btn--outline btn--small card__draft" />
@@ -80,11 +87,19 @@ export function OursCard({ email }: { email: string | null }) {
   );
 }
 
-export function RightColumn({ invitesRemaining, email = null }: { invitesRemaining: number; email?: string | null }) {
+export function RightColumn({
+  invitesRemaining,
+  email = null,
+  count = null,
+}: {
+  invitesRemaining: number;
+  email?: string | null;
+  count?: number | null;
+}) {
   return (
     <aside className="aside" aria-label="our.one">
       <div className="aside__inner">
-        <OursCard email={email} />
+        <OursCard email={email} count={count} />
         <section className="card" aria-labelledby="invite-card-title">
           <h2 id="invite-card-title" className="card__title">
             Invite someone

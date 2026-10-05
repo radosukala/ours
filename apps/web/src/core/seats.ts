@@ -28,6 +28,10 @@
  * - The waiting list keeps an address and a time, nothing else. An address
  *   leaves it when it is invited, or when its owner asks
  *   (`forgetWaitlistAddress`).
+ * - A request may carry a named app (D-0024 §B; needs.ts): the words typed to
+ *   "Which app would you take back?". It is kept apart from the address, with
+ *   nothing that joins them, only after both rate limits have passed, and
+ *   never refuses the seat if it can't be kept.
  */
 import { and, asc, count as countRows, desc, eq, gt, inArray, isNull, ne, notInArray, sql } from "drizzle-orm";
 import { createEmailToken } from "./auth";
@@ -38,6 +42,7 @@ import { createSeatInvite, SEAT_NOTE } from "./invites";
 import { hit, RATE, rateKeyHash } from "./limits";
 import { type Defer, nowOrDeferred, sendMail } from "./mail";
 import { seatEmail } from "./mail-templates";
+import { keepNeed } from "./needs";
 import {
   accounts,
   emailTokens,
@@ -47,7 +52,7 @@ import {
   seatState as seatRow,
   waitlist,
 } from "./schema";
-import { normEmail } from "./validate";
+import { normEmail, validNeed } from "./validate";
 
 /** What the front page's form answers whenever seats are off (SPEC §18.2, §18.4). */
 export const SEATS_CLOSED = "Joining opens soon.";
@@ -355,12 +360,14 @@ async function sendSeatEmail(
  */
 export async function requestSeat(
   db: Db,
-  input: { email: string; ipHash: string; now?: Date; defer?: Defer },
+  input: { email: string; ipHash: string; need?: unknown; now?: Date; defer?: Defer },
 ): Promise<void> {
   const now = input.now ?? new Date();
   if (!accountCreationOpen() || !clientIpHeader()) throw closed(SEATS_CLOSED);
   if (!(await maintainerId(db))) throw closed(SEATS_CLOSED);
   const email = normEmail(input.email);
+  // A named app (D-0024 §B): checked here, with the address, before anything is counted or kept.
+  const need = validNeed(input.need);
   if (!input.ipHash) throw new Error("requestSeat needs the client's IP hash.");
   // Resolved now: a missing setting fails the request, before a seat is taken.
   const base = appUrl();
@@ -369,6 +376,11 @@ export async function requestSeat(
   // that may fail), so a refused request is still counted.
   await hit(db, `seat:ip:${input.ipHash}`, { ...RATE.joinIp, now });
   await hit(db, `seat:email:${rateKeyHash(email)}`, { ...RATE.joinEmail, now });
+
+  // A named app is kept only by a request that has passed both limits, for
+  // every address alike (it says nothing about the address, and is not kept
+  // with it), and never refuses the seat if it can't be kept (needs.ts).
+  if (need) await keepNeed(db, need, now);
 
   await nowOrDeferred(async () => {
     type Seat = { to: string; token: string; inviteId: string; expiresAt: Date; waitingSince: Date };

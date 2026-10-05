@@ -63,10 +63,9 @@ import PrivacyPage from "@/app/(public)/privacy/page";
 import ProjectsPage from "@/app/(public)/projects/page";
 import {
   DOOR_EYEBROW,
-  DOOR_LEDE,
+  DOOR_START,
   DOOR_STATUS,
   DOOR_TITLE,
-  ENTRANCES,
   ILLUSTRATION,
   OPEN_FOOT,
   OPEN_ROWS,
@@ -87,7 +86,7 @@ import {
 } from "@/components/public/drafts";
 import { FrontDoor, type FrontDoorProps } from "@/components/public/FrontDoor";
 import { FRONT_PAGE_TITLE, HEADLINE } from "@/components/public/FrontPage";
-import { countLine, FREE_LINE, INVITE_CLOSED_LINE, JOIN_LABEL, WAITING_LIST_LABEL } from "@/components/public/join";
+import { countLine, FREE_LINE, INVITE_CLOSED_LINE, JOIN_LABEL, progressLine, WAITING_LIST_LABEL } from "@/components/public/join";
 import { LEDE } from "@/components/public/lede";
 import { PLACES } from "@/components/public/PublicNav";
 import { STATUS_LINE } from "@/components/RightColumn";
@@ -163,9 +162,14 @@ describe("what the front door never says (D-0020 §F)", () => {
     }
   });
 
+  // Changed under M-0021 (D-0024 §A): the first screen carries the maintainer's pledge,
+  // a sentence about the handover, which the claims scan lets through only by exact text
+  // and file (M-0011). It is listed for FrontDoor.tsx, so the rendered page is scanned
+  // under that file, as /feed's is under FrontPage.tsx. The scan under no file still flags it
+  // (tests/first-screen.test.ts), so nothing else about the handover gets through here.
   it("the claims scan finds nothing in any rendered state, nor in its source files", () => {
     for (const state of STATES) {
-      expect(scanText(textOf(render(state)), null).map((h) => h.match), JSON.stringify(state)).toEqual([]);
+      expect(scanText(textOf(render(state)), "src/components/public/FrontDoor.tsx").map((h) => h.match), JSON.stringify(state)).toEqual([]);
     }
     for (const file of [
       "src/components/public/door.ts",
@@ -229,17 +233,23 @@ describe("what the front door never says (D-0020 §F)", () => {
   it("a count that couldn't be read is left out; the page still renders", () => {
     const text = textOf(render({ count: null }));
     expect(text).not.toMatch(/people are in|person is in|Nobody is in yet/);
-    expect(text).toContain(DOOR_LEDE);
+    // Changed under M-0021 (D-0024 §A): the first screen's line is DOOR_START, no longer DOOR_LEDE.
+    expect(text).toContain(DOOR_START);
   });
 });
 
 /* ------------------------------------------------------------- the copy */
 
 describe("the front door's copy (D-0020 §A)", () => {
-  it("the message: eyebrow, headline, lede, the two entrances and what holds today, in that order", () => {
-    const html = render();
+  // Changed under M-0021 (D-0024 §A): the first screen is the eyebrow, the headline, one line
+  // (DOOR_START, in the lede's place), the count against 100,000 with the pledge under it, what
+  // holds today and one form. The two entrances ("I want this to exist", "I want to build") and
+  // the paragraph above them are gone: the form is the way in, and what they led to stays below.
+  // The rest of this test is as it was.
+  it("the message: eyebrow, headline, line, the count and the pledge, what holds today and the form, in that order", () => {
+    const html = render({ count: 12 });
     const text = textOf(html);
-    const order = [DOOR_EYEBROW, TAGLINE, DOOR_LEDE, ENTRANCES.people, ENTRANCES.builders, DOOR_STATUS];
+    const order = [DOOR_EYEBROW, TAGLINE, DOOR_START, progressLine(12), "I hand over its domain, its data", DOOR_STATUS, "Your email"];
     let at = -1;
     for (const part of order) {
       const next = text.indexOf(part, at + 1);
@@ -248,7 +258,10 @@ describe("the front door's copy (D-0020 §A)", () => {
     }
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     expect(textOf(html.slice(html.indexOf("<h1"), html.indexOf("</h1>")))).toBe(TAGLINE);
-    expect(links(html)).toEqual(expect.arrayContaining([[`${ENTRANCES.people} ↗`, "#part"], [`${ENTRANCES.builders} ↗`, "#build"], ["See where it stands.", "#open"]]));
+    expect(links(html)).toEqual(expect.arrayContaining([["See where it stands.", "#open"]]));
+    expect(text).not.toMatch(/I want this to exist|I want to build/);
+    expect(links(html).map(([, href]) => href)).not.toContain("#part");
+    expect(links(html).map(([, href]) => href)).not.toContain("#build");
   });
 
   it("the projects: the feed first, then two possibilities, each labelled with no project announced", () => {
@@ -270,7 +283,10 @@ describe("the front door's copy (D-0020 §A)", () => {
     const open = textOf(render({ seatsOpen: 3, seatsWaiting: 0, count: 1284 }));
     expect(open).toContain(JOIN_LABEL);
     expect(open).toContain(FREE_LINE);
-    expect(open).toContain(countLine(1284));
+    // Changed under M-0021 (D-0024 §A): the form is the first screen's, and its count is the
+    // count against 100,000, with no rank; "You'd be #1,285." is /feed's (countLine, below).
+    expect(open).toContain(progressLine(1284));
+    expect(open).not.toContain(countLine(1284));
     expect(open).not.toContain("No seats are open right now.");
     const full = textOf(render({ seatsOpen: 0, seatsWaiting: 0 }));
     expect(full).toContain(WAITING_LIST_LABEL);
@@ -417,7 +433,8 @@ describe("the routes", () => {
     const html = renderToStaticMarkup((await FrontDoorRoute()) as ReactElement);
     const text = textOf(html);
     expect(text).toContain(TAGLINE);
-    expect(text).toContain(countLine(1284));
+    // Changed under M-0021 (D-0024 §A): the count is "1,284 of 100,000 people are in.", with no rank.
+    expect(text).toContain(progressLine(1284));
     expect(text).toContain(WAITING_LIST_LABEL);
     expect(metadata.title).toEqual({ absolute: DOOR_TITLE });
     expect(DOOR_TITLE).toBe("our.one · The software we live in should be ours.");

@@ -439,7 +439,10 @@ describe("Joining", () => {
   it("the form's action is takeSeat, through useActionState", () => {
     const source = readFileSync(join(WEB_ROOT, "src/components/public/GetInForm.tsx"), "utf8");
     expect(source).toMatch(/import \{[^}]*\btakeSeat\b[^}]*\} from "@\/app\/\(public\)\/seat-actions";/);
-    expect(source).toMatch(/useActionState<[^>]*>\(\s*takeSeat,/);
+    // Changed under M-0021 (D-0024 §A): the form still runs takeSeat through useActionState, but through a
+    // wrapper that also keeps what was typed, so a refusal puts the fields back (React empties a form after
+    // every submit): the action it runs is takeSeat(null, form), and its result is what the form shows.
+    expect(source).toMatch(/useActionState<[^>]*>\(\s*async \(_previous, form\) => \(\{\s*result: await takeSeat\(null, form\),/);
     expect(source.startsWith('"use client";')).toBe(true);
   });
 });

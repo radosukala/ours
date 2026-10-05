@@ -114,6 +114,7 @@ import PowerPage from "@/app/(public)/power/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
 import RulesPage from "@/app/(public)/rules/page";
 import NotFound from "@/app/not-found";
+import { FrontDoor } from "@/components/public/FrontDoor";
 import { FrontPage, type FrontPageProps } from "@/components/public/FrontPage";
 import { CHECK_YOUR_EMAIL } from "@/components/public/GetInForm";
 import { MAINTAINER, NOTICE_DAYS } from "@/components/public/handover";
@@ -990,7 +991,9 @@ describe("the records' exact text, against the pages and the sources they cite (
       const found = readFileSync(join(WEB_ROOT, file), "utf8").match(/have joined/g)?.length ?? 0;
       if (found > 0) counts[file] = found;
     }
-    expect(counts).toEqual({ [FRONT]: 2, "src/components/RightColumn.tsx": 1 });
+    // Changed under M-0021 (D-0024 §A): the front door's first screen carries the card's sentence too, as the
+    // maintainer's pledge: still the three sentences D-0016 §N names, the card's now in a second file.
+    expect(counts).toEqual({ [FRONT]: 2, "src/components/public/FrontDoor.tsx": 1, "src/components/RightColumn.tsx": 1 });
     const page = renderToStaticMarkup(createElement(PublicLayout, null, createElement(FrontPage, { joining: true, count: 1284, seatsOpen: 5 })));
     expect(sentencesOf(page).filter((sentence) => sentence.includes("have joined"))).toEqual([
       CARD_HANDOVER,
@@ -998,6 +1001,9 @@ describe("the records' exact text, against the pages and the sources they cite (
       STATUS_LINE.replace("Maintained by its founder. ", ""),
     ]);
     expect(textOf(page)).toContain("1,284 people are in. You'd be #1,285.");
+    // Changed under M-0021 (D-0024 §A): the front door's one 'have joined' is the card's sentence, word for word.
+    const door = renderToStaticMarkup(createElement(FrontDoor, { joining: true, email: null, count: 1284, seatsOpen: 5 }));
+    expect(sentencesOf(door).filter((sentence) => sentence.includes("have joined"))).toEqual([CARD_HANDOVER]);
     expect(textOf(rendered(ContractPage))).toContain("The count is the number on the front page: accounts that exist and are not suspended.");
     const n = sectionN();
     expect(n).toContain('The card, the handover promise and the status line say "when [threshold] people have joined".');

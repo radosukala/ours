@@ -290,6 +290,7 @@ export const PROHIBITED: readonly Prohibited[] = [
 /** The threshold as the pages write it, for the handover sentences' rendered form. */
 const T = HANDOVER_THRESHOLD.toLocaleString("en-US");
 const FRONT_FILE = "src/components/public/FrontPage.tsx";
+const FRONT_DOOR_FILE = "src/components/public/FrontDoor.tsx";
 const CONTRACT_PAGE = "src/app/(public)/contract/page.tsx";
 const HANDOVER_REASON =
   "D-0012 §B and §D, D-0015 §C, D-0016 §C and §K, M-0011, M-0013 and M-0014: a sentence about the handover, reviewed and listed by exact text (source and rendered form).";
@@ -322,6 +323,14 @@ export const ALLOWLIST: readonly AllowEntry[] = [
     "After ${THRESHOLD}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.",
     `After ${T}, I hand over the domain, the data and the right to replace me to a not-for-profit body of its members.`,
   ].map((sentence) => ({ file: FRONT_FILE, sentence, reason: HANDOVER_REASON })),
+  ...[
+    // The maintainer's pledge on the front door's first screen (D-0024 §A;
+    // M-0021): the first sentence of the signed promise on /feed (D-0016
+    // §C), word for word. FrontDoor.tsx is imported by the front door's
+    // route and by nothing else, so the sentence stays there.
+    "When {THRESHOLD} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.",
+    `When ${T} people have joined, I hand over its domain, its data and the right to replace me to a not-for-profit body of its members.`,
+  ].map((sentence) => ({ file: FRONT_DOOR_FILE, sentence, reason: HANDOVER_REASON })),
   ...[
     "At ${THRESHOLD} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.",
     `At ${T} members, I hand over the domain, the data and the right to replace the maintainer to a not-for-profit body of the members, founded by their vote under rules published before that day.`,

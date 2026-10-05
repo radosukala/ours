@@ -22,6 +22,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { DEFAULT_INVITES } from "./config";
 
@@ -571,8 +572,34 @@ export const waitlist = pgTable(
   (t) => [index("waitlist_created_idx").on(t.createdAt, t.email)],
 );
 
+/**
+ * A named app (D-0024 §B, SPEC §18.23, M-0021): what a visitor typed to
+ * *"Which app would you take back?"*, and the day they typed it. **Nothing
+ * else is kept**: no address, no account, no network address, and no key
+ * that could join it to any of them. That is why the id is a random uuid
+ * and not a ulid (a ulid carries the millisecond it was made in), and why
+ * the time is a day, in UTC, and not a moment (a moment would let anyone
+ * who can read the database match a name to a row of the waiting list).
+ *
+ * Nothing shows, quotes, lists or links them; the front door shows how many
+ * there are. The founder reads them in the database. The 140 is
+ * `LIMITS.needMax`; the database refuses more, whatever the code does.
+ */
+export const needs = pgTable(
+  "needs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    body: text("body").notNull(),
+    namedOn: date("named_on", { mode: "string" })
+      .notNull()
+      .default(sql`(now() at time zone 'utc')::date`),
+  },
+  () => [check("needs_body_length", sql`char_length("body") between 1 and 140`)],
+);
+
 /* ----------------------------------------------------------------- types */
 
+export type Need = typeof needs.$inferSelect;
 export type Account = typeof accounts.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type EmailToken = typeof emailTokens.$inferSelect;

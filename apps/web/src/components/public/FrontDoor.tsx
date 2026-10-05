@@ -1,8 +1,11 @@
 /**
- * The front door, `/` (D-0020 §A; SPEC §18.19). The words are door.ts's,
- * in the order a stranger needs them:
+ * The front door, `/` (D-0020 §A, as D-0024 §A amends it; SPEC §18.19,
+ * §18.23). The words are door.ts's, in the order a stranger needs them:
  *
- * - the message, the two entrances, and what holds today;
+ * - the first screen: the message, one line, the count against the
+ *   threshold with the maintainer's pledge under it, what holds today, and
+ *   one form: the address, and the optional question "Which app would you
+ *   take back?";
  * - the idea: AI is changing who can build, so let's change who has a say;
  * - the projects: the feed first, then two labelled possibilities;
  * - what "ours" means, as the common agreement proposes it, with an
@@ -12,14 +15,17 @@
  * - in the open: what is built, a draft, or not built;
  * - your part: the feed, a need, or an idea.
  *
- * The feed's panel carries its join form, the count and the lines under
- * them, the same as /feed's first screen: /contract counts "the number on
- * the front page", and the seat email says to ask again there.
+ * There is one form on the page, the first screen's (D-0024 §A). The feed's
+ * panel points to it, and /feed has its own page and its own form.
+ * /contract counts "the number on the front page": it is the first
+ * screen's, "N of 100,000 people are in.", and the seat email says to ask
+ * again there.
  *
  * Presentational: src/app/(public)/page.tsx reads whether joining is open,
- * the count, the seats and the proposals address, so every state can be
- * rendered without a database. A number that could not be read is null,
- * and its line is left out. The feed's own page is /feed.
+ * the count, the number of named apps, the seats and the proposals address,
+ * so every state can be rendered without a database. A number that could
+ * not be read is null, and its line is left out. The feed's own page is
+ * /feed.
  */
 import Link from "next/link";
 import { OPEN_CODE_URL } from "@/components/RightColumn";
@@ -45,9 +51,8 @@ import {
   BUILD_TERMS,
   DOOR_EYEBROW,
   DOOR_HEADLINE,
-  DOOR_LEDE,
+  DOOR_START,
   DOOR_STATUS,
-  ENTRANCES,
   IDEA_CLOSE,
   IDEA_HEADING,
   IDEA_TEXT,
@@ -70,8 +75,8 @@ import {
   partFoot,
 } from "./door";
 import styles from "./door.module.css";
-import { MAINTAINER } from "./handover";
-import { countLine, FREE_LINE, INVITE_CLOSED_LINE, joinLabel, memberCountLine, seatLine } from "./join";
+import { formatCount, MAINTAINER, THRESHOLD } from "./handover";
+import { FREE_LINE, INVITE_CLOSED_LINE, joinLabel, needsLine, seatLine } from "./join";
 import { LEDE } from "./lede";
 import { MemberJoin } from "./MemberJoin";
 import { ServiceTabs, type Tab } from "./ServiceTabs";
@@ -87,6 +92,8 @@ export type FrontDoorProps = {
   email: string | null;
   /** The public count (`memberCount`), or null when it could not be read. */
   count?: number | null;
+  /** How many apps have been named (`needCount`), or null when that could not be read. */
+  needs?: number | null;
   /** Seats open now, or null when that could not be read (or joining is off). */
   seatsOpen?: number | null;
   /** Addresses waiting in line, or null when that could not be read (or joining is off). */
@@ -120,8 +127,7 @@ function External({ href, children, className }: { href: string; children: React
   );
 }
 
-function FeedPanel({ joining, count, seatsOpen, seatsWaiting, member }: Omit<FrontDoorProps, "email">) {
-  const seats = joining && seatsOpen !== null && seatsOpen !== undefined ? seatLine(seatsOpen) : null;
+function FeedPanel({ joining, member }: Pick<FrontDoorProps, "joining" | "member">) {
   return (
     <div className={styles.possibility}>
       <div className={styles.possibilityText}>
@@ -131,29 +137,21 @@ function FeedPanel({ joining, count, seatsOpen, seatsWaiting, member }: Omit<Fro
           <span className={styles.line}>Then you&apos;re done.</span>
         </h3>
         <p className={styles.possibilityBody}>{LEDE}</p>
-        <div className={styles.join}>
-          {member ? (
-            <MemberJoin />
-          ) : joining ? (
-            <>
-              <GetInForm label={joinLabel(seatsOpen ?? null, seatsWaiting ?? null)} />
-              {seats ? <p className={styles.joinStrong}>{seats}</p> : null}
-              <p className={styles.joinStrong}>{FREE_LINE}</p>
-              <p className={styles.joinSmall}>
-                {"We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in "}
-                <Link href="/privacy">Privacy</Link>.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="notice">Joining opens soon.</p>
-              <p className={styles.joinSmall}>{INVITE_CLOSED_LINE}</p>
-            </>
-          )}
-          {count !== null && count !== undefined ? (
-            <p className={styles.count}>{member ? memberCountLine(count) : countLine(count)}</p>
-          ) : null}
-        </div>
+        {/* The one form is the first screen's (D-0024 §A); a member is shown their feed (D-0023 §C). */}
+        {member ? (
+          <p>
+            <Link href="/home" className={styles.textLink}>
+              {MEMBER_JOIN.link}
+              <span aria-hidden="true"> ↗</span>
+            </Link>
+          </p>
+        ) : joining ? (
+          <p>
+            <a href="#join" className={styles.textLink}>
+              Join at the top of this page<span aria-hidden="true"> ↑</span>
+            </a>
+          </p>
+        ) : null}
         <p>
           <Link href="/feed" className={styles.textLink}>
             More about the feed<span aria-hidden="true"> ↗</span>
@@ -234,12 +232,52 @@ function PossibilityPanel({ index }: { index: number }) {
   );
 }
 
-export function FrontDoor({ joining, email, count = null, seatsOpen = null, seatsWaiting = null, member = false }: FrontDoorProps) {
+/**
+ * The first screen's one form (D-0024 §A): for a visitor the address and the
+ * optional question under the button's words (D-0016 §B), the lines under it
+ * and, once an app has been named, how many; for a member (D-0023 §C)
+ * "You're in." and a way to the feed; while joining is closed, only that.
+ */
+function HeroJoin({
+  joining,
+  member,
+  needs,
+  seatsOpen,
+  seatsWaiting,
+}: Pick<FrontDoorProps, "joining" | "member" | "needs" | "seatsOpen" | "seatsWaiting">) {
+  const seats = joining && seatsOpen !== null && seatsOpen !== undefined ? seatLine(seatsOpen) : null;
+  const named = needs !== null && needs !== undefined ? needsLine(needs) : null;
+  return (
+    <div id="join" className={styles.heroJoin}>
+      {member ? (
+        <MemberJoin />
+      ) : joining ? (
+        <>
+          <GetInForm label={joinLabel(seatsOpen ?? null, seatsWaiting ?? null)} need />
+          {named ? <p className={styles.joinStrong}>{named}</p> : null}
+          {seats ? <p className={styles.joinStrong}>{seats}</p> : null}
+          <p className={styles.joinStrong}>{FREE_LINE}</p>
+          <p className={styles.joinSmall}>
+            {"We'll email you the link. Once you've joined, you also get a weekly email, which you can stop. What we keep, and for how long, is in "}
+            <Link href="/privacy">Privacy</Link>.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="notice">Joining opens soon.</p>
+          <p className={styles.joinSmall}>{INVITE_CLOSED_LINE}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function FrontDoor({ joining, email, count = null, needs = null, seatsOpen = null, seatsWaiting = null, member = false }: FrontDoorProps) {
   const tabs: Tab[] = [
     {
       id: "feed",
       label: "Your people",
-      panel: <FeedPanel joining={joining} count={count} seatsOpen={seatsOpen} seatsWaiting={seatsWaiting} member={member} />,
+      panel: <FeedPanel joining={joining} member={member} />,
     },
     ...POSSIBILITIES.map((p, i) => ({ id: p.id, label: p.tab, panel: <PossibilityPanel index={i} /> })),
   ];
@@ -262,24 +300,30 @@ export function FrontDoor({ joining, email, count = null, seatsOpen = null, seat
             </span>
           </h1>
           <div className={styles.heroText}>
-            <p className={styles.lede}>{DOOR_LEDE}</p>
-            <p className={styles.actions}>
-              <a href="#part" className={`${styles.btn} ${styles.btnSolid}`}>
-                {ENTRANCES.people}
-                <span aria-hidden="true" className={styles.arrow}>
-                  ↗
-                </span>
-              </a>
-              <a href="#build" className={styles.btn}>
-                {ENTRANCES.builders}
-                <span aria-hidden="true" className={styles.arrow}>
-                  ↗
-                </span>
-              </a>
-            </p>
+            <p className={styles.lede}>{DOOR_START}</p>
+            {/* The count against the threshold, and the pledge under it (D-0024 §A). */}
+            {count !== null ? (
+              <p className={styles.progress}>
+                <span className={styles.progressN}>{formatCount(count)}</span>
+                {" of "}
+                {THRESHOLD}
+                {" people are in."}
+              </p>
+            ) : null}
+            <figure className={styles.pledge}>
+              <blockquote className={styles.pledgeWords}>
+                <p>
+                  When {THRESHOLD}{" "}
+                  people have joined, I hand over its domain, its data and the right to replace me to a{" "}
+                  <span className={styles.nowrap}>not-for-profit</span> body of its members. Until then, I hold all three.
+                </p>
+              </blockquote>
+              <figcaption className={styles.pledgeBy}>{MAINTAINER}, maintainer</figcaption>
+            </figure>
             <p className={styles.heroStatus}>
               {DOOR_STATUS} <a href="#open">See where it stands.</a>
             </p>
+            <HeroJoin joining={joining} member={member} needs={needs} seatsOpen={seatsOpen} seatsWaiting={seatsWaiting} />
           </div>
           <Diagram />
         </section>
