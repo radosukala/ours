@@ -960,7 +960,8 @@ describe("closed (each passes on 089cbcd)", () => {
     const r = receipt();
     // Changed after the verification of M-0021 (round one): the receipt says where the verification stands now,
     // truly. The checks table "before verification" below is kept as it was, with its numbers on e1fc284.
-    expect(r).toContain("Status: TESTED locally, after round one of the independent verification (13 findings fixed, one part recorded). The re-check is next. Nothing is pushed or deployed.");
+    // Changed after the re-check of M-0021 (round two): the status is the closed verification's.
+    expect(r).toContain("Status: TESTED locally, after the independent verification and its one re-check: 20 findings, 18 fixed, one fixed for wide screens with its phone part recorded, and one recorded. Nothing is pushed or deployed.");
     expect(r).toContain("| Tests (vitest, real Postgres) | CHECKED | 1,701 pass, 2 skipped (M-0020's R12, and one older), in 67 files on e1fc284 |");
     expect(r).toContain("| Typecheck, lint | CHECKED | pass |");
     expect(r).toContain("| Production build | CHECKED | pass |");
@@ -1042,7 +1043,8 @@ describe("closed (each passes on 089cbcd)", () => {
       "13-first-screen-member-1440-light-after-round-one.jpg",
     ]);
     const rule = record("receipts/conformance/2026-10-05-M-0021.verification.md");
-    expect(rule).toContain("Status of this receipt: OPEN — the stopping rule, declared before the verification starts.");
+    // Changed after the re-check of M-0021 (round two): the receipt is closed; its stopping rule is as it was declared.
+    expect(rule).toContain("Status of this receipt: CLOSED. The stopping rule was declared before the verification started; round one and the one re-check are done, and every finding is fixed or recorded.");
     expect(rule).toContain("This is the rule M-0018 used, as M-0021 asks.");
     expect(rule).toContain("Classes: every check here is CHECKED (a test reports). Only R-SCOPE is ENFORCED.");
   });
