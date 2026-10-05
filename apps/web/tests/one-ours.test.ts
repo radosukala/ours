@@ -25,7 +25,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { MEMBER_JOIN, MEMBER_PANEL, TAGLINE } from "@/components/public/door";
 import { FrontDoor } from "@/components/public/FrontDoor";
 import { FrontPage } from "@/components/public/FrontPage";
-import { memberCountLine } from "@/components/public/join";
+import { memberCountLine, progressLine } from "@/components/public/join";
 
 const WEB = fileURLToPath(new URL("..", import.meta.url));
 const read = (rel: string) => readFileSync(join(WEB, rel), "utf8");
@@ -121,9 +121,12 @@ describe("the front door for members (D-0023 §C)", () => {
       expect(textOf(html)).toContain(MEMBER_JOIN.link);
       expect(html).toContain('href="/home"');
       expect(html).not.toContain("<form");
-      expect(textOf(html)).toContain(memberCountLine(12));
       expect(textOf(html)).not.toContain("You'd be #13");
     }
+    // Changed under M-0021 (D-0024 §A): the front door's count is the count against 100,000
+    // ("12 of 100,000 people are in."), still with no rank; /feed's is the plain count, as it was.
+    expect(textOf(door)).toContain(progressLine(12));
+    expect(textOf(feed)).toContain(memberCountLine(12));
     expect(textOf(feed)).not.toContain("Who would you like to hear from?");
     const visitor = renderToStaticMarkup(createElement(FrontPage, { count: 12, joining: true, seatsOpen: 3, seatsWaiting: 0 }) as ReactElement);
     expect(visitor).toContain("<form");

@@ -6,7 +6,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "our.one", template: "%s · our.one" },
   description: DOOR_LEDE,
-  referrer: "no-referrer",
+  // same-origin, as next.config.ts's header says and for its reason: under no-referrer a browser sends
+  // `Origin: null` on a native form post, and Next then refuses the server action, so a form without
+  // JavaScript fails. Another site still gets no referrer.
+  referrer: "same-origin",
   formatDetection: { telephone: false, email: false, address: false },
 };
 

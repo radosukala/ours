@@ -714,7 +714,12 @@ describe("closed doors: a seat or a place in line while no data controller is na
 
       expect(await codeOf(ask("new_f@example.test", { now: new Date() })), label).toBe("CLOSED");
       web.headers.set("x-forwarded-for", "203.0.113.9");
-      expect(await takeSeat(null, form({ email: "new2_f@example.test" })), label).toEqual({ error: SEATS_CLOSED });
+      // Changed under M-0021 (D-0025 §G): a refusal carries what was typed (`values`), so the form can put it back
+      // without a client closure. The refusal itself is the same sentence, and nothing is kept.
+      expect(await takeSeat(null, form({ email: "new2_f@example.test" })), label).toEqual({
+        error: SEATS_CLOSED,
+        values: { email: "new2_f@example.test", need: "" },
+      });
       const front = renderToStaticMarkup((await FrontPageRoute()) as ReactElement);
       expect(front, label).not.toContain('name="email"');
       expect(await codeOf(openEmailLink(db(), { token: heldLink, now: new Date() })), label).toBe("CLOSED");

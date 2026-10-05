@@ -80,6 +80,11 @@
         "kept": "They are not removed automatically yet. What was written to your address is deleted when you delete your account."
       },
       {
+        "what": "Named apps: The words you type if you answer Which app would you take back?, and the day you typed them. Nothing else is stored with them: not your email address, not your account, not your network address. Please leave anything about yourself out of it.",
+        "why": "So the maintainer can read which apps people would take back. Once any have been answered, how many shows on the front page, and nothing else shows them.",
+        "kept": "They are not removed automatically yet. Nothing in one says whose it is, so it can't be shown to you, changed or deleted later. Someone who can read our database could still guess whose it is from when it was written, most of all while few people have answered."
+      },
+      {
         "what": "Seat requests: your email address, and when you asked for a seat.",
         "why": "To send you the join link, or to keep your place in line until a seat opens and you are invited.",
         "kept": "Until you join, or ask to be deleted by writing to the controller. Nothing removes it automatically yet."
@@ -109,8 +114,8 @@
       "src/core",
       "scripts"
     ],
-    "export": "In Settings → Export, while your account is active: your profile, posts, replies and connections. For anything else, or if your account is suspended, write to the data controller.",
-    "delete": "In Settings → Delete, while your account is active: your posts, replies, likes, connections and sessions go with it. If your account is suspended, or to remove a seat request, write to the data controller."
+    "export": "In Settings → Export, while your account is active: your profile, posts, replies and connections. For anything else, or if your account is suspended, write to the data controller. A named app can't be found to export, because nothing stored with it says whose it is.",
+    "delete": "In Settings → Delete, while your account is active: your posts, replies, likes, connections and sessions go with it. If your account is suspended, or to remove a seat request, write to the data controller. A named app can't be found to delete, because nothing stored with it says whose it is."
   },
   "claims": {
     "allowed": [

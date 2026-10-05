@@ -626,7 +626,9 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
     const handover = ALLOWLIST.filter((entry) => /hand|give it away/i.test(entry.sentence));
     // Changed under M-0015 (its re-check): the contract's never-reached sentence is also
     // listed once on /agreement and once on /projects, each in its own file.
-    expect(handover).toHaveLength(12);
+    // Changed under M-0021 (D-0024 §A): the maintainer's pledge on the first screen is /feed's
+    // signed promise's first sentence, listed again, in both forms, for FrontDoor.tsx: 14.
+    expect(handover).toHaveLength(14);
     for (const entry of handover) {
       expect(scanText(entry.sentence, entry.file), entry.sentence).toEqual([]);
       expect(scanText(entry.sentence, elsewhere).length, entry.sentence).toBeGreaterThan(0);
@@ -644,7 +646,7 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
   });
 
   it("closed: the two files whose handover sentences are listed are imported by their own routes only, so a listed sentence reaches no other page", () => {
-    const importers: Record<string, string[]> = { FrontPage: [], contract: [] };
+    const importers: Record<string, string[]> = { FrontPage: [], FrontDoor: [], contract: [] };
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         const path = join(dir, entry.name);
@@ -653,6 +655,7 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
           const text = readFileSync(path, "utf8");
           const file = path.slice(WEB_ROOT.length).split("\\").join("/");
           if (/from\s+["'][^"']*components\/public\/FrontPage["']/.test(text)) importers.FrontPage!.push(file);
+          if (/from\s+["'][^"']*components\/public\/FrontDoor["']/.test(text)) importers.FrontDoor!.push(file);
           if (/from\s+["'][^"']*contract\/page["']/.test(text)) importers.contract!.push(file);
         }
       }
@@ -660,6 +663,8 @@ describe("closed doors: the claims scan's handover list and new markup rules", (
     walk(join(WEB_ROOT, "src"));
     // Changed after D-0020 (M-0017): the front page's route moved to /feed; it is
     // still the one file that imports FrontPage.tsx.
-    expect(importers).toEqual({ FrontPage: ["src/app/(public)/feed/page.tsx"], contract: [] });
+    // Changed under M-0021 (D-0024 §A): FrontDoor.tsx carries the pledge's listed sentence, so it
+    // is held to the same rule: the front door's route imports it, and nothing else does.
+    expect(importers).toEqual({ FrontPage: ["src/app/(public)/feed/page.tsx"], FrontDoor: ["src/app/(public)/page.tsx"], contract: [] });
   });
 });

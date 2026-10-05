@@ -153,6 +153,7 @@ import { HeaderTabs } from "@/components/PageHeader";
 import { OursCard, RightColumn } from "@/components/RightColumn";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TabBar } from "@/components/TabBar";
+import { progressLine } from "@/components/public/join";
 import { MEMBER_JOIN, MEMBER_PANEL } from "@/components/public/door";
 import { FeedContrast } from "@/components/public/FeedContrast";
 import { FeedPreview } from "@/components/public/FeedPreview";
@@ -1011,7 +1012,9 @@ describe("closed checks (each held, and passes)", () => {
       expect(text(tree)).toContain(MEMBER_JOIN.line);
       expect(findAll(tree, (e) => e.tag === "a" && text(e) === MEMBER_JOIN.link).map((a) => a.attrs.href)).toEqual(["/home"]);
       expect(findAll(tree, (e) => e.tag === "form")).toEqual([]);
-      expect(text(tree)).toContain("10 people are in.");
+      // Changed under M-0021 (D-0024 §A): the front door's count is the count against 100,000, still with no
+      // rank; /feed's is the plain count, as it was.
+      expect(text(tree)).toContain(route === FrontDoorRoute ? progressLine(10) : "10 people are in.");
       expect(text(tree)).not.toContain("You'd be #");
     }
     // Changed after the verification of M-0020 (H4): the link is PublicAccount's, which the not-found page draws too.

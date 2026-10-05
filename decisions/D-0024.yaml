@@ -1,0 +1,67 @@
+schema: ours.decision/v0.1
+decision_id: D-0024
+title: The first screen asks one thing — the count and the pledge, one form, a named app kept as words and a day, a link card
+status: ADOPTED
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0024.md
+
+proposal: P-0017
+prerequisite_decisions: [D-0011, D-0020, D-0023]
+
+outcome: >
+  The first screen shows, for a visitor, the headline, one line, the count
+  against 100,000 with the founder's pledge under it, the status line and one
+  form: the address, and the optional question "Which app would you take
+  back?". A named app is kept as its words and the day, with no address, no
+  account and no key to either; it is counted and shown only as a count,
+  read by the founder in the database, and never published. A member sees
+  "You're in." in the form's place, and the panel beside the feed says how
+  many of 100,000 are in. Every public page carries a link card, the
+  headline on the paper. SPEC section 18.23, the kit's manifest and /privacy
+  say what a named app keeps, in the same words. Amends D-0020 section A.
+  Authorizes M-0021 (BUILD); nothing is pushed before the founder's go.
+
+authorizes:
+  mandate_classes: [BUILD]
+  mandate_ids: [M-0021]
+
+prohibits:
+  - an address, an account, a network address or any key stored with, or able to find, a named app
+  - any page that shows, quotes, lists or links a named app
+  - any sentence saying a named app will be built, is wanted by a number of people, or gives anyone a say
+  - using the count of named apps as authority, or as evidence of demand to a builder, before the founder decides it may be
+  - a public page that depends on the database being up, or on a named-app count being readable
+  - changing what the feed does, or the feed's verified words, under M-0021
+
+effective_from: 2026-10-05T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. This is a second draft, written after the first was lost,
+  from the founder's two instructions of 5 October 2026 and an earlier
+  agent's notes. The founder's review of this exact wording is pending. Each
+  choice the notes left open is marked "(agent's choice)" in the decision:
+  the line after "It starts with a friends feed", which sentence is the
+  pledge (/feed's signed promise, D-0016 §C, listed in the claims scan for the
+  front door's file), the removal of the two entrance buttons, the 140 characters, the
+  day instead of the moment, the one-form rule, the question being asked only
+  while the count of named apps can be read, and the link card's look.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

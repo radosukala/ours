@@ -9,7 +9,7 @@
  * (D-0020 §B).
  */
 import { DEFAULT_INVITES } from "@/core/config";
-import { formatCount } from "./handover";
+import { formatCount, THRESHOLD } from "./handover";
 
 /** A seat is open and nobody waits, or the seats can't be read. */
 export const JOIN_LABEL = "Join our.one";
@@ -38,6 +38,27 @@ export function countLine(n: number): string {
   if (n === 0) return "Nobody is in yet. You'd be #1.";
   if (n === 1) return "1 person is in. You'd be #2.";
   return `${formatCount(n)} people are in. You'd be #${formatCount(n + 1)}.`;
+}
+
+/**
+ * The count against the threshold (D-0024 §A, §D): the first screen's, and
+ * the member's panel's. "N of 100,000 people are in." for a visitor and a
+ * member alike: no rank. The number is the same one `countLine` is built
+ * from, the public count (D-0012 §B).
+ */
+export function progressLine(n: number): string {
+  return `${formatCount(n)} of ${THRESHOLD} people are in.`;
+}
+
+/**
+ * Under the form, once at least one answer has been kept (D-0024 §C, as
+ * D-0025 amends it): the number of answers, which is what is counted. It is
+ * not a number of apps: five people can name one, and nothing here tells
+ * which are the same. Nothing for none.
+ */
+export function needsLine(n: number): string | null {
+  if (n <= 0) return null;
+  return n === 1 ? "1 answer so far." : `${formatCount(n)} answers so far.`;
 }
 
 /** The count for a member, who is already among them: no rank (D-0023 §C). */

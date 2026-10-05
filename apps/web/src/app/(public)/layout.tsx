@@ -17,15 +17,53 @@
  * footer's running version, the configured controller on /power and the
  * mail provider on /privacy are this server's now, never the values the
  * app happened to be built with.
+ *
+ * It carries the link card (D-0024 §E; SPEC §18.23): the title, the
+ * description and the image (`CARD`) that X, Facebook, Slack and anything
+ * that reads a page's card show. A page that sets none of its own gives its
+ * link this one. It lives here and not in the root layout, which imports
+ * nothing from the core: its base, the site's own address, is APP_URL
+ * (`appUrl`). If that is missing the card is left without a base, which
+ * costs the card, never a page. It reads no database.
  */
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Account, SignIn } from "@/components/PublicAccount";
 import { SiteFooter } from "@/components/RightColumn";
 import { SiteHeader, Wordmark } from "@/components/SiteHeader";
-import { TAGLINE } from "@/components/public/door";
+import { CARD, TAGLINE } from "@/components/public/door";
+import { appUrl } from "@/core/config";
 
 export const dynamic = "force-dynamic";
+
+/** The site's own address, or undefined (and a line in the log) when it isn't set or isn't one. */
+function siteBase(): URL | undefined {
+  try {
+    return new URL(appUrl());
+  } catch {
+    console.error("[ours] the link card has no base address: APP_URL is not set, or is not an address.");
+    return undefined;
+  }
+}
+
+export function generateMetadata(): Metadata {
+  const base = siteBase();
+  return {
+    ...(base ? { metadataBase: base } : {}),
+    // No title or description here: Next fills them from the page's own, so a shared link to /privacy
+    // says what /privacy says, and the front door's says the front door's. A page with none of its own
+    // takes the root layout's (the description is `DOOR_LEDE`).
+    openGraph: {
+      type: "website",
+      siteName: "our.one",
+      images: [{ url: CARD.path, width: CARD.width, height: CARD.height, alt: CARD.alt }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [{ url: CARD.path, alt: CARD.alt }],
+    },
+  };
+}
 
 /** The browser's bar in the pages' paper, light and dark (D-0020 §A). */
 export const viewport: Viewport = {

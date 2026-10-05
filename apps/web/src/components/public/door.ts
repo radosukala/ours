@@ -17,20 +17,44 @@ export const DOOR_EYEBROW = "AI helps us build. Together, we can make it ours.";
 /** The headline, one line each; the last word is set apart (D-0020 §A). */
 export const DOOR_HEADLINE = ["The software", "we live in", "should be", "ours."] as const;
 
+/**
+ * The link card (D-0024 §E): the image every public page offers to X,
+ * Facebook, Slack and anything that reads a page's card. It is
+ * public/card.png, made by scripts/card.ts from the headline above.
+ */
+export const CARD = {
+  path: "/card.png",
+  width: 1200,
+  height: 630,
+  alt: `our.one: ${TAGLINE}`,
+} as const;
+
 /** The metadata title. */
 export const DOOR_TITLE = `our.one · ${TAGLINE}`;
 
 export const DOOR_LEDE =
   "We're bringing people and builders together to create services their users can control. Starting with a friends feed. Building toward much more.";
 
-/** Under the two entrances (D-0020 §F): what holds today, before anything else. */
+/**
+ * The line under the headline (D-0024 §A): `DOOR_LEDE`'s last two
+ * sentences, said as the first screen's own (agent's choice: the notes
+ * quote only "It starts with a friends feed…"). It claims no more than they
+ * do, and is held to the same rules (D-0020 §F). `DOOR_LEDE` is unchanged,
+ * and still the description of every page without one of its own.
+ */
+export const DOOR_START = "It starts with a friends feed. Building toward much more.";
+
+/** Under the pledge (D-0020 §F): what holds today, before anything else. */
 export const DOOR_STATUS = "Founder-led today. User control isn't built yet.";
 
-/** The two entrances (D-0020 §A). */
-export const ENTRANCES = {
-  people: "I want this to exist",
-  builders: "I want to build",
-} as const;
+/**
+ * The first screen's question (D-0024 §A, §B): optional, beside the address.
+ * Its hint says what is true of the answer and what the form asks of the
+ * person: up to 140 characters, no way to change or delete it later (nothing
+ * in it says whose it is), so leave anything about yourself out of it.
+ */
+export const NEED_LABEL = "Which app would you take back?";
+export const NEED_HINT = "Optional, up to 140 characters. It can't be changed or deleted later, so please leave anything about yourself out of it.";
 
 export const STRIP_LINE = "Software should answer to the people who depend on it.";
 

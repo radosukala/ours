@@ -385,7 +385,8 @@ describe("defects (each FAILS on d26556a; the build is bee6e3b)", () => {
       // What holds: one account, the whole schema, each migration once, no address in either log.
       expect(await query(fresh.url, "select handle from accounts")).toEqual([{ handle: "founder_fict" }]);
       expect(await tablesIn(fresh.url)).toEqual(MIGRATED_TABLES);
-      expect(await query(fresh.url, "select count(*)::int as n from drizzle.__drizzle_migrations")).toEqual([{ n: 3 }]);
+      // Changed under M-0021 (D-0024 §B): a fourth migration, 0003_needs; each is still applied once.
+      expect(await query(fresh.url, "select count(*)::int as n from drizzle.__drizzle_migrations")).toEqual([{ n: 4 }]);
       for (const line of [...a.lines, ...b.lines]) expect(line).not.toMatch(/localhost|ours_web_verify|example\.test/);
       // The defect: one of the two builds failed.
       expect([a.ok, b.ok]).toEqual([true, true]);

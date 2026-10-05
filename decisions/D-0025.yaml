@@ -1,0 +1,63 @@
+schema: ours.decision/v0.1
+decision_id: D-0025
+title: What the verification of M-0021 found, and how D-0024 reads after it
+status: DRAFT
+class: CONSTITUTIONAL
+
+authority:
+  source: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  procedure: founder-bootstrap-declaration
+  higher_sources:
+    - path: authority/FOUNDING-AUTHORITY.md
+    - path: constitution/CONSTITUTION-0.1.md
+
+human_source:
+  path: decisions/D-0025.md
+
+proposal: P-0017
+prerequisite_decisions: [D-0011, D-0020, D-0023, D-0024]
+
+outcome: >
+  Amends D-0024 after the independent verification of M-0021, by a record of
+  its own and not by editing it. A named app is stored with no address,
+  account, network address or key, and someone who can read the database could
+  still guess whose one is from the order the rows were written and the day;
+  the hint, the refusal, /privacy, the manifest and the receipt say so, and ask
+  people to leave anything about themselves out. The count says "answers". The
+  one form, the link card's look and the refusal of an email address in a need
+  are recorded as the agent's choices. The form posts without JavaScript again,
+  and the root layout's referrer policy is same-origin. The first screen's
+  button ends within a 1440 x 900 window. Departure from rule 6 of
+  apps/web/AGENTS.md for a named app is recorded, with the founder's three
+  options. Drafted by an agent; not adopted.
+
+authorizes:
+  mandate_classes: []
+  mandate_ids: []
+
+prohibits:
+  - a claim that a named app can't be joined to its author, while someone who can read the database can
+  - a count, or any sentence, that calls the answers apps
+  - editing D-0024 or P-0017 in place: an amendment is a new record
+
+effective_from: 2026-10-05T00:00:00Z
+expires_at: 2027-06-30T00:00:00Z
+
+dissent: []
+dissent_note: >
+  None recorded. The founder's review of D-0024 and of this record is pending.
+  This record authorises nothing: M-0021's verification clause authorises the
+  build's fixes. The choices it makes that the founder may overturn are listed
+  under "Open, and the founder's" in the decision: rule 6, what a database
+  reader can infer, the count's word, the first screen's line and the choices
+  of section D, the first screen below the fold on a small window, the seats
+  and the publishing of named apps.
+
+appeal:
+  available: false
+  reason: >
+    None available during bootstrap. Recorded as a known gap.

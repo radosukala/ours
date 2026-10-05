@@ -2950,3 +2950,159 @@ token table (X's colours), the left navigation with its *Post* pill,
     4.5:1 or more;
   - the member's menu closes on Escape and on a tap outside it, as the
     app's other menus do (`useDismissableMenu`).
+
+### 18.23 The first screen asks one thing (M-0021, 5 October 2026)
+
+D-0024, D-0025, P-0017. M-0021 is the **second draft** of this work: the first,
+and its build, were lost unpushed, and this one was built from the founder's
+instruction and an earlier agent's notes
+(`proposals/P-0017.evidence-conversation-2026-10-05.md`). Each choice the notes
+left open is marked "(agent's choice)" in D-0024 or D-0025. After the
+independent verification (`receipts/conformance/2026-10-05-M-0021.verification.md`)
+D-0025 amends D-0024; this section is as that leaves it. It amends §18.19's
+first screen and leaves the rest of the front door, and all of the feed, as
+they were.
+
+- **The first screen** (§A), for a visitor, in this order:
+  1. the headline (`DOOR_HEADLINE`), unchanged;
+  2. one line, `DOOR_START`: *"It starts with a friends feed. Building toward
+     much more."* (a rephrasing of `DOOR_LEDE`'s last two sentences, D-0025
+     §F);
+  3. the count against the threshold, `progressLine(count)`: *"12 of 100,000
+     people are in."*, with the number set large; left out when the count
+     can't be read;
+  4. the maintainer's pledge, as a quotation signed *"Rado, maintainer"*:
+     *"When 100,000 people have joined, I hand over its domain, its data and
+     the right to replace me to a not-for-profit body of its members. Until
+     then, I hold all three."* The first sentence is the one on `/feed`'s signed
+     promise (D-0016 §C), word for word; it is listed in the claims allowlist
+     for `FrontDoor.tsx`, in its source and rendered forms, and the page that
+     carries it imports nothing else;
+  5. the status line, `DOOR_STATUS`, with *"See where it stands."*;
+  6. **one form**, `#join`, in `HeroJoin`.
+  The two entrance buttons (`ENTRANCES`) and the paragraph above them are gone
+  from the first screen. `DOOR_LEDE` is unchanged, and is still the description
+  of every page without one of its own.
+- **The size of it** (D-0025 §I): at 1440 × 900 the form's button ends within
+  the window (the headline is at most 80px, the count's number at most 44px, and
+  the margins between the parts are tight). At a smaller window (1366 × 768,
+  1280 × 720, every phone) the form is below the first screen: the order puts
+  it last.
+- **The one form** (§A). There is one email field on the page; the feed's panel
+  under *A first project* points to it (*"Join at the top of this page"*, or
+  *Open your feed* to a member) and carries no second form.
+  - For a visitor with joining open: *Your email*, then **`need`**, labelled
+    *"Which app would you take back?"* (`NEED_LABEL`), with the hint *"Optional,
+    up to 140 characters. It can't be changed or deleted later, so please leave
+    anything about yourself out of it."* (`NEED_HINT`), then the button
+    (`joinLabel`, D-0016 §B), then, in this order, *"N answers so far."*
+    (`needsLine`, only once one has been kept), the seat line, `FREE_LINE` and
+    the Privacy line.
+  - **The question is asked only while the count of named apps can be read**
+    (`needs` is a number). Production applies migrations only in a release build
+    the founder names, so this code can be live before the `needs` table is:
+    until then, or while the database can't answer, the form asks for the
+    address alone, and nothing invites a visitor to type what can't be kept.
+  - Joining closed: *"Joining opens soon."* and `INVITE_CLOSED_LINE`, no field.
+    A member: `MemberJoin`, *"You're in."* and *"Open your feed"* (§18.22 §C),
+    and no count line of its own.
+  - `/feed`'s form: `GetInForm` has the field only where it is given `need`, and
+    sends none otherwise. **Both forms are the server action itself, passed to
+    `useActionState`, so both still post without JavaScript** (D-0025 §G).
+  - With the question the form's three parts stack, each on its own line
+    (`get-in-form--need`); the one-line layout of the address and the button is
+    for a form with one field.
+  - **A refusal puts back what was typed.** React empties a form's fields after
+    every submit, so `takeSeat` returns what was sent (`values`) with every
+    refusal and `GetInFormView` puts it back: a person whose need held an
+    address fixes that one field and retypes nothing. After the one answer the
+    form is empty.
+  - **The one answer is drawn above the fields**, where the person was (a
+    `role="status"` paragraph), and the button is `aria-disabled` while the form
+    is sent, not `disabled`, so keyboard focus stays on it (D-0025 §H).
+  - The question's field has no `maxlength`: a need over 140 characters is
+    refused at the field, in words (`NEED_TOO_LONG`).
+- **A named app** (§B), `needs`, in migration `0003_needs`:
+
+  | Column | Type | Notes |
+  |---|---|---|
+  | `id` | `uuid primary key default gen_random_uuid()` | Not a ulid: a ulid carries the millisecond it was made in. |
+  | `body` | `text not null`, check `char_length(body) between 1 and 140` | The words. |
+  | `named_on` | `date not null default (now() at time zone 'utc')::date` | The day, in UTC, not the moment. |
+
+  **Stored with** no address, no account, no network address, no browser detail
+  and no key to any of them. **What can still be inferred, by someone who can
+  read the database** (D-0025 §A): the row's transaction id (`xmin`) sits
+  between the rows the same request wrote to `rate_events` and `waitlist`, and
+  the day narrows it further, most of all while few people have answered; the
+  provider's history and a backup hold the same. So the hint, the refusal,
+  `/privacy` and the manifest say a named app can't be changed or deleted later,
+  that someone with the database could still guess whose one is, and ask people
+  to leave anything about themselves out. The migration is additive;
+  `drizzle/down/0003_needs.sql` drops the table by hand, in one transaction, and
+  the words with it.
+- **The core** is `src/core/needs.ts`: `dayOf(now)`, `recordNeed(db, words,
+  now?)`, `keepNeed(db, words, now?)` (which logs by name and code, never the
+  message or the words, and returns false instead of throwing) and
+  `needCount(db)`. `validNeed(input)` is in `validate.ts`, with `LIMITS.needMax`
+  (140): every control character (C0 and C1) and run of white space becomes a
+  single space, the bidi controls are dropped, a need of nothing a reader could
+  see is `null`, over 140 characters is INVALID (`NEED_TOO_LONG`), and an email
+  address in it is INVALID (`NEED_HAS_ADDRESS`): in the spellings it reads, which
+  are a space beside the @, a full-width or small @, and a full-width or
+  ideographic dot. It is not a general filter: it can't tell other things about
+  a person from an app's name.
+- **`requestSeat`** takes `need?: unknown`. It validates it with the address,
+  takes the same two rate limits, and then, for every address alike, calls
+  `keepNeed`: a request that is refused (closed, an invalid address or need, a
+  limit) keeps nothing, and a need that can't be kept (the table isn't there
+  until the release's migration, the database is unwell) never refuses the seat.
+  The answer is the one answer.
+- **`takeSeat`** returns `{ ok: true }` or `{ error, field?, values? }`; `field`
+  is `"need"` when the need is what was refused, `values` is `{ email, need }` as
+  typed, and the form shows the error at the right input and puts the values
+  back.
+- **The count of them** (§C): `needCount`, read by the front door's route, and
+  only for a visitor with joining open. If it can't be read the line is left
+  out; the page renders with no error and no number. **It says "answers"** (D-0025
+  §C): it is the number stored, which counts what was typed, not different apps.
+  It is not authority: nothing may use it as a vote, a demand or a promise
+  (D-0024).
+- **Members** (§D): the panel's card, `OursCard`, shows *"N of 100,000 people are
+  in."* (`progressLine`, class `card__count`) under its text; the app layout
+  reads the count and leaves the line out if it can't.
+- **The link card** (§E):
+  - `(public)/layout.tsx` exports `generateMetadata`: `openGraph` (website, site
+    name, the image) and `twitter` (`summary_large_image`, the image), and, while
+    `appUrl()` is an address, `metadataBase`. **It names no title or description**:
+    Next fills them from the page's own, so a link to `/privacy` says what
+    `/privacy` says; a page with none takes the root layout's (`DOOR_LEDE`). With
+    `APP_URL` missing or not an address the card has no base of the site's own
+    (Next falls back to its own address for the image) and the log says so; no
+    page fails. The root layout imports nothing from the core, as before, and its
+    `referrer` is `same-origin` (D-0025 §G), as `next.config.ts`'s header is;
+  - the image is `public/card.png`, 1200 × 630, made by hand by
+    `pnpm --filter @ours/web card` (`scripts/card.ts`) from `DOOR_HEADLINE`,
+    `DOOR_START` and the front door's tokens, with the site's wordmark (*our*, a
+    rust full stop, *one*), and committed. The build and the running site never
+    run it and fetch nothing for it. The script waits for the browser to close
+    before it removes its working folder, and checks the PNG's size and weight
+    before it replaces the old card;
+  - X, Facebook and Slack keep the card they hold until they fetch the link
+    again.
+- **The records** (§F): `our.one.json` and `/privacy` each gain *Named apps*, last
+  before *Seat requests*, in the same words, which the kit's test compares;
+  `/privacy`'s seat paragraph and *Your rights* say a named app can't be shown,
+  changed or deleted later, and that someone with the database could still guess
+  whose one is; the manifest's `export` and `delete` say a named app can't be
+  found to export or delete. **That departs from rule 6 of
+  `apps/web/AGENTS.md`**, which D-0025 records with the founder's options.
+- **Tests:** `tests/first-screen.test.ts` (the order, the one form, the need's
+  denial paths, the count, members, the panel, the card), `tests/needs.test.ts`
+  (the table, the core, the request), and the verifiers' files
+  (`tests/verify-m0021-honesty.test.ts`, `tests/verify-m0021-rendering.test.ts`).
+  The tests that pinned the old first screen are changed, each with a comment
+  naming M-0021 and why.
+- **Not built:** publishing, listing, grouping or ranking the named apps; any use
+  of their count as authority; opening seats; a way for a person to delete their
+  answer (D-0025, rule 6).

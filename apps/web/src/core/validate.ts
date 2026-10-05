@@ -41,6 +41,8 @@ export const LIMITS = {
   replyMax: 1000,
   noteMax: 40,
   reportDetailsMax: 500,
+  /** A named app (D-0024 §B). The `needs` table's check says the same. */
+  needMax: 140,
 } as const;
 
 /** Length in characters (code points). */
@@ -176,6 +178,45 @@ export function validNote(input: unknown): string {
     throw invalid(`A note can be at most ${LIMITS.noteMax} characters.`);
   }
   return note;
+}
+
+/** What a refusal of a named app says (D-0024 §B). They are shown at the field. */
+export const NEED_TOO_LONG = `Keep it to ${LIMITS.needMax} characters.`;
+export const NEED_HAS_ADDRESS = "Leave email addresses out of this one. It can't be changed or deleted later, and we don't need it.";
+
+/**
+ * An email address as people write one around a filter: a space beside the @,
+ * a full-width or small @, and a full-width or ideographic dot. It is not a
+ * general filter: it can't tell other things about a person from an app's
+ * name, and the form's hint is what asks people to leave them out.
+ */
+const AT = "[@\\uFF20\\uFE6B]";
+const DOT = "[.\\u3002\\uFF0E\\uFF61]";
+const ADDRESS_IN_TEXT = new RegExp(`[^\\s@\\uFF20\\uFE6B]+\\s*${AT}\\s*[^\\s@\\uFF20\\uFE6B]+\\s*${DOT}\\s*[^\\s@\\uFF20\\uFE6B]+`);
+
+/**
+ * A named app (D-0024 §B): what a visitor typed to "Which app would you
+ * take back?". One line of up to 140 characters. Every control character
+ * (C0 and C1) and run of white space becomes a single space, and the bidi
+ * controls are dropped. Empty means nothing was named and nothing is kept:
+ * `null`. A need of nothing a reader could see (zero-width, filler,
+ * soft-hyphen and the like) is empty too.
+ *
+ * Refused (INVALID, in words) when it is too long, or when it holds an email
+ * address in the spellings `ADDRESS_IN_TEXT` reads: the form asks for one
+ * beside it, and a need is kept without anything that says whose it is, so an
+ * address typed into the wrong box would break that.
+ */
+export function validNeed(input: unknown): string | null {
+  const need = asString(input)
+    .replace(/\p{Cc}/gu, " ")
+    .replace(/\p{Bidi_Control}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (need.replace(/[\p{Default_Ignorable_Code_Point}\s]/gu, "") === "") return null;
+  if (charCount(need) > LIMITS.needMax) throw invalid(NEED_TOO_LONG);
+  if (ADDRESS_IN_TEXT.test(need)) throw invalid(NEED_HAS_ADDRESS);
+  return need;
 }
 
 /** A report's details: up to 500 characters, may be empty. */

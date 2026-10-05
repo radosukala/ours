@@ -552,7 +552,18 @@ describe("closed (each passes on 185bb67)", () => {
     expect(markup).not.toMatch(/<form|<input|<textarea|<button|<select/);
     expect((markup.match(/href="mailto:proposals@example\.test\?subject=/g) ?? []).length).toBe(2);
     expect(readdirSync(join(WEB, "src/app/(public)/maintainers"))).toEqual(["page.tsx"]);
-    expect(readFileSync(join(WEB, "src/core/schema.ts"), "utf8")).not.toMatch(/proposal|\bneeds?\b/i);
+    // Changed under M-0021 (D-0024 §B): a table named `needs` now keeps the optional answers to "Which app would
+    // you take back?" on the front door's form: words and a day, from no one in particular (tests/needs.test.ts).
+    // They are not the proposals and needs a visitor emails to PROPOSALS_EMAIL (D-0018 §D), which still reach no
+    // table: the schema is searched with that one table, its comment and its type left out, and nothing else in
+    // it names a proposal or a need.
+    const schema = readFileSync(join(WEB, "src/core/schema.ts"), "utf8");
+    expect(schema).toMatch(/export const needs = pgTable\(\s*"needs"/);
+    const without = schema
+      .replace(/\/\*\*\n \* A named app \(D-0024[\s\S]*?\n\);\n/, "")
+      .replace("export type Need = typeof needs.$inferSelect;\n", "");
+    expect(without).not.toContain("export const needs");
+    expect(without).not.toMatch(/proposal|\bneeds?\b/i);
   });
 
   it("closed: no safeguard reads as built: every sentence on the three pages that says 'built' also says not, none or yet", () => {

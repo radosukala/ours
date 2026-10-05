@@ -1,0 +1,129 @@
+schema: ours.mandate/v0.1
+mandate_id: M-0021
+title: The first screen asks one thing — the count and the pledge, one form, a named app kept as words and a day, a link card
+status: ADOPTED
+class: BUILD
+
+authority:
+  source_decision: D-0024
+  granted_by: founder-bootstrap
+  actor:
+    id: founder
+    kind: human
+    role: founder-steward
+  valid_from: 2026-10-05T00:00:00Z
+  expires_at: 2027-06-30T00:00:00Z
+  prerequisite_decisions: [D-0011, D-0020, D-0023, D-0024]
+
+institution:
+  constitution_version: ours-constitution/0.1
+  cell: root
+  charter_version: null
+
+human_source:
+  path: mandates/M-0021.md
+
+objective: >
+  Build D-0024 in apps/web: the front door's first screen in the decided
+  order (the headline, one line, the count against 100,000 with the pledge
+  under it, the status line, one form with the address and the optional
+  question "Which app would you take back?"); a needs table, with its
+  migration and its down migration, keeping a named app as its words and
+  the day and nothing else; the count of them under the form; "You're in."
+  in the form's place for a member, and "N of 100,000 people are in." in
+  the panel beside the feed; a link card for every public page, made by
+  scripts/card.ts; and SPEC section 18.23, with the same entry in the
+  kit's manifest and on /privacy. SPEC section 18.23.
+
+human_outcome: >
+  A stranger sees how far from 100,000 it is, what the founder has pledged,
+  and one thing to do; can say which app they would take back without giving
+  anything that identifies them; and a link to our.one shows its headline.
+
+adopted_constraints:
+  - What the feed does, its verified words, and every rule and gate behind the pages are unchanged.
+  - A named app is stored as its words and a day; nothing stored with it can find whose it is.
+  - No page shows, quotes, lists or links a named app; only their count is shown.
+  - The public pages still never depend on the database being up, or on the count being readable.
+  - A need that cannot be stored never refuses a seat.
+  - Fictional data only; nothing loads from anywhere but the site.
+
+hypotheses:
+  - A visitor who sees the count, the pledge and one form is more likely to ask for a seat, and to say which app they would take back, than one who meets a paragraph and two buttons.
+
+scope:
+  repositories: [ours]
+  paths:
+    allow:
+      - apps/web/**
+      - receipts/builds/**
+      - receipts/conformance/**
+    deny:
+      - kit/**
+      - vercel.json
+      - authority/**
+      - constitution/**
+      - decisions/**
+      - mandates/**
+      - foundation/**
+      - proposals/**
+      - envelopes/**
+      - packages/**
+      - apps/proof/**
+      - communities/**
+      - spec/**
+      - exit/**
+      - observations/**
+  external_systems: []
+
+risk:
+  class: MEDIUM
+  reversibility: REVERSIBLE
+  affected_groups: [visitors, members]
+
+requirements:
+  constitutional_rules:
+    - R-HUMAN-AUTHORITY
+    - R-SOURCE-HIERARCHY
+    - R-TYPED-MANDATE
+    - R-SCOPE
+    - R-TRUTHFUL-STATUS
+    - R-CHECKABLE-CLAIM
+    - R-PUBLIC-PRIVATE
+    - R-BUILD-DEPLOY
+    - R-ROLLBACK
+  security: [no-secret-exposure, nothing-loaded-from-elsewhere]
+  privacy: [no-real-person-data-under-this-mandate, a-named-app-keeps-no-key-to-its-author]
+
+acceptance:
+  tests:
+    - The first screen renders, for a visitor, the headline, the line, "N of 100,000" with the pledge, the status line and one form, in that order; there is one email field on the page.
+    - A request with a need keeps its words and a day in needs and nothing else; the row holds no address, account, network address or key to one; a request that is refused, or over 140 characters, keeps nothing.
+    - A need that cannot be stored (the table missing) still gives the seat and the one answer.
+    - The count line follows the table, is left out when it cannot be read, and the page renders with the database down.
+    - A member sees "You're in." in the form's place and "N of 100,000 people are in." in the panel.
+    - Every public page carries the card (title, description, image of 1200 x 630); the root layout imports nothing from the core.
+    - The kit's manifest and /privacy say the same of a named app, and the kit's check passes.
+    - Typecheck, lint, tests, the claims scan, a production build, and pnpm ours check M-0021 --changed.
+  evidence:
+    - a build receipt with screenshots, desktop and phone, light and dark
+    - an independent verification in receipts/conformance/, with the verifiers' tests committed as written before any fix
+
+limits:
+  stop_conditions:
+    - the feed's behaviour or its verified words would have to change
+    - a public page would have to depend on the database being up
+    - a named app would have to be stored with anything that can find whose it is
+
+release:
+  deploy_authority_required: true
+  environments: []
+  production_allowed: false
+
+rollback:
+  method: revert the M-0021 commits, and run apps/web/drizzle/down/0003_needs.sql by hand, in one transaction, on any database that applied 0003_needs
+  irreversible_residue: the words named while it was live, which the down migration drops, and the card X, Facebook and Slack kept of the page
+
+human_approvals:
+  adoption: the founder's "finish M-0021 and commit to main" of 5 October 2026 (D-0024)
+  deploy: the founder's go, after screenshots (D-0024); a push to main is a deploy

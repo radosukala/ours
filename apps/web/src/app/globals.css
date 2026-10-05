@@ -671,6 +671,13 @@ hr {
   font-size: 15px;
 }
 
+/* How many of the threshold are in (D-0024 §D): the panel's one number. */
+.card__count {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -711,6 +718,7 @@ hr {
   color: var(--forest-sub, #c8d2c2);
 }
 
+.card--ours .card__count,
 .card--ours .card__links a {
   color: var(--forest-ink, #f5f3eb);
 }
@@ -1780,6 +1788,14 @@ body:has(.public) {
 
   .get-in-form > .btn {
     min-height: 44px;
+  }
+
+  /* The front door's form has a second field (D-0024 §A): the address, the
+     question and the button stack, each on its own line. */
+  .get-in-form.get-in-form--need {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 16px;
+    align-items: stretch;
   }
 }
 

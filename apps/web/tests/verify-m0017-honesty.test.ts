@@ -129,7 +129,7 @@ import { DraftButton } from "@/components/public/Draft";
 import { DRAFT_CLOSE, DRAFT_FALLBACK, DRAFT_KINDS, MAILTO_LIMIT, draftMailto, draftText } from "@/components/public/drafts";
 import { FrontDoor, type FrontDoorProps } from "@/components/public/FrontDoor";
 import { PREVIEW_LAST_VISIT, PREVIEW_NOW } from "@/components/public/FeedPreview";
-import { countLine, JOIN_LABEL } from "@/components/public/join";
+import { JOIN_LABEL, progressLine } from "@/components/public/join";
 import { LEDE } from "@/components/public/lede";
 import { PLACES } from "@/components/public/PublicNav";
 import { publicTextFiles, scanKitText, scanText } from "@/core/claims";
@@ -277,10 +277,14 @@ describe("defects (each FAILS on cb1aadd)", () => {
     expect(feed).toContain('<h2 id="front-runs">Keep your people. Change who runs it.</h2>');
     expect(textOf(feed)).toContain("Until then, I hold all three.");
 
-    // / is the front door: no such section, and no promise to land on.
+    // / is the front door: no such section to land on.
+    // Changed under M-0021 (D-0024 §A): the first screen now carries the maintainer's pledge, the
+    // first sentence of /feed's signed card, so "carries no promise" no longer holds. What the
+    // link needs does: the front door still has no #front-runs, the section the link names, and
+    // not its card or its terms, so a link to /#front-runs would still land on nothing.
     const door = renderToStaticMarkup((await FrontDoorRoute()) as ReactElement);
     expect(door).not.toContain('id="front-runs"');
-    expect(textOf(door)).not.toMatch(/I hand over|I hold all three/);
+    expect(textOf(door)).not.toContain("Keep your people. Change who runs it.");
 
     // The defect: the page the link names doesn't carry the section it names.
     const [path, anchor] = href.split("#");
@@ -556,7 +560,33 @@ describe("closed (each passes on cb1aadd)", () => {
 
     // Changed after the verification of M-0020 (H2): the two pictures were redrawn to show the app as it is
     // (D-0023 §A, §D); their people, posts and words are still 25ce8f0's.
-    for (const file of ["GetInForm.tsx", "lede.ts", "handover.ts"]) {
+    // Changed under M-0021 (D-0024 §A, D-0025 §G, §H): GetInForm gains an optional second field, "Which app
+    // would you take back?", for the front door's form; /feed's passes none, and renders what it did. Its
+    // verified words (the label, the one answer, the button's) are 25ce8f0's: the file is 25ce8f0's once the
+    // field, the refusal's field and kept values, the one answer's place and the button's aria-disabled are
+    // taken out. (After round one the hook is the verified one again: the server action itself.)
+    const getInAsVerified = (text: string) =>
+      text
+        .replace(/\n \*\n \* On the front door \(D-0024 §A\)[\s\S]*? keyboard focus stays on it\.\n \*\//, "\n */")
+        .replace('import { type SeatResult, type Sent, takeSeat } from "@/app/(public)/seat-actions";', 'import { type SeatResult, takeSeat } from "@/app/(public)/seat-actions";')
+        .replace('import { NEED_HINT, NEED_LABEL } from "./door";\n', "")
+        .replace("export function GetInForm({ label = JOIN_LABEL, need = false }: { label?: string; need?: boolean }) {", "export function GetInForm({ label = JOIN_LABEL }: { label?: string }) {")
+        .replace(" label={label} need={need} />;", " label={label} />;")
+        .replace("  label = JOIN_LABEL,\n  need = false,\n  values: given,\n}: {", "  label = JOIN_LABEL,\n}: {")
+        .replace("  label?: string;\n  need?: boolean;\n  /** What to put back in the fields: a refusal's own values, unless given. */\n  values?: Sent;\n}) {", "  label?: string;\n}) {")
+        .replace(
+          '  const refusal = state !== null && "error" in state ? state : null;\n  // What was typed when the form was refused, put back in its fields.\n  const values = given ?? refusal?.values;\n  // A refusal belongs to the field it names; the address\'s is the default.\n  const error = refusal !== null && refusal.field !== "need" ? refusal.error : null;\n  const needError = refusal !== null && refusal.field === "need" ? refusal.error : null;\n  const answered = state !== null && refusal === null;\n',
+          '  const error = state !== null && "error" in state ? state.error : null;\n  const answered = state !== null && error === null;\n',
+        )
+        // The one answer was drawn after the form, and is now drawn first.
+        .replace('      {answered ? (\n        <p className="notice notice--ok" role="status">\n          {CHECK_YOUR_EMAIL}\n        </p>\n      ) : null}\n      <form ', "      <form ")
+        .replace("      </form>\n    </div>", '      </form>\n      {answered ? (\n        <p className="notice notice--ok" role="status">\n          {CHECK_YOUR_EMAIL}\n        </p>\n      ) : null}\n    </div>')
+        .replace('className={`form get-in-form${need ? " get-in-form--need" : ""}`}', 'className="form get-in-form"')
+        .replace("          defaultValue={values?.email}\n", "")
+        .replace(/        \{need \? \(\n          <Field\n[\s\S]*?        \) : null\}\n/, "")
+        .replace(/        <Button\n          type="submit"\n[\s\S]*?        >\n/, '        <Button type="submit" kind="primary" size="large" block disabled={pending}>\n');
+    expect(getInAsVerified(read("src/components/public/GetInForm.tsx"))).toBe(gitShow(FRONT_PAGE_VERIFIED, "apps/web/src/components/public/GetInForm.tsx"));
+    for (const file of ["lede.ts", "handover.ts"]) {
       expect(read(`src/components/public/${file}`), file).toBe(gitShow(FRONT_PAGE_VERIFIED, `apps/web/src/components/public/${file}`));
     }
     const between = (s: string, from: string, to: string) => s.slice(s.indexOf(from), s.indexOf(to));
@@ -651,10 +681,17 @@ describe("closed (each passes on cb1aadd)", () => {
       ["work", "hidden"],
       ["audience", "hidden"],
     ]);
-    const first = html.slice(html.indexOf('-panel-feed" role="tabpanel"'), html.indexOf('-panel-work" role="tabpanel"'));
-    expect(textOf(first)).toContain(countLine(1284));
+    // Changed under M-0021 (D-0024 §A): the count and the one join form are the first screen's, the
+    // first thing a visitor reads, shown with or without JavaScript, by /feed's gates; the feed's
+    // panel points up to them. "The number on the front page" is now "1,284 of 100,000 people are
+    // in.", the same public count, with no rank; the form is the same form, with its optional question.
+    const first = html.slice(0, html.indexOf('id="idea"'));
+    expect(textOf(first)).toContain(progressLine(1284));
     expect(first).toContain("<form");
     expect(textOf(first)).toContain(JOIN_LABEL);
+    const panel = html.slice(html.indexOf('-panel-feed" role="tabpanel"'), html.indexOf('-panel-work" role="tabpanel"'));
+    expect(panel).not.toContain("<form");
+    expect(panel).toContain('href="#join"');
   });
 
   it("closed: every possibility and the illustration carry their labels, in every state — the two tabs' panels say 'A possibility · no project announced' and 'Concept only', with notes that they are illustrations; the picture's cards say IMAGINE and its description 'possibilities, not projects'; /projects heads them 'Possibilities, not projects'; the illustration names itself in both its states and says our.one can't do it today (D-0020 §A)", () => {
@@ -824,7 +861,8 @@ describe("closed (each passes on cb1aadd)", () => {
     for (const f of changed) expect(scanText(read(f), f).map((h) => h.match), f).toEqual([]);
     for (const joining of [true, false]) {
       for (const email of [null, "ideas@example.test"]) {
-        expect(scanText(textOf(renderDoor({ joining, email })), null)).toEqual([]);
+        // Changed under M-0021 (D-0024 §A): the first screen's pledge is a listed sentence for FrontDoor.tsx.
+        expect(scanText(textOf(renderDoor({ joining, email })), "src/components/public/FrontDoor.tsx")).toEqual([]);
       }
     }
     for (const kind of ["need", "idea"] as const) expect(scanText(textOf(hydratedDraft(kind, "ideas@example.test")), null)).toEqual([]);

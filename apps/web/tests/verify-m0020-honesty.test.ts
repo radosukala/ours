@@ -171,7 +171,7 @@ import { DRAFT_FALLBACK, draftNote } from "@/components/public/drafts";
 import { CONTRAST_LABELS, FeedContrast } from "@/components/public/FeedContrast";
 import { FeedPreview } from "@/components/public/FeedPreview";
 import { CLOSE_LINE, FrontPage } from "@/components/public/FrontPage";
-import { JOIN_LABEL, memberCountLine } from "@/components/public/join";
+import { JOIN_LABEL, memberCountLine, progressLine } from "@/components/public/join";
 import { PLACES } from "@/components/public/PublicNav";
 import { sessionIdFromCookie } from "@/core/auth";
 import { ALLOWLIST, publicTextFiles, scanKitText, scanRepoPublicText, scanText } from "@/core/claims";
@@ -746,7 +746,11 @@ describe("closed (each passes on 4e04af5)", () => {
     expect(header).not.toContain("Sign in");
     expect(member).not.toContain("<form");
     expect(member).toContain(`<a class="btn btn--primary" href="/home">${MEMBER_JOIN.link}</a>`);
-    expect(textOf(member)).toContain(`${MEMBER_JOIN.line} ${MEMBER_JOIN.link} ${memberCountLine(12)}`);
+    // Changed under M-0021 (D-0024 §A): the front door's count is the count against 100,000, above
+    // the pledge and the form's place, so it no longer follows "Open your feed"; it is still the same
+    // count and still has no rank. "You're in." and "Open your feed" are still together.
+    expect(textOf(member)).toContain(`${MEMBER_JOIN.line} ${MEMBER_JOIN.link}`);
+    expect(textOf(member)).toContain(progressLine(12));
     expect(textOf(member)).not.toContain("You'd be #13");
     const feed = textOf((await routes()).feed);
     expect(feed).toContain(`${MEMBER_JOIN.line} ${MEMBER_JOIN.link}`);
@@ -758,7 +762,8 @@ describe("closed (each passes on 4e04af5)", () => {
     const visitor = await full(createElement(PublicLayout, null, (await FrontDoorRoute()) as ReactElement));
     expect(visitor).toContain('<a class="public-header__signin" href="/signin">Sign in</a>');
     expect(visitor).toContain("<form");
-    expect(textOf(visitor)).toContain("12 people are in. You'd be #13.");
+    // Changed under M-0021 (D-0024 §A): a visitor reads the count against 100,000, with no rank, as members do.
+    expect(textOf(visitor)).toContain(progressLine(12));
 
     for (const file of ["src/app/(public)/page.tsx", "src/app/(public)/layout.tsx", "src/app/layout.tsx"]) {
       expect(read(file), file).not.toMatch(/\bredirect\(|permanentRedirect|useRouter|location\.(?:href|assign|replace)/);
@@ -899,7 +904,6 @@ describe("closed (each passes on 4e04af5)", () => {
     for (const file of [
       "src/app/(public)/contract/page.tsx",
       "src/components/public/floorRules.ts",
-      "src/app/(public)/privacy/page.tsx",
       "src/app/(public)/power/page.tsx",
       "src/app/(public)/costs/page.tsx",
       "src/app/(public)/agreement/page.tsx",
@@ -914,6 +918,16 @@ describe("closed (each passes on 4e04af5)", () => {
     ]) {
       expect(read(file), file).toBe(git(["show", `184865b:apps/web/${file}`]));
     }
+    // Changed under M-0021 (D-0024 §B): /privacy gains an entry for a named app (last in KEPT), a sentence in the seat
+    // paragraph, and a right ("A named app can't be found."), with a paragraph in its header comment saying so. The page
+    // is 184865b's byte for byte once those four additions are taken out.
+    const privacyAsVerified = (text: string) =>
+      text
+        .replace(/ \* A named app \(D-0024 §B, SPEC §18\.23\)[\s\S]*? nothing else it keeps\.\n \*\n/, "")
+        .replace(/  \{\n    title: "Named apps",\n[\s\S]*?\n  \},\n(?=\];)/, "")
+        .replace(" If you also answer the question on the form, those words are kept without your address: see Named apps.", "")
+        .replace(/          <li>\n            <strong>A named app can&apos;t be found\.<\/strong>\n[\s\S]*?          <\/li>\n/, "");
+    expect(privacyAsVerified(read("src/app/(public)/privacy/page.tsx"))).toBe(git(["show", "184865b:apps/web/src/app/(public)/privacy/page.tsx"]));
   });
 
   it("closed: the panel claims nothing that isn't so — its line is D-0020 §A's message, a 'should'; 'The feed is our.one's first project.' is D-0017 §A and D-0023 §D; 'What should we make ours?' is the front door's own question, asked, not answered; 'Name a need' and 'Bring an idea' are D-0020 §A's words and open the front door's drafts (without JavaScript, /maintainers), whose dialog says 'Nothing is saved, sent or counted.'; its places are the header's four; the panel ends with the status line, 'Maintained by its founder. Promised: …'. No word a person reads in the panel, the member's links and menu, MemberJoin, the bottom bar or a member's header says member, owner, control, holder, safeguard or protected; the claims scan finds nothing in any of them, nor in / and /feed as a member", async () => {
@@ -972,8 +986,10 @@ describe("closed (each passes on 4e04af5)", () => {
     const kit = scanKitText(WEB);
     expect([...pages.hits, ...kit.hits]).toEqual([]);
     // Changed after the verification of M-0020 (H2, H4, H11): places.ts and PublicAccount.tsx added, InAppSiteFooter.tsx gone.
-    expect(pages.files.length + kit.files.length).toBe(178);
-    expect(ALLOWLIST.length).toBe(17);
+    // Changed under M-0021 (D-0024): src/core/needs.ts is read too (179), and the pledge's sentence is listed in its two
+    // forms for FrontDoor.tsx (19). The 17 and the 178 are M-0020's, and still the others' of those.
+    expect(pages.files.length + kit.files.length).toBe(179);
+    expect(ALLOWLIST.length).toBe(19);
     expect(record("receipts/builds/2026-10-03-M-0020.md")).toContain("| Claims scan | CHECKED | no prohibited claim in 177 files; 17 sentences listed |");
 
     const check = spawnSync(process.execPath, ["kit/our-one.mjs", "check", "--project", "apps/web"], {
