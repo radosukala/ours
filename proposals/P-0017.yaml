@@ -1,0 +1,46 @@
+schema: ours.proposal/v0.1
+proposal_id: P-0017
+title: The first screen asks one thing — the count and the pledge, one form, a named app kept as words and a day, a link card
+status: ADOPTED
+
+requests:
+  decision_class: CONSTITUTIONAL
+  decision_id: D-0024
+
+human_source:
+  path: proposals/P-0017.md
+evidence:
+  - path: proposals/P-0017.evidence-conversation-2026-10-05.md
+
+proposed_by:
+  - id: founder
+    kind: human
+    role: founder-steward
+drafted_by:
+  - id: claude
+    kind: agent
+    role: drafter
+
+affected_groups:
+  - visitors, who would see the count, the pledge and one form on the first screen, and could name an app without giving an address with it
+  - members, who would see "You're in." and how many of 100,000 are in
+  - people who share a link to our.one, whose card would show the headline
+
+unresolved:
+  - whether the named apps are ever published, and how
+  - how many seats to open in /admin when this goes out
+  - the sentence after "It starts with a friends feed", and which sentence is the pledge
+  - what becomes of the two entrance buttons
+  - whether the count says "answers" rather than "apps named"
+
+cost:
+  proposer_hours: 1
+  source: ESTIMATED
+
+deliberation:
+  - date: 2026-10-05
+    actor: { id: founder, kind: human }
+    position: finish M-0021 and commit to main (after an earlier session's build was lost unpushed)
+  - date: 2026-10-05
+    actor: { id: claude, kind: agent }
+    position: rebuild M-0021 from the pasted notes and the repository, state in the records that it is a reconstruction, choose the shortest true sentence wherever the notes leave one open, and list each such choice for the founder
